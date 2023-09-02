@@ -1,4 +1,5 @@
 import type { CriteriaMode } from './constants'
+import type { Field } from './field'
 import type { FlattenObject } from './utils/flatten-object'
 
 export type ResolverOptions<T> = {
@@ -10,7 +11,7 @@ export type ResolverOptions<T> = {
   /**
    * An array of fields, using flattened dot paths as keys.
    */
-  fields: Record<string, Field['_f']>
+  fields: Record<string, Field>
 
   /**
    * An array of dot paths to property names.

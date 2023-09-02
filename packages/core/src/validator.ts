@@ -42,7 +42,7 @@ export type Validator<TFieldValue, TForm> = (
 ) => MaybePromise<ValidateResult>
 
 export type RegisterOptions<
-  TForm extends Record<PropertyKey, unknown>,
+  TForm extends Record<PropertyKey, unknown> = Record<PropertyKey, unknown>,
   TFieldName extends keyof FlattenObject<TForm> = keyof FlattenObject<TForm>,
   TFieldValue = FlattenObject<TForm>[TFieldName],
 > = {

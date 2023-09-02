@@ -1,5 +1,6 @@
 import type { FlattenObject } from './utils/flatten-object'
 import type { Noop } from './utils/noop'
+import type { RegisterOptions } from './validator'
 
 /**
  * A custom field element has these properties.
