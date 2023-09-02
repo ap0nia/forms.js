@@ -1,3 +1,4 @@
+import type { AnyRecord } from './utils/any-record'
 import type { FlattenObject } from './utils/flatten-object'
 import type { MaybePromise } from './utils/maybe-promise'
 
@@ -9,9 +10,7 @@ export type ValidationValue = boolean | number | string | RegExp
 /**
  * Something.
  */
-export type ValidationRule<T extends ValidationValue = ValidationValue> =
-  | T
-  | ValidationValueMessage<T>
+export type ValidationRule<T extends ValidationValue> = T | ValidationValueMessage<T>
 
 /**
  * Idk.
@@ -42,7 +41,7 @@ export type Validator<TFieldValue, TForm> = (
 ) => MaybePromise<ValidateResult>
 
 export type RegisterOptions<
-  TForm extends Record<PropertyKey, unknown> = Record<PropertyKey, unknown>,
+  TForm extends AnyRecord = AnyRecord,
   TFieldName extends keyof FlattenObject<TForm> = keyof FlattenObject<TForm>,
   TFieldValue = FlattenObject<TForm>[TFieldName],
 > = {

@@ -6,7 +6,6 @@ import { isEmptyObject } from '../guards/is-empty-object'
  *
  * FIXEDME: Don't invoke `updateFormState` here.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function shouldRenderFormState(formState: any, proxyFormState: any, isRoot: boolean) {
   return (
     isEmptyObject(formState) ||

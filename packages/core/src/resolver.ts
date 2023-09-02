@@ -1,6 +1,14 @@
 import type { CriteriaMode } from './constants'
+import type { FieldErrors } from './errors'
 import type { Field } from './field'
 import type { FlattenObject } from './utils/flatten-object'
+import type { MaybePromise } from './utils/maybe-promise'
+
+export type ResolverSuccessResult<T> = { values: T }
+
+export type ResolverErrorResult<T> = { errors: FieldErrors<T> }
+
+export type ResolverResult<T> = ResolverSuccessResult<T> | ResolverErrorResult<T>
 
 export type ResolverOptions<T> = {
   /**
@@ -27,8 +35,8 @@ export type ResolverOptions<T> = {
 /**
  * A resolver does something.
  */
-export type Resolver<TForm extends Record<PropertyKey, unknown>, TContext = unknown> = (
+export type Resolver<TForm, TContext> = (
   values: TForm,
   context: TContext | undefined,
   options: ResolverOptions<TForm>,
-) => unknown
+) => MaybePromise<ResolverResult<TForm>>

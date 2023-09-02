@@ -5,7 +5,7 @@ import type { RegisterOptions } from './validator'
 /**
  * A custom field element has these properties.
  */
-export type CustomElement<T extends Record<PropertyKey, unknown> = Record<PropertyKey, unknown>> = {
+export type CustomElement<T> = {
   /**
    * The name of the field.
    */
@@ -49,7 +49,7 @@ export type CustomElement<T extends Record<PropertyKey, unknown> = Record<Proper
   focus?: Noop
 }
 
-export type FieldElement<T extends Record<PropertyKey, unknown> = Record<PropertyKey, unknown>> =
+export type FieldElement<T = any> =
   | HTMLInputElement
   | HTMLSelectElement
   | HTMLTextAreaElement

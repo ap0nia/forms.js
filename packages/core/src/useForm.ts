@@ -1,5 +1,14 @@
-import type { ValidationMode, RevalidationMode, CriteriaMode } from './constants'
+import {
+  type ValidationMode,
+  type RevalidationMode,
+  type CriteriaMode,
+  VALIDATION_MODE,
+} from './constants'
+import type { FieldErrors } from './errors'
+import { isFunction } from './guards/is-function'
 import type { Resolver } from './resolver'
+import type { AnyRecord } from './utils/any-record'
+import type { DeepMapObject } from './utils/deep-map-object'
 import type { DeepPartial } from './utils/deep-partial'
 import type { MaybeAsyncFunction } from './utils/maybe-async-function'
 
@@ -53,10 +62,7 @@ export type KeepStateOptions = {
   keepSubmitCount?: boolean
 }
 
-export type UseFormProps<
-  TForm extends Record<PropertyKey, unknown> = Record<PropertyKey, unknown>,
-  TContext = unknown,
-> = {
+export type UseFormProps<TForm extends AnyRecord = AnyRecord, TContext = any> = {
   /**
    * When to validate the form.
    */
@@ -82,12 +88,12 @@ export type UseFormProps<
   /**
    * What to do when resetting the form.
    */
-  resetOptions: KeepStateOptions
+  resetOptions?: KeepStateOptions
 
   /**
    * Validates the form.
    */
-  resolver: Resolver<TForm, TContext>
+  resolver?: Resolver<TForm, TContext>
 
   /**
    * Idk what context is for.
@@ -127,6 +133,58 @@ export type UseFormProps<
   delayError?: number
 }
 
+export type FormState<T> = {
+  isDirty: boolean
+  isLoading: boolean
+  isSubmitted: boolean
+  isSubmitSuccessful: boolean
+  isSubmitting: boolean
+  isValidating: boolean
+  isValid: boolean
+  submitCount: number
+  defaultValues?: Readonly<DeepPartial<T>>
+  dirtyFields: Partial<Readonly<DeepMapObject<T, boolean>>>
+  touchedFields: Partial<Readonly<DeepMapObject<T, boolean>>>
+  errors: FieldErrors<T>
+}
+
 /**
  */
-export function useForm() {}
+export function useForm<TForm extends AnyRecord = AnyRecord, TContext = any>(
+  props: UseFormProps<TForm, TContext>,
+) {
+  createFormControl<TForm, TContext>(props)
+}
+
+const defaultOptions = {
+  mode: VALIDATION_MODE.onSubmit,
+  reValidateMode: VALIDATION_MODE.onChange,
+  shouldFocusError: true,
+} as const
+
+export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext = any>(
+  props: UseFormProps<TForm, TContext>,
+): any {
+  props
+
+  const _options = {
+    ...defaultOptions,
+    ...props,
+  }
+
+  const _formState: FormState<TForm> = {
+    submitCount: 0,
+    isDirty: false,
+    isLoading: isFunction(_options.defaultValues),
+    isValidating: false,
+    isSubmitted: false,
+    isSubmitting: false,
+    isSubmitSuccessful: false,
+    isValid: false,
+    touchedFields: {},
+    dirtyFields: {},
+    errors: {},
+  }
+
+  return undefined
+}
