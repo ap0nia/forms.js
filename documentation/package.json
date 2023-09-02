@@ -1,0 +1,39 @@
+{
+  "name": "@forms.js/documentation",
+  "version": "0.0.1",
+  "description": "forms.js documentation",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://ap0nia.github.io/forms.js",
+  "funding": "https://github.com/ap0nia/forms.js",
+  "contributors": [
+    {
+      "name": "ap0nia",
+      "email": "",
+      "url": "https://github.com/ap0nia"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ap0nia/forms.js",
+    "directory": "documentation"
+  },
+  "bugs": {
+    "url": "https://github.com/ap0nia/forms.js/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev src/routes",
+    "build": "vitepress build src/routes",
+    "preview": "vitepress preview src/routes"
+  },
+  "devDependencies": {
+    "ci-info": "^3.8.0",
+    "vitepress": "1.0.0-rc.4"
+  },
+  "packageManager": "pnpm@8.6.12",
+  "engines": {
+    "pnpm": "^8.0.0",
+    "node": ">=18"
+  }
+}
