@@ -1,7 +1,7 @@
-import { isDateObject } from './isDateObject'
-import { isNullish } from './isNullish'
-import { isObject } from './isObject'
-import { isPrimitive } from './isPrimitive'
+import { isDateObject } from '../guards/is-date-object'
+import { isNullish } from '../guards/is-nullish'
+import { isObject } from '../guards/is-object'
+import { isPrimitive } from '../guards/is-primitive'
 
 export function deepEqual(left: unknown, right: unknown): boolean {
   if (isNullish(left) || isNullish(right)) {

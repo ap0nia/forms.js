@@ -24,6 +24,12 @@
   "keywords": [],
   "type": "module",
   "scripts": {},
+  "dependencies": {
+    "react-hook-form": "^7.45.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  },
   "packageManager": "pnpm@8.6.12",
   "engines": {
     "pnpm": "^8.0.0",

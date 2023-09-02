@@ -1,5 +1,5 @@
-import { isDateObject } from './isDateObject'
-import { isNullish } from './isNullish'
+import { isDateObject } from './is-date-object'
+import { isNullish } from './is-nullish'
 
 export function isObject<T extends object>(value: unknown): value is T {
   return (

@@ -4,10 +4,14 @@ export const EVENTS = {
   CHANGE: 'change',
 } as const
 
-export const VALIDATION_MODE = {
+export const REVALIDATION_MODE = {
   onBlur: 'onBlur',
   onChange: 'onChange',
   onSubmit: 'onSubmit',
+} as const
+
+export const VALIDATION_MODE = {
+  ...REVALIDATION_MODE,
   onTouched: 'onTouched',
   all: 'all',
 } as const
@@ -23,3 +27,7 @@ export const INPUT_VALIDATION_RULES = {
 } as const
 
 export type ValidationMode = typeof VALIDATION_MODE
+
+export type RevalidationMode = typeof REVALIDATION_MODE
+
+export type CriteriaMode = 'firstError' | 'all'

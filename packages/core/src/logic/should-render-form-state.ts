@@ -1,5 +1,5 @@
 import { VALIDATION_MODE } from '../constants'
-import { isEmptyObject } from '../utils/isEmptyObject'
+import { isEmptyObject } from '../guards/is-empty-object'
 
 /**
  * TODO: proper form state type and proxy form state type.

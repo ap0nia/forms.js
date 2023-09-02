@@ -1,4 +1,4 @@
-import { isNullish } from './isNullish'
+import { isNullish } from './is-nullish'
 
 export type Primitive = null | undefined | string | number | boolean | symbol | bigint
 

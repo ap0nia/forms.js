@@ -1,4 +1,4 @@
-import { isObject } from './isObject'
+import { isObject } from './is-object'
 
 export type EmptyObject = Record<PropertyKey, never>
 
