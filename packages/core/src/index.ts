@@ -29,6 +29,6 @@ const form = useForm<MyForm>({
   },
 })
 
-form
+form.register('e.f')
 
 export type Test = UnionToIntersection<ObjectToUnion<MyForm>>
