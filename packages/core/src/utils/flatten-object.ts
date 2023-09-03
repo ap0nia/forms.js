@@ -19,12 +19,13 @@ import type { UnionToIntersection } from './union-to-intersection'
  *   e: boolean
  * }
  *
- * type MyTypeUnion = ObjectToUnion<MyType>
+ * type MyFlattenedType = FlattenObject<MyType>
  *
- * type MyTypeUnion =
- *   | { 'a.b': string, }
- *   | { 'a.b.c.d': number }
- *   | { 'e': boolean }
+ * type MyFlattenedType = {
+ *   'a.b': string,
+ *   'a.b.c.d': number,
+ *   'e': boolean
+ * }
  * ```
  */
 export type FlattenObject<T> = UnionToIntersection<ObjectToUnion<T>>
