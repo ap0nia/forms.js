@@ -8,8 +8,10 @@ import {
 } from './constants'
 import type { FieldError, FieldErrors } from './errors'
 import type { Field, FieldName, FieldRefs } from './field'
+import { isBoolean } from './guards/is-boolean'
 import { isEmptyObject } from './guards/is-empty-object'
 import { isFunction, type AnyFunction } from './guards/is-function'
+import { isNullish } from './guards/is-nullish'
 import { isObject } from './guards/is-object'
 import { getResolverOptions } from './logic/get-resolver-options'
 import type { Resolver } from './resolver'
@@ -21,9 +23,11 @@ import type { DeepMapObject } from './utils/deep-map-object'
 import type { DeepPartial } from './utils/deep-partial'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
+import type { FlattenObject } from './utils/flatten-object'
 import { live } from './utils/live'
 import type { MaybeAsyncFunction } from './utils/maybe-async-function'
 import validateField from './validateField'
+import type { RegisterOptions } from './validator'
 
 /**
  * What to do when transitioning between states?
@@ -422,8 +426,114 @@ export function createFormControl<
     return deepGet(values, fieldNames)
   }) as UseFormGetValues<TForm>
 
+  // const register: UseFormRegister<TForm> = (name, options = {}) => {
+  const register = <TFieldName extends keyof TFlattenedForm>(
+    name: TFieldName,
+    options: any, // RegisterOptions<TFlattenedForm, TFieldName> = {},
+  ) => {
+    let field = deepGet(_fields, name)
+    const disabledIsDefined = isBoolean(options.disabled)
+
+    deepSet(_fields, name, {
+      ...(field || {}),
+      _f: {
+        ...(field && field._f ? field._f : { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
+    })
+
+    _names.mount.add(name)
+
+    if (field) {
+      _updateDisabledField({
+        field,
+        disabled: options.disabled,
+        name,
+      })
+    } else {
+      updateValidAndValue(name, true, options.value)
+    }
+
+    return {
+      ...(disabledIsDefined ? { disabled: options.disabled } : {}),
+      ...(_options.progressive
+        ? {
+            required: !!options.required,
+            min: getRuleValue(options.min),
+            max: getRuleValue(options.max),
+            minLength: getRuleValue<number>(options.minLength) as number,
+            maxLength: getRuleValue(options.maxLength) as number,
+            pattern: getRuleValue(options.pattern) as string,
+          }
+        : {}),
+      name,
+      onChange,
+      onBlur: onChange,
+      ref: (ref: HTMLInputElement | null): void => {
+        if (ref == null) {
+          field = get(_fields, name, {})
+
+          if (field._f) {
+            field._f.mount = false
+          }
+
+          if (
+            (_options.shouldUnregister || options.shouldUnregister) &&
+            !(isNameInFieldArray(_names.array, name) && _state.action)
+          ) {
+            _names.unMount.add(name)
+          }
+          return
+        }
+
+        register(name, options)
+
+        field = deepGet(_fields, name)
+
+        const fieldRef = isNullish(ref.value)
+          ? ref.querySelectorAll
+            ? (ref.querySelectorAll('input,select,textarea')[0] as Ref) || ref
+            : ref
+          : ref
+
+        const radioOrCheckbox = isRadioOrCheckbox(fieldRef)
+
+        const refs = field._f.refs || []
+
+        if (
+          radioOrCheckbox
+            ? refs.find((option: Ref) => option === fieldRef)
+            : fieldRef === field._f.ref
+        ) {
+          return
+        }
+
+        deepSet(_fields, name, {
+          _f: {
+            ...field._f,
+            ...(radioOrCheckbox
+              ? {
+                  refs: [
+                    ...refs.filter(live),
+                    fieldRef,
+                    ...(Array.isArray(get(_defaultValues, name)) ? [{}] : []),
+                  ],
+                  ref: { type: fieldRef.type, name },
+                }
+              : { ref: fieldRef }),
+          },
+        })
+
+        updateValidAndValue(name, false, undefined, fieldRef)
+      },
+    }
+  }
+
   return {
     getValues,
+    register,
     delayErrorCallback,
     debounce,
     updateErrors,
@@ -500,3 +610,43 @@ export type UseFormGetValues<T> = {
 }
 
 export type GetIsDirty = <T>(name?: string, data?: T) => boolean
+
+/**
+ * Register field into hook form with or without the actual DOM ref. You can invoke register anywhere in the component including at `useEffect`.
+ *
+ * @remarks
+ * [API](https://react-hook-form.com/docs/useform/register) • [Demo](https://codesandbox.io/s/react-hook-form-register-ts-ip2j3) • [Video](https://www.youtube.com/watch?v=JFIpCoajYkA)
+ *
+ * @param name - the path name to the form field value, name is required and unique
+ * @param options - register options include validation, disabled, unregister, value as and dependent validation
+ *
+ * @returns onChange, onBlur, name, ref, and native contribute attribute if browser validation is enabled.
+ *
+ * @example
+ * ```tsx
+ * // Register HTML native input
+ * <input {...register("input")} />
+ * <select {...register("select")} />
+ *
+ * // Register options
+ * <textarea {...register("textarea", { required: "This is required.", maxLength: 20 })} />
+ * <input type="number" {...register("name2", { valueAsNumber: true })} />
+ * <input {...register("name3", { deps: ["name2"] })} />
+ *
+ * // Register custom field at useEffect
+ * useEffect(() => {
+ *   register("name4");
+ *   register("name5", { value: '"hiddenValue" });
+ * }, [register])
+ *
+ * // Register without ref
+ * const { onChange, onBlur, name } = register("name6")
+ * <input onChange={onChange} onBlur={onBlur} name={name} />
+ * ```
+ */
+export type UseFormRegister<T extends AnyRecord> = <
+  TFieldName extends keyof FlattenObject<T> = keyof FlattenObject<T>,
+>(
+  name: TFieldName,
+  options?: RegisterOptions<T, TFieldName>,
+) => UseFormRegisterReturn<TFieldName>
