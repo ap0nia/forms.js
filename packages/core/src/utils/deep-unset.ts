@@ -1,6 +1,7 @@
 import { isEmptyObject } from '../guards/is-empty-object'
 import { isNullish } from '../guards/is-nullish'
 import { isObject } from '../guards/is-object'
+
 import { isKey } from './is-key'
 import { stringToPath } from './string-to-path'
 
@@ -18,7 +19,7 @@ function baseGet(object: any, updatePath: (string | number)[]) {
 
 function isEmptyArray(obj: unknown[]) {
   for (const key in obj) {
-    if (obj.hasOwnProperty(key) && !isNullish(obj[key])) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && !isNullish(obj[key])) {
       return false
     }
   }

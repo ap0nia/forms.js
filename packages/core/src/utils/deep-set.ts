@@ -1,4 +1,5 @@
 import { isObject } from '../guards/is-object'
+
 import type { AnyRecord } from './any-record'
 import { isKey } from './is-key'
 import { stringToPath } from './string-to-path'
@@ -29,8 +30,8 @@ export function deepSet(object: AnyRecord, path: string, value?: unknown) {
         isObject(objValue) || Array.isArray(objValue)
           ? objValue
           : !isNaN(Number(tempPath[index + 1]))
-            ? []
-            : {}
+          ? []
+          : {}
     }
 
     object[key] = newValue

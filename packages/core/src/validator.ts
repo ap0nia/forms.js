@@ -10,7 +10,9 @@ export type ValidationValue = boolean | number | string | RegExp
 /**
  * Something.
  */
-export type ValidationRule<T extends ValidationValue> = T | ValidationValueMessage<T>
+export type ValidationRule<T extends ValidationValue = ValidationValue> =
+  | T
+  | ValidationValueMessage<T>
 
 /**
  * Idk.

@@ -88,6 +88,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@legendapp/state':
+        specifier: ^1.11.1
+        version: 1.11.1(react@18.2.0)
       react-hook-form:
         specifier: ^7.45.4
         version: 7.45.4(react@18.2.0)
@@ -1317,6 +1320,17 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
+
+  /@legendapp/state@1.11.1(react@18.2.0):
+    resolution:
+      {
+        integrity: sha512-9bso1xOwgkHEgZo4IfzJ1FkGoHuyhOZoe2EATJabzSiYxZYOzKuZbbUSfwl6E22JDKMTbbCoqp9YQWgXQO5n9g==,
+      }
+    dependencies:
+      use-sync-external-store: 1.2.0(react@18.2.0)
+    transitivePeerDependencies:
+      - react
+    dev: false
 
   /@manypkg/find-root@1.1.0:
     resolution:
@@ -7018,6 +7032,17 @@ packages:
     dependencies:
       punycode: 2.3.0
     dev: true
+
+  /use-sync-external-store@1.2.0(react@18.2.0):
+    resolution:
+      {
+        integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==,
+      }
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 18.2.0
+    dev: false
 
   /util-deprecate@1.0.2:
     resolution:

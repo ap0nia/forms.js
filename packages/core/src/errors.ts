@@ -38,3 +38,5 @@ export type FieldErrors<T> = Partial<
 > & {
   root?: Record<string, GlobalError> & GlobalError
 }
+
+export type InternalFieldErrors = Partial<Record<string, FieldError>>

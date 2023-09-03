@@ -1,3 +1,5 @@
+import { observable } from '@legendapp/state'
+
 import {
   type ValidationMode,
   type RevalidationMode,
@@ -5,13 +7,13 @@ import {
   VALIDATION_MODE,
 } from './constants'
 import type { FieldError, FieldErrors } from './errors'
-import type { Field, FieldName } from './field'
+import type { Field, FieldName, FieldRefs } from './field'
 import { isEmptyObject } from './guards/is-empty-object'
-import { isFunction } from './guards/is-function'
+import { isFunction, type AnyFunction } from './guards/is-function'
 import { isObject } from './guards/is-object'
 import { getResolverOptions } from './logic/get-resolver-options'
-import { getValidationModes } from './logic/get-validation-modes'
 import type { Resolver } from './resolver'
+import { updateFieldArrayRootError } from './update-field-array-root-error'
 import type { AnyRecord } from './utils/any-record'
 import { deepEqual } from './utils/deep-equal'
 import { deepGet } from './utils/deep-get'
@@ -21,7 +23,7 @@ import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { live } from './utils/live'
 import type { MaybeAsyncFunction } from './utils/maybe-async-function'
-import { isNullish } from './guards/is-nullish'
+import validateField from './validateField'
 
 /**
  * What to do when transitioning between states?
@@ -176,7 +178,7 @@ export type DelayedFunction = (duration: number) => unknown
 /**
  */
 export function useForm<TForm extends AnyRecord = AnyRecord, TContext = any>(
-  props: any // UseFormProps<TForm, TContext>,
+  props: UseFormProps<TForm, TContext>,
 ) {
   createFormControl<TForm, TContext>(props)
 }
@@ -187,9 +189,11 @@ const defaultOptions = {
   shouldFocusError: true,
 } as const
 
-export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext = any>(
-  props: any // UseFormProps<TForm, TContext>,
-): any {
+export function createFormControl<
+  TForm extends AnyRecord = AnyRecord,
+  TContext = any,
+  TFlattenedForm = FieldName<TForm>,
+>(props: UseFormProps<TForm, TContext>) {
   const _options = {
     ...defaultOptions,
     ...props,
@@ -209,29 +213,29 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
     errors: {},
   }
 
-  let _fields = {}
+  const _fields = {}
 
-  let _defaultValues =
+  const _defaultValues =
     isObject(_options.defaultValues) || isObject(_options.values)
       ? structuredClone(_options.defaultValues ?? _options.values ?? {})
       : {}
 
-  let _formValues = _options.shouldUnregister ? {} : structuredClone(_defaultValues)
+  const _formValues = _options.shouldUnregister ? {} : structuredClone(_defaultValues)
 
-  let _state = {
+  const _state = {
     action: false,
     mount: false,
     watch: false,
   }
 
-  let _names: Names = {
+  const _names: Names = {
     mount: new Set(),
     unMount: new Set(),
     array: new Set(),
     watch: new Set(),
   }
 
-  let delayErrorCallback: DelayedFunction | null
+  const delayErrorCallback: DelayedFunction | null = null
 
   let timer = 0
 
@@ -244,18 +248,18 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
     errors: false,
   }
 
-  const _subjects: Subjects<TFieldValues> = {
-    values: createSubject(),
-    array: createSubject(),
-    state: createSubject(),
+  const _subjects = {
+    values: observable(),
+    array: observable(),
+    state: observable(),
   }
 
-  const shouldCaptureDirtyFields = props.resetOptions && props.resetOptions.keepDirtyValues
-  const validationModeBeforeSubmit = getValidationModes(_options.mode)
-  const validationModeAfterSubmit = getValidationModes(_options.reValidateMode)
+  // const shouldCaptureDirtyFields = props.resetOptions && props.resetOptions.keepDirtyValues
+  // const validationModeBeforeSubmit = getValidationModes(_options.mode)
+  // const validationModeAfterSubmit = getValidationModes(_options.reValidateMode)
   const shouldDisplayAllAssociatedErrors = _options.criteriaMode === VALIDATION_MODE.all
 
-  const debounce = <T extends Function>(callback: T) => {
+  const debounce = <T extends AnyFunction>(callback: T) => {
     const waitFunction: DelayedFunction = (wait) => {
       clearTimeout(timer)
       timer = setTimeout(callback, wait)
@@ -270,14 +274,70 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
         : await executeBuiltInValidation(_fields, true)
 
       if (isValid !== _formState.isValid) {
-        _subjects.state.update({ isValid })
+        _subjects.state.set({ isValid })
       }
     }
   }
 
+  const executeBuiltInValidation = async (
+    fields: FieldRefs<TForm>,
+    shouldOnlyCheckValid?: boolean,
+    context = { valid: true },
+  ) => {
+    for (const name in fields) {
+      const field = fields[name as keyof typeof fields]
+
+      if (field == null) {
+        continue
+      }
+
+      const { _f, ...fieldValue } = field
+
+      if (_f) {
+        const isFieldArrayRoot = _names.array.has(_f.name)
+
+        const fieldError = await validateField(
+          field,
+          _formValues,
+          shouldDisplayAllAssociatedErrors,
+          _options.shouldUseNativeValidation && !shouldOnlyCheckValid,
+          isFieldArrayRoot,
+        )
+
+        if (fieldError[_f.name]) {
+          context.valid = false
+
+          if (shouldOnlyCheckValid) {
+            break
+          }
+        }
+
+        if (shouldOnlyCheckValid) {
+          continue
+        }
+
+        if (deepGet(fieldError, _f.name)) {
+          if (isFieldArrayRoot) {
+            updateFieldArrayRootError(_formState.errors, fieldError, _f.name)
+          } else {
+            deepSet(_formState.errors, _f.name, fieldError[_f.name])
+          }
+        } else {
+          deepUnset(_formState.errors, _f.name)
+        }
+      }
+
+      if (fieldValue) {
+        await executeBuiltInValidation(fieldValue as any, shouldOnlyCheckValid, context)
+      }
+    }
+
+    return context.valid
+  }
+
   const _updateIsValidating = (value: boolean) => {
     if (_proxyFormState.isValidating) {
-      _subjects.state.update({ isValidating: value })
+      _subjects.state.set({ isValidating: value })
     }
   }
 
@@ -288,7 +348,7 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
 
   const updateErrors = (name: string, error: FieldError) => {
     deepSet(_formState.errors, name, error)
-    _subjects.state.update({ errors: _formState.errors })
+    _subjects.state.set({ errors: _formState.errors })
   }
 
   const _executeSchema = async (name?: string[]) => {
@@ -327,10 +387,10 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
 
   const _removeUnmounted = () => {
     for (const name of _names.unMount) {
-      const field: Field | undefined = deepGet(_fields, name)
+      const field = deepGet<Field | undefined>(_fields, name)
 
-      if (!live(field?.ref) || field?.refs?.every((ref) => !live(ref))) {
-        unregister(name as FieldPath<TForm>)
+      if (!live(field?._f.ref) || field?._f.refs?.every((ref) => !live(ref))) {
+        unregister(name as keyof TFlattenedForm)
       }
     }
 
@@ -345,85 +405,98 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
     return false
   }
 
-  const getValues: UseFormGetValues<TForm> = (
-    fieldNames?: FieldName<TForm> | FieldName<TForm>[],
-  ) => {
+  const getValues = ((fieldNames?: keyof TFlattenedForm | keyof TFlattenedForm[]) => {
     const values = {
       ..._defaultValues,
       ...(_state.mount ? _formValues : {}),
     }
 
-    return isNullish(fieldNames)
-      ? values
-      : Array.isArray(fieldNames)
-      ? fieldNames.map((name) => deepGet(values, name))
-      : deepGet(values, fieldNames)
-  }
+    if (fieldNames == null) {
+      return values
+    }
 
-  return undefined
+    if (Array.isArray(fieldNames)) {
+      return fieldNames.map((name) => deepGet(values, name))
+    }
+
+    return deepGet(values, fieldNames)
+  }) as UseFormGetValues<TForm>
+
+  return {
+    getValues,
+    delayErrorCallback,
+    debounce,
+    updateErrors,
+    executeBuiltInValidation,
+    executeSchemaAndUpdateState,
+    _getDirty,
+    _removeUnmounted,
+    _updateValid,
+    _updateFieldArray,
+    _updateIsValidating,
+  }
 }
 
-// export type UseFormGetValues<T> = {
-//   /**
-//    * Get the entire form values when no argument is supplied to this function.
-//    *
-//    * @remarks
-//    * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
-//    *
-//    * @returns form values
-//    *
-//    * @example
-//    * ```tsx
-//    * <button onClick={() => getValues()}>getValues</button>
-//    *
-//    * <input {...register("name", {
-//    *   validate: (value, formValues) => formValues.otherField === value;
-//    * })} />
-//    * ```
-//    */
-//   (): T
-//   /**
-//    * Get a single field value.
-//    *
-//    * @remarks
-//    * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
-//    *
-//    * @param name - the path name to the form field value.
-//    *
-//    * @returns the single field value
-//    *
-//    * @example
-//    * ```tsx
-//    * <button onClick={() => getValues("name")}>getValues</button>
-//    *
-//    * <input {...register("name", {
-//    *   validate: () => getValues('otherField') === "test";
-//    * })} />
-//    * ```
-//    */
-//   <TFieldName extends FieldName<T>>(name: TFieldName): FieldName<T[TFieldName]>
-//   /**
-//    * Get an array of field values.
-//    *
-//    * @remarks
-//    * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
-//    *
-//    * @param names - an array of field names
-//    *
-//    * @returns An array of field values
-//    *
-//    * @example
-//    * ```tsx
-//    * <button onClick={() => getValues(["name", "name1"])}>getValues</button>
-//    *
-//    * <input {...register("name", {
-//    *   validate: () => getValues(["fieldA", "fieldB"]).includes("test");
-//    * })} />
-//    * ```
-//    */
-//   <TFieldNames extends FieldPath<T>[]>(
-//     names: readonly [...TFieldNames],
-//   ): [...FieldPathValues<T, TFieldNames>]
-// }
+export type UseFormGetValues<T> = {
+  /**
+   * Get the entire form values when no argument is supplied to this function.
+   *
+   * @remarks
+   * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+   *
+   * @returns form values
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => getValues()}>getValues</button>
+   *
+   * <input {...register("name", {
+   *   validate: (value, formValues) => formValues.otherField === value;
+   * })} />
+   * ```
+   */
+  (): T
+
+  /**
+   * Get a single field value.
+   *
+   * @remarks
+   * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+   *
+   * @param name - the path name to the form field value.
+   *
+   * @returns the single field value
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => getValues("name")}>getValues</button>
+   *
+   * <input {...register("name", {
+   *   validate: () => getValues('otherField') === "test";
+   * })} />
+   * ```
+   */
+  <TFieldName extends FieldName<T>>(name: TFieldName): any
+  /**
+   * Get an array of field values.
+   *
+   * @remarks
+   * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+   *
+   * @param names - an array of field names
+   *
+   * @returns An array of field values
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => getValues(["name", "name1"])}>getValues</button>
+   *
+   * <input {...register("name", {
+   *   validate: () => getValues(["fieldA", "fieldB"]).includes("test");
+   * })} />
+   * ```
+   */
+  <TFieldNames extends FieldName<T>[]>(names: readonly [...TFieldNames]): any
+}
 
 export type GetIsDirty = <T>(name?: string, data?: T) => boolean

@@ -25,6 +25,7 @@
   "type": "module",
   "scripts": {},
   "dependencies": {
+    "@legendapp/state": "^1.11.1",
     "react-hook-form": "^7.45.4"
   },
   "devDependencies": {

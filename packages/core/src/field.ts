@@ -2,6 +2,8 @@ import type { FlattenObject } from './utils/flatten-object'
 import type { Noop } from './utils/noop'
 import type { RegisterOptions } from './validator'
 
+export type NativeFieldValue = string | number | boolean | null | undefined | unknown[]
+
 /**
  * A custom field element has these properties.
  */
@@ -59,25 +61,29 @@ export type FieldElement<T = any> =
  * Idk what this stands for.
  */
 export type Field = {
-  /**
-   * The original element referenced by the field.
-   */
-  ref: FieldElement
+  _f: {
+    /**
+     * The original element referenced by the field.
+     */
+    ref: FieldElement
 
-  /**
-   * The name of the field.
-   */
-  name: string
+    /**
+     * The name of the field.
+     */
+    name: string
 
-  /**
-   * Actual HTML elements used by the field.
-   */
-  refs?: HTMLInputElement[]
+    /**
+     * Actual HTML elements used by the field.
+     */
+    refs?: HTMLInputElement[]
 
-  /**
-   * Whether it's mounted?
-   */
-  mount?: boolean
-} & RegisterOptions
+    /**
+     * Whether it's mounted?
+     */
+    mount?: boolean
+  } & RegisterOptions
+}
 
 export type FieldName<T> = keyof FlattenObject<T>
+
+export type FieldRefs<T> = Partial<Record<FieldName<T>, Field>>

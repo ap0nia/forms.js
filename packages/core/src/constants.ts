@@ -26,6 +26,8 @@ export const INPUT_VALIDATION_RULES = {
   validate: 'validate',
 } as const
 
+export type InputValidationRules = typeof INPUT_VALIDATION_RULES
+
 export type ValidationMode = typeof VALIDATION_MODE
 
 export type RevalidationMode = typeof REVALIDATION_MODE
