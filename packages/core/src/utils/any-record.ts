@@ -1,3 +1,3 @@
 /**
  */
-export type AnyRecord = Record<PropertyKey, any>
+export type AnyRecord = Record<string, any>

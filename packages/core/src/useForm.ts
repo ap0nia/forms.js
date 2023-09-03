@@ -4,13 +4,24 @@ import {
   type CriteriaMode,
   VALIDATION_MODE,
 } from './constants'
-import type { FieldErrors } from './errors'
+import type { FieldError, FieldErrors } from './errors'
+import type { Field, FieldName } from './field'
+import { isEmptyObject } from './guards/is-empty-object'
 import { isFunction } from './guards/is-function'
+import { isObject } from './guards/is-object'
+import { getResolverOptions } from './logic/get-resolver-options'
+import { getValidationModes } from './logic/get-validation-modes'
 import type { Resolver } from './resolver'
 import type { AnyRecord } from './utils/any-record'
+import { deepEqual } from './utils/deep-equal'
+import { deepGet } from './utils/deep-get'
 import type { DeepMapObject } from './utils/deep-map-object'
 import type { DeepPartial } from './utils/deep-partial'
+import { deepSet } from './utils/deep-set'
+import { deepUnset } from './utils/deep-unset'
+import { live } from './utils/live'
 import type { MaybeAsyncFunction } from './utils/maybe-async-function'
+import { isNullish } from './guards/is-nullish'
 
 /**
  * What to do when transitioning between states?
@@ -148,10 +159,24 @@ export type FormState<T> = {
   errors: FieldErrors<T>
 }
 
+export type Names = {
+  mount: Set<string>
+  unMount: Set<string>
+  array: Set<string>
+  watch: Set<string>
+  focus?: Set<string>
+  watchAll?: Set<boolean>
+}
+
+/**
+ * A delayed function accepts a duration and is expected to execute after the duration.
+ */
+export type DelayedFunction = (duration: number) => unknown
+
 /**
  */
 export function useForm<TForm extends AnyRecord = AnyRecord, TContext = any>(
-  props: UseFormProps<TForm, TContext>,
+  props: any // UseFormProps<TForm, TContext>,
 ) {
   createFormControl<TForm, TContext>(props)
 }
@@ -163,10 +188,8 @@ const defaultOptions = {
 } as const
 
 export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext = any>(
-  props: UseFormProps<TForm, TContext>,
+  props: any // UseFormProps<TForm, TContext>,
 ): any {
-  props
-
   const _options = {
     ...defaultOptions,
     ...props,
@@ -186,5 +209,221 @@ export function createFormControl<TForm extends AnyRecord = AnyRecord, TContext 
     errors: {},
   }
 
+  let _fields = {}
+
+  let _defaultValues =
+    isObject(_options.defaultValues) || isObject(_options.values)
+      ? structuredClone(_options.defaultValues ?? _options.values ?? {})
+      : {}
+
+  let _formValues = _options.shouldUnregister ? {} : structuredClone(_defaultValues)
+
+  let _state = {
+    action: false,
+    mount: false,
+    watch: false,
+  }
+
+  let _names: Names = {
+    mount: new Set(),
+    unMount: new Set(),
+    array: new Set(),
+    watch: new Set(),
+  }
+
+  let delayErrorCallback: DelayedFunction | null
+
+  let timer = 0
+
+  const _proxyFormState = {
+    isDirty: false,
+    dirtyFields: false,
+    touchedFields: false,
+    isValidating: false,
+    isValid: false,
+    errors: false,
+  }
+
+  const _subjects: Subjects<TFieldValues> = {
+    values: createSubject(),
+    array: createSubject(),
+    state: createSubject(),
+  }
+
+  const shouldCaptureDirtyFields = props.resetOptions && props.resetOptions.keepDirtyValues
+  const validationModeBeforeSubmit = getValidationModes(_options.mode)
+  const validationModeAfterSubmit = getValidationModes(_options.reValidateMode)
+  const shouldDisplayAllAssociatedErrors = _options.criteriaMode === VALIDATION_MODE.all
+
+  const debounce = <T extends Function>(callback: T) => {
+    const waitFunction: DelayedFunction = (wait) => {
+      clearTimeout(timer)
+      timer = setTimeout(callback, wait)
+    }
+    return waitFunction
+  }
+
+  const _updateValid = async (shouldUpdateValid?: boolean) => {
+    if (_proxyFormState.isValid || shouldUpdateValid) {
+      const isValid = _options.resolver
+        ? isEmptyObject((await _executeSchema())?.errors)
+        : await executeBuiltInValidation(_fields, true)
+
+      if (isValid !== _formState.isValid) {
+        _subjects.state.update({ isValid })
+      }
+    }
+  }
+
+  const _updateIsValidating = (value: boolean) => {
+    if (_proxyFormState.isValidating) {
+      _subjects.state.update({ isValidating: value })
+    }
+  }
+
+  /**
+   * TODO
+   */
+  const _updateFieldArray = () => {}
+
+  const updateErrors = (name: string, error: FieldError) => {
+    deepSet(_formState.errors, name, error)
+    _subjects.state.update({ errors: _formState.errors })
+  }
+
+  const _executeSchema = async (name?: string[]) => {
+    if (_options.resolver == null) {
+      return
+    }
+
+    const resolverOptions = getResolverOptions(
+      name || _names.mount,
+      _fields,
+      _options.criteriaMode,
+      _options.shouldUseNativeValidation,
+    )
+
+    return _options.resolver(_formValues as TForm, _options.context, resolverOptions)
+  }
+
+  const executeSchemaAndUpdateState = async (names?: string[]) => {
+    const schemaResult = await _executeSchema(names)
+
+    if (schemaResult == null) {
+      return
+    }
+
+    if (names) {
+      for (const name of names) {
+        const error = deepGet(schemaResult.errors, name)
+        error ? deepSet(_formState.errors, name, error) : deepUnset(_formState.errors, name)
+      }
+    } else {
+      _formState.errors = schemaResult.errors
+    }
+
+    return schemaResult.errors
+  }
+
+  const _removeUnmounted = () => {
+    for (const name of _names.unMount) {
+      const field: Field | undefined = deepGet(_fields, name)
+
+      if (!live(field?.ref) || field?.refs?.every((ref) => !live(ref))) {
+        unregister(name as FieldPath<TForm>)
+      }
+    }
+
+    _names.unMount = new Set()
+  }
+
+  const _getDirty: GetIsDirty = (name, data) => {
+    if (name && data) {
+      deepSet(_formValues, name, data)
+      return !deepEqual(getValues(), _defaultValues)
+    }
+    return false
+  }
+
+  const getValues: UseFormGetValues<TForm> = (
+    fieldNames?: FieldName<TForm> | FieldName<TForm>[],
+  ) => {
+    const values = {
+      ..._defaultValues,
+      ...(_state.mount ? _formValues : {}),
+    }
+
+    return isNullish(fieldNames)
+      ? values
+      : Array.isArray(fieldNames)
+      ? fieldNames.map((name) => deepGet(values, name))
+      : deepGet(values, fieldNames)
+  }
+
   return undefined
 }
+
+// export type UseFormGetValues<T> = {
+//   /**
+//    * Get the entire form values when no argument is supplied to this function.
+//    *
+//    * @remarks
+//    * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+//    *
+//    * @returns form values
+//    *
+//    * @example
+//    * ```tsx
+//    * <button onClick={() => getValues()}>getValues</button>
+//    *
+//    * <input {...register("name", {
+//    *   validate: (value, formValues) => formValues.otherField === value;
+//    * })} />
+//    * ```
+//    */
+//   (): T
+//   /**
+//    * Get a single field value.
+//    *
+//    * @remarks
+//    * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+//    *
+//    * @param name - the path name to the form field value.
+//    *
+//    * @returns the single field value
+//    *
+//    * @example
+//    * ```tsx
+//    * <button onClick={() => getValues("name")}>getValues</button>
+//    *
+//    * <input {...register("name", {
+//    *   validate: () => getValues('otherField') === "test";
+//    * })} />
+//    * ```
+//    */
+//   <TFieldName extends FieldName<T>>(name: TFieldName): FieldName<T[TFieldName]>
+//   /**
+//    * Get an array of field values.
+//    *
+//    * @remarks
+//    * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+//    *
+//    * @param names - an array of field names
+//    *
+//    * @returns An array of field values
+//    *
+//    * @example
+//    * ```tsx
+//    * <button onClick={() => getValues(["name", "name1"])}>getValues</button>
+//    *
+//    * <input {...register("name", {
+//    *   validate: () => getValues(["fieldA", "fieldB"]).includes("test");
+//    * })} />
+//    * ```
+//    */
+//   <TFieldNames extends FieldPath<T>[]>(
+//     names: readonly [...TFieldNames],
+//   ): [...FieldPathValues<T, TFieldNames>]
+// }
+
+export type GetIsDirty = <T>(name?: string, data?: T) => boolean

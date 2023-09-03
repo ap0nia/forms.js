@@ -1,3 +1,4 @@
+import type { AnyRecord } from './any-record'
 import type { IsAny } from './is-any'
 
 /**
@@ -38,7 +39,7 @@ import type { IsAny } from './is-any'
 export type ObjectToUnion<T, Key extends string = ''> = {
   [K in keyof T]: IsAny<T[K]> extends true
     ? any
-    : T[K] extends Record<PropertyKey, unknown>
+    : T[K] extends AnyRecord
     ? ObjectToUnion<T[K], `${Key}${Extract<K, string>}.`>
     : { [key in `${Key}${Extract<K, string>}`]: T[K] }
 }[keyof T]

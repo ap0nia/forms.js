@@ -1,12 +1,13 @@
 import type { CriteriaMode } from './constants'
 import type { FieldErrors } from './errors'
 import type { Field } from './field'
+import type { EmptyObject } from './guards/is-empty-object'
 import type { FlattenObject } from './utils/flatten-object'
 import type { MaybePromise } from './utils/maybe-promise'
 
-export type ResolverSuccessResult<T> = { values: T }
+export type ResolverSuccessResult<T> = { values: T, errors: EmptyObject }
 
-export type ResolverErrorResult<T> = { errors: FieldErrors<T> }
+export type ResolverErrorResult<T> = { values: EmptyObject, errors: FieldErrors<T> }
 
 export type ResolverResult<T> = ResolverSuccessResult<T> | ResolverErrorResult<T>
 

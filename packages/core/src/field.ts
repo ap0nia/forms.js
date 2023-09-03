@@ -79,3 +79,5 @@ export type Field = {
    */
   mount?: boolean
 } & RegisterOptions
+
+export type FieldName<T> = keyof FlattenObject<T>
