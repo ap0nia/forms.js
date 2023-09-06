@@ -24,7 +24,8 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest --coverage"
+    "test": "vitest --coverage",
+    "typecheck": "vitest typecheck"
   },
   "dependencies": {
     "@legendapp/state": "^1.11.1",
