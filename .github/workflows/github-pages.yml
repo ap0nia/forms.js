@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build documentation
-        run: pnpm --filter @template/documentation build
+        run: pnpm --filter @forms.js/documentation build
 
       - name: Upload documentation artifacts
         uses: actions/upload-pages-artifact@v2
