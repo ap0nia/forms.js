@@ -23,7 +23,13 @@ import type { Join } from './join'
  *
  * type MyTypeUnion = ObjectToUnion<MyType>
  *
- * type MyTypeUnion = { a: string } | { 'b.c': number } | { 'd.e.f': boolean }
+ * type MyTypeUnion =
+ *  | { a: string }
+ *  | { b: { c: number } }
+ *  | { 'b.c': number }
+ *  | { d: { e: { f: boolean } } }
+ *  | { 'd.e': { f: boolean } }
+ *  | { 'd.e.f': boolean }
  * ```
  *
  * @see https://stackoverflow.com/a/68518494
@@ -38,10 +44,12 @@ import type { Join } from './join'
  */
 export type ObjectToUnion<T, Keys extends unknown[] = []> = IsAny<T> extends true
   ? any
-  : {
-      [K in keyof T]: IsAny<T[K]> extends true
-        ? any
-        : T[K] extends Record<string, any>
-        ? ObjectToUnion<T[K], [...Keys, K]>
-        : { [key in Join<[...Keys, K]>]: T[K] }
-    }[keyof T]
+  :
+      | {
+          [K in keyof T]: IsAny<T[K]> extends true
+            ? { [SubKey in Join<[...Keys, K]>]: T[K] }
+            : T[K] extends Record<string, any>
+            ? ObjectToUnion<T[K], [...Keys, K]>
+            : { [key in Join<[...Keys, K]>]: T[K] }
+        }[keyof T]
+      | (Keys['length'] extends 0 ? never : { [SubKey in Join<Keys>]: T })
