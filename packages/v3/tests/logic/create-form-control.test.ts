@@ -1,27 +1,74 @@
-import { describe, test } from 'vitest'
+import { describe, test, expect } from 'vitest'
 
-import { createFormControl } from '../../src/logic/create-form-control'
+import { FormControl } from '../../src/logic/create-form-control'
 
-describe('create form control', () => {
-  test('should return getValues', () => {
-    type MyForm = {
-      name: string
-      age: number
-      a: {
-        b: {
-          c: {
-            d: string
-          }
-        }
+type MyForm = {
+  name: string
+  age: number
+  a: {
+    b: {
+      c: {
+        d: string
       }
     }
+  }
+}
 
-    const formControl = createFormControl<MyForm>()
+describe('create form control', () => {
+  test('register sets fields', () => {
+    const formControl = new FormControl<MyForm>()
 
-    console.log(formControl)
-
+    formControl.register('name')
+    formControl.register('a.b')
     formControl.register('a.b.c.d')
 
-    console.log(JSON.stringify(formControl.fields, null, 2))
+    const fields = {
+      name: {
+        _f: {
+          ref: {
+            name: 'name',
+          },
+          name: 'name',
+          mount: true,
+        },
+      },
+      a: {
+        b: {
+          _f: {
+            ref: {
+              name: 'a.b',
+            },
+            name: 'a.b',
+            mount: true,
+          },
+          c: {
+            d: {
+              _f: {
+                ref: {
+                  name: 'a.b.c.d',
+                },
+                name: 'a.b.c.d',
+                mount: true,
+              },
+            },
+          },
+        },
+      },
+    }
+
+    expect(formControl.fields).toEqual(fields)
+  })
+
+  test('register updates names', () => {
+    const formControl = new FormControl<MyForm>()
+
+    formControl.register('age')
+
+    expect(formControl.names.mount).toEqual(new Set(['age']))
+
+    formControl.register('a.b')
+    formControl.register('a.b.c.d')
+
+    expect(formControl.names.mount).toEqual(new Set(['age', 'a.b', 'a.b.c.d']))
   })
 })

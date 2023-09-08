@@ -1,7 +1,6 @@
-import { isReadonlyArray } from './lib/is-readonly-array'
-import type { FlattenObject } from './type-utils/flatten-object'
+import { FormControl } from './logic/create-form-control'
 import type { FieldValues } from './types/fields'
-import type { UseFormGetValues, UseFormProps } from './types/form'
+import type { UseFormProps } from './types/form'
 
 /**
  * Custom hook to manage the entire form.
@@ -40,35 +39,6 @@ export function useForm<
   TContext = any,
   // TTransformedValues extends FieldValues | undefined = undefined,
 >(props: UseFormProps<TFieldValues, TContext> = {}) {
-  return createFormControl<TFieldValues, TContext>(props, () => {})
-}
-
-export function createFormControl<TFieldValues extends FieldValues = FieldValues, TContext = any>(
-  props: UseFormProps<TFieldValues, TContext> = {},
-  flushRootRender: () => void,
-) {
-  const getValues: UseFormGetValues<TFieldValues> = (
-    fieldNames?:
-      | keyof FlattenObject<TFieldValues>
-      | ReadonlyArray<keyof FlattenObject<TFieldValues>>,
-  ) => {
-    if (fieldNames == null) {
-      fieldNames
-      return undefined as any
-    }
-
-    if (isReadonlyArray(fieldNames)) {
-      fieldNames
-      return undefined as any
-    }
-
-    fieldNames
-    return undefined as any
-  }
-
-  return {
-    props,
-    getValues,
-    flushRootRender,
-  }
+  const formControl = new FormControl<TFieldValues, TContext>(props, () => {})
+  return formControl
 }

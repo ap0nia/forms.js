@@ -27,7 +27,7 @@ import { safeGet } from './safe-get'
  * console.log(result3) // ['qux', undefined]
  * ```
  */
-export function safeGetMultiple<T>(
+export function safeGetMultiple<T = any>(
   obj: NonNullable<unknown>,
   key?: Nullish | string | string[],
 ): T {

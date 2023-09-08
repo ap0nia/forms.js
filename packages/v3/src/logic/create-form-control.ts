@@ -1,64 +1,79 @@
 import { VALIDATION_MODE } from '../constants'
 import type { Field } from '../types/fields'
-import type { UseFormGetValues, UseFormProps, UseFormRegister } from '../types/form'
+import type { Names, UseFormGetValues, UseFormProps, UseFormRegister } from '../types/form'
 import { deepSet } from '../utils/deep-set'
 import { isObject } from '../utils/is-object'
 import { safeGet } from '../utils/safe-get'
 import { safeGetMultiple } from '../utils/safe-get-multiple'
 
-const defaultOptions = {
+const defaultProps = {
   mode: VALIDATION_MODE.onSubmit,
   reValidateMode: VALIDATION_MODE.onChange,
   shouldFocusError: true,
 } as const
 
-export function createFormControl<
+export class FormControl<
   TFieldValues extends Record<string, any> = Record<string, any>,
   TContext = any,
->(props: UseFormProps<TFieldValues, TContext> = {}, flushRootRender?: () => void) {
-  const resolvedProps = {
-    ...defaultOptions,
-    ...props,
+> {
+  names: Names
+
+  props: UseFormProps<TFieldValues, TContext>
+
+  defaultValues: any
+
+  values: any
+
+  fields: any
+
+  flushRootRender?: () => void
+
+  constructor(props: UseFormProps<TFieldValues, TContext> = {}, flushRootRender?: () => void) {
+    const resolvedProps = {
+      ...defaultProps,
+      ...props,
+    }
+
+    this.props = resolvedProps
+
+    this.defaultValues =
+      isObject(resolvedProps.defaultValues) || isObject(resolvedProps.values)
+        ? structuredClone(resolvedProps.defaultValues || resolvedProps.values) || {}
+        : {}
+
+    this.names = {
+      mount: new Set(),
+      unMount: new Set(),
+      array: new Set(),
+      watch: new Set(),
+    }
+
+    this.fields = {}
+
+    this.flushRootRender = flushRootRender
   }
 
-  const defaultValues =
-    isObject(resolvedProps.defaultValues) || isObject(resolvedProps.values)
-      ? structuredClone(resolvedProps.defaultValues || resolvedProps.values) || {}
-      : {}
+  getValues: UseFormGetValues<TFieldValues> = (fieldNames: any) => {
+    return safeGetMultiple(this.getValues, fieldNames)
+  }
 
-  const fields = {}
-
-  const value = resolvedProps.shouldUnregister ? {} : structuredClone(defaultValues)
-
-  const getValues = ((fieldNames: any) => {
-    return safeGetMultiple(value, fieldNames)
-  }) as UseFormGetValues<TFieldValues>
-
-  const register: UseFormRegister<TFieldValues> = (name, options = {}) => {
-    const field = safeGet<Field>(value, name)
+  register: UseFormRegister<TFieldValues> = (name, options = {}) => {
+    const field = safeGet<Field | undefined>(this.fields, name)
 
     const disabledIsDefined = typeof options.disabled === 'boolean'
 
-    deepSet(fields, name, {
-      ...(field || {}),
+    deepSet(this.fields, name, {
+      ...field,
       _f: {
-        ...(field && field._f ? field._f : { ref: { name } }),
+        ...(field?._f ? field._f : { ref: { name } }),
         name,
         mount: true,
         ...options,
       },
     })
 
-    return {
-      disabledIsDefined,
-    } as any
-  }
+    this.names.mount.add('' + name)
 
-  return {
-    fields,
-    props,
-    getValues,
-    flushRootRender,
-    register,
+    return { disabledIsDefined } as any
   }
 }

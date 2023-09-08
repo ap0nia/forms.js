@@ -37,6 +37,8 @@ export type CustomElement<T extends FieldValues = FieldValues> = {
   focus?: Noop
 }
 
+export type NativeFieldValue = string | number | boolean | null | undefined | unknown[]
+
 /**
  * A field element is any element that can be registered as a valid form component.
  */

@@ -3,6 +3,7 @@ import type { DeepPartial } from '../type-utils/deep-partial'
 import type { FlattenObject } from '../type-utils/flatten-object'
 
 import type { FieldName, FieldValues, InternalFieldName } from './fields'
+import type { Nullish } from './utils'
 
 export type DefaultValues<TFieldValues> = TFieldValues extends AsyncDefaultValues<TFieldValues>
   ? DeepPartial<Awaited<TFieldValues>>
@@ -106,7 +107,7 @@ export type UseFormGetValues<T extends FieldValues> = {
    * })} />
    * ```
    */
-  (): T
+  (nullish?: Nullish): T
 
   /**
    * Get a single field value.
@@ -230,3 +231,14 @@ export type RecordKeyMapper<
   : Keys extends [infer Head, ...infer Tail]
   ? RecordKeyMapper<T, Extract<Tail, string[]>, [...Answer, T[Extract<Head, keyof T>]]>
   : never
+
+export type InternalNameSet = Set<InternalFieldName>
+
+export type Names = {
+  mount: InternalNameSet
+  unMount: InternalNameSet
+  array: InternalNameSet
+  watch: InternalNameSet
+  focus?: InternalFieldName
+  watchAll?: boolean
+}
