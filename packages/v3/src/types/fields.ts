@@ -68,4 +68,6 @@ export type Field = {
 /**
  * A record of field refs?
  */
-export type FieldRefs = Partial<Record<InternalFieldName, Ref>>
+export type FieldRefs = Partial<Record<InternalFieldName, Field>>
+
+export type FieldPath<T> = keyof FlattenObject<T>

@@ -1,9 +1,14 @@
+import type { Observable } from '@legendapp/state'
+
 import type { CriteriaMode, Mode, RevalidationMode } from '../constants'
 import type { DeepPartial } from '../type-utils/deep-partial'
 import type { FlattenObject } from '../type-utils/flatten-object'
 
-import type { FieldName, FieldValues, InternalFieldName } from './fields'
-import type { Nullish } from './utils'
+import type { FieldErrors } from './errors'
+import type { EventType } from './event'
+import type { FieldName, FieldPath, FieldValues, InternalFieldName } from './fields'
+import type { DeepMap, Nullish } from './utils'
+import type { RegisterOptions } from './validator'
 
 export type DefaultValues<TFieldValues> = TFieldValues extends AsyncDefaultValues<TFieldValues>
   ? DeepPartial<Awaited<TFieldValues>>
@@ -72,7 +77,7 @@ export type UseFormProps<TFieldValues extends FieldValues = FieldValues, TContex
 
   resetOptions?: KeepStateOptions
 
-  // resolver
+  resolver?: any
 
   context?: TContext
 
@@ -186,11 +191,11 @@ export type UseFormGetValues<T extends FieldValues> = {
  * <input onChange={onChange} onBlur={onBlur} name={name} />
  * ```
  */
-export type UseFormRegister<TFieldValues extends FieldValues> = <
-  TFieldName extends FieldName<TFieldValues> = FieldName<TFieldValues>,
+export type UseFormRegister<T extends FieldValues> = <
+  TFieldName extends FieldName<T> = FieldName<T>,
 >(
   name: TFieldName,
-  options?: RegisterOptions<TFieldValues, TFieldName>,
+  options?: RegisterOptions<T, TFieldName>,
 ) => UseFormRegisterReturn<TFieldName>
 
 export type ChangeHandler = (event: { target: any; type?: any }) => Promise<void | boolean>
@@ -200,11 +205,11 @@ export type RefCallBack = (instance: any) => void
 /**
  * Returned registration props.
  */
-export type UseFormRegisterReturn<TFieldName extends InternalFieldName = InternalFieldName> = {
+export type UseFormRegisterReturn<T = InternalFieldName> = {
   onChange: ChangeHandler
   onBlur: ChangeHandler
   ref: RefCallBack
-  name: TFieldName
+  name: T
   min?: string | number
   max?: string | number
   maxLength?: number
@@ -242,3 +247,85 @@ export type Names = {
   focus?: InternalFieldName
   watchAll?: boolean
 }
+
+export type FieldNamesMarkedBoolean<T extends FieldValues> = DeepMap<DeepPartial<T>, boolean>
+
+export type FormStateProxy<T extends FieldValues = FieldValues> = {
+  isDirty: boolean
+  isValidating: boolean
+  dirtyFields: FieldNamesMarkedBoolean<T>
+  touchedFields: FieldNamesMarkedBoolean<T>
+  errors: boolean
+  isValid: boolean
+}
+
+export type ReadFormState = { [K in keyof FormStateProxy]: boolean | 'all' }
+
+export type FormState<T extends FieldValues> = {
+  isDirty: boolean
+  isLoading: boolean
+  isSubmitted: boolean
+  isSubmitSuccessful: boolean
+  isSubmitting: boolean
+  isValidating: boolean
+  isValid: boolean
+  submitCount: number
+  defaultValues?: undefined | Readonly<DeepPartial<T>>
+  dirtyFields: Partial<Readonly<FieldNamesMarkedBoolean<T>>>
+  touchedFields: Partial<Readonly<FieldNamesMarkedBoolean<T>>>
+  errors: FieldErrors<T>
+}
+
+export type FormObservables<TFieldValues extends FieldValues = FieldValues> = {
+  values: Observable<{
+    name?: InternalFieldName
+    type?: EventType
+    values: FieldValues
+  }>
+  array: Observable<{
+    name?: InternalFieldName
+    values?: FieldValues
+  }>
+  state: Observable<Partial<FormState<TFieldValues>> & { name?: InternalFieldName }>
+}
+
+export type SetValueConfig = {
+  shouldValidate?: boolean
+  shouldDirty?: boolean
+  shouldTouch?: boolean
+}
+
+export type GetIsDirty = <T extends InternalFieldName, TData>(name?: T, data?: TData) => boolean
+
+export type TriggerConfig = {
+  shouldFocus?: boolean
+}
+
+/**
+ * Trigger field or form validation
+ *
+ * @remarks
+ * [API](https://react-hook-form.com/docs/useform/trigger) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-triggervalidation-forked-xs7hl) • [Video](https://www.youtube.com/watch?v=-bcyJCDjksE)
+ *
+ * @param name - provide empty argument will trigger the entire form validation, an array of field names will validate an arrange of fields, and a single field name will only trigger that field's validation.
+ * @param options - should focus on the error field
+ *
+ * @returns validation result
+ *
+ * @example
+ * ```tsx
+ * useEffect(() => {
+ *   trigger();
+ * }, [trigger])
+ *
+ * <button onClick={async () => {
+ *   const result = await trigger(); // result will be a boolean value
+ * }}>
+ *  trigger
+ *  </button>
+ * ```
+ */
+export type UseFormTrigger<T extends FieldValues> = (
+  name?: FieldPath<T> | FieldPath<T>[] | readonly FieldPath<T>[],
+  options?: TriggerConfig,
+) => Promise<boolean>

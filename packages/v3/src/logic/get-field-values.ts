@@ -22,7 +22,7 @@ export function getFieldValueAs<T extends NativeFieldValue>(value: T, field: Fie
     : value
 }
 
-export default function getFieldValue(_f: Field['_f']) {
+export function getFieldValue(_f: Field['_f']) {
   const ref = _f.ref
 
   if (_f.refs ? _f.refs.every((ref) => ref.disabled) : ref.disabled) {

@@ -63,7 +63,7 @@ export type RegisterOptions<
    * This implementation is different because it flattens the object,
    * and then accesses the value at some key in the flattened object.
    */
-  validate:
+  validate?:
     | Validate<TFieldValue, TFieldValues>
     | Record<string, Validate<TFieldValue, TFieldValues>>
 
