@@ -1,3 +1,5 @@
+import type { Nullish } from '../types/utils'
+
 /**
  * Safely accesses an unknown object with a dot-concatenated string path.
  *
@@ -13,8 +15,12 @@
  * console.log(result) // 'qux'
  * ```
  */
-export function safeGet<T>(obj: NonNullable<unknown>, key: string): T {
-  const keyArray = key.split(/[,[\].]+?/)
+export function safeGet<T>(obj: NonNullable<unknown>, key?: string | Nullish): T {
+  if (key == null) {
+    return undefined as T
+  }
+
+  const keyArray = key.split(/[,[\].]+?/).filter(Boolean)
 
   const result = keyArray.reduce((currentResult, currentKey) => {
     return currentResult == null
@@ -22,5 +28,5 @@ export function safeGet<T>(obj: NonNullable<unknown>, key: string): T {
       : currentResult[currentKey as keyof typeof currentResult]
   }, obj)
 
-  return (result != null && result != obj ? result : obj[key as keyof typeof obj]) as T
+  return (result == null || result === obj ? obj[key as keyof typeof obj] : result) as T
 }
