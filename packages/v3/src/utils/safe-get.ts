@@ -15,9 +15,13 @@ import type { Nullish } from '../types/utils'
  * console.log(result) // 'qux'
  * ```
  */
-export function safeGet<T>(obj: NonNullable<unknown>, key?: string | Nullish): T {
+export function safeGet<T>(obj: NonNullable<unknown>, key?: PropertyKey | Nullish): T {
   if (key == null) {
     return undefined as T
+  }
+
+  if (typeof key === 'number' || typeof key === 'symbol') {
+    return obj[key as keyof typeof obj] as T
   }
 
   const keyArray = key.split(/[,[\].]+?/).filter(Boolean)

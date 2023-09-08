@@ -2,6 +2,36 @@ import { describe, test, expect } from 'vitest'
 
 import { deepSet } from '../../src/utils/deep-set'
 
+describe('deep set', () => {
+  test('number key', () => {
+    const input = { 0: 123 }
+    const key = 0
+    const value = 456
+    const output = { 0: 456 }
+
+    expect(deepSet(input, key, value)).toBe(value)
+    expect(input).toStrictEqual(output)
+
+    const input2 = [123]
+    const key2 = 0
+    const value2 = 456
+    const output2 = [456]
+
+    expect(deepSet(input2, key2, value2)).toBe(value2)
+    expect(input2).toStrictEqual(output2)
+  })
+
+  test('symbol key', () => {
+    const input = { [Symbol.for('elysia')]: 123 }
+    const key = Symbol.for('elysia')
+    const value = 456
+    const output = { [Symbol.for('elysia')]: 456 }
+
+    expect(deepSet(input, key, value)).toBe(value)
+    expect(input).toStrictEqual(output)
+  })
+})
+
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/set.test.ts
  */

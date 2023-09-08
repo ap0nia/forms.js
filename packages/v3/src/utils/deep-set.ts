@@ -1,8 +1,15 @@
+import { isObject } from './is-object'
+
 /**
  * Given a dot-concatenated string path, deeply set a property,
  * filling in any missing objects along the way.
  */
-export function deepSet<T>(obj: NonNullable<unknown>, key: string, value: unknown): T {
+export function deepSet<T>(obj: NonNullable<unknown>, key: PropertyKey, value: unknown): T {
+  if (typeof key === 'number' || typeof key === 'symbol') {
+    obj[key as keyof typeof obj] = value as never
+    return obj[key as keyof typeof obj] as T
+  }
+
   const keyArray = key
     .replace(/["|']|\]/g, '')
     .split(/\.|\[/)
@@ -22,10 +29,10 @@ export function deepSet<T>(obj: NonNullable<unknown>, key: string, value: unknow
 
     const fillerValue = (isNaN(keyArray[index + 1] as any) ? {} : []) as never
 
-    if (currentValue && typeof currentValue !== 'object') {
-      currentResult[currentKey as keyof typeof currentResult] = fillerValue
-    } else {
+    if (isObject(currentValue)) {
       currentResult[currentKey as keyof typeof currentResult] ??= fillerValue
+    } else {
+      currentResult[currentKey as keyof typeof currentResult] = fillerValue
     }
 
     return currentResult[currentKey as keyof typeof currentResult]

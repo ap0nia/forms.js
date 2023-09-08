@@ -2,7 +2,7 @@ import type { CriteriaMode, Mode, RevalidationMode } from '../constants'
 import type { DeepPartial } from '../type-utils/deep-partial'
 import type { FlattenObject } from '../type-utils/flatten-object'
 
-import type { FieldName, FieldValues } from './fields'
+import type { FieldName, FieldValues, InternalFieldName } from './fields'
 
 export type DefaultValues<TFieldValues> = TFieldValues extends AsyncDefaultValues<TFieldValues>
   ? DeepPartial<Awaited<TFieldValues>>
@@ -66,6 +66,8 @@ export type UseFormProps<TFieldValues extends FieldValues = FieldValues, TContex
   revalidateMode?: RevalidationMode
 
   defaultValues?: DefaultValues<TFieldValues> | AsyncDefaultValues<TFieldValues>
+
+  values?: TFieldValues
 
   resetOptions?: KeepStateOptions
 
@@ -148,6 +150,67 @@ export type UseFormGetValues<T extends FieldValues> = {
   <TFieldNames extends FieldName<T>[]>(
     names: readonly [...TFieldNames],
   ): RecordKeyMapper<FlattenObject<T>, TFieldNames>
+}
+
+/**
+ * Register field into hook form with or without the actual DOM ref. You can invoke register anywhere in the component including at `useEffect`.
+ *
+ * @remarks
+ * [API](https://react-hook-form.com/docs/useform/register) • [Demo](https://codesandbox.io/s/react-hook-form-register-ts-ip2j3) • [Video](https://www.youtube.com/watch?v=JFIpCoajYkA)
+ *
+ * @param name - the path name to the form field value, name is required and unique
+ * @param options - register options include validation, disabled, unregister, value as and dependent validation
+ *
+ * @returns onChange, onBlur, name, ref, and native contribute attribute if browser validation is enabled.
+ *
+ * @example
+ * ```tsx
+ * // Register HTML native input
+ * <input {...register("input")} />
+ * <select {...register("select")} />
+ *
+ * // Register options
+ * <textarea {...register("textarea", { required: "This is required.", maxLength: 20 })} />
+ * <input type="number" {...register("name2", { valueAsNumber: true })} />
+ * <input {...register("name3", { deps: ["name2"] })} />
+ *
+ * // Register custom field at useEffect
+ * useEffect(() => {
+ *   register("name4");
+ *   register("name5", { value: '"hiddenValue" });
+ * }, [register])
+ *
+ * // Register without ref
+ * const { onChange, onBlur, name } = register("name6")
+ * <input onChange={onChange} onBlur={onBlur} name={name} />
+ * ```
+ */
+export type UseFormRegister<TFieldValues extends FieldValues> = <
+  TFieldName extends FieldName<TFieldValues> = FieldName<TFieldValues>,
+>(
+  name: TFieldName,
+  options?: RegisterOptions<TFieldValues, TFieldName>,
+) => UseFormRegisterReturn<TFieldName>
+
+export type ChangeHandler = (event: { target: any; type?: any }) => Promise<void | boolean>
+
+export type RefCallBack = (instance: any) => void
+
+/**
+ * Returned registration props.
+ */
+export type UseFormRegisterReturn<TFieldName extends InternalFieldName = InternalFieldName> = {
+  onChange: ChangeHandler
+  onBlur: ChangeHandler
+  ref: RefCallBack
+  name: TFieldName
+  min?: string | number
+  max?: string | number
+  maxLength?: number
+  minLength?: number
+  pattern?: string
+  required?: boolean
+  disabled?: boolean
 }
 
 /**

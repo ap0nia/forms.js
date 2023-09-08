@@ -50,6 +50,25 @@ describe('safe get', () => {
 
     expect(safeGet(input, key)).toBe(output)
   })
+
+  test('number key', () => {
+    const input = { 0: 123 }
+    const key = 0
+    const output = 123
+    expect(safeGet(input, key)).toBe(output)
+
+    const input2 = [123]
+    const key2 = 0
+    const output2 = 123
+    expect(safeGet(input2, key2)).toBe(output2)
+  })
+
+  test('symbol key', () => {
+    const input = { [Symbol.for('test')]: 123 }
+    const key = Symbol.for('test')
+    const output = 123
+    expect(safeGet(input, key)).toBe(output)
+  })
 })
 
 /**
