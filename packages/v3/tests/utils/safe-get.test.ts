@@ -55,7 +55,7 @@ describe('safe get', () => {
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/get.test.ts
  */
-describe('react-hook-form get tests', () => {
+describe('get react-hook-form', () => {
   test('should get the right data', () => {
     const test = {
       bill: [1, 2, 3],

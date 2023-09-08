@@ -10,22 +10,26 @@ export function deepSet<T>(obj: NonNullable<unknown>, key: string, value: unknow
 
   const lastIndex = keyArray.length - 1
 
+  const lastKey = keyArray[lastIndex]
+
   const result = keyArray.reduce((currentResult, currentKey, index) => {
+    if (index === lastIndex) {
+      currentResult[currentKey as keyof typeof currentResult] = value as never
+      return currentResult
+    }
+
     const currentValue = currentResult[currentKey as keyof typeof currentResult]
 
-    const valueToSet =
-      index === lastIndex
-        ? value
-        : currentValue != null
-        ? currentValue
-        : isNaN(keyArray[index + 1] as any)
-        ? {}
-        : []
+    const fillerValue = (isNaN(keyArray[index + 1] as any) ? {} : []) as never
 
-    currentResult[currentKey as keyof typeof currentResult] = valueToSet as never
+    if (currentValue && typeof currentValue !== 'object') {
+      currentResult[currentKey as keyof typeof currentResult] = fillerValue
+    } else {
+      currentResult[currentKey as keyof typeof currentResult] ??= fillerValue
+    }
 
     return currentResult[currentKey as keyof typeof currentResult]
   }, obj)
 
-  return result as T
+  return result[lastKey as keyof typeof result] as T
 }
