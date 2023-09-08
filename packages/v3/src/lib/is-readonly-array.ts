@@ -1,9 +1,4 @@
 /**
- * I love TS.
- */
-export type MaybeReadonlyArray<T> = T | ReadonlyArray<T>
-
-/**
  * Why doesn't this narrowing happen automatically??
  *
  * If I have something that's a {@link MaybeReadonlyArray},
