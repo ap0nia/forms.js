@@ -2,7 +2,7 @@ import type { BrowserNativeObject } from '../type-utils/browser'
 import type { DeepRequired } from '../type-utils/deep-required'
 import type { IsAny } from '../type-utils/is-any'
 
-import type { FieldValues, Ref } from './fields'
+import type { FieldValues, InternalFieldName, Ref } from './fields'
 import type { LiteralUnion, Merge } from './utils'
 import type { RegisterOptions, ValidateResult } from './validator'
 
@@ -45,3 +45,5 @@ export type FieldErrors<T extends FieldValues = FieldValues> = Partial<
 > & {
   root?: Record<string, GlobalError> & GlobalError
 }
+
+export type InternalFieldErrors = Partial<Record<InternalFieldName, FieldError>>

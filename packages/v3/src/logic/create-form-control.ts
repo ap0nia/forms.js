@@ -1,12 +1,19 @@
 import { observable } from '@legendapp/state'
 
-import { VALIDATION_MODE } from '../constants'
+import { VALIDATION_MODE, type CriteriaMode } from '../constants'
 import { isCheckBoxInput } from '../lib/html/checkbox'
 import { isFileInput } from '../lib/html/file'
 import { isMultipleSelectInput } from '../lib/html/select'
 import { isEmptyObject } from '../lib/is-empty-object'
 import { isHTMLElement } from '../lib/is-html-element'
-import type { Field, FieldRefs, InternalFieldName, Ref } from '../types/fields'
+import type {
+  Field,
+  FieldName,
+  FieldRefs,
+  FieldValues,
+  InternalFieldName,
+  Ref,
+} from '../types/fields'
 import type {
   FormObservables,
   FormState,
@@ -28,6 +35,7 @@ import { safeGetMultiple } from '../utils/safe-get-multiple'
 import { focusFieldBy } from './focus-field-by'
 import { getFieldValue, getFieldValueAs } from './get-field-values'
 import { updateFieldArrayRootError } from './update-field-array-root-error'
+import { validateField } from './validate-field'
 
 const defaultProps = {
   mode: VALIDATION_MODE.onSubmit,
@@ -187,8 +195,8 @@ export class FormControl<
     }
 
     const isValid = this.props.resolver
-      ? isEmptyObject((await _executeSchema()).errors)
-      : await executeBuiltInValidation(this.fields, true)
+      ? isEmptyObject((await this.executeSchema()).errors)
+      : await this.executeBuiltInValidation(this.fields, true)
 
     if (isValid !== this.formState.isValid) {
       this.subjects.state.set({ isValid })
@@ -249,7 +257,7 @@ export class FormControl<
     }
 
     if (options.shouldValidate) {
-      trigger(name as Path<TFieldValues>)
+      this.trigger(name as any)
     }
   }
 
@@ -326,22 +334,21 @@ export class FormControl<
     this.updateIsValidating(true)
 
     if (this.props.resolver) {
-      const errors = await executeSchemaAndUpdateState(name == null ? name : fieldNames)
-
+      const errors = await this.executeSchemaAndUpdateState(name == null ? name : fieldNames)
       isValid = isEmptyObject(errors)
       validationResult = name ? !fieldNames.some((name) => safeGet(errors, name)) : isValid
     } else if (name) {
       validationResult = (
         await Promise.all(
           fieldNames.map(async (fieldName) => {
-            const field = safeGet<Field | undefined>(this.fields, fieldName)
-            return await executeBuiltInValidation(field?._f ? { [fieldName]: field } : field)
+            const field = safeGet<any>(this.fields, fieldName)
+            return await this.executeBuiltInValidation(field?._f ? { [fieldName]: field } : field)
           }),
         )
       ).every(Boolean)
       !(!validationResult && !this.formState.isValid) && this.updateValid()
     } else {
-      validationResult = isValid = await executeBuiltInValidation(this.fields)
+      validationResult = isValid = await this.executeBuiltInValidation(this.fields)
     }
 
     this.subjects.state.set({
@@ -416,10 +423,60 @@ export class FormControl<
       }
 
       if (fieldValue) {
-        await executeBuiltInValidation(fieldValue, shouldOnlyCheckValid, context)
+        await this.executeBuiltInValidation(fieldValue, shouldOnlyCheckValid, context)
       }
     }
 
     return context.valid
+  }
+
+  executeSchema = async (name?: InternalFieldName[]) => {
+    return this.props.resolver?.(
+      this.values as TFieldValues,
+      this.props.context,
+      getResolverOptions(
+        name || this.names.mount,
+        this.fields,
+        this.props.criteriaMode,
+        this.props.shouldUseNativeValidation,
+      ),
+    )
+  }
+
+  executeSchemaAndUpdateState = async (names?: InternalFieldName[]) => {
+    const { errors } = await this.executeSchema(names)
+
+    if (names) {
+      for (const name of names) {
+        const error = safeGet(errors, name)
+        error ? deepSet(this.formState.errors, name, error) : deepUnset(this.formState.errors, name)
+      }
+    } else {
+      this.formState.errors = errors
+    }
+
+    return errors
+  }
+}
+
+export function getResolverOptions<T extends FieldValues>(
+  fieldsNames: Set<InternalFieldName> | InternalFieldName[],
+  _fields: FieldRefs,
+  criteriaMode?: CriteriaMode,
+  shouldUseNativeValidation?: boolean | undefined,
+) {
+  const fields: Record<InternalFieldName, Field['_f']> = {}
+
+  for (const name of fieldsNames) {
+    const field = safeGet<Field | undefined>(_fields, name)
+
+    field && deepSet(fields, name, field._f)
+  }
+
+  return {
+    criteriaMode,
+    names: [...fieldsNames] as FieldName<T>[],
+    fields,
+    shouldUseNativeValidation,
   }
 }
