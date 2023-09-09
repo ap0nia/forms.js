@@ -6,7 +6,14 @@ import type { FlattenObject } from '../type-utils/flatten-object'
 
 import type { FieldErrors } from './errors'
 import type { EventType } from './event'
-import type { FieldName, FieldPath, FieldValues, InternalFieldName } from './fields'
+import type {
+  Field,
+  FieldName,
+  FieldPath,
+  FieldRefs,
+  FieldValues,
+  InternalFieldName,
+} from './fields'
 import type { DeepMap, Nullish } from './utils'
 import type { RegisterOptions } from './validator'
 
@@ -329,3 +336,51 @@ export type UseFormTrigger<T extends FieldValues> = (
   name?: FieldPath<T> | FieldPath<T>[] | readonly FieldPath<T>[],
   options?: TriggerConfig,
 ) => Promise<boolean>
+
+type Noop = () => unknown
+
+export type Control<TFieldValues extends FieldValues = FieldValues, TContext = any> = {
+  _subjects: FormObservables<TFieldValues>
+  _removeUnmounted: Noop
+  _names: Names
+  _state: {
+    mount: boolean
+    action: boolean
+    watch: boolean
+  }
+  // _reset: UseFormReset<TFieldValues>;
+  _options: UseFormProps<TFieldValues, TContext>
+  _getDirty: GetIsDirty
+  _resetDefaultValues: Noop
+  _formState: FormState<TFieldValues>
+  _updateValid: (shouldUpdateValid?: boolean) => void
+  _updateFormState: (formState: Partial<FormState<TFieldValues>>) => void
+  _fields: FieldRefs
+  _formValues: FieldValues
+  _proxyFormState: ReadFormState
+  _defaultValues: Partial<DefaultValues<TFieldValues>>
+  // _getWatch: WatchInternal<TFieldValues>;
+  // _updateFieldArray: BatchFieldArrayUpdate;
+  _getFieldArray: <TFieldArrayValues>(name: InternalFieldName) => Partial<TFieldArrayValues>[]
+  _updateDisabledField: (
+    props: {
+      disabled?: boolean
+      name: FieldName<any>
+    } & (
+      | {
+          field?: Field
+          fields?: undefined
+        }
+      | {
+          field?: undefined
+          fields?: FieldRefs
+        }
+    ),
+  ) => void
+  _executeSchema: (names: InternalFieldName[]) => Promise<{ errors: FieldErrors }>
+  register: UseFormRegister<TFieldValues>
+  // handleSubmit: UseFormHandleSubmit<TFieldValues>;
+  // unregister: UseFormUnregister<TFieldValues>;
+  // getFieldState: UseFormGetFieldState<TFieldValues>;
+  // setError: UseFormSetError<TFieldValues>;
+}

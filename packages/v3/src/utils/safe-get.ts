@@ -15,8 +15,8 @@ import type { Nullish } from '../types/utils'
  * console.log(result) // 'qux'
  * ```
  */
-export function safeGet<T>(obj: NonNullable<unknown>, key?: PropertyKey | Nullish): T {
-  if (key == null) {
+export function safeGet<T = any>(obj: unknown, key?: PropertyKey | Nullish): T {
+  if (key == null || obj == null) {
     return undefined as T
   }
 

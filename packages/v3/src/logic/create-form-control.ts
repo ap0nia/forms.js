@@ -15,6 +15,7 @@ import type {
   Ref,
 } from '../types/fields'
 import type {
+  Control,
   FormObservables,
   FormState,
   GetIsDirty,
@@ -145,16 +146,35 @@ export class FormControl<
     this.names.mount.add('' + name)
 
     if (field) {
-      // _updateDisabledField({
-      //   field,
-      //   disabled: options.disabled,
-      //   name,
-      // })
+      this.updateDisabledField({
+        field,
+        disabled: options?.disabled,
+        name,
+      })
     } else {
       this.updateValidAndValue('' + name, true, options?.value)
     }
 
     return { disabledIsDefined } as any
+  }
+
+  updateDisabledField: Control<TFieldValues>['_updateDisabledField'] = ({
+    disabled,
+    name,
+    field,
+    fields,
+  }) => {
+    if (typeof disabled !== 'boolean') {
+      return
+    }
+
+    const value =
+      (disabled ? undefined : safeGet(this.values, name)) ??
+      getFieldValue(field ? field._f : safeGet(fields, name)._f)
+
+    deepSet(this.values, name, value)
+
+    this.updateTouchAndDirty('' + name, value, false, false, true)
   }
 
   updateValidAndValue(
