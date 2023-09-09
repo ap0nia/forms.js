@@ -44,10 +44,7 @@ const defaultProps = {
   shouldFocusError: true,
 } as const
 
-export class FormControl<
-  TFieldValues extends Record<string, any> = Record<string, any>,
-  TContext = any,
-> {
+export class FormControl<TFieldValues extends FieldValues = FieldValues, TContext = any> {
   props: UseFormProps<TFieldValues, TContext>
 
   defaultValues: any
@@ -96,12 +93,16 @@ export class FormControl<
       ...props,
     }
 
-    this.props = resolvedProps
-
-    this.defaultValues =
+    const defaultValues =
       isObject(resolvedProps.defaultValues) || isObject(resolvedProps.values)
         ? structuredClone(resolvedProps.defaultValues || resolvedProps.values) || {}
         : {}
+
+    this.props = resolvedProps
+
+    this.defaultValues = defaultValues
+
+    this.values = resolvedProps.shouldUnregister ? {} : structuredClone(defaultValues)
 
     this.fields = {}
 
