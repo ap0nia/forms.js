@@ -421,7 +421,9 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     /**
      * Only update dirty fields and get the result if requested.
      */
-    const updateDirtyFieldsResult = shouldDirty ? this.updateDirtyFields(name, fieldValue) : null
+    const updateDirtyFieldsResult = shouldDirty
+      ? this.updateDirtyFields(name, fieldValue)
+      : undefined
 
     /**
      * Always update touched fields and get the result.
@@ -434,13 +436,17 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     const shouldUpdateField =
       updateDirtyFieldsResult?.shouldUpdate || updateTouchedFieldsResult?.shouldUpdate
 
+    if (!shouldUpdateField) {
+      return undefined
+    }
+
     const result = {
       isDirty: updateDirtyFieldsResult?.isDirty,
-      touchedFields: updateTouchedFieldsResult.touchedFields,
       dirtyFields: updateDirtyFieldsResult?.dirtyFields,
+      touchedFields: updateTouchedFieldsResult.touchedFields,
     } as UpdateTouchAndDirtyResult<TFieldValues>
 
-    return shouldUpdateField ? result : undefined
+    return result
   }
 
   /**
@@ -456,17 +462,17 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     const updateIsDirtyResult = this.proxyFormState.isDirty ? this.updateIsDirty() : undefined
 
     /**
-     * Whether the current field should currently be clean based on its current and default value.
+     * The current field is clean if its value is equal to its default value.
      */
-    const isClean = deepEqual(safeGet(this.defaultValues, name), fieldValue)
+    const currentFieldIsClean = deepEqual(safeGet(this.defaultValues, name), fieldValue)
 
     /**
-     * Whether the current field is currently dirty based on {@link formState}.
+     * Whether the current field is currently __believed to be__ dirty.
      */
     const previousIsDirty = safeGet(this.formState.dirtyFields, name)
 
     // If the field is currently clean, then unset the dirty flag. Otherwise, set the dirty flag.
-    if (isClean) {
+    if (currentFieldIsClean) {
       deepUnset(this.formState.dirtyFields, name)
     } else {
       deepSet(this.formState.dirtyFields, name, true)
@@ -479,7 +485,7 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
      */
     const shouldUpdate =
       updateIsDirtyResult?.shouldUpdate ||
-      (this.proxyFormState.dirtyFields && previousIsDirty !== !isClean)
+      (this.proxyFormState.dirtyFields && previousIsDirty !== !currentFieldIsClean)
 
     return {
       isDirty: updateIsDirtyResult?.isDirty,
@@ -493,27 +499,24 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
    */
   updateTouchedFields(name: InternalFieldName): UpdateTouchedFieldsResult {
     /**
-     * Whether this field was touched.
+     * Whether this field has already been touched.
      */
     const previousIsTouched = safeGet(this.formState.touchedFields, name)
 
-    /**
-     * It should be touched now.
-     */
+    // It should be touched now.
     if (!previousIsTouched) {
       deepSet(this.formState.touchedFields, name, true)
     }
 
     /**
-     * Only provided if the field was not previously touched.
+     * Only defined if the field was not previously touched.
      */
     const touchedFields = !previousIsTouched ? this.formState.touchedFields : undefined
 
     /**
      * Whether the touched state of this field changed.
      */
-    const shouldUpdate =
-      !previousIsTouched && this.proxyFormState.touchedFields && previousIsTouched
+    const shouldUpdate = !previousIsTouched && this.proxyFormState.touchedFields
 
     return { touchedFields, shouldUpdate }
   }
@@ -522,8 +525,14 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
    * Update {@link formState.isDirty} based on the current values of the ***form***.
    */
   updateIsDirty(): UpdateIsDirtyResult<TFieldValues> {
+    /**
+     * Whether the form is currently believed to be dirty.
+     */
     const previousIsDirty = this.formState.isDirty
 
+    /**
+     * Whether the form is actually dirty.
+     */
     const isDirty = this.isDirty()
 
     this.formState.isDirty = isDirty
