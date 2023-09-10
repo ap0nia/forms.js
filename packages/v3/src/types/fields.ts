@@ -21,7 +21,12 @@ export type FieldValue<T extends FieldValues> = T[InternalFieldName]
 /**
  * FIXME: This is better represented as "keys of a flattened object".
  */
-export type FieldName<T extends FieldValues = FieldValues> = Exclude<keyof FlattenObject<T>, symbol>
+export type FieldName<T extends FieldValues = FieldValues> = Extract<keyof FlattenObject<T>, string>
+
+export type FieldValueFromFieldName<
+  T extends FieldValues,
+  K extends keyof FlattenObject<T>,
+> = FlattenObject<T>[K]
 
 /**
  * A custom element is a component that simulates an HTML element.

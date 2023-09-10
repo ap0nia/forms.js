@@ -241,8 +241,8 @@ export type RecordKeyMapper<
 > = Keys extends []
   ? Answer
   : Keys extends [infer Head, ...infer Tail]
-  ? RecordKeyMapper<T, Extract<Tail, string[]>, [...Answer, T[Extract<Head, keyof T>]]>
-  : never
+  ? RecordKeyMapper<T, Tail, [...Answer, T[Extract<Head, keyof T>]]>
+  : T
 
 export type InternalNameSet = Set<InternalFieldName>
 
@@ -384,3 +384,17 @@ export type Control<TFieldValues extends FieldValues = FieldValues, TContext = a
   // getFieldState: UseFormGetFieldState<TFieldValues>;
   // setError: UseFormSetError<TFieldValues>;
 }
+
+export type UpdateDisabledFieldOptions = {
+  disabled?: boolean
+  name: FieldName<any>
+} & (
+  | {
+      field?: Field
+      fields?: undefined
+    }
+  | {
+      field?: undefined
+      fields?: FieldRefs
+    }
+)

@@ -6,6 +6,8 @@ import { isFileInput } from '../lib/html/file'
 import { isMultipleSelectInput } from '../lib/html/select'
 import { isEmptyObject } from '../lib/is-empty-object'
 import { isHTMLElement } from '../lib/is-html-element'
+import type { DeepPartial } from '../type-utils/deep-partial'
+import type { FlattenObject } from '../type-utils/flatten-object'
 import type {
   Field,
   FieldName,
@@ -15,17 +17,16 @@ import type {
   Ref,
 } from '../types/fields'
 import type {
-  Control,
   FormObservables,
   FormState,
-  GetIsDirty,
   Names,
+  RecordKeyMapper,
   SetValueConfig,
-  UseFormGetValues,
   UseFormProps,
-  UseFormRegister,
+  UseFormRegisterReturn,
   UseFormTrigger,
 } from '../types/form'
+import type { RegisterOptions } from '../types/validator'
 import { deepEqual } from '../utils/deep-equal'
 import { deepSet } from '../utils/deep-set'
 import { deepUnset } from '../utils/deep-unset'
@@ -45,18 +46,41 @@ const defaultProps = {
 } as const
 
 export class FormControl<TFieldValues extends FieldValues = FieldValues, TContext = any> {
+  /**
+   * The root props used to configure the form.
+   *
+   * Merged with {@link defaultProps}.
+   */
   props: UseFormProps<TFieldValues, TContext>
 
-  defaultValues: any
+  /**
+   * The default values assigned to form fields.
+   */
+  defaultValues: DeepPartial<TFieldValues>
 
-  values: any
+  /**
+   * The current values of the form fields.
+   */
+  values: TFieldValues
 
+  /**
+   * Data about registered fields.
+   */
   fields: any
 
+  /**
+   * Idk. It's a noop of some sort.
+   */
   flushRootRender?: () => void
 
+  /**
+   * Idk.
+   */
   shouldDisplayAllAssociatedErrors: boolean
 
+  /**
+   * Idk.
+   */
   names: Names = {
     mount: new Set(),
     unMount: new Set(),
@@ -64,15 +88,29 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     watch: new Set(),
   }
 
+  /**
+   * The current state of the form?
+   *
+   * TODO, FIXME: I feel that this can be better encapsulated as an enum.
+   */
   state = {
     action: false,
     mount: false,
     watch: false,
   }
 
+  /**
+   * Current state of the form?
+   */
   formState: FormState<TFieldValues>
 
+  /**
+   * Idk.
+   */
   proxyFormState = {
+    /**
+     * Whether to update the form's dirty state?
+     */
     isDirty: false,
     dirtyFields: false,
     touchedFields: false,
@@ -81,6 +119,9 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     errors: false,
   }
 
+  /**
+   * Stores.
+   */
   subjects: FormObservables<TFieldValues> = {
     values: observable(),
     array: observable(),
@@ -100,9 +141,11 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
 
     this.props = resolvedProps
 
-    this.defaultValues = defaultValues
+    this.defaultValues = defaultValues as DeepPartial<TFieldValues>
 
-    this.values = resolvedProps.shouldUnregister ? {} : structuredClone(defaultValues)
+    this.values = (
+      resolvedProps.shouldUnregister ? {} : structuredClone(defaultValues)
+    ) as TFieldValues
 
     this.fields = {}
 
@@ -125,14 +168,89 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     }
   }
 
-  getValues: UseFormGetValues<TFieldValues> = (fieldNames: any) => {
+  /**
+   * Get the entire form values when no argument is supplied to this function.
+   *
+   * @remarks
+   * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+   *
+   * @returns form values
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => getValues()}>getValues</button>
+   *
+   * <input {...register("name", {
+   *   validate: (value, formValues) => formValues.otherField === value;
+   * })} />
+   * ```
+   */
+  getValues(): TFieldValues
+
+  /**
+   * Get a single field value.
+   *
+   * @remarks
+   * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+   *
+   * @param name - the path name to the form field value.
+   *
+   * @returns the single field value
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => getValues("name")}>getValues</button>
+   *
+   * <input {...register("name", {
+   *   validate: () => getValues('otherField') === "test";
+   * })} />
+   * ```
+   */
+  getValues<T extends FieldName<TFieldValues>>(fieldName: T): FlattenObject<TFieldValues>[T]
+
+  /**
+   * Get an array of field values.
+   *
+   * @remarks
+   * [API](https://react-hook-form.com/docs/useform/getvalues) • [Demo](https://codesandbox.io/s/react-hook-form-v7-ts-getvalues-txsfg)
+   *
+   * @param names - an array of field names
+   *
+   * @returns An array of field values
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => getValues(["name", "name1"])}>getValues</button>
+   *
+   * <input {...register("name", {
+   *   validate: () => getValues(["fieldA", "fieldB"]).includes("test");
+   * })} />
+   * ```
+   */
+  getValues<T extends FieldName<TFieldValues>[]>(
+    names: readonly [...T],
+  ): RecordKeyMapper<FlattenObject<TFieldValues>, T>
+
+  /**
+   * Implementation.
+   */
+  getValues(fieldNames?: any): any {
     return safeGetMultiple(this.getValues, fieldNames)
   }
 
-  register: UseFormRegister<TFieldValues> = (name, options) => {
+  /**
+   * Register a name to the internal form state.
+   *
+   * @param name The dot-concatenated path name of the form field.
+   * @param options Options to configure field registration.
+   *
+   * @returns props.
+   */
+  register<T extends FieldName<TFieldValues>>(
+    name: T,
+    options?: RegisterOptions<TFieldValues, T>,
+  ): UseFormRegisterReturn<T> {
     const field = safeGet<Field | undefined>(this.fields, name)
-
-    const disabledIsDefined = typeof options?.disabled === 'boolean'
 
     deepSet(this.fields, name, {
       ...field,
@@ -144,46 +262,52 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
       },
     })
 
-    this.names.mount.add('' + name)
+    this.names.mount.add(name)
 
     if (field) {
-      this.updateDisabledField({
-        field,
-        disabled: options?.disabled,
-        name,
-      })
+      this.updateDisabledField(name, field, options?.disabled)
     } else {
-      this.updateValidAndValue('' + name, true, options?.value)
+      this.updateValidAndValue(name, true, options?.value)
     }
+
+    const disabledIsDefined = typeof options?.disabled === 'boolean'
 
     return { disabledIsDefined } as any
   }
 
-  updateDisabledField: Control<TFieldValues>['_updateDisabledField'] = ({
-    disabled,
-    name,
-    field,
-    fields,
-  }) => {
-    if (typeof disabled !== 'boolean') {
-      return
-    }
-
-    const value =
-      (disabled ? undefined : safeGet(this.values, name)) ??
-      getFieldValue(field ? field._f : safeGet(fields, name)._f)
+  /**
+   * Update the value of a field based on its disabled status.
+   */
+  updateDisabledField(name: FieldName<TFieldValues>, field: Field, disabled: boolean = false) {
+    const value = disabled ? undefined : safeGet(this.values, name) ?? getFieldValue(field._f)
 
     deepSet(this.values, name, value)
 
-    this.updateTouchAndDirty('' + name, value, false, false, true)
+    const result = this.updateDirtyFields(name, value)
+
+    if (result.shouldUpdate) {
+      this.subjects.state.set(result)
+    }
   }
 
-  updateValidAndValue(
-    name: InternalFieldName,
-    shouldSkipSetValueAs: boolean,
-    value?: unknown,
-    ref?: Ref,
-  ) {
+  /**
+   * Update the value of fields based on their disabled status.
+   */
+  updateDisabledFields(name: FieldName<TFieldValues>, fields: FieldRefs, disabled: boolean) {
+    const value = disabled
+      ? undefined
+      : safeGet(this.values, name) ?? getFieldValue(safeGet(fields, name)._f)
+
+    deepSet(this.values, name, value)
+
+    const result = this.updateDirtyFields(name, value)
+
+    if (result.shouldUpdate) {
+      this.subjects.state.set(result)
+    }
+  }
+
+  updateValidAndValue(name: string, shouldSkipSetValueAs: boolean, value?: unknown, ref?: Ref) {
     const field = safeGet<Field | undefined>(this.fields, name)
 
     if (field == null) {
@@ -204,7 +328,7 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     }
   }
 
-  updateIsValidating = (value: boolean) => {
+  updateIsValidating(value: boolean) {
     if (this.proxyFormState.isValidating) {
       this.subjects.state.set({ isValidating: value })
     }
@@ -224,7 +348,7 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     }
   }
 
-  setFieldValue = (name: InternalFieldName, value: any, options: SetValueConfig = {}) => {
+  setFieldValue(name: InternalFieldName, value: any, options: SetValueConfig = {}) {
     const field: Field = safeGet(this.fields, name)
 
     let fieldValue: unknown = value
@@ -273,8 +397,12 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
       }
     }
 
-    if (options.shouldDirty || options.shouldTouch) {
-      this.updateTouchAndDirty(name, fieldValue, options.shouldTouch, options.shouldDirty, true)
+    if (options.shouldTouch) {
+      const result = this.updateTouchedAndDirty(name, fieldValue, options.shouldDirty)
+
+      if (result) {
+        this.subjects.state.set(result)
+      }
     }
 
     if (options.shouldValidate) {
@@ -282,69 +410,134 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     }
   }
 
-  updateTouchAndDirty = (
+  /**
+   * i.e. you can update the touched and dirty status after an onBlur event.
+   */
+  updateTouchedAndDirty(
     name: InternalFieldName,
     fieldValue: unknown,
-    isBlurEvent?: boolean,
     shouldDirty?: boolean,
-    shouldRender?: boolean,
-  ): Partial<Pick<FormState<TFieldValues>, 'dirtyFields' | 'isDirty' | 'touchedFields'>> => {
-    let shouldUpdateField = false
-    let isPreviousDirty = false
-    const output: Partial<FormState<TFieldValues>> & { name: string } = {
-      name,
-    }
+  ): UpdateTouchAndDirtyResult<TFieldValues> | undefined {
+    /**
+     * Only update dirty fields and get the result if requested.
+     */
+    const updateDirtyFieldsResult = shouldDirty ? this.updateDirtyFields(name, fieldValue) : null
 
-    if (!isBlurEvent || shouldDirty) {
-      if (this.proxyFormState.isDirty) {
-        isPreviousDirty = this.formState.isDirty
-        this.formState.isDirty = output.isDirty = this.getDirty()
-        shouldUpdateField = isPreviousDirty !== output.isDirty
-      }
+    /**
+     * Always update touched fields and get the result.
+     */
+    const updateTouchedFieldsResult = this.updateTouchedFields(name)
 
-      const isCurrentFieldPristine = deepEqual(safeGet(this.defaultValues, name), fieldValue)
+    /**
+     * If either of the results indicate that the field should be updated, then return a defined result.
+     */
+    const shouldUpdateField =
+      updateDirtyFieldsResult?.shouldUpdate || updateTouchedFieldsResult?.shouldUpdate
 
-      isPreviousDirty = safeGet(this.formState.dirtyFields, name)
+    const result = {
+      isDirty: updateDirtyFieldsResult?.isDirty,
+      touchedFields: updateTouchedFieldsResult.touchedFields,
+      dirtyFields: updateDirtyFieldsResult?.dirtyFields,
+    } as UpdateTouchAndDirtyResult<TFieldValues>
 
-      if (isCurrentFieldPristine) {
-        deepUnset(this.formState.dirtyFields, name)
-      } else {
-        deepSet(this.formState.dirtyFields, name, true)
-      }
-
-      output.dirtyFields = this.formState.dirtyFields
-
-      shouldUpdateField =
-        shouldUpdateField ||
-        (this.proxyFormState.dirtyFields && isPreviousDirty !== !isCurrentFieldPristine)
-    }
-
-    if (isBlurEvent) {
-      const isPreviousFieldTouched = safeGet(this.formState.touchedFields, name)
-
-      if (!isPreviousFieldTouched) {
-        deepSet(this.formState.touchedFields, name, isBlurEvent)
-
-        output.touchedFields = this.formState.touchedFields
-
-        shouldUpdateField =
-          shouldUpdateField ||
-          (this.proxyFormState.touchedFields && isPreviousFieldTouched !== isBlurEvent)
-      }
-    }
-
-    if (shouldUpdateField && shouldRender) {
-      this.subjects.state.set(output)
-    }
-
-    return shouldUpdateField ? output : {}
+    return shouldUpdateField ? result : undefined
   }
 
-  getDirty: GetIsDirty = (name, data) => {
-    return (
-      name && data && deepSet(this.values, name, data),
-      !deepEqual(this.getValues(), this.defaultValues)
-    )
+  /**
+   * Update {@link formState.isDirty} based on the current values of the ***field***.
+   */
+  updateDirtyFields(
+    name: InternalFieldName,
+    fieldValue: unknown,
+  ): UpdateDirtyFieldsResult<TFieldValues> {
+    /**
+     * Update and get the newest dirty state of the form if {@link proxyFormState.isDirty} indicates to do so.
+     */
+    const updateIsDirtyResult = this.proxyFormState.isDirty ? this.updateIsDirty() : undefined
+
+    /**
+     * Whether the current field should currently be clean based on its current and default value.
+     */
+    const isClean = deepEqual(safeGet(this.defaultValues, name), fieldValue)
+
+    /**
+     * Whether the current field is currently dirty based on {@link formState}.
+     */
+    const previousIsDirty = safeGet(this.formState.dirtyFields, name)
+
+    // If the field is currently clean, then unset the dirty flag. Otherwise, set the dirty flag.
+    if (isClean) {
+      deepUnset(this.formState.dirtyFields, name)
+    } else {
+      deepSet(this.formState.dirtyFields, name, true)
+    }
+
+    /**
+     * Whether the dirty state of this field changed.
+     *
+     * TODO: not sure why {@link proxyFormState.dirtyFields} has to be true as well.
+     */
+    const shouldUpdate =
+      updateIsDirtyResult?.shouldUpdate ||
+      (this.proxyFormState.dirtyFields && previousIsDirty !== !isClean)
+
+    return {
+      isDirty: updateIsDirtyResult?.isDirty,
+      dirtyFields: this.formState.dirtyFields,
+      shouldUpdate,
+    }
+  }
+
+  /**
+   * Idk.
+   */
+  updateTouchedFields(name: InternalFieldName): UpdateTouchedFieldsResult {
+    /**
+     * Whether this field was touched.
+     */
+    const previousIsTouched = safeGet(this.formState.touchedFields, name)
+
+    /**
+     * It should be touched now.
+     */
+    if (!previousIsTouched) {
+      deepSet(this.formState.touchedFields, name, true)
+    }
+
+    /**
+     * Only provided if the field was not previously touched.
+     */
+    const touchedFields = !previousIsTouched ? this.formState.touchedFields : undefined
+
+    /**
+     * Whether the touched state of this field changed.
+     */
+    const shouldUpdate =
+      !previousIsTouched && this.proxyFormState.touchedFields && previousIsTouched
+
+    return { touchedFields, shouldUpdate }
+  }
+
+  /**
+   * Update {@link formState.isDirty} based on the current values of the ***form***.
+   */
+  updateIsDirty(): UpdateIsDirtyResult<TFieldValues> {
+    const previousIsDirty = this.formState.isDirty
+
+    const isDirty = this.isDirty()
+
+    this.formState.isDirty = isDirty
+
+    const shouldUpdate = previousIsDirty !== isDirty
+
+    return { isDirty, shouldUpdate }
+  }
+
+  /**
+   * Determine if the form is dirty by comparing the current values of the form with the default values.
+   */
+  isDirty(): boolean {
+    return !deepEqual(this.getValues(), this.defaultValues)
   }
 
   trigger: UseFormTrigger<TFieldValues> = async (name, options = {}) => {
@@ -393,21 +586,18 @@ export class FormControl<TFieldValues extends FieldValues = FieldValues, TContex
     return validationResult
   }
 
-  executeBuiltInValidation = async (
+  async executeBuiltInValidation(
     fields: FieldRefs,
     shouldOnlyCheckValid?: boolean,
-    context: {
-      valid: boolean
-    } = {
-      valid: true,
-    },
-  ) => {
+    context: ValidationContext = { valid: true },
+  ) {
     for (const name in fields) {
       const field = fields[name]
 
       if (field == null) {
         continue
       }
+
       const { _f, ...fieldValue } = field
 
       if (_f) {
@@ -501,3 +691,38 @@ export function getResolverOptions<T extends FieldValues>(
     shouldUseNativeValidation,
   }
 }
+
+export type ValidationContext = {
+  valid: boolean
+}
+
+export type UpdateIsDirtyResult<T extends FieldValues = FieldValues> = Partial<
+  Pick<FormState<T>, 'isDirty'>
+> & {
+  /**
+   * Whether the dirty state of the ***form*** changed and should be updated, i.e. re-rendered.
+   */
+  shouldUpdate: boolean
+}
+
+export type UpdateDirtyFieldsResult<T extends FieldValues = FieldValues> = Partial<
+  Pick<FormState<T>, 'dirtyFields' | 'isDirty'>
+> & {
+  /**
+   * Whether the dirty state of the ***field*** changed and should be updated, i.e. re-rendered.
+   */
+  shouldUpdate: boolean
+}
+
+export type UpdateTouchedFieldsResult<T extends FieldValues = FieldValues> = Partial<
+  Pick<FormState<T>, 'touchedFields'>
+> & {
+  /**
+   * Whether the dirty state of the ***field*** changed and should be updated, i.e. re-rendered.
+   */
+  shouldUpdate: boolean
+}
+
+export type UpdateTouchAndDirtyResult<T extends FieldValues = FieldValues> = Partial<
+  Pick<FormState<T>, 'dirtyFields' | 'isDirty' | 'touchedFields'>
+>
