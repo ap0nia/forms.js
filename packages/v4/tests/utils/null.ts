@@ -1,6 +1,6 @@
 import { describe, test, expect, expectTypeOf } from 'vitest'
 
-import { isNullish, type Nullish } from '../../src/utils/nullish'
+import { isNullish, type Nullish } from '../../src/utils/null'
 
 describe('nullish type', () => {
   test('matching type definitions', () => {

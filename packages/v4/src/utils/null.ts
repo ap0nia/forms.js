@@ -3,6 +3,16 @@
  */
 export type Nullish = null | undefined | void
 
+/**
+ * Not very useful.
+ */
 export function isNullish(value: unknown): value is Nullish {
   return value == null
+}
+
+/**
+ * This is a necessary type guard mimic {@link Array.filter(Boolean)}.
+ */
+export function notNullish<T>(value: T): value is NonNullable<T> {
+  return !isNullish(value)
 }
