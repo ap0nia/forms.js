@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest --coverage",
+    "test": "vitest",
     "typecheck": "vitest typecheck"
   },
   "dependencies": {

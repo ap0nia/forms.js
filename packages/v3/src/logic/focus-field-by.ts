@@ -1,9 +1,9 @@
-import type { Field, FieldRefs, InternalFieldName } from '../types/fields'
+import type { Field, FieldRecord, InternalFieldName } from '../types/fields'
 import { isObject } from '../utils/is-object'
 import { safeGet } from '../utils/safe-get'
 
 export function focusFieldBy(
-  fields: FieldRefs,
+  fields: FieldRecord,
   callback: (name?: string) => unknown,
   fieldsNames?: Set<InternalFieldName> | InternalFieldName[],
 ) {

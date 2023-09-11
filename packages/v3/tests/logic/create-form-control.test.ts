@@ -71,4 +71,40 @@ describe('create form control', () => {
 
     expect(formControl.names.mount).toEqual(new Set(['age', 'a.b', 'a.b.c.d']))
   })
+
+  describe('get values', () => {
+    const values: MyForm = {
+      name: 'Elysia',
+      age: 18,
+      a: {
+        b: {
+          c: {
+            d: 'Hello',
+          },
+        },
+      },
+    }
+
+    const formControl = new FormControl<MyForm>({ values })
+
+    test('no key', () => {
+      expect(formControl.getValues()).toEqual(values)
+    })
+
+    test('single key', () => {
+      expect(formControl.getValues('a')).toEqual(values.a)
+    })
+
+    test('args keys', () => {
+      expect(formControl.getValues('a', 'name', 'a.b.c')).toEqual([
+        values.a,
+        values.name,
+        values.a.b.c,
+      ])
+    })
+
+    test('array keys', () => {
+      expect(formControl.getValues(['a.b.c.d', 'name'])).toEqual([values.a.b.c.d, values.name])
+    })
+  })
 })

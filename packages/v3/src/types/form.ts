@@ -10,7 +10,7 @@ import type {
   Field,
   FieldName,
   FieldPath,
-  FieldRefs,
+  FieldRecord,
   FieldValues,
   InternalFieldName,
 } from './fields'
@@ -355,7 +355,7 @@ export type Control<TFieldValues extends FieldValues = FieldValues, TContext = a
   _formState: FormState<TFieldValues>
   _updateValid: (shouldUpdateValid?: boolean) => void
   _updateFormState: (formState: Partial<FormState<TFieldValues>>) => void
-  _fields: FieldRefs
+  _fields: FieldRecord
   _formValues: FieldValues
   _proxyFormState: ReadFormState
   _defaultValues: Partial<DefaultValues<TFieldValues>>
@@ -373,7 +373,7 @@ export type Control<TFieldValues extends FieldValues = FieldValues, TContext = a
         }
       | {
           field?: undefined
-          fields?: FieldRefs
+          fields?: FieldRecord
         }
     ),
   ) => void
@@ -395,6 +395,6 @@ export type UpdateDisabledFieldOptions = {
     }
   | {
       field?: undefined
-      fields?: FieldRefs
+      fields?: FieldReferenceRecord
     }
 )

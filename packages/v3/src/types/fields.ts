@@ -62,17 +62,19 @@ export type Ref = FieldElement
  * I'm not sure what data is stored outside of _f
  */
 export type Field = {
-  _f: {
-    ref: Ref
-    name: InternalFieldName
-    refs?: HTMLInputElement[]
-    mount?: boolean
-  } & RegisterOptions
+  _f: FieldReference
 }
+
+export type FieldReference = {
+  ref: Ref
+  name: InternalFieldName
+  refs?: HTMLInputElement[]
+  mount?: boolean
+} & RegisterOptions
 
 /**
  * A record of field refs?
  */
-export type FieldRefs = Partial<Record<InternalFieldName, Field>>
+export type FieldRecord = Partial<Record<InternalFieldName, Field>>
 
 export type FieldPath<T> = keyof FlattenObject<T>
