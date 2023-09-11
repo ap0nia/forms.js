@@ -125,6 +125,12 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
 
+  packages/v4:
+    devDependencies:
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
+
 packages:
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution:
