@@ -77,4 +77,4 @@ export type FieldReference = {
  */
 export type FieldRecord = Partial<Record<InternalFieldName, Field>>
 
-export type FieldPath<T> = keyof FlattenObject<T>
+export type FieldPath<T> = Extract<keyof FlattenObject<T>, string>
