@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 
-import { FormControl } from '../src/create-form-control'
+import { FormControl } from '../src/form-control'
 
 describe('create-form-control', () => {
   describe('get values', () => {
