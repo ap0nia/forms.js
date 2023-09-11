@@ -50,7 +50,7 @@ export class Writable<T> {
   }
 
   update(updater: Updater<T>) {
-    this.set(updater(this.value))
+    this.set(updater(this.value as T))
   }
 
   subscribe(run: Subscriber<T>, invalidate = noop) {
@@ -62,7 +62,7 @@ export class Writable<T> {
       this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
     }
 
-    run(this.value)
+    run(this.value as T)
 
     return () => {
       this.subscribers.delete(subscriber)

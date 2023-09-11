@@ -1,11 +1,43 @@
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import { Writable } from '../../src/state/store'
+
+describe('store', () => {
+  describe('writable', () => {
+    test('subscription function is called once', () => {
+      const count = new Writable(0)
+
+      const mock = vi.fn().mockImplementation(() => {
+        /* noop */
+      })
+
+      count.subscribe(mock)
+
+      expect(mock).toHaveBeenCalledTimes(1)
+    })
+
+    test('subscription function is not called for same value', () => {
+      const number = 0
+
+      const count = new Writable(number)
+
+      const mock = vi.fn().mockImplementation(() => {
+        /* noop */
+      })
+
+      count.subscribe(mock)
+
+      count.set(number)
+
+      expect(mock).toHaveBeenCalledTimes(1)
+    })
+  })
+})
 
 /**
  * @see https://github.com/sveltejs/svelte/blob/master/packages/svelte/test/store/store.test.js
  */
-describe('store', () => {
+describe('store - svelte', () => {
   describe('writable', () => {
     test('creates a writable store', () => {
       const count = new Writable(0)
