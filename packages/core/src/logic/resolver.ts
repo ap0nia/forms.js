@@ -1,8 +1,8 @@
-import type { CriteriaMode } from './constants'
+import type { CriteriaMode } from '../constants'
 import type { FieldErrors } from './errors'
 import type { FieldReference } from './fields'
-import type { FlattenObject } from './utils/types/flatten-object'
-import type { MaybePromise } from './utils/types/maybe-promise'
+import type { FlattenObject } from '../utils/types/flatten-object'
+import type { MaybePromise } from '../utils/types/maybe-promise'
 
 /**
  * A resolver processes the form values and returns a result.

@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { IsAny } from '../../src/utils/is-any'
+import type { IsAny } from '../../src/utils/types/is-any'
 
 describe('isAny identifies explicit any and ignores everything else', () => {
   test('any', () => {

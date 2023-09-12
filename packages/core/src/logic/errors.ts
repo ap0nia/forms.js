@@ -1,8 +1,8 @@
 import type { FieldElement } from './fields'
 import type { RegisterOptions } from './register'
-import type { DeepRequired } from './utils/types/deep-required'
-import type { LiteralUnion } from './utils/types/literal-union'
-import type { Merge } from './utils/types/merge'
+import type { DeepRequired } from '../utils/types/deep-required'
+import type { LiteralUnion } from '../utils/types/literal-union'
+import type { Merge } from '../utils/types/merge'
 import type { ValidateResult } from './validation'
 
 /**

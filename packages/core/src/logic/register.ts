@@ -1,4 +1,4 @@
-import type { FlattenObject } from './utils/types/flatten-object'
+import type { FlattenObject } from '../utils/types/flatten-object'
 import type { Validate, ValidationRule } from './validation'
 
 /**
