@@ -1,8 +1,12 @@
+import { getCheckboxValue, isCheckBoxInput } from '../utils/html/checkbox'
+import { isFileInput } from '../utils/html/file'
+import { isHTMLElement } from '../utils/html/is-html-element'
+import { getRadioValue, isRadioInput } from '../utils/html/radio'
+import { notNullish } from '../utils/null'
+import { safeGet } from '../utils/safe-get'
+
 import type { InternalFieldErrors } from './errors'
 import type { Field, FieldRecord } from './fields'
-import { notNullish } from '../utils/null'
-import type { FormControl } from '../form-control'
-import { safeGet } from '../utils/safe-get'
 
 /**
  * Not sure what this is for.
@@ -43,7 +47,7 @@ export type ValidationOptions = {
   /**
    * Callback to determine if a field is a field array root.
    *
-   * Should be handled by a parent {@link FormControl}.
+   * Should be handled by a parent FormControl.
    */
   isFieldArrayRoot?: (name: string) => boolean
 
@@ -127,10 +131,65 @@ async function nativelyValidateField(
 
   const errors: InternalFieldErrors = {}
 
+  hasError(field, inputValue, isFieldArray)
+
+  validateAllFieldCriteria
+
+  if (shouldSetCustomValidity) {
+    setCustomValidity(inputRef, '')
+  }
+
   return errors
 }
 
-function setCustomValidity(inputRef: HTMLInputElement, message?: string | boolean) {
+export function setCustomValidity(inputRef: HTMLInputElement, message?: string | boolean) {
   inputRef.setCustomValidity(typeof message === 'boolean' ? '' : message || '')
   inputRef.reportValidity()
+}
+
+function hasError(field: Field, inputValue: any, isFieldArray?: boolean) {
+  if ((isFieldArray && !Array.isArray(inputValue)) || !inputValue.length) {
+    return true
+  }
+
+  if (!field._f.required) {
+    return false
+  }
+
+  const isRadio = isRadioInput(field._f.ref)
+  const isCheckBox = isCheckBoxInput(field._f.ref)
+  const isRadioOrCheckbox = isRadio || isCheckBox
+  const isEmpty = refIsEmpty(field, inputValue)
+
+  if (!isRadioOrCheckbox && (isEmpty || inputValue == null)) {
+    return true
+  }
+
+  if (typeof inputValue === 'boolean' && !inputValue) {
+    return true
+  }
+
+  if (isCheckBox && !getCheckboxValue(field._f.refs).isValid) {
+    return true
+  }
+
+  if (isRadio && !getRadioValue(field._f.refs).isValid) {
+    return true
+  }
+
+  return false
+}
+
+function refIsEmpty(field: Field, inputValue: unknown) {
+  const { ref, value, valueAsNumber } = field._f
+
+  if ((valueAsNumber || isFileInput(field._f.ref)) && value == null && inputValue == null) {
+    return true
+  }
+
+  if ((isHTMLElement(ref) && value === '') || inputValue === '') {
+    return true
+  }
+
+  return Array.isArray(inputValue) && !inputValue.length
 }
