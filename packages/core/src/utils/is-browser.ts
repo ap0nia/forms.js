@@ -1,4 +1,7 @@
-export const isBrowser =
-  typeof window !== 'undefined' &&
-  typeof window.HTMLElement !== 'undefined' &&
-  typeof document !== 'undefined'
+export function isBrowser() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.HTMLElement !== 'undefined' &&
+    typeof document !== 'undefined'
+  )
+}

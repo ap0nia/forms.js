@@ -1,5 +1,5 @@
 {
-  "name": "@bronya.js/form",
+  "name": "@forms.js/core",
   "version": "0.0.0",
   "description": "form.js core",
   "private": true,
@@ -23,9 +23,10 @@
   },
   "keywords": [],
   "type": "module",
-  "scripts": {
-    "test": "vitest",
-    "typecheck": "vitest typecheck"
+  "scripts": {},
+  "dependencies": {
+    "@legendapp/state": "^1.11.1",
+    "react-hook-form": "^7.45.4"
   },
   "devDependencies": {
     "typescript": "^5.1.6"

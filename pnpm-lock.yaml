@@ -90,6 +90,22 @@ importers:
         version: 1.0.0-rc.4(@algolia/client-search@4.19.1)(@types/node@20.4.5)(search-insights@2.7.0)
 
   packages/core:
+    devDependencies:
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
+
+  packages/resolvers:
+    dependencies:
+      arktype:
+        specifier: 1.0.21-alpha
+        version: 1.0.21-alpha
+    devDependencies:
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
+
+  packages/v1:
     dependencies:
       '@legendapp/state':
         specifier: ^1.11.1
@@ -123,12 +139,6 @@ importers:
       react-hook-form:
         specifier: ^7.45.4
         version: 7.45.4(react@18.2.0)
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v4:
     devDependencies:
       typescript:
         specifier: ^5.1.6
@@ -2251,6 +2261,13 @@ packages:
         integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==,
       }
     dev: true
+
+  /arktype@1.0.21-alpha:
+    resolution:
+      {
+        integrity: sha512-XQBoepICSrwDXYlh7gqcrKWEbWTSebToIoTimi9CxVLLlxNWt/YXNrKrSITr/T9jke+TIag1tUcIum/90EQNpg==,
+      }
+    dev: false
 
   /array-buffer-byte-length@1.0.0:
     resolution:

@@ -1,43 +1,33 @@
 import type { CriteriaMode } from './constants'
-import type { FieldErrors } from './errors'
-import type { Field } from './field'
-import type { EmptyObject } from './guards/is-empty-object'
-import type { FlattenObject } from './utils/flatten-object'
-import type { MaybePromise } from './utils/maybe-promise'
+import type { FlattenObject } from './utils/types/flatten-object'
 
-export type ResolverSuccessResult<T> = { values: T, errors: EmptyObject }
-
-export type ResolverErrorResult<T> = { values: EmptyObject, errors: FieldErrors<T> }
-
-export type ResolverResult<T> = ResolverSuccessResult<T> | ResolverErrorResult<T>
-
-export type ResolverOptions<T> = {
-  /**
-   * Idk. When to trigger errors?
-   */
-  criteriaMode?: CriteriaMode
-
-  /**
-   * An array of fields, using flattened dot paths as keys.
-   */
-  fields: Record<string, Field>
-
-  /**
-   * An array of dot paths to property names.
-   */
-  names?: (keyof FlattenObject<T>)[]
-
-  /**
-   * Not sure what this is.
-   */
-  shouldUseNativeValidation: boolean | undefined
+export type ResolverSuccess<T> = {
+  values: T
+  errors: {}
 }
 
-/**
- * A resolver does something.
- */
-export type Resolver<TForm, TContext> = (
-  values: TForm,
+export type ResolverError<T> = {
+  values: {}
+  errors: FieldErrors<T>
+}
+
+export type ResolverResult<T> = ResolverSuccess<T> | ResolverError<T>
+
+export interface ResolverOptions<T> {
+  criteriaMode?: CriteriaMode
+
+  fields: Record<string, Field['_f']>
+
+  /**
+   * Flatten the form values object.
+   */
+  names?: keyof FlattenObject<T>[]
+
+  shouldUseNativeValidation?: boolean
+}
+
+export type Resolver<TFieldValues, TContext = any> = (
+  values: TFieldValues,
   context: TContext | undefined,
-  options: ResolverOptions<TForm>,
-) => MaybePromise<ResolverResult<TForm>>
+  options: ResolverOptions<TFieldValues>,
+) => Promise<ResolverResult<TFieldValues>> | ResolverResult<TFieldValues>

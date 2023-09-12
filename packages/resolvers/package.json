@@ -1,7 +1,7 @@
 {
-  "name": "@forms.js/corev4",
+  "name": "@bronya.js/form-resolvers",
   "version": "0.0.0",
-  "description": "form.js core",
+  "description": "form.js resolvers",
   "private": true,
   "license": "MIT",
   "homepage": "https://ap0nia.github.io/forms.js",
@@ -34,5 +34,8 @@
   "engines": {
     "pnpm": "^8.0.0",
     "node": ">=18"
+  },
+  "dependencies": {
+    "arktype": "1.0.21-alpha"
   }
 }
