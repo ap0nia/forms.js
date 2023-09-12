@@ -21,26 +21,35 @@ describe('create-form-control', () => {
       },
     }
 
-    const formControl = new FormControl({ values })
-
-    test('no key', () => {
-      expect(formControl.getValues()).toEqual(values)
+    test('values but unregister', () => {
+      const formControl = new FormControl({ values, shouldUnregister: true })
+      expect(formControl.getValues()).toEqual({})
     })
 
-    test('single key', () => {
-      expect(formControl.getValues('a')).toEqual(values.a)
-    })
+    describe('set values', () => {
+      test('no key', () => {
+        const formControl = new FormControl({ values })
+        expect(formControl.getValues()).toEqual(values)
+      })
 
-    test('args keys', () => {
-      expect(formControl.getValues('a', 'name', 'a.b.c')).toEqual([
-        values.a,
-        values.name,
-        values.a.b.c,
-      ])
-    })
+      test('single key', () => {
+        const formControl = new FormControl({ values })
+        expect(formControl.getValues('a')).toEqual(values.a)
+      })
 
-    test('array keys', () => {
-      expect(formControl.getValues(['a.b.c.d', 'name'])).toEqual([values.a.b.c.d, values.name])
+      test('args keys', () => {
+        const formControl = new FormControl({ values })
+        expect(formControl.getValues('a', 'name', 'a.b.c')).toEqual([
+          values.a,
+          values.name,
+          values.a.b.c,
+        ])
+      })
+
+      test('array keys', () => {
+        const formControl = new FormControl({ values })
+        expect(formControl.getValues(['a.b.c.d', 'name'])).toEqual([values.a.b.c.d, values.name])
+      })
     })
   })
 })
