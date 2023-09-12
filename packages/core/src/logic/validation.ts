@@ -161,47 +161,8 @@ async function nativelyValidateField(
 
   const isEmpty = refIsEmpty(field, inputValue)
 
-  const { min, max } = field._f
-
-  if (!isEmpty && (min != null || max != null)) {
-    let exceedMax
-    let exceedMin
-    const maxOutput = getValueAndMessage(max)
-    const minOutput = getValueAndMessage(min)
-
-    if (inputValue != null && !isNaN(inputValue)) {
-      const valueNumber =
-        (ref as HTMLInputElement).valueAsNumber || (inputValue ? +inputValue : inputValue)
-
-      if (maxOutput.value != null) {
-        exceedMax = valueNumber > maxOutput.value
-      }
-
-      if (minOutput.value != null) {
-        exceedMin = valueNumber < minOutput.value
-      }
-    } else {
-      const valueDate = (ref as HTMLInputElement).valueAsDate || new Date(inputValue as string)
-      const convertTimeToDate = (time: unknown) => new Date(new Date().toDateString() + ' ' + time)
-      const isTime = ref.type == 'time'
-      const isWeek = ref.type == 'week'
-
-      if (typeof maxOutput.value === 'string' && inputValue) {
-        exceedMax = isTime
-          ? convertTimeToDate(inputValue) > convertTimeToDate(maxOutput.value)
-          : isWeek
-          ? inputValue > maxOutput.value
-          : valueDate > new Date(maxOutput.value)
-      }
-
-      if (typeof minOutput.value === 'string' && inputValue) {
-        exceedMin = isTime
-          ? convertTimeToDate(inputValue) < convertTimeToDate(minOutput.value)
-          : isWeek
-          ? inputValue < minOutput.value
-          : valueDate < new Date(minOutput.value)
-      }
-    }
+  if (!isEmpty && (field._f.min != null || field._f.max != null)) {
+    const { exceedMax, exceedMin, maxOutput, minOutput } = fieldExceedsBounds(field, inputValue)
 
     if (exceedMax || exceedMin) {
       const message = exceedMax ? maxOutput.message : minOutput.message
@@ -228,10 +189,67 @@ async function nativelyValidateField(
     }
   }
 
+  const hasLength = typeof inputValue === 'string' || (isFieldArray && Array.isArray(inputValue))
+
+  if ((field._f.maxLength || field._f.minLength) && !isEmpty && hasLength) {
+    const maxLengthOutput = getValueAndMessage(field._f.maxLength)
+    const minLengthOutput = getValueAndMessage(field._f.minLength)
+    const exceedMax = maxLengthOutput.value != null && inputValue.length > +maxLengthOutput.value
+    const exceedMin = minLengthOutput.value != null && inputValue.length < +minLengthOutput.value
+
+    if (exceedMax || exceedMin) {
+      const message = exceedMax ? maxLengthOutput.message : minLengthOutput.message
+
+      const validationType = exceedMax ? INPUT_VALIDATION_RULES.max : INPUT_VALIDATION_RULES.min
+
+      errors[name] = {
+        type: validationType,
+        message,
+        ref,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [validationType]: message || true,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria && shouldSetCustomValidity) {
+        setCustomValidity(inputRef, errors[name]?.message)
+        return errors
+      }
+    }
+  }
+
+  if (field._f.pattern && !isEmpty && typeof inputValue === 'string') {
+    const { value, message } = getValueAndMessage(field._f.pattern)
+
+    if (value instanceof RegExp && !inputValue.match(value)) {
+      errors[name] = {
+        type: INPUT_VALIDATION_RULES.pattern,
+        message,
+        ref,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [INPUT_VALIDATION_RULES.pattern]: message || true,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria && shouldSetCustomValidity) {
+        setCustomValidity(inputRef, message)
+        return errors
+      }
+    }
+  }
+
   return errors
 }
 
-export function setCustomValidity(inputRef: HTMLInputElement, message?: string | boolean) {
+function setCustomValidity(inputRef: HTMLInputElement, message?: string | boolean) {
   inputRef.setCustomValidity(typeof message === 'boolean' ? '' : message || '')
   inputRef.reportValidity()
 }
@@ -289,7 +307,7 @@ function refIsEmpty(field: Field, inputValue: unknown) {
   return Array.isArray(inputValue) && !inputValue.length
 }
 
-export function getValueAndMessage(validationRule?: ValidationRule): ValidationValueMessage {
+function getValueAndMessage(validationRule?: ValidationRule): ValidationValueMessage {
   if (typeof validationRule === 'string') {
     return { value: Boolean(validationRule), message: validationRule }
   }
@@ -299,4 +317,56 @@ export function getValueAndMessage(validationRule?: ValidationRule): ValidationV
   }
 
   return { value: validationRule, message: '' }
+}
+
+type ExceedBoundsResult = {
+  exceedMax: boolean
+  exceedMin: boolean
+  maxOutput: ValidationValueMessage
+  minOutput: ValidationValueMessage
+}
+
+function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
+  const { min, max, ref } = field._f
+
+  const maxOutput = getValueAndMessage(max)
+  const minOutput = getValueAndMessage(min)
+
+  if (inputValue != null && !isNaN(inputValue)) {
+    const valueNumber =
+      (ref as HTMLInputElement).valueAsNumber || (inputValue ? +inputValue : inputValue)
+    const exceedMax = maxOutput.value != null && valueNumber > maxOutput.value
+
+    const exceedMin = minOutput.value != null && valueNumber < minOutput.value
+
+    return { exceedMax, exceedMin, maxOutput, minOutput }
+  }
+
+  const valueDate = (ref as HTMLInputElement).valueAsDate || new Date(inputValue as string)
+  const isTime = ref.type == 'time'
+  const isWeek = ref.type == 'week'
+
+  const exceedMax =
+    typeof maxOutput.value === 'string' &&
+    inputValue &&
+    (isTime
+      ? convertTimeToDate(inputValue) > convertTimeToDate(maxOutput.value)
+      : isWeek
+      ? inputValue > maxOutput.value
+      : valueDate > new Date(maxOutput.value))
+
+  const exceedMin =
+    typeof minOutput.value === 'string' &&
+    inputValue &&
+    (isTime
+      ? convertTimeToDate(inputValue) < convertTimeToDate(minOutput.value)
+      : isWeek
+      ? inputValue < minOutput.value
+      : valueDate < new Date(minOutput.value))
+
+  return { exceedMax, exceedMin, maxOutput, minOutput }
+}
+
+function convertTimeToDate(time: unknown) {
+  return new Date(new Date().toDateString() + ' ' + time)
 }

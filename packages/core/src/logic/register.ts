@@ -1,4 +1,5 @@
 import type { FlattenObject } from '../utils/types/flatten-object'
+
 import type { Validate, ValidationRule } from './validation'
 
 /**
@@ -86,8 +87,8 @@ export type RegisterOptions<
  */
 export type AdditionalRegisterOptions =
   | AdditionalValidationOptions<RegExp, false, false>
-  | AdditionalValidationOptions<undefined, false, true>
-  | AdditionalValidationOptions<undefined, true, false>
+  | AdditionalValidationOptions<never, false, true>
+  | AdditionalValidationOptions<never, true, false>
 
 /**
  * More native validation options.
