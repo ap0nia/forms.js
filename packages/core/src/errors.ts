@@ -70,16 +70,14 @@ export type MultipleFieldErrors = {
 /**
  * Idk.
  */
-export type FieldErrors<T extends Record<string, any> = Record<string, any>> = Partial<
-  FieldErrorsImpl<DeepRequired<T>>
-> & {
+export type FieldErrors<T = Record<string, any>> = Partial<FieldErrorsImpl<DeepRequired<T>>> & {
   root?: Record<string, GlobalError> & GlobalError
 }
 
 /**
  * Idk.
  */
-export type FieldErrorsImpl<T extends Record<string, any> = Record<string, any>> = {
+export type FieldErrorsImpl<T = Record<string, any>> = {
   [K in keyof T]?: K extends 'root' | `root.${string}`
     ? GlobalError
     : T[K] extends object

@@ -6,7 +6,7 @@ export type ValidationValue = boolean | number | string | RegExp
 /**
  * Maybe this is referenced when displaying validation errors?
  */
-export type ValidationValueMessage<T extends ValidationValue = ValidationValue> = {
+export type ValidationValueMessage<T = ValidationValue> = {
   value: T
   message: string
 }
@@ -14,9 +14,7 @@ export type ValidationValueMessage<T extends ValidationValue = ValidationValue> 
 /**
  * What's a validation rule used for?
  */
-export type ValidationRule<T extends ValidationValue = ValidationValue> =
-  | T
-  | ValidationValueMessage<T>
+export type ValidationRule<T = ValidationValue> = T | ValidationValueMessage<T>
 
 /**
  * Not sure what this is for.

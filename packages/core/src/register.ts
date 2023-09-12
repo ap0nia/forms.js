@@ -4,25 +4,39 @@ import type { Validate, ValidationRule } from './validation'
 /**
  * Options when registering a new field component or element.
  *
- * @param TFieldName is different from the original implementation because it flattens the object and then obtains its keys.
+ * @param TFieldName A key in the flattened form values object.
+ * @param TFieldValue Represents the value at TFieldName in the flattened form values object.
  *
- * @param TFieldValue
- * is a new param that shouldn't be touched,
- * and just adopts the type of the value at the specified key in the flattened object.
+ * @remarks Please don't manually set TFieldValue :^)
  */
 export type RegisterOptions<
   TValues extends Record<string, any> = Record<string, any>,
   TFieldName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
   TFieldValue = FlattenObject<TValues>[TFieldName],
 > = {
+  /**
+   * Native validation, makes the field required.
+   */
   required?: string | ValidationRule<boolean>
 
+  /**
+   * Native validation, indicates the minimum value or number of characters.
+   */
   min?: ValidationRule<number | string>
 
+  /**
+   * Native validation, indicates the maximum value or number of characters.
+   */
   max?: ValidationRule<number | string>
 
+  /**
+   * Native validation, indicates the minimum number of characters.
+   */
   maxLength?: ValidationRule<number>
 
+  /**
+   * Native validation, indicates the maximum number of characters.
+   */
   minLength?: ValidationRule<number>
 
   /**
@@ -71,18 +85,26 @@ export type RegisterOptions<
  * Additional register options.
  */
 export type AdditionalRegisterOptions =
-  | {
-      pattern?: ValidationRule<RegExp>
-      valueAsNumber?: false
-      valueAsDate?: false
-    }
-  | {
-      pattern?: undefined
-      valueAsNumber?: false
-      valueAsDate?: true
-    }
-  | {
-      pattern?: undefined
-      valueAsNumber?: true
-      valueAsDate?: false
-    }
+  | AdditionalValidationOptions<RegExp, false, false>
+  | AdditionalValidationOptions<undefined, false, true>
+  | AdditionalValidationOptions<undefined, true, false>
+
+/**
+ * More native validation options.
+ */
+export type AdditionalValidationOptions<TPattern, TValueAsNumber, TValueAsDate> = {
+  /**
+   * Regular expression to validate the field.
+   */
+  pattern?: ValidationRule<TPattern>
+
+  /**
+   * Native validation, indicates the value is a number.
+   */
+  valueAsNumber?: TValueAsNumber
+
+  /**
+   * Native validation, indicates the value is a date.
+   */
+  valueAsDate?: TValueAsDate
+}
