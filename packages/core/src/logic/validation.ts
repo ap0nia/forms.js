@@ -3,12 +3,13 @@ import { getCheckboxValue, isCheckBoxInput } from '../utils/html/checkbox'
 import { isFileInput } from '../utils/html/file'
 import { isHTMLElement } from '../utils/html/is-html-element'
 import { getRadioValue, isRadioInput } from '../utils/html/radio'
+import { isEmptyObject } from '../utils/is-empty-object'
 import { isObject } from '../utils/is-object'
 import { notNullish } from '../utils/null'
 import { safeGet } from '../utils/safe-get'
 
-import type { InternalFieldErrors } from './errors'
-import type { Field, FieldRecord } from './fields'
+import type { FieldError, InternalFieldErrors } from './errors'
+import type { Field, FieldElement, FieldRecord } from './fields'
 
 /**
  * Not sure what this is for.
@@ -152,8 +153,10 @@ async function nativelyValidateField(
         }),
       }
 
-      if (!validateAllFieldCriteria && shouldSetCustomValidity) {
-        setCustomValidity(inputRef, message)
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, message)
+        }
         return errors
       }
     }
@@ -182,8 +185,10 @@ async function nativelyValidateField(
         }),
       }
 
-      if (!validateAllFieldCriteria && shouldSetCustomValidity) {
-        setCustomValidity(inputRef, errors[name]?.message)
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, errors[name]?.message)
+        }
         return errors
       }
     }
@@ -215,8 +220,10 @@ async function nativelyValidateField(
         }),
       }
 
-      if (!validateAllFieldCriteria && shouldSetCustomValidity) {
-        setCustomValidity(inputRef, errors[name]?.message)
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, errors[name]?.message)
+        }
         return errors
       }
     }
@@ -239,11 +246,92 @@ async function nativelyValidateField(
         }),
       }
 
-      if (!validateAllFieldCriteria && shouldSetCustomValidity) {
-        setCustomValidity(inputRef, message)
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, message)
+        }
         return errors
       }
     }
+  }
+
+  const { validate } = field._f
+
+  if (validate) {
+    if (typeof validate === 'function') {
+      const result = await validate(inputValue, formValues)
+      const validateError = getValidateError(result, inputRef)
+
+      if (validateError) {
+        errors[name] = {
+          ...validateError,
+          ...(validateAllFieldCriteria && {
+            ...errors[name],
+            types: {
+              ...errors[name]?.types,
+              [INPUT_VALIDATION_RULES.validate]: validateError.message,
+            },
+          }),
+        }
+
+        if (!validateAllFieldCriteria) {
+          if (shouldSetCustomValidity) {
+            setCustomValidity(inputRef, validateError.message)
+          }
+          return errors
+        }
+      }
+    } else if (isObject(validate)) {
+      let validationResult = {} as FieldError
+
+      for (const key in validate) {
+        if (!isEmptyObject(validationResult) && !validateAllFieldCriteria) {
+          break
+        }
+
+        const validateError = getValidateError(
+          await validate[key]?.(inputValue, formValues),
+          inputRef,
+          key,
+        )
+
+        if (validateError) {
+          validationResult = {
+            ...validateError,
+            ...(validateAllFieldCriteria && {
+              ...errors[name],
+              types: {
+                ...errors[name]?.types,
+                [key]: validateError.message,
+              },
+            }),
+          }
+
+          if (shouldSetCustomValidity) {
+            setCustomValidity(inputRef, validateError.message)
+          }
+
+          if (validateAllFieldCriteria) {
+            errors[name] = validationResult
+          }
+        }
+      }
+
+      if (!isEmptyObject(validationResult)) {
+        errors[name] = {
+          ref: inputRef,
+          ...validationResult,
+        }
+
+        if (!validateAllFieldCriteria) {
+          return errors
+        }
+      }
+    }
+  }
+
+  if (shouldSetCustomValidity) {
+    setCustomValidity(inputRef, true)
   }
 
   return errors
@@ -369,4 +457,22 @@ function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
 
 function convertTimeToDate(time: unknown) {
   return new Date(new Date().toDateString() + ' ' + time)
+}
+
+export function getValidateError(
+  result: ValidateResult,
+  ref: FieldElement,
+  type = 'validate',
+): FieldError | void {
+  if (
+    typeof result === 'string' ||
+    (Array.isArray(result) && result.every((r) => typeof r === 'string')) ||
+    result === false
+  ) {
+    return {
+      type,
+      message: typeof result === 'string' ? result : '',
+      ref,
+    }
+  }
 }
