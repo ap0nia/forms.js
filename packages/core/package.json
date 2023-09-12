@@ -1,5 +1,5 @@
 {
-  "name": "@bronya.js/form",
+  "name": "@forms.js/core",
   "version": "0.0.0",
   "description": "form.js core",
   "private": true,
