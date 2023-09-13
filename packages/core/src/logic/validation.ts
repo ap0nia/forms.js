@@ -255,11 +255,9 @@ async function nativelyValidateField(
     }
   }
 
-  const { validate } = field._f
-
-  if (validate) {
-    if (typeof validate === 'function') {
-      const result = await validate(inputValue, formValues)
+  if (field._f.validate) {
+    if (typeof field._f.validate === 'function') {
+      const result = await field._f.validate(inputValue, formValues)
       const validateError = getValidateError(result, inputRef)
 
       if (validateError) {
@@ -281,19 +279,17 @@ async function nativelyValidateField(
           return errors
         }
       }
-    } else if (isObject(validate)) {
+    } else if (isObject(field._f.validate)) {
       let validationResult = {} as FieldError
 
-      for (const key in validate) {
+      for (const key in field._f.validate) {
         if (!isEmptyObject(validationResult) && !validateAllFieldCriteria) {
           break
         }
 
-        const validateError = getValidateError(
-          await validate[key]?.(inputValue, formValues),
-          inputRef,
-          key,
-        )
+        const currentValidateResult = await field._f.validate[key]?.(inputValue, formValues)
+
+        const validateError = getValidateError(currentValidateResult, inputRef, key)
 
         if (validateError) {
           validationResult = {
@@ -318,10 +314,7 @@ async function nativelyValidateField(
       }
 
       if (!isEmptyObject(validationResult)) {
-        errors[name] = {
-          ref: inputRef,
-          ...validationResult,
-        }
+        errors[name] = { ref: inputRef, ...validationResult }
 
         if (!validateAllFieldCriteria) {
           return errors
@@ -334,7 +327,283 @@ async function nativelyValidateField(
     setCustomValidity(inputRef, true)
   }
 
+  nativeValidateRequired
+  nativeValidateMinMax
+  nativeValidateLength
+  nativeValidatePattern
+  nativeValidateValidate
+
   return errors
+}
+
+type NativeValidationContext = {
+  name: string
+  field: Field
+  errors: InternalFieldErrors
+  inputRef: HTMLInputElement
+  inputValue: any
+  formValues: any
+  isFieldArray?: boolean
+  validateAllFieldCriteria?: boolean
+  shouldSetCustomValidity?: boolean
+}
+
+type NativeValidationOutput = {}
+
+function nativeValidateRequired(context: NativeValidationContext): NativeValidationOutput {
+  const {
+    name,
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    isFieldArray,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+  } = context
+
+  if (requiredButMissing(field, inputValue, isFieldArray)) {
+    const { value, message } = getValueAndMessage(field._f.required)
+
+    if (value) {
+      errors[name] = {
+        type: INPUT_VALIDATION_RULES.required,
+        message,
+        ref: inputRef,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [INPUT_VALIDATION_RULES.required]: message || true,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, message)
+        }
+        return errors
+      }
+    }
+  }
+}
+
+function nativeValidateMinMax(context: NativeValidationContext) {
+  const {
+    name,
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+  } = context
+
+  const { ref } = field._f
+
+  if (!refIsEmpty(field, inputValue) && (field._f.min != null || field._f.max != null)) {
+    const { exceedMax, exceedMin, maxOutput, minOutput } = fieldExceedsBounds(field, inputValue)
+
+    if (exceedMax || exceedMin) {
+      const message = exceedMax ? maxOutput.message : minOutput.message
+
+      const validationType = exceedMax ? INPUT_VALIDATION_RULES.max : INPUT_VALIDATION_RULES.min
+
+      errors[name] = {
+        type: validationType,
+        message,
+        ref,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [validationType]: message || true,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, errors[name]?.message)
+        }
+        return errors
+      }
+    }
+  }
+}
+
+function nativeValidateLength(context: NativeValidationContext) {
+  const {
+    name,
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    isFieldArray,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+  } = context
+
+  const { ref } = field._f
+
+  const hasLength = typeof inputValue === 'string' || (isFieldArray && Array.isArray(inputValue))
+
+  if ((field._f.maxLength || field._f.minLength) && !refIsEmpty(field, inputValue) && hasLength) {
+    const maxLengthOutput = getValueAndMessage(field._f.maxLength)
+    const minLengthOutput = getValueAndMessage(field._f.minLength)
+    const exceedMax = maxLengthOutput.value != null && inputValue.length > +maxLengthOutput.value
+    const exceedMin = minLengthOutput.value != null && inputValue.length < +minLengthOutput.value
+
+    if (exceedMax || exceedMin) {
+      const message = exceedMax ? maxLengthOutput.message : minLengthOutput.message
+
+      const validationType = exceedMax ? INPUT_VALIDATION_RULES.max : INPUT_VALIDATION_RULES.min
+
+      errors[name] = {
+        type: validationType,
+        message,
+        ref,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [validationType]: message || true,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, errors[name]?.message)
+        }
+        return errors
+      }
+    }
+  }
+}
+
+function nativeValidatePattern(context: NativeValidationContext) {
+  const {
+    name,
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+  } = context
+
+  const { ref } = field._f
+
+  if (field._f.pattern && !refIsEmpty(field, inputValue) && typeof inputValue === 'string') {
+    const { value, message } = getValueAndMessage(field._f.pattern)
+
+    if (value instanceof RegExp && !inputValue.match(value)) {
+      errors[name] = {
+        type: INPUT_VALIDATION_RULES.pattern,
+        message,
+        ref,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [INPUT_VALIDATION_RULES.pattern]: message || true,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, message)
+        }
+        return errors
+      }
+    }
+  }
+}
+
+async function nativeValidateValidate(context: NativeValidationContext) {
+  const {
+    name,
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    formValues,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+  } = context
+
+  if (field._f.validate == null) {
+    return
+  }
+
+  if (typeof field._f.validate === 'function') {
+    const result = await field._f.validate(inputValue, formValues)
+    const validateError = getValidateError(result, inputRef)
+
+    if (validateError) {
+      errors[name] = {
+        ...validateError,
+        ...(validateAllFieldCriteria && {
+          ...errors[name],
+          types: {
+            ...errors[name]?.types,
+            [INPUT_VALIDATION_RULES.validate]: validateError.message,
+          },
+        }),
+      }
+
+      if (!validateAllFieldCriteria) {
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, validateError.message)
+        }
+        return errors
+      }
+    }
+  } else if (isObject(field._f.validate)) {
+    let validationResult = {} as FieldError
+
+    for (const key in field._f.validate) {
+      if (!isEmptyObject(validationResult) && !validateAllFieldCriteria) {
+        break
+      }
+
+      const currentValidateResult = await field._f.validate[key]?.(inputValue, formValues)
+
+      const validateError = getValidateError(currentValidateResult, inputRef, key)
+
+      if (validateError) {
+        validationResult = {
+          ...validateError,
+          ...(validateAllFieldCriteria && {
+            ...errors[name],
+            types: {
+              ...errors[name]?.types,
+              [key]: validateError.message,
+            },
+          }),
+        }
+
+        if (shouldSetCustomValidity) {
+          setCustomValidity(inputRef, validateError.message)
+        }
+
+        if (validateAllFieldCriteria) {
+          errors[name] = validationResult
+        }
+      }
+    }
+
+    if (!isEmptyObject(validationResult)) {
+      errors[name] = { ref: inputRef, ...validationResult }
+
+      if (!validateAllFieldCriteria) {
+        return errors
+      }
+    }
+  }
 }
 
 function setCustomValidity(inputRef: HTMLInputElement, message?: string | boolean) {
@@ -415,14 +684,16 @@ type ExceedBoundsResult = {
 }
 
 function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
-  const { min, max, ref } = field._f
+  const { min, max } = field._f
+  const ref = field._f.ref as HTMLInputElement
 
   const maxOutput = getValueAndMessage(max)
+
   const minOutput = getValueAndMessage(min)
 
   if (inputValue != null && !isNaN(inputValue)) {
-    const valueNumber =
-      (ref as HTMLInputElement).valueAsNumber || (inputValue ? +inputValue : inputValue)
+    const valueNumber = ref.valueAsNumber || (inputValue ? +inputValue : inputValue)
+
     const exceedMax = maxOutput.value != null && valueNumber > maxOutput.value
 
     const exceedMin = minOutput.value != null && valueNumber < minOutput.value
@@ -430,8 +701,10 @@ function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
     return { exceedMax, exceedMin, maxOutput, minOutput }
   }
 
-  const valueDate = (ref as HTMLInputElement).valueAsDate || new Date(inputValue as string)
+  const valueDate = ref.valueAsDate || new Date(inputValue as string)
+
   const isTime = ref.type == 'time'
+
   const isWeek = ref.type == 'week'
 
   const exceedMax =
