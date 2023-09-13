@@ -12,6 +12,28 @@ import type { NativeValidationContext } from './types'
 import { nativeValidateValidate } from './validate'
 
 /**
+ * Native validators receive a context object with all the information they need to validate a field.
+ *
+ * TODO: allow custom native-validators to be added or to override the default ones.
+ *
+ * Native-validators __can__ mutate the context object, notably the errors, similar to Express.js middleware.
+ */
+const nativeValidators = [
+  nativeValidateRequired,
+  nativeValidateMinMax,
+  nativeValidateMinMaxLength,
+  nativeValidatePattern,
+  nativeValidateValidate,
+]
+
+/**
+ * Validators receive a "next" function, which should be the next validator in the sequence.
+ */
+const sequencedNativeValidators = nativeValidators.map((nativeValidator, i) => {
+  return (context: NativeValidationContext) => nativeValidator(context, nativeValidators[i + 1])
+})
+
+/**
  * Validates all the fields provided.
  */
 export async function nativeValidateManyFields(
@@ -32,12 +54,12 @@ export async function nativeValidateManyFields(
       field,
       values,
       options.shouldDisplayAllAssociatedErrors,
-      options.shouldUseNativeValidation && !options.exitEarly,
+      options.shouldUseNativeValidation && !options.validateAllFieldCriteria,
       isFieldArrayRoot,
     )
 
     if (fieldError[_f.name]) {
-      if (options.exitEarly) {
+      if (options.validateAllFieldCriteria) {
         return false
       } else {
         isValid = false
@@ -86,15 +108,3 @@ export async function nativeValidateSingleField(
 
   return errors
 }
-
-const nativeValidators = [
-  nativeValidateRequired,
-  nativeValidateMinMax,
-  nativeValidateMinMaxLength,
-  nativeValidatePattern,
-  nativeValidateValidate,
-]
-
-const sequencedNativeValidators = nativeValidators.map((nativeValidator, i) => {
-  return (context: NativeValidationContext) => nativeValidator(context, nativeValidators[i + 1])
-})
