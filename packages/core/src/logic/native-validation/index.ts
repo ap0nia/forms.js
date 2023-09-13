@@ -46,16 +46,6 @@ export async function nativeValidateManyFields(
 
     options.afterValidation?.(_f.name, fieldError, isFieldArrayRoot)
 
-    // if (!options.exitEarly && safeGet(fieldError, _f.name)) {
-    //   if (isFieldArrayRoot) {
-    //     updateFieldArrayRootError(_formState.errors, fieldError, _f.name)
-    //   } else {
-    //     set(_formState.errors, _f.name, fieldError[_f.name])
-    //   }
-    // } else {
-    //   unset(_formState.errors, _f.name)
-    // }
-
     if (fieldValue) {
       isValid &&= await nativeValidateManyFields(fieldValue, values, options)
     }
@@ -105,8 +95,6 @@ const nativeValidators = [
   nativeValidateValidate,
 ]
 
-const sequencedNativeValidators = nativeValidators.map((nativeValidator, index) => {
-  return async (context: NativeValidationContext) => {
-    return nativeValidator(context, nativeValidators[index + 1])
-  }
+const sequencedNativeValidators = nativeValidators.map((nativeValidator, i) => {
+  return (context: NativeValidationContext) => nativeValidator(context, nativeValidators[i + 1])
 })
