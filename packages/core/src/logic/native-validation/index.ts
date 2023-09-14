@@ -30,7 +30,7 @@ const defaultNativeValidators = [
 /**
  */
 function sequenceNativeValidators(
-  nativeValidators = defaultNativeValidators,
+  nativeValidators: NativeValidationFunction[],
 ): NativeValidationFunction {
   const nativeValidator: NativeValidationFunction = (context, next) => {
     const handle = (i: number): ReturnType<NativeValidationFunction> => {
@@ -117,7 +117,7 @@ export async function nativeValidateSingleField(
     errors,
   }
 
-  await sequenceNativeValidators()(context)
+  await sequenceNativeValidators(defaultNativeValidators)(context)
 
   if (shouldSetCustomValidity) {
     setCustomValidity(inputRef, true)
