@@ -42,7 +42,9 @@ export const nativeValidateMinMaxLength: NativeValidationFunction = (context, ne
 
   const message = exceedMax ? maxLengthOutput.message : minLengthOutput.message
 
-  const validationType = exceedMax ? INPUT_VALIDATION_RULES.max : INPUT_VALIDATION_RULES.min
+  const validationType = exceedMax
+    ? INPUT_VALIDATION_RULES.maxLength
+    : INPUT_VALIDATION_RULES.minLength
 
   errors[name] = {
     type: validationType,

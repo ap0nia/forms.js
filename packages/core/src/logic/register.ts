@@ -54,7 +54,7 @@ export type RegisterOptions<
   /**
    * Not sure what this is.
    */
-  setValueAs: (value: any) => any
+  setValueAs?: (value: any) => any
 
   /**
    * Not sure when this is checked or what it's used for.

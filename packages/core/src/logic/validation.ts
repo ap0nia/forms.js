@@ -71,15 +71,9 @@ export type ValidationOptions = {
  * Helper function to get the value and message from a validation rule.
  */
 export function getValueAndMessage(validationRule?: ValidationRule): ValidationValueMessage {
-  if (typeof validationRule === 'string') {
-    return { value: Boolean(validationRule), message: validationRule }
-  }
-
-  if (isObject(validationRule) && !(validationRule instanceof RegExp)) {
-    return validationRule
-  }
-
-  return { value: validationRule, message: '' }
+  return isObject(validationRule) && !(validationRule instanceof RegExp)
+    ? validationRule
+    : { value: validationRule, message: '' }
 }
 
 /**

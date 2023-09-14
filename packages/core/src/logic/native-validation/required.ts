@@ -19,15 +19,18 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
     shouldSetCustomValidity,
   } = context
 
-  const { name } = field._f
+  const { name, required } = field._f
 
   if (!requiredButMissing(field, inputValue, isFieldArray)) {
     return next?.(context)
   }
 
-  const { value, message } = getValueAndMessage(field._f.required)
+  const { value, message } =
+    typeof required === 'string'
+      ? { value: !!required, message: required }
+      : getValueAndMessage(required)
 
-  if (value == null) {
+  if (!value) {
     return next?.(context)
   }
 

@@ -1,5 +1,6 @@
 import { notNullish } from '../../utils/null'
 import { safeGet } from '../../utils/safe-get'
+import { setCustomValidity } from '../../utils/set-custom-validity'
 import type { InternalFieldErrors } from '../errors'
 import type { Field, FieldRecord } from '../fields'
 import type { ValidationOptions } from '../validation'
@@ -8,7 +9,7 @@ import { nativeValidateMinMax } from './min-max'
 import { nativeValidateMinMaxLength } from './min-max-length'
 import { nativeValidatePattern } from './pattern'
 import { nativeValidateRequired } from './required'
-import type { NativeValidationContext } from './types'
+import type { NativeValidationContext, NativeValidationFunction } from './types'
 import { nativeValidateValidate } from './validate'
 
 /**
@@ -18,7 +19,7 @@ import { nativeValidateValidate } from './validate'
  *
  * Native-validators __can__ mutate the context object, notably the errors, similar to Express.js middleware.
  */
-const nativeValidators = [
+const defaultNativeValidators = [
   nativeValidateRequired,
   nativeValidateMinMax,
   nativeValidateMinMaxLength,
@@ -27,11 +28,21 @@ const nativeValidators = [
 ]
 
 /**
- * Validators receive a "next" function, which should be the next validator in the sequence.
  */
-const sequencedNativeValidators = nativeValidators.map((nativeValidator, i) => {
-  return (context: NativeValidationContext) => nativeValidator(context, nativeValidators[i + 1])
-})
+function sequenceNativeValidators(
+  nativeValidators = defaultNativeValidators,
+): NativeValidationFunction {
+  const nativeValidator: NativeValidationFunction = (context, next) => {
+    const handle = (i: number): ReturnType<NativeValidationFunction> => {
+      return i < nativeValidators.length
+        ? nativeValidators[i]?.(context, () => handle(i + 1))
+        : next?.(context)
+    }
+    return handle(0)
+  }
+
+  return nativeValidator
+}
 
 /**
  * Validates all the fields provided.
@@ -83,6 +94,10 @@ export async function nativeValidateSingleField(
   shouldUseNativeValidation?: boolean,
   isFieldArray?: boolean,
 ): Promise<InternalFieldErrors> {
+  if (!field._f.mount || field._f.disabled) {
+    return {}
+  }
+
   const errors: InternalFieldErrors = {}
 
   const inputRef = (field._f.refs ? field._f.refs[0] : field._f.ref) as HTMLInputElement
@@ -102,8 +117,10 @@ export async function nativeValidateSingleField(
     errors,
   }
 
-  for (const nativeValidator of sequencedNativeValidators) {
-    await nativeValidator(context)
+  await sequenceNativeValidators()(context)
+
+  if (shouldSetCustomValidity) {
+    setCustomValidity(inputRef, true)
   }
 
   return errors
