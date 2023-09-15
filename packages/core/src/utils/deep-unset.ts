@@ -40,7 +40,7 @@ export function deepUnset(object: any, path: string | (string | number)[]) {
     delete childObject[key as keyof typeof childObject]
   }
 
-  if (index === 0 && (isEmptyObject(childObject) || isEmptyArray(childObject))) {
+  if (index !== 0 && (isEmptyObject(childObject) || isEmptyArray(childObject))) {
     deepUnset(object, paths.slice(0, -1))
   }
 
