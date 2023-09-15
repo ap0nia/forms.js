@@ -2,10 +2,6 @@ import { isObject } from './is-object'
 import { isPrimitive } from './is-primitive'
 
 export function deepEqual(left: unknown, right: unknown): boolean {
-  if (left == null || right == null) {
-    return left === right
-  }
-
   if (isPrimitive(left) || isPrimitive(right)) {
     return left === right
   }
@@ -14,11 +10,12 @@ export function deepEqual(left: unknown, right: unknown): boolean {
     return left.getTime() === right.getTime()
   }
 
-  if (!isObject(left) || !isObject(right)) {
-    return false
+  if (left == null || right == null) {
+    return left === right
   }
 
   const leftKeys = Object.keys(left ?? {})
+
   const rightKeys = Object.keys(right ?? {})
 
   if (leftKeys.length !== rightKeys.length) {
@@ -32,16 +29,15 @@ export function deepEqual(left: unknown, right: unknown): boolean {
       return false
     }
 
-    // if (key !== 'ref') {
-    // }
-
     const val2: any = right[key as keyof typeof right]
 
-    if ((val1 instanceof Date && val2 instanceof Date) || (isObject(val1) && isObject(val2))) {
-      return false
-    }
+    const bothDates = val1 instanceof Date && val2 instanceof Date
 
-    if (Array.isArray(val1) && (Array.isArray(val2) ? !deepEqual(val1, val2) : val1 !== val2)) {
+    const bothObjects = isObject(val1) && isObject(val2)
+
+    const bothArrays = Array.isArray(val1) && Array.isArray(val2)
+
+    if ((bothDates || bothObjects || bothArrays) && !deepEqual(val1, val2)) {
       return false
     }
   }
