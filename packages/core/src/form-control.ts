@@ -96,6 +96,22 @@ const defaultOptions: FormControlOptions<any> = {
   shouldFocusError: true,
 }
 
+export interface RegisterOptions<TValues, TContext> {
+  mode: keyof ValidationMode
+  reValidateMode: keyof RevalidationMode
+  defaultValues: DefaultValues<TValues> | AsyncDefaultValues<TValues>
+  values: TValues
+  resetOptions: KeepStateOptions
+  resolver: Resolver<TValues, TContext>
+  context: TContext
+  shouldFocusError: boolean
+  shouldUnregister: boolean
+  shouldUseNativeValidation: boolean
+  progressive: boolean
+  criteriaMode: CriteriaMode
+  delayError: number
+}
+
 export class FormControl<
   TValues extends Record<string, any>,
   TContext = any,
@@ -142,4 +158,6 @@ export class FormControl<
     const names = fieldNames.length > 1 ? fieldNames : fieldNames[0]
     return safeGetMultiple(this.values, names)
   }
+
+  register() {}
 }
