@@ -2,6 +2,10 @@ import { isObject } from './is-object'
 import { isPrimitive } from './is-primitive'
 
 export function deepEqual(left: unknown, right: unknown): boolean {
+  if (left == null || right == null) {
+    return left === right
+  }
+
   if (isPrimitive(left) || isPrimitive(right)) {
     return left === right
   }
@@ -10,13 +14,9 @@ export function deepEqual(left: unknown, right: unknown): boolean {
     return left.getTime() === right.getTime()
   }
 
-  if (left == null || right == null) {
-    return left === right
-  }
+  const leftKeys = Object.keys(left)
 
-  const leftKeys = Object.keys(left ?? {})
-
-  const rightKeys = Object.keys(right ?? {})
+  const rightKeys = Object.keys(right)
 
   if (leftKeys.length !== rightKeys.length) {
     return false

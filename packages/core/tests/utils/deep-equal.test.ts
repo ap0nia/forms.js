@@ -3,6 +3,18 @@ import { describe, it, expect } from 'vitest'
 import { deepEqual } from '../../src/utils/deep-equal'
 
 describe('deepEqual', () => {
+  it('returns whether left and right are identical for primitive values', () => {
+    expect(deepEqual(1, 1)).toBeTruthy()
+    expect(deepEqual(1, 2)).toBeFalsy()
+    expect(deepEqual('1', '1')).toBeTruthy()
+    expect(deepEqual('1', '2')).toBeFalsy()
+    expect(deepEqual(true, true)).toBeTruthy()
+    expect(deepEqual(true, false)).toBeFalsy()
+    expect(deepEqual(null, null)).toBeTruthy()
+    expect(deepEqual(null, undefined)).toBeFalsy()
+    expect(deepEqual(undefined, undefined)).toBeTruthy()
+  })
+
   it('should return false when two sets not match', () => {
     expect(deepEqual([{ test: '123' }, { test: '455' }, { test: '455' }], [])).toBeFalsy()
 
