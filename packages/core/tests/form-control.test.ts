@@ -52,4 +52,13 @@ describe('create-form-control', () => {
       })
     })
   })
+
+  describe('register', () => {
+    const formControl = new FormControl()
+
+    test('returns correct props', () => {
+      const props = undefined
+      expect(formControl.register()).toEqual(props)
+    })
+  })
 })
