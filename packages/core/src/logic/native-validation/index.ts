@@ -1,3 +1,4 @@
+import { noop } from '../../utils/noop'
 import { notNullish } from '../../utils/null'
 import { safeGet } from '../../utils/safe-get'
 import { setCustomValidity } from '../../utils/set-custom-validity'
@@ -48,10 +49,10 @@ function createNativeValidatorSequencer(
 /**
  * Natively validates all the provided fields.
  */
-export async function nativeValidateManyFields(
+export async function fieldsAreNativelyValid(
   fields: FieldRecord,
   values: any,
-  options: ValidationOptions,
+  options?: ValidationOptions,
 ): Promise<boolean> {
   let isValid = true
 
@@ -60,28 +61,28 @@ export async function nativeValidateManyFields(
   for (const field of definedFields) {
     const { _f, ...fieldValue } = field
 
-    const isFieldArrayRoot = options.isFieldArrayRoot?.(_f.name)
+    const isFieldArrayRoot = options?.isFieldArrayRoot?.(_f.name)
 
     const fieldError = await nativeValidateSingleField(
       field,
       values,
-      options.shouldDisplayAllAssociatedErrors,
-      options.shouldUseNativeValidation && !options.validateAllFieldCriteria,
+      options?.shouldDisplayAllAssociatedErrors,
+      options?.shouldUseNativeValidation && !options?.validateAllFieldCriteria,
       isFieldArrayRoot,
     )
 
     if (fieldError[_f.name]) {
-      if (options.validateAllFieldCriteria) {
+      if (options?.validateAllFieldCriteria) {
         return false
       } else {
         isValid = false
       }
     }
 
-    options.afterValidation?.(_f.name, fieldError, isFieldArrayRoot)
+    options?.afterValidation?.(_f.name, fieldError, isFieldArrayRoot)
 
     if (fieldValue) {
-      isValid &&= await nativeValidateManyFields(fieldValue, values, options)
+      isValid &&= await fieldsAreNativelyValid(fieldValue, values, options)
     }
   }
 
@@ -123,7 +124,12 @@ export async function nativeValidateSingleField(
    */
   const nativeValidatorSequencer = createNativeValidatorSequencer(defaultNativeValidators)
 
-  await nativeValidatorSequencer(context)
+  /**
+   * TODO: maybe allow customizing the next function.
+   */
+  const next = noop
+
+  await nativeValidatorSequencer(context, next)
 
   if (shouldSetCustomValidity) {
     setCustomValidity(inputRef, true)

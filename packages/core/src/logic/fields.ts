@@ -9,19 +9,64 @@ import type { FlattenObject } from '../utils/types/flatten-object'
 import type { RegisterOptions } from './register'
 
 /**
- * A record of fields.
+ * A record of fields maps the structure of the form values to form fields.
+ *
+ * @example
+ * ```ts
+ * const myForm = {
+ *   name: {
+ *     first: 'John',
+ *     last: 'Doe'
+ *   }
+ * }
+ *
+ * const myFormFields = {
+ *   name: {
+ *     first: {
+ *       _f: {
+ *         // Field details for 'name.first'.
+ *       }
+ *     },
+ *     last: {
+ *       _f: {
+ *         // Field details for 'name.last'.
+ *       }
+ *     }
+ *   }
+ * }
+ *
  */
-export type FieldRecord = Partial<Record<string, Field>>
+export type FieldRecord = Partial<{ [K: string]: (Field | FieldRecord) & Field }>
 
 /**
- * I'm not sure what data is stored outside of _f
+ * A regular field will only have a `_f` property.
+ *
+ * Inside a {@link FieldRecord}, fields can also contain nested field records.
+ * This might not be achievable normally, but is handled in the code.
+ *
+ * @example
+ *
+ * ```ts
+ * type TheoreticalFormFields = 'name' | 'name.initials'
+ *
+ * const theoreticalFormFields = {
+ *  name: {
+ *    _f: {
+ *      // Field details for 'name'.
+ *    },
+ *    initials: {
+ *      _f: {
+ *        // Field details for 'name.initials'.
+ *      }
+ *    }
+ *  }
+ * }
+ * ```
  */
-export type Field = {
-  _f: FieldReference
-}
+export type Field = { _f: FieldReference }
 
 /**
- * A field reference contains information about the element.
+ * A field reference contains concrete information about the field.
  */
 export type FieldReference = {
   /**
