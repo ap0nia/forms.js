@@ -5,6 +5,7 @@ import {
   type RevalidationMode,
   type State,
 } from './constants'
+import type { FieldErrors } from './logic/errors'
 import {
   getFieldValue,
   type Field,
@@ -17,10 +18,13 @@ import { updateFieldReference } from './logic/update-field-reference'
 import type { Validate, ValidationRule } from './logic/validation'
 import { Writable } from './state/store'
 import { cloneObject } from './utils/clone-object'
+import { deepEqual } from './utils/deep-equal'
 import { deepSet } from './utils/deep-set'
+import { deepUnset } from './utils/deep-unset'
 import { isHTMLElement } from './utils/html/is-html-element'
 import { isObject } from './utils/is-object'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
+import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
 import type { FlattenObject } from './utils/types/flatten-object'
 import type { MapObjectKeys } from './utils/types/map-object-keys'
@@ -219,6 +223,21 @@ export type SetValueOptions = {
   shouldTouch?: boolean
 }
 
+export type FormState<T> = {
+  isDirty: boolean
+  isLoading: boolean
+  isSubmitted: boolean
+  isSubmitSuccessful: boolean
+  isSubmitting: boolean
+  isValidating: boolean
+  isValid: boolean
+  submitCount: number
+  defaultValues?: undefined | Readonly<DeepPartial<T>>
+  dirtyFields: Partial<Readonly<DeepMap<T, boolean>>>
+  touchedFields: Partial<Readonly<DeepMap<T, boolean>>>
+  errors: FieldErrors<T>
+}
+
 const defaultOptions: FormControlOptions<any> = {
   mode: VALIDATION_MODE.onSubmit,
   revalidateMode: VALIDATION_MODE.onChange,
@@ -250,8 +269,29 @@ export class FormControl<
     watch: new Set(),
   }
 
+  /**
+   * Current state of the form?
+   */
+  formState: FormState<TValues>
+
+  /**
+   * Idk.
+   */
+  proxyFormState = {
+    /**
+     * Whether to update the form's dirty state?
+     */
+    isDirty: false,
+    dirtyFields: false,
+    touchedFields: false,
+    isValidating: false,
+    isValid: false,
+    errors: false,
+  }
+
   stores = {
     values: new Writable<{ name: string; values: TValues }>(),
+    state: new Writable<Partial<FormState<TValues>> & { name?: string }>(),
   }
 
   state: State
@@ -273,6 +313,20 @@ export class FormControl<
     this.context = {} as TContext
 
     this.state = 'idle'
+
+    this.formState = {
+      submitCount: 0,
+      isDirty: false,
+      isLoading: typeof resolvedOptions.defaultValues === 'function',
+      isValidating: false,
+      isSubmitted: false,
+      isSubmitting: false,
+      isSubmitSuccessful: false,
+      isValid: false,
+      touchedFields: {},
+      dirtyFields: {},
+      errors: {},
+    }
   }
 
   getValues(): TValues
@@ -369,17 +423,93 @@ export class FormControl<
   }
 
   touch(name: string, value: unknown, options: SetValueOptions) {
-    console.log('touch', name, value, options)
-    // if (options.shouldTouch) {
-    //   const result = this.updateTouchedAndDirty(name, value, options.shouldDirty)
+    if (options.shouldTouch) {
+      const result = this.updateTouchedAndDirty(name, value, options.shouldDirty)
 
-    //   if (result) {
-    //     this.subjects.state.set(result)
-    //   }
-    // }
+      if (result) {
+        this.stores.state.set(result)
+      }
+    }
 
-    // if (options.shouldValidate) {
-    //   this.trigger(name as any)
-    // }
+    if (options.shouldValidate) {
+      this.trigger(name)
+    }
+  }
+
+  updateTouchedAndDirty(name: string, fieldValue: unknown, shouldDirty?: boolean) {
+    const updateDirtyFieldsResult = shouldDirty
+      ? this.updateDirtyFields(name, fieldValue)
+      : undefined
+
+    const updateTouchedFieldsResult = this.updateTouchedFields(name)
+
+    const shouldUpdateField =
+      updateDirtyFieldsResult?.shouldUpdate || updateTouchedFieldsResult?.shouldUpdate
+
+    return shouldUpdateField
+      ? {
+          isDirty: updateDirtyFieldsResult?.isDirty,
+          dirtyFields: updateDirtyFieldsResult?.dirtyFields,
+          touchedFields: updateTouchedFieldsResult.touchedFields,
+        }
+      : undefined
+  }
+
+  updateDirtyFields(name: string, fieldValue: unknown) {
+    const updateIsDirtyResult = this.proxyFormState.isDirty ? this.updateIsDirty() : undefined
+
+    const currentFieldIsClean = deepEqual(safeGet(this.defaultValues, name), fieldValue)
+
+    const previousIsDirty = safeGet(this.formState.dirtyFields, name)
+
+    if (currentFieldIsClean) {
+      deepUnset(this.formState.dirtyFields, name)
+    } else {
+      deepSet(this.formState.dirtyFields, name, true)
+    }
+
+    const shouldUpdate =
+      updateIsDirtyResult?.shouldUpdate ||
+      (this.proxyFormState.dirtyFields && previousIsDirty !== !currentFieldIsClean)
+
+    return {
+      isDirty: updateIsDirtyResult?.isDirty,
+      dirtyFields: this.formState.dirtyFields,
+      shouldUpdate,
+    }
+  }
+
+  updateTouchedFields(name: string) {
+    const previousIsTouched = safeGet(this.formState.touchedFields, name)
+
+    if (!previousIsTouched) {
+      deepSet(this.formState.touchedFields, name, true)
+    }
+
+    const touchedFields = !previousIsTouched ? this.formState.touchedFields : undefined
+
+    const shouldUpdate = !previousIsTouched && this.proxyFormState.touchedFields
+
+    return { touchedFields, shouldUpdate }
+  }
+
+  updateIsDirty() {
+    const previousIsDirty = this.formState.isDirty
+
+    const isDirty = this.getDirty()
+
+    this.formState.isDirty = isDirty
+
+    const shouldUpdate = previousIsDirty !== isDirty
+
+    return { isDirty, shouldUpdate }
+  }
+
+  getDirty(): boolean {
+    return !deepEqual(this.getValues(), this.defaultValues)
+  }
+
+  trigger(name: string) {
+    console.log(name)
   }
 }

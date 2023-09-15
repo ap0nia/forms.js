@@ -8,8 +8,6 @@ describe('create-form-control', () => {
     test('setting a value for un-registered field touches it', () => {
       const formControl = new FormControl()
 
-      formControl.touch = vi.fn()
-
       formControl.setFieldValue('name', 'Elysia')
 
       expect(formControl.touch).toHaveBeenCalledWith('name', 'Elysia', {})
