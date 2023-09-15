@@ -4,7 +4,7 @@
 
 import { describe, test, expect } from 'vitest'
 
-import { getCheckboxValue } from '../../../src/utils/html/checkbox'
+import { getCheckboxValue, isCheckboxInput } from '../../../src/utils/html/checkbox'
 
 describe('getCheckboxValue', () => {
   test('should return default value if not valid or empty options', () => {
@@ -221,5 +221,11 @@ describe('getCheckboxValue', () => {
       value: false,
       isValid: false,
     })
+  })
+})
+
+describe('isCheckBoxInput', () => {
+  test('should return true when type is checkbox', () => {
+    expect(isCheckboxInput({ name: 'test', type: 'checkbox' })).toBeTruthy()
   })
 })
