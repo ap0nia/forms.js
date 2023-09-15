@@ -1,7 +1,7 @@
 import { isBrowser } from '../is-browser'
 
 export function isHTMLElement(value: unknown): value is HTMLElement {
-  if (isBrowser()) {
+  if (!isBrowser()) {
     return false
   }
 
