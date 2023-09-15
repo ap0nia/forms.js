@@ -1,6 +1,6 @@
 import { INPUT_VALIDATION_RULES } from '../../constants'
-import { fieldRefIsEmpty } from '../../utils/field-ref-is-empty'
-import { setCustomValidity } from '../../utils/set-custom-validity'
+import { fieldRefIsEmpty } from '../field-ref-is-empty'
+import { setCustomValidity } from '../set-custom-validity'
 import { getValueAndMessage } from '../validation'
 
 import type { NativeValidationFunction } from './types'

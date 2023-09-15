@@ -1,9 +1,9 @@
 import { noop } from '../../utils/noop'
 import { notNullish } from '../../utils/null'
 import { safeGet } from '../../utils/safe-get'
-import { setCustomValidity } from '../../utils/set-custom-validity'
 import type { InternalFieldErrors } from '../errors'
 import type { Field, FieldRecord } from '../fields'
+import { setCustomValidity } from '../set-custom-validity'
 import type { ValidationOptions } from '../validation'
 
 import { nativeValidateMinMax } from './min-max'

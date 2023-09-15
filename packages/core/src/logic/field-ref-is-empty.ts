@@ -1,7 +1,6 @@
 import type { Field } from '../logic/fields'
-
-import { isFileInput } from './html/file'
-import { isHTMLElement } from './html/is-html-element'
+import { isFileInput } from '../utils/html/file'
+import { isHTMLElement } from '../utils/html/is-html-element'
 
 /**
  * Helper function describing whether a field's ref is empty.

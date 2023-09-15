@@ -1,8 +1,8 @@
 import { INPUT_VALIDATION_RULES } from '../../constants'
 import { isEmptyObject } from '../../utils/is-empty-object'
 import { isObject } from '../../utils/is-object'
-import { setCustomValidity } from '../../utils/set-custom-validity'
 import type { FieldError } from '../errors'
+import { setCustomValidity } from '../set-custom-validity'
 import { getValidateError } from '../validation'
 
 import type { NativeValidationFunction } from './types'

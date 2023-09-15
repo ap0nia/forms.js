@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 
+import { fieldRefIsEmpty } from '../../src/logic/field-ref-is-empty'
 import type { Field } from '../../src/logic/fields'
-import { fieldRefIsEmpty } from '../../src/utils/field-ref-is-empty'
 
 describe('fieldRefIsEmpty', () => {
   test('empty file input', () => {
