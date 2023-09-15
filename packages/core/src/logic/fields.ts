@@ -126,5 +126,23 @@ export function getFieldValue(_f: Field['_f']) {
     return getCheckboxValue(_f.refs).value
   }
 
-  // return getFieldValueAs(ref.value == null ? _f.ref.value : ref.value, _f);
+  return getFieldValueAs(ref.value == null ? _f.ref.value : ref.value, _f)
+}
+
+export function getFieldValueAs(value: unknown, _f: Field['_f']) {
+  const { valueAsNumber, valueAsDate, setValueAs } = _f
+
+  return value == null
+    ? value
+    : valueAsNumber
+    ? value === ''
+      ? NaN
+      : value
+      ? +value
+      : value
+    : valueAsDate && typeof value === 'string'
+    ? new Date(value)
+    : setValueAs
+    ? setValueAs(value)
+    : value
 }
