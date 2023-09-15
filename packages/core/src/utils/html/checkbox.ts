@@ -16,6 +16,10 @@ const defaultResult: CheckboxFieldResult = {
 
 const validResult = { value: true, isValid: true }
 
+export function isCheckboxInput(element: FieldElement): element is HTMLInputElement {
+  return element.type === 'checkbox'
+}
+
 export function getCheckboxValue(options?: HTMLInputElement[]): CheckboxFieldResult {
   if (!Array.isArray(options)) {
     return defaultResult

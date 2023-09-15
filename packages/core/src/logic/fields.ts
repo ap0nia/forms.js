@@ -1,7 +1,11 @@
-import type { RegisterOptions } from './register'
+import { getCheckboxValue, isCheckBoxInput } from '../utils/html/checkbox'
+import { isFileInput } from '../utils/html/file'
+import { getRadioValue, isRadioInput } from '../utils/html/radio'
 import type { Noop } from '../utils/noop'
 import type { Nullish } from '../utils/null'
 import type { FlattenObject } from '../utils/types/flatten-object'
+
+import type { RegisterOptions } from './register'
 
 /**
  * A record of fields.
@@ -96,4 +100,30 @@ export type CustomElement<T = Record<string, any>> = {
    * Callback function to focus on the field.
    */
   focus?: Noop
+}
+
+export function getFieldValue(_f: Field['_f']) {
+  const ref = _f.ref
+
+  if (_f.refs ? _f.refs.every((ref) => ref.disabled) : ref.disabled) {
+    return
+  }
+
+  if (isFileInput(ref)) {
+    return ref.files
+  }
+
+  if (isRadioInput(ref)) {
+    return getRadioValue(_f.refs).value
+  }
+
+  // if (isMultipleSelect(ref)) {
+  //   return [...ref.selectedOptions].map(({ value }) => value);
+  // }
+
+  if (isCheckBoxInput(ref)) {
+    return getCheckboxValue(_f.refs).value
+  }
+
+  // return getFieldValueAs(ref.value == null ? _f.ref.value : ref.value, _f);
 }
