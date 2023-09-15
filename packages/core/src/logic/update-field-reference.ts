@@ -24,13 +24,6 @@ export function updateFieldReference(reference: FieldReference, value: any) {
     return 'radio'
   }
 
-  if (isMultipleSelectInput(reference.ref)) {
-    Array.from(reference.ref.options).forEach((option) => {
-      option.selected = value.includes(option.value)
-    })
-    return 'select'
-  }
-
   if (isFileInput(reference.ref)) {
     reference.ref.value = ''
     return 'file'
