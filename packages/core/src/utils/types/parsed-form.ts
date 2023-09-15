@@ -15,5 +15,5 @@ export type ParsedForm<T extends Record<string, any> = Record<string, any>> = {
   /**
    * Keys to access the flattened form values.
    */
-  keys: keyof FlattenObject<T>
+  keys: Extract<keyof FlattenObject<T>, string>
 }
