@@ -1,6 +1,7 @@
 import { getCheckboxValue, isCheckBoxInput } from '../utils/html/checkbox'
 import { isFileInput } from '../utils/html/file'
 import { getRadioValue, isRadioInput } from '../utils/html/radio'
+import { isMultipleSelectInput } from '../utils/html/select'
 import type { Noop } from '../utils/noop'
 import type { Nullish } from '../utils/null'
 import type { FlattenObject } from '../utils/types/flatten-object'
@@ -117,9 +118,9 @@ export function getFieldValue(_f: Field['_f']) {
     return getRadioValue(_f.refs).value
   }
 
-  // if (isMultipleSelect(ref)) {
-  //   return [...ref.selectedOptions].map(({ value }) => value);
-  // }
+  if (isMultipleSelectInput(ref)) {
+    return [...ref.selectedOptions].map(({ value }) => value)
+  }
 
   if (isCheckBoxInput(ref)) {
     return getCheckboxValue(_f.refs).value
