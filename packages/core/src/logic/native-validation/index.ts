@@ -28,24 +28,25 @@ const defaultNativeValidators = [
 ]
 
 /**
+ * Given an array of native validation functions,
+ * returns a single native validation function that runs them in sequence.
  */
-function sequenceNativeValidators(
+function createNativeValidatorSequencer(
   nativeValidators: NativeValidationFunction[],
 ): NativeValidationFunction {
-  const nativeValidator: NativeValidationFunction = (context, next) => {
-    const handle = (i: number): ReturnType<NativeValidationFunction> => {
-      return i < nativeValidators.length
-        ? nativeValidators[i]?.(context, () => handle(i + 1))
+  const nativeValidatorSequencer: NativeValidationFunction = (context, next) => {
+    const runValidatorIndex = (index: number): ReturnType<NativeValidationFunction> => {
+      return index < nativeValidators.length
+        ? nativeValidators[index]?.(context, () => runValidatorIndex(index + 1))
         : next?.(context)
     }
-    return handle(0)
+    return runValidatorIndex(0)
   }
-
-  return nativeValidator
+  return nativeValidatorSequencer
 }
 
 /**
- * Validates all the fields provided.
+ * Natively validates all the provided fields.
  */
 export async function nativeValidateManyFields(
   fields: FieldRecord,
@@ -117,7 +118,12 @@ export async function nativeValidateSingleField(
     errors,
   }
 
-  await sequenceNativeValidators(defaultNativeValidators)(context)
+  /**
+   * TODO: allow customizing the native validators used for a specific field.
+   */
+  const nativeValidatorSequencer = createNativeValidatorSequencer(defaultNativeValidators)
+
+  await nativeValidatorSequencer(context)
 
   if (shouldSetCustomValidity) {
     setCustomValidity(inputRef, true)
