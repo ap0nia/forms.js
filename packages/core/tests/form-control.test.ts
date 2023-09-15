@@ -1,6 +1,56 @@
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../src/form-control'
+import {} from '../src/utils/html/is-html-element'
+
+describe('create-form-control', () => {
+  describe('set field value', () => {
+    test('setting a value for un-registered field touches it', () => {
+      const formControl = new FormControl()
+
+      formControl.touch = vi.fn()
+
+      formControl.setFieldValue('name', 'Elysia')
+
+      expect(formControl.touch).toHaveBeenCalledWith('name', 'Elysia', {})
+    })
+
+    test('setting a value for registered field updates its value', () => {
+      const formControl = new FormControl()
+
+      formControl.register('name')
+
+      formControl.setFieldValue('name', 'Elysia')
+
+      expect(formControl.getValues('name')).toEqual('Elysia')
+    })
+  })
+
+  describe('update valid and value', () => {
+    test('if default value exists, set field value is called', () => {
+      const formControl = new FormControl({
+        defaultValues: {
+          name: 'Elysia',
+        },
+      })
+
+      formControl.register('name')
+
+      formControl.setFieldValue = vi.fn()
+
+      formControl.updateValidAndValue('name', false)
+
+      /**
+       * TODO: figure out why {@link FormControl.updateValidAndValue} prefers default value.
+       */
+      expect(formControl.setFieldValue).toHaveBeenCalledWith('name', formControl.defaultValues.name)
+    })
+  })
+
+  /**
+   * TODO: testing, register a real DOM element for the ref.
+   */
+})
 
 describe('create-form-control', () => {
   describe('get values', () => {

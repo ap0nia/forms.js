@@ -3,12 +3,22 @@ import {
   type CriteriaMode,
   type ValidationMode,
   type RevalidationMode,
+  type State,
 } from './constants'
-import { getFieldValue, type Field, type FieldElement, type FieldRecord } from './logic/fields'
+import {
+  getFieldValue,
+  type Field,
+  type FieldElement,
+  type FieldRecord,
+  getFieldValueAs,
+} from './logic/fields'
 import type { Resolver } from './logic/resolver'
+import { updateFieldReference } from './logic/update-field-reference'
 import type { Validate, ValidationRule } from './logic/validation'
+import { Writable } from './state/store'
 import { cloneObject } from './utils/clone-object'
 import { deepSet } from './utils/deep-set'
+import { isHTMLElement } from './utils/html/is-html-element'
 import { isObject } from './utils/is-object'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepPartial } from './utils/types/deep-partial'
@@ -203,6 +213,12 @@ export type AdditionalValidationOptions<TPattern, TValueAsNumber, TValueAsDate> 
   valueAsDate?: TValueAsDate
 }
 
+export type SetValueOptions = {
+  shouldValidate?: boolean
+  shouldDirty?: boolean
+  shouldTouch?: boolean
+}
+
 const defaultOptions: FormControlOptions<any> = {
   mode: VALIDATION_MODE.onSubmit,
   revalidateMode: VALIDATION_MODE.onChange,
@@ -234,6 +250,12 @@ export class FormControl<
     watch: new Set(),
   }
 
+  stores = {
+    values: new Writable<{ name: string; values: TValues }>(),
+  }
+
+  state: State
+
   constructor(options?: FormControlOptions<TValues, TContext>) {
     const resolvedOptions = { ...defaultOptions, ...options }
 
@@ -249,6 +271,8 @@ export class FormControl<
     this.values = resolvedOptions.shouldUnregister ? {} : cloneObject(defaultValues)
 
     this.context = {} as TContext
+
+    this.state = 'idle'
   }
 
   getValues(): TValues
@@ -299,19 +323,63 @@ export class FormControl<
       return
     }
 
+    /**
+     * TODO: figure out why it prioritizes current value over the provided value.
+     */
     const defaultValue =
       safeGet(this.values, name) ?? value == null ? safeGet(this.defaultValues, name) : value
 
     if (defaultValue == null || (ref as HTMLInputElement)?.defaultChecked || skipSetValueAs) {
       deepSet(this.values, name, skipSetValueAs ? defaultValue : getFieldValue(field._f))
+    } else {
+      this.setFieldValue(name, defaultValue)
     }
-
-    // else {
-    //   setFieldValue(name, defaultValue)
-    // }
 
     // if (this.state.mount) {
     //   this.updateValid()
+    // }
+  }
+
+  setFieldValue(name: string, value: any, options: SetValueOptions = {}) {
+    const field = safeGet<Field | undefined>(this.fields, name)
+
+    const fieldReference = field?._f
+
+    if (fieldReference == null) {
+      this.touch(name, value, options)
+      return
+    }
+
+    if (!fieldReference.disabled) {
+      deepSet(this.values, name, getFieldValueAs(value, fieldReference))
+    }
+
+    /**
+     * TODO: testing, register a real DOM element for the ref.
+     */
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    const updateResult = updateFieldReference(fieldReference, fieldValue)
+
+    if (updateResult === 'custom') {
+      this.stores.values.set({ name, values: { ...this.values } })
+    }
+
+    this.touch(name, fieldValue, options)
+  }
+
+  touch(name: string, value: unknown, options: SetValueOptions) {
+    console.log('touch', name, value, options)
+    // if (options.shouldTouch) {
+    //   const result = this.updateTouchedAndDirty(name, value, options.shouldDirty)
+
+    //   if (result) {
+    //     this.subjects.state.set(result)
+    //   }
+    // }
+
+    // if (options.shouldValidate) {
+    //   this.trigger(name as any)
     // }
   }
 }
