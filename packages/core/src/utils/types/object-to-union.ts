@@ -40,6 +40,8 @@ import type { JoinArray } from './join-array'
  * i.e. if either the provided T or a property value T[K] is explicitly `any`.
  * This is why it terminates early if `IsAny<T>` or `IsAny<T[K]>` is `true`.
  *
+ * Also,
+ *
  * @internal
  */
 export type ObjectToUnion<T, Keys extends unknown[] = []> = IsAny<T> extends true
@@ -47,9 +49,11 @@ export type ObjectToUnion<T, Keys extends unknown[] = []> = IsAny<T> extends tru
   :
       | {
           [K in keyof T]: IsAny<T[K]> extends true
-            ? { [SubKey in JoinArray<[...Keys, K]>]: T[K] }
+            ? { [SubKey in JoinArray<[...Keys, K]>]: T[K] } // Shallow
+            : T[K] extends any[]
+            ? { [SubKey in JoinArray<[...Keys, K]>]: T[K] } // Shallow.
             : T[K] extends Record<string, any>
-            ? ObjectToUnion<T[K], [...Keys, K]>
-            : { [key in JoinArray<[...Keys, K]>]: T[K] }
+            ? ObjectToUnion<T[K], [...Keys, K]> // Recursive.
+            : { [SubKey in JoinArray<[...Keys, K]>]: T[K] } // Shallow.
         }[keyof T]
       | (Keys['length'] extends 0 ? never : { [SubKey in JoinArray<Keys>]: T })

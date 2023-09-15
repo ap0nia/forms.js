@@ -54,11 +54,17 @@ describe('create-form-control', () => {
   })
 
   describe('register', () => {
-    const formControl = new FormControl()
+    const formControl = new FormControl({
+      values: {
+        name: 'Elysia',
+        age: 18,
+        friends: ['Aponia', 'Eden'],
+      },
+    })
 
     test('returns correct props', () => {
       const props = undefined
-      expect(formControl.register()).toEqual(props)
+      expect(formControl.register('friends')).toEqual(props)
     })
   })
 })

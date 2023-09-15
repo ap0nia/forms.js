@@ -4,6 +4,7 @@ import {
   type ValidationMode,
   type RevalidationMode,
 } from './constants'
+import type { Resolver } from './logic/resolver'
 import { cloneObject } from './utils/clone-object'
 import { isObject } from './utils/is-object'
 import { safeGetMultiple } from './utils/safe-get'
@@ -99,7 +100,7 @@ const defaultOptions: FormControlOptions<any> = {
 export interface RegisterOptions<TValues, TContext> {
   mode: keyof ValidationMode
   reValidateMode: keyof RevalidationMode
-  defaultValues: DefaultValues<TValues> | AsyncDefaultValues<TValues>
+  defaultValues: TValues | ((payload?: unknown) => MaybePromise<TValues>)
   values: TValues
   resetOptions: KeepStateOptions
   resolver: Resolver<TValues, TContext>
@@ -154,10 +155,12 @@ export class FormControl<
     ...names: readonly [...T]
   ): MapObjectKeys<TParsedForm['flattened'], T>
 
-  getValues(...fieldNames: any): any {
+  getValues(...fieldNames: any[]): any {
     const names = fieldNames.length > 1 ? fieldNames : fieldNames[0]
     return safeGetMultiple(this.values, names)
   }
 
-  register() {}
+  register<T extends TParsedForm['keys']>(name: T, options?: RegisterOptions<TValues, TContext>) {
+    console.log(name, options)
+  }
 }
