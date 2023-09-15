@@ -57,7 +57,7 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
   return next?.(context)
 }
 
-function requiredButMissing(field: Field, inputValue: any, isFieldArray?: boolean) {
+export function requiredButMissing(field: Field, inputValue: any, isFieldArray?: boolean) {
   // Invalid field array.
   if (isFieldArray && (!Array.isArray(inputValue) || !inputValue.length)) {
     return true
