@@ -1,3 +1,7 @@
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/logic/getRadioValue.test.ts
+ */
+
 import { describe, it, expect } from 'vitest'
 
 import { getRadioValue } from '../../../src/utils/html/radio'

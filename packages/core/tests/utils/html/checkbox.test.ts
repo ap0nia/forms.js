@@ -1,3 +1,7 @@
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/logic/getCheckboxValue.test.ts
+ */
+
 import { describe, test, expect } from 'vitest'
 
 import { getCheckboxValue } from '../../../src/utils/html/checkbox'
