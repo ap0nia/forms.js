@@ -61,7 +61,7 @@ type ExceedBoundsResult = {
   minOutput: ValidationValueMessage
 }
 
-function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
+export function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
   const { min, max } = field._f
 
   const ref = field._f.ref as HTMLInputElement

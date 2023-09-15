@@ -1,8 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { nativeValidateMinMaxLength } from '../../../src/logic/native-validation/min-max-length'
-
-import type { NativeValidationContext } from 'packages/core/src/logic/native-validation/types'
+import type { NativeValidationContext } from '../../../src/logic/native-validation/types'
 
 describe('nativeValidateMinMaxLength', () => {
   const defaultContext: NativeValidationContext = {
