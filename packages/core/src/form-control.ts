@@ -13,8 +13,10 @@ import {
   type FieldRecord,
   getFieldValueAs,
 } from './logic/fields'
+import { focusFieldBy } from './logic/focus-field-by'
 import { fieldsAreNativelyValid } from './logic/native-validation'
 import { getResolverOptions, type Resolver } from './logic/resolver'
+import { updateFieldArrayRootError } from './logic/update-field-array-root-error'
 import { updateFieldReference } from './logic/update-field-reference'
 import type { Validate, ValidationRule } from './logic/validation'
 import { Writable } from './state/store'
@@ -240,6 +242,10 @@ export type FormState<T> = {
   errors: FieldErrors<T>
 }
 
+export type TriggerOptions = {
+  shouldFocus?: boolean
+}
+
 const defaultOptions: FormControlOptions<any> = {
   mode: VALIDATION_MODE.onSubmit,
   revalidateMode: VALIDATION_MODE.onChange,
@@ -298,6 +304,8 @@ export class FormControl<
 
   state: State
 
+  shouldDisplayAllAssociatedErrors: boolean
+
   constructor(options?: FormControlOptions<TValues, TContext>) {
     const resolvedOptions = { ...defaultOptions, ...options }
 
@@ -329,6 +337,8 @@ export class FormControl<
       dirtyFields: {},
       errors: {},
     }
+
+    this.shouldDisplayAllAssociatedErrors = resolvedOptions.criteriaMode === VALIDATION_MODE.all
   }
 
   getValues(): TValues
@@ -434,7 +444,7 @@ export class FormControl<
     }
 
     if (options.shouldValidate) {
-      this.trigger(name)
+      this.trigger(name as any)
     }
   }
 
@@ -511,8 +521,56 @@ export class FormControl<
     return !deepEqual(this.getValues(), this.defaultValues)
   }
 
-  trigger(name: string) {
-    console.log(name)
+  async trigger(
+    name: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
+    options?: TriggerOptions,
+  ) {
+    let isValid
+    let validationResult
+    const fieldNames = (Array.isArray(name) ? name : [name]) as string[]
+
+    this.updateIsValidating(true)
+
+    if (this.options.resolver) {
+      const errors = await this.executeSchemaAndUpdateState(name == null ? name : fieldNames)
+      isValid = isEmptyObject(errors)
+      validationResult = name ? !fieldNames.some((name) => safeGet(errors, name)) : isValid
+    } else if (name) {
+      validationResult = (
+        await Promise.all(
+          fieldNames.map(async (fieldName) => {
+            const field = safeGet<any>(this.fields, fieldName)
+            return await this.executeBuiltInValidation(
+              field?._f ? { [fieldName]: field } : field,
+              true,
+            )
+          }),
+        )
+      ).every(Boolean)
+      !(!validationResult && !this.formState.isValid) && this.updateValid()
+    } else {
+      validationResult = isValid = await this.executeBuiltInValidation(this.fields, true)
+    }
+
+    this.stores.state.set({
+      ...(typeof name !== 'string' ||
+      (this.proxyFormState.isValid && isValid !== this.formState.isValid)
+        ? {}
+        : { name }),
+      ...(this.options.resolver || !name ? { isValid } : {}),
+      errors: this.formState.errors,
+      isValidating: false,
+    })
+
+    if (options?.shouldFocus && !validationResult) {
+      focusFieldBy(
+        this.fields,
+        (key) => key && safeGet(this.formState.errors, key),
+        name ? fieldNames : this.names.mount,
+      )
+    }
+
+    return validationResult
   }
 
   async updateValid(shouldUpdateValid?: boolean) {
@@ -529,7 +587,7 @@ export class FormControl<
 
   async validate(name?: string[]): Promise<boolean> {
     if (this.options.resolver == null) {
-      return fieldsAreNativelyValid(this.fields, true)
+      return await this.executeBuiltInValidation(this.fields, true)
     }
 
     const resolverOptions = getResolverOptions(
@@ -546,5 +604,67 @@ export class FormControl<
     )
 
     return isEmptyObject(resolverResult.errors)
+  }
+
+  updateIsValidating(value: boolean) {
+    if (this.proxyFormState.isValidating) {
+      this.stores.state.set({ isValidating: value })
+    }
+  }
+
+  async executeSchemaAndUpdateState(names?: string[]) {
+    if (this.options.resolver == null) {
+      return
+    }
+
+    const resolverOptions = getResolverOptions(names || this.names.mount, this.fields)
+
+    const { errors } = await this.options.resolver(this.getValues(), this.context, resolverOptions)
+
+    if (names) {
+      for (const name of names) {
+        const error = safeGet(errors, name)
+
+        if (error) {
+          deepSet(this.formState.errors, name, error)
+        } else {
+          deepUnset(this.formState.errors, name)
+        }
+      }
+    } else {
+      this.formState.errors = errors ?? {}
+    }
+
+    return errors
+  }
+
+  async executeBuiltInValidation(fields: FieldRecord, shouldOnlyCheckValid?: boolean) {
+    const isValid = await fieldsAreNativelyValid(fields, this.getValues(), {
+      shouldDisplayAllAssociatedErrors: this.shouldDisplayAllAssociatedErrors,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation && !shouldOnlyCheckValid,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+      afterValidation: (field, error, isFieldArrayRoot) => {
+        if (shouldOnlyCheckValid) {
+          return
+        }
+
+        if (!safeGet(error, field._f.name)) {
+          deepUnset(this.formState.errors, field._f.name)
+          return
+        }
+
+        if (isFieldArrayRoot) {
+          updateFieldArrayRootError(this.formState.errors, error, field._f.name)
+        } else {
+          deepSet(this.formState.errors, field._f.name, error[field._f.name])
+        }
+      },
+    })
+
+    if (!shouldOnlyCheckValid) {
+      this.formState.errors = {}
+    }
+
+    return isValid
   }
 }

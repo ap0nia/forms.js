@@ -34,7 +34,7 @@ export interface ResolverOptions<T> {
   /**
    * Flatten the form values object.
    */
-  names?: keyof FlattenObject<T>[]
+  names?: Extract<keyof FlattenObject<T>, string>[]
 
   /**
    * Whether to use native validation by reading the field element.

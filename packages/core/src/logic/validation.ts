@@ -1,7 +1,7 @@
 import { isObject } from '../utils/is-object'
 
 import type { FieldError, InternalFieldErrors } from './errors'
-import type { FieldElement } from './fields'
+import type { Field, FieldElement } from './fields'
 
 /**
  * Not sure what this is for.
@@ -64,7 +64,7 @@ export type ValidationOptions = {
    *
    * Should be handled by a parent {@link FormControl}.
    */
-  afterValidation?: (name: string, error: InternalFieldErrors, isFieldArrayRoot?: boolean) => void
+  afterValidation?: (field: Field, error: InternalFieldErrors, isFieldArrayRoot?: boolean) => void
 }
 
 /**

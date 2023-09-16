@@ -79,7 +79,7 @@ export async function fieldsAreNativelyValid(
       }
     }
 
-    options?.afterValidation?.(_f.name, fieldError, isFieldArrayRoot)
+    options?.afterValidation?.(field, fieldError, isFieldArrayRoot)
 
     if (fieldValue) {
       isValid &&= await fieldsAreNativelyValid(fieldValue, values, options)
