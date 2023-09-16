@@ -1,7 +1,7 @@
 import type { IsAny } from './is-any'
 
 /**
- * Makes all of an object's properties and sub-properties optional.
+ * Makes all of an object's properties and sub-properties __optional__.
  *
  * Does not handle explicit `any`.
  *
