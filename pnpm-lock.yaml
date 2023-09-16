@@ -89,12 +89,6 @@ importers:
         specifier: 1.0.0-rc.4
         version: 1.0.0-rc.4(@algolia/client-search@4.19.1)(@types/node@20.4.5)(search-insights@2.7.0)
 
-  packages/core:
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
   packages/resolvers:
     dependencies:
       arktype:
@@ -139,6 +133,12 @@ importers:
       react-hook-form:
         specifier: ^7.45.4
         version: 7.45.4(react@18.2.0)
+    devDependencies:
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
+
+  packages/v4:
     devDependencies:
       typescript:
         specifier: ^5.1.6
