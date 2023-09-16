@@ -2,6 +2,9 @@ import { describe, test, expect } from 'vitest'
 
 import { isObject, isPlainObject } from '../../src/utils/is-object'
 
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/isObject.test.ts
+ */
 describe('isObject', () => {
   test('returns true when value is an object', () => {
     expect(isObject({})).toBeTruthy()
