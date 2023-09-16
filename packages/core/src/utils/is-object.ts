@@ -26,3 +26,10 @@ export function isPlainObject<T extends EmptyObject = EmptyObject>(value: T): bo
     isObject(prototypeCopy) && Object.prototype.hasOwnProperty.call(prototypeCopy, 'isPrototypeOf')
   )
 }
+
+/**
+ * Whether the value is an empty object.
+ */
+export function isEmptyObject(value: unknown): value is EmptyObject {
+  return isObject(value) && !Object.keys(value).length
+}
