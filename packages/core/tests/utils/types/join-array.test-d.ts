@@ -15,11 +15,13 @@ describe('JoinArray', () => {
     expectTypeOf<JoinArray<[1, 2, 3, { a: 1 }]>>().toEqualTypeOf<never>()
   })
 
-  test('number elements are joined with separator', () => {
+  test('uniform elements', () => {
     expectTypeOf<JoinArray<[1, 2, 3]>>().toEqualTypeOf<'1.2.3'>()
+    expectTypeOf<JoinArray<['1', '2', '3']>>().toEqualTypeOf<'1.2.3'>()
+    expectTypeOf<JoinArray<[true, false, true]>>().toEqualTypeOf<'true.false.true'>()
   })
 
-  test('mixed elements are joined with separator', () => {
+  test('mixed elements', () => {
     expectTypeOf<
       JoinArray<[1, '2', true, null, undefined]>
     >().toEqualTypeOf<'1.2.true.null.undefined'>()
@@ -32,7 +34,7 @@ describe('JoinArray', () => {
   /**
    * This is technically not an intended feature, lol. But it's allowed by the type.
    */
-  test('custom separator with initial result to append to', () => {
-    expectTypeOf<JoinArray<[1, 2, 3], '-', 'a'>>().toEqualTypeOf<'a-1-2-3'>()
+  test('custom separator with initial result', () => {
+    expectTypeOf<JoinArray<[1, 2, 3], '-', 'initial'>>().toEqualTypeOf<'initial-1-2-3'>()
   })
 })

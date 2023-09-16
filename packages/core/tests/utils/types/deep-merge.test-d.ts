@@ -32,7 +32,7 @@ describe('DeepMerge', () => {
     expectTypeOf<DeepMerge<Left, Right>>().toEqualTypeOf<[...Left, ...Right]>()
   })
 
-  test('merges single layer objects', () => {
+  test('single layer objects', () => {
     type Left = {
       a: string
       b: number
@@ -47,7 +47,7 @@ describe('DeepMerge', () => {
     expectTypeOf<DeepMerge<Left, Right>>().toEqualTypeOf<Left & Right>()
   })
 
-  test('merges nested objects', () => {
+  test('nested objects', () => {
     type Left = {
       a: {
         b: string

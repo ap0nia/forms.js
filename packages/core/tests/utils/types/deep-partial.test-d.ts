@@ -7,13 +7,13 @@ describe('DeepPartial', () => {
     expectTypeOf<DeepPartial<any>>().toEqualTypeOf<any>()
   })
 
-  test('makes array values optional', () => {
+  test('array', () => {
     expectTypeOf<DeepPartial<string[]>>().toEqualTypeOf<(string | undefined)[]>()
     expectTypeOf<DeepPartial<number[]>>().toEqualTypeOf<(number | undefined)[]>()
     expectTypeOf<DeepPartial<boolean[]>>().toEqualTypeOf<(boolean | undefined)[]>()
   })
 
-  test('makes tuple values optional', () => {
+  test('tuple', () => {
     expectTypeOf<DeepPartial<[string, number, boolean]>>().toEqualTypeOf<
       [string?, number?, boolean?]
     >()
@@ -24,7 +24,7 @@ describe('DeepPartial', () => {
     expectTypeOf<DeepPartial<{ a: string }>>().toEqualTypeOf<Partial<{ a: string }>>()
   })
 
-  test('single layer object properties are all optional', () => {
+  test('single layer object', () => {
     type MyType = {
       a: string
       b: number
@@ -38,7 +38,7 @@ describe('DeepPartial', () => {
     }>()
   })
 
-  test('nested object properties are all optional', () => {
+  test('nested object', () => {
     type MyType = {
       a: string
       b: {
