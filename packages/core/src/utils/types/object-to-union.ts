@@ -57,8 +57,6 @@ import type { JoinArray } from './join-array'
  *
  * The top level record is also recorded if it's nested;
  * this type is mainly intended as a helper for flattening nested objects in a particular way.
- *
- * @internal
  */
 export type ObjectToUnion<T, Keys extends unknown[] = []> = IsAny<T> extends true
   ? any
