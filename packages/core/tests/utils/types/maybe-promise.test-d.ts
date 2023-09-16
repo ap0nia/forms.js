@@ -14,4 +14,10 @@ describe('MaybePromise', () => {
     expectTypeOf<number>().toMatchTypeOf<MaybePromise<number>>()
     expectTypeOf<unknown>().toMatchTypeOf<MaybePromise<unknown>>()
   })
+
+  test('allows promise-like', () => {
+    expectTypeOf<PromiseLike<string>>().toMatchTypeOf<MaybePromise<string>>()
+    expectTypeOf<PromiseLike<number>>().toMatchTypeOf<MaybePromise<number>>()
+    expectTypeOf<PromiseLike<unknown>>().toMatchTypeOf<MaybePromise<unknown>>()
+  })
 })
