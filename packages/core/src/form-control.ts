@@ -13,7 +13,8 @@ import {
   type FieldRecord,
   getFieldValueAs,
 } from './logic/fields'
-import type { Resolver } from './logic/resolver'
+import { fieldsAreNativelyValid } from './logic/native-validation'
+import { getResolverOptions, type Resolver } from './logic/resolver'
 import { updateFieldReference } from './logic/update-field-reference'
 import type { Validate, ValidationRule } from './logic/validation'
 import { Writable } from './state/store'
@@ -22,6 +23,7 @@ import { deepEqual } from './utils/deep-equal'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { isHTMLElement } from './utils/html/is-html-element'
+import { isEmptyObject } from './utils/is-empty-object'
 import { isObject } from './utils/is-object'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
@@ -263,7 +265,7 @@ export class FormControl<
    * Names of fields doing something.
    */
   names = {
-    mount: new Set(),
+    mount: new Set<string>(),
     unMount: new Set(),
     array: new Set(),
     watch: new Set(),
@@ -389,9 +391,9 @@ export class FormControl<
       this.setFieldValue(name, defaultValue)
     }
 
-    // if (this.state.mount) {
-    //   this.updateValid()
-    // }
+    if (this.state === 'mount') {
+      this.updateValid()
+    }
   }
 
   setFieldValue(name: string, value: any, options: SetValueOptions = {}) {
@@ -511,5 +513,38 @@ export class FormControl<
 
   trigger(name: string) {
     console.log(name)
+  }
+
+  async updateValid(shouldUpdateValid?: boolean) {
+    if (!(this.proxyFormState.isValid || shouldUpdateValid)) {
+      return
+    }
+
+    const isValid = await this.validate()
+
+    if (isValid !== this.formState.isValid) {
+      this.stores.state.set({ isValid })
+    }
+  }
+
+  async validate(name?: string[]): Promise<boolean> {
+    if (this.options.resolver == null) {
+      return fieldsAreNativelyValid(this.fields, true)
+    }
+
+    const resolverOptions = getResolverOptions(
+      name || this.names.mount,
+      this.fields,
+      this.options.criteriaMode,
+      this.options.shouldUseNativeValidation,
+    )
+
+    const resolverResult = await this.options.resolver(
+      this.getValues(),
+      this.context,
+      resolverOptions,
+    )
+
+    return isEmptyObject(resolverResult.errors)
   }
 }

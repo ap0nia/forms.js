@@ -1,8 +1,11 @@
 import type { CriteriaMode } from '../constants'
-import type { FieldErrors } from './errors'
-import type { FieldReference } from './fields'
+import { deepSet } from '../utils/deep-set'
+import { safeGet } from '../utils/safe-get'
 import type { FlattenObject } from '../utils/types/flatten-object'
 import type { MaybePromise } from '../utils/types/maybe-promise'
+
+import type { FieldErrors } from './errors'
+import type { Field, FieldRecord, FieldReference } from './fields'
 
 /**
  * A resolver processes the form values and returns a result.
@@ -69,4 +72,28 @@ export type ResolverError<T> = {
    * Return the form errors.
    */
   errors: FieldErrors<T>
+}
+
+export function getResolverOptions<T>(
+  fieldsNames: Set<string> | string[],
+  _fields: FieldRecord,
+  criteriaMode?: CriteriaMode,
+  shouldUseNativeValidation?: boolean | undefined,
+): ResolverOptions<T> {
+  const fields: Record<string, FieldReference> = {}
+
+  for (const name of fieldsNames) {
+    const field = safeGet<Field | undefined>(_fields, name)
+
+    if (field) {
+      deepSet(fields, name, field._f)
+    }
+  }
+
+  return {
+    criteriaMode,
+    names: [...fieldsNames] as any,
+    fields,
+    shouldUseNativeValidation,
+  }
 }
