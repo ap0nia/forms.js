@@ -1,8 +1,7 @@
+import type { FieldReference } from 'packages/core/src/logic/fields'
 import { describe, test, expect } from 'vitest'
 
 import { updateFieldReference } from '../../src/logic/update-field-reference'
-
-import type { FieldReference } from 'packages/core/src/logic/fields'
 
 describe('update field reference', () => {
   describe('multiple select input', () => {
