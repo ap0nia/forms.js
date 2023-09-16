@@ -21,8 +21,8 @@ import type { IsAny } from './is-any'
  * type DeepRequiredMyType = DeepRequired<MyType>
  *      // ^? type DeepRequiredMyType = { a: string; b: { c: number; d: { e: boolean;  } } }
  */
-export type DeepPartial<T> = IsAny<T> extends true
+export type DeepRequired<T> = IsAny<T> extends true
   ? any
   : T extends Record<PropertyKey, any>
-  ? { [K in keyof T]-?: DeepPartial<T[K]> }
+  ? { [K in keyof T]-?: DeepRequired<T[K]> }
   : T
