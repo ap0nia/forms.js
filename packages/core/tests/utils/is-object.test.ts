@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 
-import { isObject, isPlainObject } from '../../src/utils/is-object'
+import { isObject, isPlainObject, isEmptyObject } from '../../src/utils/is-object'
 
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/isObject.test.ts
@@ -40,5 +40,27 @@ describe('isPlainObject', () => {
     expect(isPlainObject(['foo', 'bar'])).toBeFalsy()
     expect(isPlainObject(() => null)).toBeFalsy()
     expect(isPlainObject(new Blob())).toBeFalsy()
+  })
+})
+
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/isEmptyObject.test.ts
+ */
+describe('isEmptyObject', () => {
+  test('should return true when value is an empty object', () => {
+    expect(isEmptyObject({})).toBeTruthy()
+  })
+
+  test('should return false when value is not an empty object', () => {
+    expect(isEmptyObject(null)).toBeFalsy()
+    expect(isEmptyObject(undefined)).toBeFalsy()
+    expect(isEmptyObject(-1)).toBeFalsy()
+    expect(isEmptyObject(0)).toBeFalsy()
+    expect(isEmptyObject(1)).toBeFalsy()
+    expect(isEmptyObject('')).toBeFalsy()
+    expect(isEmptyObject(() => null)).toBeFalsy()
+    expect(isEmptyObject({ foo: 'bar' })).toBeFalsy()
+    expect(isEmptyObject([])).toBeFalsy()
+    expect(isEmptyObject(['foo', 'bar'])).toBeFalsy()
   })
 })
