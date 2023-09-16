@@ -1,6 +1,13 @@
 import { isBrowser } from './is-browser'
 import { isObject, isPlainObject } from './is-object'
 
+/**
+ * Deep clone an object or array.
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/cloneObject.ts
+ *
+ * TODO: Maybe devise an implementation with {@link structuredClone}.
+ */
 export function cloneObject<T>(data: T): T {
   if (data instanceof Date) {
     return new Date(data) as T
