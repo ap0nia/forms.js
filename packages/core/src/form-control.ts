@@ -641,8 +641,11 @@ export class FormControl<
   async executeBuiltInValidation(fields: FieldRecord, shouldOnlyCheckValid?: boolean) {
     const isValid = await fieldsAreNativelyValid(fields, this.getValues(), {
       shouldDisplayAllAssociatedErrors: this.shouldDisplayAllAssociatedErrors,
+
       shouldUseNativeValidation: this.options.shouldUseNativeValidation && !shouldOnlyCheckValid,
+
       isFieldArrayRoot: (name) => this.names.array.has(name),
+
       afterValidation: (field, error, isFieldArrayRoot) => {
         if (shouldOnlyCheckValid) {
           return
