@@ -25,6 +25,4 @@ import type { IsAny } from './is-any'
  *
  * ```
  */
-export type Prettify<T extends Record<PropertyKey, any>> = IsAny<T> extends true
-  ? any
-  : { [K in keyof T]: T[K] } & {}
+export type Prettify<T> = IsAny<T> extends true ? any : { [K in keyof T]: T[K] } & {}
