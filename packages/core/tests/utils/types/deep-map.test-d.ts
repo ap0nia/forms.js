@@ -7,23 +7,23 @@ describe('DeepPartial', () => {
     expectTypeOf<DeepMap<any, boolean>>().toEqualTypeOf<any>()
   })
 
-  test('handles nested any', () => {
+  test('nested any', () => {
     expectTypeOf<DeepMap<{ a: any }, boolean>>().toEqualTypeOf<{ a: boolean }>()
   })
 
-  test('converts array values', () => {
+  test('array', () => {
     expectTypeOf<DeepMap<string[], boolean>>().toEqualTypeOf<boolean[]>()
     expectTypeOf<DeepMap<number[], string>>().toEqualTypeOf<string[]>()
     expectTypeOf<DeepMap<boolean[], number>>().toEqualTypeOf<number[]>()
   })
 
-  test('converts tuple values', () => {
+  test('tuple', () => {
     expectTypeOf<DeepMap<[string, number, boolean], Symbol>>().toEqualTypeOf<
       [Symbol, Symbol, Symbol]
     >()
   })
 
-  test('single layer object properties are mapped like simple interface mapping', () => {
+  test('single layer object properties are mapped like interface mapping', () => {
     type MyType = {
       a: string
       b: number
@@ -33,7 +33,7 @@ describe('DeepPartial', () => {
     expectTypeOf<DeepMap<MyType, null>>().toEqualTypeOf<{ [K in keyof MyType]: null }>()
   })
 
-  test('nested object properties are all mapped', () => {
+  test('nested object properties', () => {
     type MyType = {
       a: string
       b: {
