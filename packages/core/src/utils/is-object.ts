@@ -8,7 +8,7 @@ export type EmptyObject = NonNullable<unknown>
  *
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/isObject.ts
  */
-export function isObject<T extends EmptyObject>(value: unknown): value is T {
+export function isObject<T extends object>(value: unknown): value is T {
   return (
     value != null && !Array.isArray(value) && typeof value === 'object' && !(value instanceof Date)
   )
