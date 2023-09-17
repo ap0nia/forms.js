@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 
-import { isCheckBoxInput, getCheckboxValue } from '../../../src/logic/html/checkbox'
+import { isCheckBoxInput, getCheckBoxValue } from '../../../src/logic/html/checkbox'
 
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/isCheckBoxInput.test.ts
@@ -16,7 +16,7 @@ describe('isCheckBoxInput', () => {
  */
 describe('getCheckboxValue', () => {
   test('returns default value for invalid or empty options', () => {
-    expect(getCheckboxValue(undefined)).toEqual({
+    expect(getCheckBoxValue(undefined)).toEqual({
       value: false,
       isValid: false,
     })
@@ -24,7 +24,7 @@ describe('getCheckboxValue', () => {
 
   test('returns checked value for checked single checkbox', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -38,7 +38,7 @@ describe('getCheckboxValue', () => {
 
   test('returns true for checked single checkbox with no value', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -51,7 +51,7 @@ describe('getCheckboxValue', () => {
 
   test('returns true for checked single checkbox with empty value', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -62,7 +62,7 @@ describe('getCheckboxValue', () => {
       ]),
     ).toEqual({ value: true, isValid: true })
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -75,7 +75,7 @@ describe('getCheckboxValue', () => {
 
   test('returns false for un-checked single checkbox', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: false,
@@ -88,7 +88,7 @@ describe('getCheckboxValue', () => {
 
   test('returns multiple selected values', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -109,7 +109,7 @@ describe('getCheckboxValue', () => {
 
   test('returns values for checked boxes only', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: false,
@@ -137,7 +137,7 @@ describe('getCheckboxValue', () => {
 
   test('returns empty array for multi-checkbox with no checked boxes', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: false,
@@ -158,7 +158,7 @@ describe('getCheckboxValue', () => {
 
   test('does not return error for undefined checkbox ref', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         // @ts-expect-error Not a valid HTML element.
         undefined,
         {
@@ -174,7 +174,7 @@ describe('getCheckboxValue', () => {
 
   test('returns disabled input result', () => {
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -197,7 +197,7 @@ describe('getCheckboxValue', () => {
     })
 
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,
@@ -221,7 +221,7 @@ describe('getCheckboxValue', () => {
     })
 
     expect(
-      getCheckboxValue([
+      getCheckBoxValue([
         {
           name: 'bill',
           checked: true,

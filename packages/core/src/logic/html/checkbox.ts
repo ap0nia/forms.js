@@ -16,7 +16,7 @@ export function isCheckBoxInput(element: FieldElement): element is HTMLInputElem
   return element.type === 'checkbox'
 }
 
-export function getCheckboxValue(options?: HTMLInputElement[]): CheckboxFieldResult {
+export function getCheckBoxValue(options?: HTMLInputElement[]): CheckboxFieldResult {
   if (!Array.isArray(options)) {
     return defaultResult
   }

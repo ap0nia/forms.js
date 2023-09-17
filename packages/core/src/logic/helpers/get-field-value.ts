@@ -1,5 +1,5 @@
 import type { FieldReference } from '../fields'
-import { getCheckboxValue, isCheckBoxInput } from '../html/checkbox'
+import { getCheckBoxValue, isCheckBoxInput } from '../html/checkbox'
 import { isFileInput } from '../html/file'
 import { getRadioValue, isRadioInput } from '../html/radio'
 import { isMultipleSelectInput } from '../html/select'
@@ -27,7 +27,7 @@ export function getFieldValue(_f: FieldReference) {
   }
 
   if (isCheckBoxInput(ref)) {
-    return getCheckboxValue(_f.refs).value
+    return getCheckBoxValue(_f.refs).value
   }
 
   return getFieldValueAs(ref.value == null ? _f.ref.value : ref.value, _f)
