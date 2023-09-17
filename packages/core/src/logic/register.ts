@@ -1,6 +1,6 @@
-import type { FlattenObject } from '../../utils/types/flatten-object'
+import type { FlattenObject } from '../utils/types/flatten-object'
 
-import type { Validate, ValidationRule } from './validation'
+import type { Validate, ValidationRule, ValidationValue } from './validation'
 
 /**
  * Options when registering a new field component or element.
@@ -84,6 +84,8 @@ export type RegisterOptions<
 
 /**
  * Additional register options.
+ *
+ * Valid combinations for the `pattern`, `valueAsNumber`, and `valueAsDate` properties.
  */
 export type AdditionalRegisterOptions =
   | AdditionalValidationOptions<RegExp, false, false>
@@ -93,7 +95,11 @@ export type AdditionalRegisterOptions =
 /**
  * More native validation options.
  */
-export type AdditionalValidationOptions<TPattern, TValueAsNumber, TValueAsDate> = {
+export type AdditionalValidationOptions<
+  TPattern extends ValidationValue,
+  TValueAsNumber,
+  TValueAsDate,
+> = {
   /**
    * Regular expression to validate the field.
    */

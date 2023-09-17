@@ -1,6 +1,6 @@
-import type { Noop } from '../../utils/noop'
-import type { Nullish } from '../../utils/null'
-import type { FlattenObject } from '../../utils/types/flatten-object'
+import type { Noop } from '../utils/noop'
+import type { Nullish } from '../utils/null'
+import type { FlattenObject } from '../utils/types/flatten-object'
 
 import type { RegisterOptions } from './register'
 
