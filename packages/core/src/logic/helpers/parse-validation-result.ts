@@ -1,3 +1,4 @@
+import type { FieldError } from '../errors'
 import type { FieldElement } from '../fields'
 import type { ValidateResult } from '../validation'
 
