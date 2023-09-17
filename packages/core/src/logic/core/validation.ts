@@ -28,3 +28,33 @@ export type Validate<TFieldValue, TFormValues> = (
   value: TFieldValue,
   formValues: TFormValues,
 ) => ValidateResult | Promise<ValidateResult>
+
+// /**
+//  * Helper function to get the value and message from a validation rule.
+//  */
+// export function getValueAndMessage(validationRule?: ValidationRule): ValidationValueMessage {
+//   return isObject(validationRule) && !(validationRule instanceof RegExp)
+//     ? validationRule
+//     : { value: validationRule, message: '' }
+// }
+//
+// /**
+//  * Helper function to convert a {@link ValidateResult} to a {@link FieldError}.
+//  */
+// export function getValidateError(
+//   result: ValidateResult,
+//   ref: FieldElement,
+//   type = 'validate',
+// ): FieldError | void {
+//   if (
+//     typeof result === 'string' ||
+//     (Array.isArray(result) && result.every((r) => typeof r === 'string')) ||
+//     result === false
+//   ) {
+//     return {
+//       type,
+//       message: typeof result === 'string' ? result : '',
+//       ref,
+//     }
+//   }
+// }
