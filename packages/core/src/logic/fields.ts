@@ -30,12 +30,12 @@ import type { RegisterOptions } from './register'
  *     }
  *   }
  * }
- *
+ * ```
  */
 export type FieldRecord = Partial<{ [K: string]: (Field | FieldRecord) & Field }>
 
 /**
- * A regular field will only have a `_f` property.
+ * A typical field will only have a `_f` property to store lower-level details.
  *
  * Inside a {@link FieldRecord}, fields can also contain nested field records.
  * This might not be achievable normally, but is handled in the code.
@@ -50,6 +50,7 @@ export type FieldRecord = Partial<{ [K: string]: (Field | FieldRecord) & Field }
  *    _f: {
  *      // Field details for 'name'.
  *    },
+ *
  *    initials: {
  *      _f: {
  *        // Field details for 'name.initials'.
