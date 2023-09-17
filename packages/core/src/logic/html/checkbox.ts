@@ -1,9 +1,5 @@
 import type { FieldElement } from '../fields'
 
-export function isCheckBoxInput(element: FieldElement): element is HTMLInputElement {
-  return element.type === 'checkbox'
-}
-
 type CheckboxFieldResult = {
   isValid: boolean
   value: string | string[] | boolean | undefined
@@ -16,7 +12,7 @@ const defaultResult: CheckboxFieldResult = {
 
 const validResult = { value: true, isValid: true }
 
-export function isCheckboxInput(element: FieldElement): element is HTMLInputElement {
+export function isCheckBoxInput(element: FieldElement): element is HTMLInputElement {
   return element.type === 'checkbox'
 }
 
