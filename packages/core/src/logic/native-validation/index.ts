@@ -5,12 +5,16 @@ import type { InternalFieldErrors } from '../errors'
 import type { Field, FieldRecord } from '../fields'
 import { setCustomValidity } from '../helpers/set-custom-validity'
 
+import { nativeValidateMinMax } from './min-max'
 import { nativeValidateMinMaxLength } from './min-max-length'
+import { nativeValidatePattern } from './pattern'
+import { nativeValidateRequired } from './required'
 import type {
   NativeValidationContext,
   NativeValidationFunction,
   NativeValidationResult,
 } from './types'
+import { nativeValidateValidate } from './validate'
 
 /**
  * Native validators receive a context object with all the information they need to validate a field.
@@ -19,12 +23,12 @@ import type {
  *
  * Native-validators __can__ mutate the context object, notably the errors, similar to Express.js middleware.
  */
-const defaultNativeValidators: any[] = [
-  // nativeValidateRequired,
-  // nativeValidateMinMax,
+const defaultNativeValidators = [
+  nativeValidateRequired,
+  nativeValidateMinMax,
   nativeValidateMinMaxLength,
-  // nativeValidatePattern,
-  // nativeValidateValidate,
+  nativeValidatePattern,
+  nativeValidateValidate,
 ]
 
 export type ValidationOptions = {
