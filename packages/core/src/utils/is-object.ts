@@ -30,6 +30,6 @@ export function isPlainObject<T extends EmptyObject = EmptyObject>(value: T): bo
 /**
  * Whether the value is an empty object.
  */
-export function isEmptyObject(value: unknown): value is EmptyObject {
+export function isEmptyObject(value: unknown): value is Record<string, never> {
   return isObject(value) && !Object.keys(value).length
 }

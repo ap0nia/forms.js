@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 
-import { parseValidationResult } from '../../../src/logic/helpers/parse-validation-result'
+import { parseValidationResult } from '../../../src/logic/native-validation/validate'
 
 describe('parseValidationResult', () => {
   test('string result', () => {
