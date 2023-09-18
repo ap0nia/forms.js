@@ -34,6 +34,43 @@ describe('nativeValidateMinMaxLength', () => {
     const context = { ...defaultContext, inputValue: '' }
 
     nativeValidateMinMaxLength(context, next)
+
+    expect(next).toHaveBeenCalledOnce()
+  })
+
+  test('exceed max length with array', () => {
+    const next = vi.fn()
+
+    const context: NativeValidationContext = {
+      ...defaultContext,
+      inputValue: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'],
+      isFieldArray: true,
+    }
+
+    nativeValidateMinMaxLength(context, next)
+
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  test('no constraints', () => {
+    const next = vi.fn()
+
+    const context: NativeValidationContext = {
+      ...defaultContext,
+      inputValue: 'test',
+      field: {
+        ...defaultContext.field,
+        _f: {
+          name: 'test',
+          ref: {
+            name: 'test',
+          },
+        },
+      },
+    }
+
+    nativeValidateMinMaxLength(context, next)
+
     expect(next).toHaveBeenCalledOnce()
   })
 
