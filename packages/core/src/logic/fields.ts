@@ -84,7 +84,11 @@ export type FieldReference = {
   refs?: HTMLInputElement[]
 
   /**
-   * Idk.
+   * Whether the field has been mounted yet.
+   *
+   * When a field is first registered, basic details about the field are added to the form control.
+   * However, information about the HTML element itself will not be present until the it's also registered.
+   * When the actual HTML element is registered, then mounted should be set to true.
    */
   mount?: boolean
 } & RegisterOptions
