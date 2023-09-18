@@ -1,134 +1,218 @@
 import { describe, test, expect, vi } from 'vitest'
 
+import { INPUT_VALIDATION_RULES } from '../../../src/constants'
 import { nativeValidateMinMaxLength } from '../../../src/logic/native-validation/min-max-length'
 import type { NativeValidationContext } from '../../../src/logic/native-validation/types'
+import { noop } from '../../../src/utils/noop'
 
 describe('nativeValidateMinMaxLength', () => {
-  const defaultContext: NativeValidationContext = {
-    field: {
-      _f: {
-        name: 'test',
-        minLength: {
-          value: 1,
-          message: '',
-        },
-        maxLength: {
-          value: 10,
-          message: '',
-        },
-        ref: {
-          name: 'test',
-        },
-      },
-    },
-    errors: {},
-    inputRef: document.createElement('input'),
-    inputValue: 'test',
-    formValues: {},
-    shouldSetCustomValidity: true,
-  }
-
-  test('should return next if input is empty', () => {
-    const next = vi.fn()
-
-    const context = { ...defaultContext, inputValue: '' }
-
-    nativeValidateMinMaxLength(context, next)
-
-    expect(next).toHaveBeenCalledOnce()
-  })
-
-  test('exceed max length with array', () => {
-    const next = vi.fn()
+  test('no errors if no constraints', () => {
+    const ref = document.createElement('input')
 
     const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'],
-      isFieldArray: true,
-    }
-
-    nativeValidateMinMaxLength(context, next)
-
-    expect(next).not.toHaveBeenCalled()
-  })
-
-  test('no constraints', () => {
-    const next = vi.fn()
-
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: 'test',
       field: {
-        ...defaultContext.field,
         _f: {
           name: 'test',
-          ref: {
-            name: 'test',
-          },
+          ref,
         },
       },
+      errors: {},
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
+      shouldSetCustomValidity: true,
     }
 
-    nativeValidateMinMaxLength(context, next)
+    nativeValidateMinMaxLength(context, noop)
 
-    expect(next).toHaveBeenCalledOnce()
+    expect(context.errors).toEqual({})
   })
 
-  test('should return next if neither bounds are exceeded', () => {
-    const next = vi.fn()
+  test('no errors if inside bounds', () => {
+    const ref = document.createElement('input')
 
-    const context = { ...defaultContext, inputValue: 'test' }
-
-    nativeValidateMinMaxLength(context, next)
-
-    expect(next).toHaveBeenCalledOnce()
-  })
-
-  test('next is not called if not validating all field criteria', () => {
-    const next = vi.fn()
-
-    const context = {
-      ...defaultContext,
-      inputValue: 'test',
+    const context: NativeValidationContext = {
       field: {
-        ...defaultContext.field,
         _f: {
-          ...defaultContext.field._f,
-          minLength: {
-            value: 10,
-            message: '',
-          },
+          name: 'test',
+          ref,
+          minLength: 1,
+          maxLength: 10,
         },
       },
+      errors: {},
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
+      shouldSetCustomValidity: true,
     }
 
-    nativeValidateMinMaxLength(context, next)
+    nativeValidateMinMaxLength(context, noop)
 
-    expect(next).not.toHaveBeenCalled()
+    expect(context.errors).toEqual({})
   })
 
-  test('should not set custom validity if validating all field criteria', () => {
-    const next = vi.fn()
+  test('calls setCustomValidity if maxLength exceeded', () => {
+    const ref = document.createElement('input')
 
-    const context = {
-      ...defaultContext,
-      inputValue: 'test',
+    ref.name = 'test'
+
+    ref.setCustomValidity = vi.fn()
+
+    const context: NativeValidationContext = {
       field: {
-        ...defaultContext.field,
         _f: {
-          ...defaultContext.field._f,
-          minLength: {
-            value: 10,
-            message: '',
-          },
+          name: 'test',
+          ref,
+          maxLength: 1,
         },
       },
-      shouldSetCustomValidity: false,
+      errors: {},
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
+      shouldSetCustomValidity: true,
+    }
+
+    nativeValidateMinMaxLength(context, noop)
+
+    expect(context.errors).toEqual({
+      test: {
+        ref: context.field._f.ref,
+        type: INPUT_VALIDATION_RULES.maxLength,
+        message: '',
+      },
+    })
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+  })
+
+  test('calls setCustomValidity if minLength exceeded', () => {
+    const ref = document.createElement('input')
+
+    ref.setCustomValidity = vi.fn()
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+          minLength: 10,
+        },
+      },
+      errors: {},
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
+      shouldSetCustomValidity: true,
+    }
+
+    nativeValidateMinMaxLength(context, noop)
+
+    expect(context.errors).toEqual({
+      test: {
+        ref: context.field._f.ref,
+        type: INPUT_VALIDATION_RULES.minLength,
+        message: '',
+      },
+    })
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+  })
+
+  test('correct errors when maxLength exceeded', () => {
+    const ref = document.createElement('input')
+
+    ref.name = 'test'
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+          maxLength: 1,
+        },
+      },
+      errors: {
+        /**
+         * This covers the optional chaining for existing errors at the same field name.
+         */
+        [ref.name]: {
+          type: 'maxLength',
+        },
+      },
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
       validateAllFieldCriteria: true,
     }
 
-    nativeValidateMinMaxLength(context, next)
+    nativeValidateMinMaxLength(context, noop)
 
-    expect(next).toHaveBeenCalledOnce()
+    expect(context.errors).toEqual({
+      test: {
+        ref: context.field._f.ref,
+        type: INPUT_VALIDATION_RULES.maxLength,
+        message: '',
+        types: {
+          [INPUT_VALIDATION_RULES.maxLength]: true,
+        },
+      },
+    })
+  })
+
+  test('correct errors when minLength exceeded', () => {
+    const ref = document.createElement('input')
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+          minLength: 10,
+        },
+      },
+      errors: {},
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
+      validateAllFieldCriteria: true,
+    }
+
+    nativeValidateMinMaxLength(context, noop)
+
+    expect(context.errors).toEqual({
+      test: {
+        ref: context.field._f.ref,
+        type: INPUT_VALIDATION_RULES.minLength,
+        message: '',
+        types: {
+          [INPUT_VALIDATION_RULES.minLength]: true,
+        },
+      },
+    })
+  })
+
+  test('no errors for array length within bounds', () => {
+    const ref = document.createElement('input')
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+        },
+      },
+      errors: {},
+      inputRef: ref,
+      inputValue: [],
+      formValues: {},
+      shouldSetCustomValidity: true,
+      isFieldArray: true,
+    }
+
+    nativeValidateMinMaxLength(context, noop)
+
+    expect(context.errors).toEqual({})
   })
 })

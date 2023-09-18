@@ -51,7 +51,7 @@ export type NativeValidationContext = {
    *
    * i.e. Using the {@link HTMLInputElement.setCustomValidity} DOM API.
    */
-  shouldSetCustomValidity: boolean
+  shouldSetCustomValidity?: boolean
 }
 
 /**
