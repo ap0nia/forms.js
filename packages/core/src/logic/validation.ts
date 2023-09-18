@@ -5,9 +5,7 @@ import type { MaybePromise } from '../utils/types/maybe-promise'
  *
  * Just the value, or a value and a custom error message can be provided.
  */
-export type ValidationRule<T extends ValidationValue = ValidationValue> =
-  | T
-  | ValidationValueMessage<T>
+export type ValidationRule<T = ValidationValue> = T | ValidationValueMessage<T>
 
 /**
  * The value for a validation rule.
@@ -23,7 +21,7 @@ export type ValidationValue = boolean | number | string | RegExp
  * The value is used for the validation check,
  * and the message is used to customize the error message displayed when validation fails.
  */
-export type ValidationValueMessage<T extends ValidationValue = ValidationValue> = {
+export type ValidationValueMessage<T = ValidationValue> = {
   value?: T
   message: string
 }
