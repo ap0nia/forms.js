@@ -5,6 +5,7 @@ import type { InternalFieldErrors } from '../errors'
 import type { Field, FieldRecord } from '../fields'
 import { setCustomValidity } from '../helpers/set-custom-validity'
 
+import { nativeValidateMinMaxLength } from './min-max-length'
 import type {
   NativeValidationContext,
   NativeValidationFunction,
@@ -21,7 +22,7 @@ import type {
 const defaultNativeValidators: any[] = [
   // nativeValidateRequired,
   // nativeValidateMinMax,
-  // nativeValidateMinMaxLength,
+  nativeValidateMinMaxLength,
   // nativeValidatePattern,
   // nativeValidateValidate,
 ]
