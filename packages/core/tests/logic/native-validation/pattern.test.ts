@@ -6,37 +6,22 @@ import type { NativeValidationContext } from '../../../src/logic/native-validati
 import { noop } from '../../../src/utils/noop'
 
 describe('nativeValidatePattern', () => {
-  const defaultContext: NativeValidationContext = {
-    field: {
-      _f: {
-        name: 'test',
-        pattern: /validTestValue/,
-        ref: {
-          name: 'test',
-        },
-      },
-    },
-    errors: {},
-    inputRef: document.createElement('input'),
-    inputValue: 'invalid test value',
-    formValues: {},
-    shouldSetCustomValidity: true,
-  }
+  test('no errors if no constraints', () => {
+    const ref = document.createElement('input')
 
-  test('does not mutate errors if no pattern', () => {
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
-          ref: {
-            name: 'test',
-          },
+          name: ref.name,
+          ref,
         },
       },
-      inputRef: document.createElement('input'),
-      formValues: {},
       errors: {},
-      inputValue: '',
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
       shouldSetCustomValidity: true,
     }
 
@@ -45,24 +30,25 @@ describe('nativeValidatePattern', () => {
     expect(context.errors).toEqual({})
   })
 
-  test('does not mutate errors if string matches pattern', () => {
-    const value = 'validTestValue'
+  test('no errors if pattern matches', () => {
+    const ref = document.createElement('input')
+
+    ref.name = 'test'
+
+    const inputValue = 'valid-value'
 
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
-          pattern: new RegExp(value),
-          ref: {
-            name: 'test',
-            value,
-          },
+          name: ref.name,
+          ref,
+          pattern: new RegExp(inputValue),
         },
       },
-      inputRef: document.createElement('input'),
-      formValues: {},
       errors: {},
-      inputValue: value,
+      inputRef: ref,
+      inputValue,
+      formValues: {},
       shouldSetCustomValidity: true,
     }
 
@@ -71,27 +57,65 @@ describe('nativeValidatePattern', () => {
     expect(context.errors).toEqual({})
   })
 
-  test('invalid string sets error', () => {
+  test('calls setCustomValidity if pattern does not match', () => {
+    const ref = document.createElement('input')
+
+    ref.name = 'test'
+
+    ref.setCustomValidity = vi.fn()
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
-          pattern: /validTestValue/,
-          ref: {
-            name: 'test',
-            value: '',
-          },
+          name: ref.name,
+          ref,
+          pattern: new RegExp('valid-value'),
         },
       },
-      inputRef: document.createElement('input'),
+      errors: {},
+      inputRef: ref,
+      inputValue: 'Hello, World!',
       formValues: {},
+      shouldSetCustomValidity: true,
+    }
+
+    nativeValidatePattern(context, noop)
+
+    expect(context.errors).toEqual({
+      test: {
+        type: INPUT_VALIDATION_RULES.pattern,
+        message: '',
+        ref,
+      },
+    })
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+  })
+
+  test('correctly sets errors when pattern does not match', () => {
+    const ref = document.createElement('input')
+
+    ref.name = 'test'
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: ref.name,
+          ref,
+          pattern: new RegExp('valid-value'),
+        },
+      },
       errors: {
-        test: {
+        /**
+         * This covers the optional chaining for existing errors at the same field name.
+         */
+        [ref.name]: {
           type: 'pattern',
         },
       },
-      inputValue: 'invalid test value',
-      shouldSetCustomValidity: true,
+      inputRef: ref,
+      inputValue: 'Hello, World!',
+      formValues: {},
       validateAllFieldCriteria: true,
     }
 
@@ -101,32 +125,11 @@ describe('nativeValidatePattern', () => {
       test: {
         type: INPUT_VALIDATION_RULES.pattern,
         message: '',
-        ref: {
-          name: 'test',
-          value: '',
-        },
+        ref,
         types: {
           [INPUT_VALIDATION_RULES.pattern]: true,
         },
       },
     })
-  })
-
-  test('set custom validity is called', () => {
-    const setCustomValidity = vi.fn()
-    const reportValidity = vi.fn()
-
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputRef: {
-        setCustomValidity,
-        reportValidity,
-      } as any,
-      shouldSetCustomValidity: true,
-    }
-
-    nativeValidatePattern(context, noop)
-
-    expect(setCustomValidity).toHaveBeenCalledOnce()
   })
 })
