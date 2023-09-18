@@ -364,6 +364,37 @@ export class FormControl<
   }
 
   /**
+   * Updates the specified field name to be touched.
+   *
+   * @returns Whether the field's touched status changed.
+   */
+  updateTouchedFields(name: string): boolean {
+    const previousIsTouched = safeGet(this.formState.touchedFields, name)
+
+    if (!previousIsTouched) {
+      deepSet(this.formState.touchedFields, name, true)
+    }
+
+    return !previousIsTouched
+  }
+
+  /**
+   * {@link formState.isValid} is not always synchronized with the actual form values.
+   * This updates the form state to match with {@link getDirty}.
+   *
+   * @returns Whether the form's dirty status changed.
+   */
+  updateIsDirty(): boolean {
+    const previousIsDirty = this.formState.isDirty
+
+    const isDirty = this.getDirty()
+
+    this.formState.isDirty = isDirty
+
+    return previousIsDirty !== isDirty
+  }
+
+  /**
    * Calculates whether the current form values are dirty.
    * The form state may not always match this calculation, i.e. until it's update accordingly.
    */
