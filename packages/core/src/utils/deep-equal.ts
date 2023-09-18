@@ -36,6 +36,10 @@ export function deepEqual(left: unknown, right: unknown): boolean {
 
     const val2: any = right[key as keyof typeof right]
 
+    if (isPrimitive(val1) && isPrimitive(val2) && val1 !== val2) {
+      return false
+    }
+
     const bothDates = val1 instanceof Date && val2 instanceof Date
 
     const bothObjects = isObject(val1) && isObject(val2)

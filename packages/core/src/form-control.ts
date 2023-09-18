@@ -9,7 +9,9 @@ import type { FieldErrors } from './logic/errors'
 import type { Field, FieldRecord } from './logic/fields'
 import type { RegisterOptions } from './logic/register'
 import type { Resolver } from './logic/resolver'
+import { Writable } from './store'
 import { cloneObject } from './utils/clone-object'
+import { deepEqual } from './utils/deep-equal'
 import { deepSet } from './utils/deep-set'
 import { isObject } from './utils/is-object'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
@@ -143,6 +145,15 @@ export type KeepStateOptions = {
 }
 
 /**
+ * Options when setting a value.
+ */
+export type SetValueOptions = {
+  shouldValidate?: boolean
+  shouldDirty?: boolean
+  shouldTouch?: boolean
+}
+
+/**
  * Overall form state.
  */
 export type FormState<T> = {
@@ -226,6 +237,9 @@ export type ParsedForm<T = Record<string, any>> = {
   keys: Extract<keyof FlattenObject<T>, string>
 }
 
+/**
+ * The core functionality of the library is encompassed by a form control that controls field/form behavior.
+ */
 export class FormControl<
   TValues extends Record<string, any>,
   TContext = any,
@@ -245,6 +259,11 @@ export class FormControl<
     watch: new Set<string>(),
   }
 
+  stores = {
+    values: new Writable<{ name: string; values: TValues }>(),
+    state: new Writable<Partial<FormState<TValues>> & { name?: string }>(),
+  }
+
   defaultValues: DeepPartial<TValues>
 
   values: TValues
@@ -252,6 +271,21 @@ export class FormControl<
   formState: FormState<TValues>
 
   state: State
+
+  /**
+   * Idk.
+   */
+  proxyFormState = {
+    /**
+     * Whether to update the form's dirty state?
+     */
+    isDirty: false,
+    dirtyFields: false,
+    touchedFields: false,
+    isValidating: false,
+    isValid: false,
+    errors: false,
+  }
 
   shouldDisplayAllAssociatedErrors: boolean
 
@@ -306,12 +340,12 @@ export class FormControl<
   }
 
   register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
-    const field = safeGet<Field | undefined>(this.fields, name)
+    const alreadyRegisteredField = safeGet<Field | undefined>(this.fields, name)
 
     deepSet(this.fields, name, {
-      ...field,
+      ...alreadyRegisteredField,
       _f: {
-        ...(field?._f ?? { ref: { name } }),
+        ...(alreadyRegisteredField?._f ?? { ref: { name } }),
         name,
         mount: true,
         ...options,
@@ -321,10 +355,19 @@ export class FormControl<
     this.names.mount.add(name)
 
     // const disabledIsDefined = options.disabled
+
     // if (field) {
     //   this.updateDisabledField({ field, disabled: options.disabled, name })
     // } else {
     //   this.updateValidAndValue(name, true, options.value)
     // }
+  }
+
+  /**
+   * Calculates whether the current form values are dirty.
+   * The form state may not always match this calculation, i.e. until it's update accordingly.
+   */
+  getDirty(): boolean {
+    return !deepEqual(this.values, this.defaultValues)
   }
 }
