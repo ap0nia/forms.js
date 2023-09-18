@@ -10,11 +10,11 @@ import { isHTMLElement } from '../../../src/logic/html/is-html-element'
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/isHTMLElement.test.ts
  */
 describe('isHTMLElement', () => {
-  test('returns true for HTMLElement', () => {
+  test('true for HTMLElement', () => {
     expect(isHTMLElement(document.createElement('input'))).toBeTruthy()
   })
 
-  test('return trues for HTMLElement inside an iframe', () => {
+  test('true for HTMLElement inside an iframe', () => {
     const iframe = document.createElement('iframe')
 
     document.body.append(iframe)
@@ -26,5 +26,9 @@ describe('isHTMLElement', () => {
     iframeDocument.body.append(input)
 
     expect(isHTMLElement(input)).toBeTruthy()
+  })
+
+  test('false for undefined', () => {
+    expect(isHTMLElement(undefined)).toBeFalsy()
   })
 })
