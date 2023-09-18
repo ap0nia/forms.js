@@ -17,18 +17,21 @@ export const nativeValidateMinMax: NativeValidationFunction = (context, next) =>
 
   const hasNoConstraints = field._f.min == null && field._f.max == null
 
+  // Nothing to validate.
   if (isEmpty || hasNoConstraints) {
     return next?.(context)
   }
 
-  const { exceedMax, exceedMin, maxOutput, minOutput } = fieldExceedsBounds(field, inputValue)
+  const { exceedMax, exceedMin, maxLength, minLength } = fieldExceedsBounds(field, inputValue)
 
   // Neither bounds were exceeded.
   if (!(exceedMax || exceedMin)) {
     return next?.(context)
   }
 
-  const message = exceedMax ? maxOutput.message : minOutput.message
+  // Either bound was exceeded. `max` has higher priority.
+
+  const message = exceedMax ? maxLength.message : minLength.message
 
   const validationType = exceedMax ? INPUT_VALIDATION_RULES.max : INPUT_VALIDATION_RULES.min
 
@@ -55,13 +58,34 @@ export const nativeValidateMinMax: NativeValidationFunction = (context, next) =>
   return next?.(context)
 }
 
-type ExceedBoundsResult = {
+/**
+ * The result of comparing a field's min and max constraints to its value.
+ */
+export type ExceedBoundsResult = {
+  /**
+   * Whether the value exceeds the field's max constraint.
+   */
   exceedMax: boolean
+
+  /**
+   * Whether the value exceeds the field's min constraint.
+   */
   exceedMin: boolean
-  maxOutput: ValidationValueMessage
-  minOutput: ValidationValueMessage
+
+  /**
+   * Parsed max validation rule's value and message.
+   */
+  maxLength: ValidationValueMessage
+
+  /**
+   * Parsed min validation rule's value and message.
+   */
+  minLength: ValidationValueMessage
 }
 
+/**
+ * Whether the value exceeds the field's min or max constraints.
+ */
 export function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsResult {
   const { min, max } = field._f
 
@@ -71,6 +95,8 @@ export function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsR
 
   const minOutput = parseValidationRule(min)
 
+  // Number comparison
+
   if (inputValue != null && !isNaN(inputValue)) {
     const valueNumber = ref.valueAsNumber || (inputValue ? +inputValue : inputValue)
 
@@ -78,8 +104,10 @@ export function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsR
 
     const exceedMin = minOutput.value != null && valueNumber < minOutput.value
 
-    return { exceedMax, exceedMin, maxOutput, minOutput }
+    return { exceedMax, exceedMin, maxLength: maxOutput, minLength: minOutput }
   }
+
+  // Date comparison. Can be a relative time or week, or absolute date string.
 
   const valueDate = ref.valueAsDate || new Date(inputValue as string)
 
@@ -105,11 +133,11 @@ export function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsR
       ? inputValue < minOutput.value
       : valueDate < new Date(minOutput.value))
 
-  return { exceedMax, exceedMin, maxOutput, minOutput }
+  return { exceedMax, exceedMin, maxLength: maxOutput, minLength: minOutput }
 }
 
 /**
- * Helper function that just converts some value to a date.
+ * Converts a relative time or week to a date.
  */
 export function convertToDate(value: unknown) {
   return new Date(`${new Date().toDateString()} ${value}`)

@@ -24,6 +24,7 @@ export const nativeValidateMinMaxLength: NativeValidationFunction = (context, ne
 
   const hasNoConstraints = field._f.maxLength == null && field._f.minLength == null
 
+  // Nothing to validate.
   if (isEmpty || !hasLength || hasNoConstraints) {
     return next?.(context)
   }
@@ -38,9 +39,12 @@ export const nativeValidateMinMaxLength: NativeValidationFunction = (context, ne
   const exceedMin =
     parsedMinLengthRule.value != null && inputValue.length < +parsedMinLengthRule.value
 
+  // Neither bounds were exceeded.
   if (!(exceedMax || exceedMin)) {
     return next?.(context)
   }
+
+  // Either bound was exceeded. `maxLength` has higher priority.
 
   const message = exceedMax ? parsedMaxLengthRule.message : parsedMinLengthRule.message
 

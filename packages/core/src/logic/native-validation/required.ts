@@ -21,6 +21,7 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
 
   const { name, required } = field._f
 
+  // This field isn't required, so no validation needed.
   if (!requiredButMissing(field, inputValue, isFieldArray)) {
     return next?.(context)
   }
@@ -74,7 +75,7 @@ export function requiredButMissing(field: Field, inputValue: any, isFieldArray?:
     return true
   }
 
-  // If the input value is false, it's missing?
+  // A required radio or checkbox input is missing if it's false.
   if (inputValue === false) {
     return true
   }

@@ -21,10 +21,12 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
 
   const { name, validate } = field._f
 
+  // Nothing to validate.
   if (validate == null || (typeof validate !== 'function' && !isObject(validate))) {
     return next?.(context)
   }
 
+  // Validation function.
   if (typeof validate === 'function') {
     const result = await validate(inputValue, formValues)
 
@@ -52,6 +54,8 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
 
     return next?.(context)
   }
+
+  // Validation record that maps field names to validation functions.
 
   let validationResult = {} as FieldError
 
@@ -98,7 +102,7 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
 }
 
 /**
- * Helper function to convert a {@link ValidateResult} to a {@link FieldError}.
+ * Converts a {@link ValidateResult} to a {@link FieldError}.
  */
 export function parseValidationResult(
   result: ValidateResult,
