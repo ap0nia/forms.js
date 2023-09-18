@@ -71,7 +71,7 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
           ...errors[name],
           types: {
             ...errors[name]?.types,
-            [INPUT_VALIDATION_RULES.validate]: validateError.message || true,
+            [key]: validateError.message || true,
           },
         }),
       }

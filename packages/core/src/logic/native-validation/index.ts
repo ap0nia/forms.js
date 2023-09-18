@@ -1,3 +1,4 @@
+import { isEmptyObject } from '../../utils/is-object'
 import { noop } from '../../utils/noop'
 import { notNullish } from '../../utils/null'
 import { safeGet } from '../../utils/safe-get'
@@ -38,7 +39,7 @@ export type ValidationOptions = {
   validateAllFieldCriteria?: boolean
 
   /**
-   * Whether to exit immediately upon encountering the first error for a __field__.
+   * Whether to exit immediately upon encountering the first error for a single field.
    */
   shouldDisplayAllAssociatedErrors?: boolean
 
@@ -55,6 +56,11 @@ export type ValidationOptions = {
    * Should be handled by a parent FormControl.
    */
   isFieldArrayRoot?: (name: string) => boolean
+
+  /**
+   * Whether to stop validating fields after the first invalid field is found.
+   */
+  shouldOnlyCheckValid?: boolean
 }
 
 /**
@@ -76,33 +82,31 @@ export async function nativelyValidateFields(
   for (const field of definedFields) {
     const { _f, ...nestedField } = field
 
-    if (_f == null) {
-      continue
-    }
+    if (_f != null) {
+      const isFieldArrayRoot = options?.isFieldArrayRoot?.(_f.name)
 
-    const isFieldArrayRoot = options?.isFieldArrayRoot?.(_f.name)
+      const fieldValidationResult = await nativeValidateSingleField(
+        field,
+        values,
+        options?.shouldDisplayAllAssociatedErrors,
+        options?.shouldUseNativeValidation && !options?.validateAllFieldCriteria,
+        isFieldArrayRoot,
+      )
 
-    const fieldValidationResult = await nativeValidateSingleField(
-      field,
-      values,
-      options?.shouldDisplayAllAssociatedErrors,
-      options?.shouldUseNativeValidation && !options?.validateAllFieldCriteria,
-      isFieldArrayRoot,
-    )
+      names.push(_f.name)
 
-    names.push(_f.name)
+      errors = { ...errors, ...fieldValidationResult }
 
-    errors = { ...errors, ...fieldValidationResult }
+      if (fieldValidationResult[_f.name]) {
+        valid = false
 
-    if (fieldValidationResult[_f.name]) {
-      valid = false
-
-      if (options?.validateAllFieldCriteria) {
-        return { names, errors, valid }
+        if (options?.shouldOnlyCheckValid) {
+          return { names, errors, valid }
+        }
       }
     }
 
-    if (nestedField == null) {
+    if (isEmptyObject(nestedField)) {
       continue
     }
 

@@ -192,7 +192,7 @@ describe('nativeValidateValidate', () => {
         message: '',
         ref,
         types: {
-          [INPUT_VALIDATION_RULES.validate]: true,
+          [ref.name]: true,
         },
       },
     }
@@ -230,7 +230,7 @@ describe('nativeValidateValidate', () => {
         message: '',
         ref,
         types: {
-          [INPUT_VALIDATION_RULES.validate]: true,
+          [ref.name]: true,
         },
       },
     }
