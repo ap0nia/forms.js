@@ -6,10 +6,13 @@ import {
   type State,
 } from './constants'
 import type { FieldErrors } from './logic/errors'
+import type { Field, FieldRecord } from './logic/fields'
+import type { RegisterOptions } from './logic/register'
 import type { Resolver } from './logic/resolver'
 import { cloneObject } from './utils/clone-object'
+import { deepSet } from './utils/deep-set'
 import { isObject } from './utils/is-object'
-import { safeGetMultiple } from './utils/safe-get'
+import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
 import type { FlattenObject } from './utils/types/flatten-object'
@@ -230,6 +233,18 @@ export class FormControl<
 > {
   options: FormControlOptions<TValues, TContext>
 
+  fields: FieldRecord = {}
+
+  /**
+   * Names of fields doing something.
+   */
+  names = {
+    mount: new Set<string>(),
+    unMount: new Set<string>(),
+    array: new Set<string>(),
+    watch: new Set<string>(),
+  }
+
   defaultValues: DeepPartial<TValues>
 
   values: TValues
@@ -288,5 +303,28 @@ export class FormControl<
   getValues(...fieldNames: any[]): any {
     const names = fieldNames.length > 1 ? fieldNames : fieldNames[0]
     return safeGetMultiple(this.values, names)
+  }
+
+  register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
+    const field = safeGet<Field | undefined>(this.fields, name)
+
+    deepSet(this.fields, name, {
+      ...field,
+      _f: {
+        ...(field?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
+    })
+
+    this.names.mount.add(name)
+
+    // const disabledIsDefined = options.disabled
+    // if (field) {
+    //   this.updateDisabledField({ field, disabled: options.disabled, name })
+    // } else {
+    //   this.updateValidAndValue(name, true, options.value)
+    // }
   }
 }
