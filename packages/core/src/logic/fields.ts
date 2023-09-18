@@ -32,7 +32,7 @@ import type { RegisterOptions } from './register'
  * }
  * ```
  */
-export type FieldRecord = Partial<{ [K: string]: (Field | FieldRecord) & Field }>
+export type FieldRecord = Partial<{ [K: string]: (Field | FieldRecord) & (Field | { _f?: never }) }>
 
 /**
  * A typical field will only have a `_f` property to store lower-level details.
