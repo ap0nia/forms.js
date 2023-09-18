@@ -5,316 +5,332 @@ import type { Field } from '../../../src/logic/fields'
 import {
   nativeValidateMinMax,
   fieldExceedsBounds,
+  convertToDate,
 } from '../../../src/logic/native-validation/min-max'
 import type { NativeValidationContext } from '../../../src/logic/native-validation/types'
+import { noop } from '../../../src/utils/noop'
 
 describe('nativeValidateMinMax', () => {
-  const message = 'Hello, Aponia!'
+  test('no errors if no constraints', () => {
+    const ref = document.createElement('input')
 
-  const defaultContext: NativeValidationContext = {
-    field: {
-      _f: {
-        name: 'test',
-        min: {
-          value: 1,
-          message,
-        },
-        max: {
-          value: 10,
-          message,
-        },
-        ref: {
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
           name: 'test',
+          ref,
         },
       },
-    },
-    errors: {},
-    inputRef: document.createElement('input'),
-    inputValue: 'test',
-    formValues: {},
-    shouldSetCustomValidity: true,
-  }
+      errors: {},
+      inputRef: ref,
+      inputValue: 'test',
+      formValues: {},
+      shouldSetCustomValidity: true,
+    }
 
-  test('does not mutate errors when field is empty', () => {
-    const next = vi.fn()
-
-    const context: NativeValidationContext = { ...defaultContext, inputValue: '' }
-
-    nativeValidateMinMax(context, next)
+    nativeValidateMinMax(context, noop)
 
     expect(context.errors).toEqual({})
   })
 
-  test('exceed min bound', () => {
-    const next = vi.fn()
+  test('no errors if inside bounds', () => {
+    const ref = document.createElement('input')
 
     const context: NativeValidationContext = {
-      ...defaultContext,
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+          min: 1,
+          max: 10,
+        },
+      },
       errors: {},
-      inputValue: '0',
+      inputRef: ref,
+      inputValue: '5',
+      formValues: {},
+      shouldSetCustomValidity: true,
     }
 
-    nativeValidateMinMax(context, next)
+    nativeValidateMinMax(context, noop)
+
+    expect(context.errors).toEqual({})
+  })
+
+  test('calls setCustomValidity if max exceeded', () => {
+    const ref = document.createElement('input')
+
+    ref.setCustomValidity = vi.fn()
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+          max: 10,
+        },
+      },
+      errors: {},
+      inputRef: ref,
+      inputValue: 11,
+      formValues: {},
+      shouldSetCustomValidity: true,
+    }
+
+    nativeValidateMinMax(context, noop)
 
     expect(context.errors).toEqual({
       test: {
-        type: 'min',
-        message,
-        ref: {
+        type: INPUT_VALIDATION_RULES.max,
+        message: '',
+        ref,
+      },
+    })
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+  })
+
+  test('calls setCustomValidity if min exceeded', () => {
+    const ref = document.createElement('input')
+
+    ref.setCustomValidity = vi.fn()
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
           name: 'test',
+          ref,
+          min: 10,
+        },
+      },
+      errors: {},
+      inputRef: ref,
+      inputValue: 1,
+      formValues: {},
+      shouldSetCustomValidity: true,
+    }
+
+    nativeValidateMinMax(context, noop)
+
+    expect(context.errors).toEqual({
+      test: {
+        type: INPUT_VALIDATION_RULES.min,
+        message: '',
+        ref,
+      },
+    })
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+  })
+
+  test('correctly sets errors when max exceeded', () => {
+    const ref = document.createElement('input')
+
+    ref.name = 'test'
+
+    const context: NativeValidationContext = {
+      field: {
+        _f: {
+          name: 'test',
+          ref,
+          max: 1,
+        },
+      },
+      errors: {
+        /**
+         * This covers the optional chaining for existing errors at the same field name.
+         */
+        [ref.name]: {
+          type: 'max',
+        },
+      },
+      inputRef: ref,
+      inputValue: 10,
+      formValues: {},
+      validateAllFieldCriteria: true,
+    }
+
+    nativeValidateMinMax(context, noop)
+
+    expect(context.errors).toEqual({
+      test: {
+        ref: context.field._f.ref,
+        type: INPUT_VALIDATION_RULES.max,
+        message: '',
+        types: {
+          [INPUT_VALIDATION_RULES.max]: true,
         },
       },
     })
   })
 
-  test('no message', () => {
-    const next = vi.fn()
+  test('correctly sets errors when min exceeded', () => {
+    const ref = document.createElement('input')
 
     const context: NativeValidationContext = {
-      ...defaultContext,
-      errors: {},
-      inputValue: '0',
       field: {
         _f: {
           name: 'test',
-          ref: {
-            name: 'test',
-          },
-          min: 1,
+          ref,
+          min: 10,
         },
       },
+      errors: {},
+      inputRef: ref,
+      inputValue: 0,
+      formValues: {},
       validateAllFieldCriteria: true,
     }
 
-    nativeValidateMinMax(context, next)
+    nativeValidateMinMax(context, noop)
 
     expect(context.errors).toEqual({
       test: {
-        type: 'min',
+        ref: context.field._f.ref,
+        type: INPUT_VALIDATION_RULES.min,
         message: '',
-        ref: {
-          name: 'test',
-        },
         types: {
           [INPUT_VALIDATION_RULES.min]: true,
         },
       },
     })
   })
-
-  test('validate all field criteria', () => {
-    const next = vi.fn()
-
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      errors: {},
-      inputValue: '0',
-      validateAllFieldCriteria: true,
-    }
-
-    nativeValidateMinMax(context, next)
-
-    expect(context.errors).toEqual({
-      test: {
-        type: 'min',
-        message,
-        ref: {
-          name: 'test',
-        },
-        types: {
-          min: message,
-        },
-      },
-    })
-  })
-
-  test('does not mutate errors when field has no constraints', () => {
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      field: {
-        _f: {
-          name: 'test',
-          ref: {
-            name: 'test',
-          },
-        },
-      },
-    }
-
-    nativeValidateMinMax(context)
-
-    expect(context.errors).toEqual({})
-  })
-
-  test('does not mutate errors when neither bounds are exceeded', () => {
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: '5',
-    }
-
-    nativeValidateMinMax(context)
-
-    expect(context.errors).toEqual({})
-  })
-
-  test('time values as bounds', () => {
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: '2021-01-01',
-      field: {
-        _f: {
-          name: 'test',
-          valueAsDate: true,
-          min: {
-            value: '2020-01-01',
-            message,
-          },
-          max: {
-            value: '2022-01-01',
-            message,
-          },
-          ref: {
-            name: 'test',
-            type: 'time',
-          },
-        },
-      },
-    }
-
-    nativeValidateMinMax(context)
-
-    expect(context.errors).toEqual({})
-  })
-
-  test('week values as bounds', () => {
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: '2021-W01',
-      field: {
-        _f: {
-          name: 'test',
-          valueAsDate: true,
-          min: {
-            value: '2020-W01',
-            message,
-          },
-          max: {
-            value: '2022-W01',
-            message,
-          },
-          ref: {
-            name: 'test',
-            type: 'week',
-          },
-        },
-      },
-    }
-
-    nativeValidateMinMax(context)
-
-    expect(context.errors).toEqual({})
-  })
-
-  test('valueAsDate as inputValue', () => {
-    const next = vi.fn()
-
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      field: {
-        _f: {
-          name: 'test',
-          min: {
-            value: '2020-01-01',
-            message,
-          },
-          max: {
-            value: '2022-01-01',
-            message,
-          },
-          ref: {
-            name: 'test',
-            valueAsDate: new Date('2021-01-01'),
-          },
-        },
-      },
-    }
-
-    nativeValidateMinMax(context, next)
-
-    expect(context.errors).toEqual({})
-  })
-
-  test('set custom validity is called', () => {
-    const setCustomValidity = vi.fn()
-
-    const reportValidity = vi.fn()
-
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: '1234567891011',
-      inputRef: {
-        setCustomValidity,
-        reportValidity,
-      } as any,
-      shouldSetCustomValidity: true,
-    }
-
-    nativeValidateMinMax(context)
-
-    expect(setCustomValidity).toHaveBeenCalledWith(message)
-  })
-
-  test('set custom validity is not called when validating all field criteria', () => {
-    const setCustomValidity = vi.fn()
-
-    const reportValidity = vi.fn()
-
-    const context: NativeValidationContext = {
-      ...defaultContext,
-      inputValue: '1234567891011',
-      inputRef: {
-        setCustomValidity,
-        reportValidity,
-      } as any,
-      validateAllFieldCriteria: true,
-      shouldSetCustomValidity: false,
-    }
-
-    nativeValidateMinMax(context)
-
-    expect(setCustomValidity).not.toHaveBeenCalled()
-  })
 })
 
 describe('fieldExceedsBounds', () => {
-  test('works with 0', () => {
+  test('number in bounds', () => {
+    const ref = document.createElement('input')
+
     const field: Field = {
       _f: {
-        min: {
-          value: 0,
-          message: '',
-        },
-        max: {
-          value: 10,
-          message: '',
-        },
-        ref: {},
+        name: 'test',
+        min: 0,
+        max: 10,
+        ref,
       },
-    } as any
+    }
 
     const result = fieldExceedsBounds(field, 0)
 
     expect(result).toEqual({
       exceedMax: false,
       exceedMin: false,
-      maxOutput: {
-        message: '',
-        value: 10,
-      },
       minOutput: {
         message: '',
         value: 0,
       },
+      maxOutput: {
+        message: '',
+        value: 10,
+      },
     })
+  })
+
+  test('date string that exceeds min', () => {
+    const ref = document.createElement('input')
+
+    const field: Field = {
+      _f: {
+        name: 'test',
+        min: '2021-01-01',
+        max: '2021-01-10',
+        ref,
+      },
+    }
+
+    const result = fieldExceedsBounds(field, '2020-01-01')
+
+    expect(result).toEqual({
+      exceedMax: false,
+      exceedMin: true,
+      minOutput: {
+        message: '',
+        value: '2021-01-01',
+      },
+      maxOutput: {
+        message: '',
+        value: '2021-01-10',
+      },
+    })
+  })
+
+  test('time that exceeds max', () => {
+    const ref = document.createElement('input')
+
+    ref.type = 'time'
+
+    const field: Field = {
+      _f: {
+        name: 'test',
+        min: '00:00',
+        max: '10:00',
+        ref,
+      },
+    }
+
+    const result = fieldExceedsBounds(field, '11:00')
+
+    expect(result).toEqual({
+      exceedMax: true,
+      exceedMin: false,
+      minOutput: {
+        message: '',
+        value: '00:00',
+      },
+      maxOutput: {
+        message: '',
+        value: '10:00',
+      },
+    })
+  })
+
+  test('week that exceeds max', () => {
+    const ref = document.createElement('input')
+
+    ref.type = 'week'
+
+    const field: Field = {
+      _f: {
+        name: 'test',
+        min: '2021-W01',
+        max: '2021-W10',
+        ref,
+      },
+    }
+
+    const result = fieldExceedsBounds(field, '2021-W11')
+
+    expect(result).toEqual({
+      exceedMax: true,
+      exceedMin: false,
+      minOutput: {
+        message: '',
+        value: '2021-W01',
+      },
+      maxOutput: {
+        message: '',
+        value: '2021-W10',
+      },
+    })
+  })
+})
+
+describe('convertToDate', () => {
+  test('works with string', () => {
+    const result = convertToDate('2021-01-01')
+
+    expect(result).toBeInstanceOf(Date)
+  })
+
+  test('works with number', () => {
+    const result = convertToDate(1612137600000)
+
+    expect(result).toBeInstanceOf(Date)
+  })
+
+  test('works with Date', () => {
+    const result = convertToDate(new Date('2021-01-01'))
+
+    expect(result).toBeInstanceOf(Date)
   })
 })

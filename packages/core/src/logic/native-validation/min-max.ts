@@ -111,6 +111,6 @@ export function fieldExceedsBounds(field: Field, inputValue: any): ExceedBoundsR
 /**
  * Helper function that just converts some value to a date.
  */
-function convertToDate(value: unknown) {
+export function convertToDate(value: unknown) {
   return new Date(`${new Date().toDateString()} ${value}`)
 }

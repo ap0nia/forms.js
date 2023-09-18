@@ -120,7 +120,7 @@ describe('nativeValidateMinMaxLength', () => {
     expect(ref.setCustomValidity).toHaveBeenCalledWith('')
   })
 
-  test('correct errors when maxLength exceeded', () => {
+  test('correctly sets errors when maxLength exceeded', () => {
     const ref = document.createElement('input')
 
     ref.name = 'test'
@@ -161,7 +161,7 @@ describe('nativeValidateMinMaxLength', () => {
     })
   })
 
-  test('correct errors when minLength exceeded', () => {
+  test('correctly sets errors when minLength exceeded', () => {
     const ref = document.createElement('input')
 
     const context: NativeValidationContext = {
