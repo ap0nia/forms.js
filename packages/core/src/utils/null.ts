@@ -11,7 +11,7 @@ export function isNullish(value: unknown): value is Nullish {
 }
 
 /**
- * This is a necessary type guard mimic {@link Array.filter(Boolean)}.
+ * This is a necessary type guard mimic for array filtering.
  */
 export function notNullish<T>(value: T): value is NonNullable<T> {
   return !isNullish(value)

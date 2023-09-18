@@ -18,7 +18,7 @@ import type {
  *
  * Native-validators __can__ mutate the context object, notably the errors, similar to Express.js middleware.
  */
-const defaultNativeValidators = [
+const defaultNativeValidators: any[] = [
   // nativeValidateRequired,
   // nativeValidateMinMax,
   // nativeValidateMinMaxLength,
@@ -70,6 +70,10 @@ export async function nativelyValidateFields(
 
   for (const field of definedFields) {
     const { _f, ...nestedField } = field
+
+    if (_f == null) {
+      continue
+    }
 
     const isFieldArrayRoot = options?.isFieldArrayRoot?.(_f.name)
 
