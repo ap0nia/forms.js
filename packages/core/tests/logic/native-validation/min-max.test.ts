@@ -1,11 +1,13 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULES } from '../../../src/constants'
+import type { InternalFieldErrors } from '../../../src/logic/errors'
 import type { Field } from '../../../src/logic/fields'
 import {
   nativeValidateMinMax,
   fieldExceedsBounds,
   convertToDate,
+  type ExceedBoundsResult,
 } from '../../../src/logic/native-validation/min-max'
 import type { NativeValidationContext } from '../../../src/logic/native-validation/types'
 import { noop } from '../../../src/utils/noop'
@@ -32,7 +34,9 @@ describe('nativeValidateMinMax', () => {
 
     nativeValidateMinMax(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('no errors if inside bounds', () => {
@@ -58,7 +62,9 @@ describe('nativeValidateMinMax', () => {
 
     nativeValidateMinMax(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('calls setCustomValidity if max exceeded', () => {
@@ -85,13 +91,15 @@ describe('nativeValidateMinMax', () => {
 
     nativeValidateMinMax(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: INPUT_VALIDATION_RULES.max,
         message: '',
         ref,
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
 
     expect(ref.setCustomValidity).toHaveBeenCalledWith('')
   })
@@ -120,15 +128,17 @@ describe('nativeValidateMinMax', () => {
 
     nativeValidateMinMax(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: INPUT_VALIDATION_RULES.min,
         message: '',
         ref,
       },
-    })
+    }
 
-    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+    expect(context.errors).toEqual(expectedErrors)
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith(expectedErrors[ref.name]?.message)
   })
 
   test('correctly sets errors when max exceeded', () => {
@@ -160,8 +170,8 @@ describe('nativeValidateMinMax', () => {
 
     nativeValidateMinMax(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         ref: context.field._f.ref,
         type: INPUT_VALIDATION_RULES.max,
         message: '',
@@ -169,7 +179,9 @@ describe('nativeValidateMinMax', () => {
           [INPUT_VALIDATION_RULES.max]: true,
         },
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('correctly sets errors when min exceeded', () => {
@@ -194,8 +206,8 @@ describe('nativeValidateMinMax', () => {
 
     nativeValidateMinMax(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         ref: context.field._f.ref,
         type: INPUT_VALIDATION_RULES.min,
         message: '',
@@ -203,7 +215,9 @@ describe('nativeValidateMinMax', () => {
           [INPUT_VALIDATION_RULES.min]: true,
         },
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 })
 
@@ -224,18 +238,20 @@ describe('fieldExceedsBounds', () => {
 
     const result = fieldExceedsBounds(field, 0)
 
-    expect(result).toEqual({
+    const expectedResult: ExceedBoundsResult = {
       exceedMax: false,
       exceedMin: false,
-      minOutput: {
+      minLength: {
         message: '',
         value: 0,
       },
-      maxOutput: {
+      maxLength: {
         message: '',
         value: 10,
       },
-    })
+    }
+
+    expect(result).toEqual(expectedResult)
   })
 
   test('date string that exceeds min', () => {
@@ -254,18 +270,20 @@ describe('fieldExceedsBounds', () => {
 
     const result = fieldExceedsBounds(field, '2020-01-01')
 
-    expect(result).toEqual({
+    const expectedResult: ExceedBoundsResult = {
       exceedMax: false,
       exceedMin: true,
-      minOutput: {
+      minLength: {
         message: '',
         value: '2021-01-01',
       },
-      maxOutput: {
+      maxLength: {
         message: '',
         value: '2021-01-10',
       },
-    })
+    }
+
+    expect(result).toEqual(expectedResult)
   })
 
   test('time that exceeds max', () => {
@@ -285,18 +303,20 @@ describe('fieldExceedsBounds', () => {
 
     const result = fieldExceedsBounds(field, '11:00')
 
-    expect(result).toEqual({
+    const expectedResult: ExceedBoundsResult = {
       exceedMax: true,
       exceedMin: false,
-      minOutput: {
+      minLength: {
         message: '',
         value: '00:00',
       },
-      maxOutput: {
+      maxLength: {
         message: '',
         value: '10:00',
       },
-    })
+    }
+
+    expect(result).toEqual(expectedResult)
   })
 
   test('week that exceeds max', () => {
@@ -316,18 +336,20 @@ describe('fieldExceedsBounds', () => {
 
     const result = fieldExceedsBounds(field, '2021-W11')
 
-    expect(result).toEqual({
+    const expectedResult: ExceedBoundsResult = {
       exceedMax: true,
       exceedMin: false,
-      minOutput: {
+      minLength: {
         message: '',
         value: '2021-W01',
       },
-      maxOutput: {
+      maxLength: {
         message: '',
         value: '2021-W10',
       },
-    })
+    }
+
+    expect(result).toEqual(expectedResult)
   })
 })
 

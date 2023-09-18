@@ -1,16 +1,16 @@
 import type { FieldElement } from '../fields'
 
-type CheckboxFieldResult = {
-  isValid: boolean
-  value: string | string[] | boolean | undefined
-}
-
 const defaultResult: CheckboxFieldResult = {
   value: false,
   isValid: false,
 }
 
 const validResult = { value: true, isValid: true }
+
+export type CheckboxFieldResult = {
+  isValid: boolean
+  value: string | string[] | boolean | undefined
+}
 
 export function isCheckBoxInput(element: FieldElement): element is HTMLInputElement {
   return element.type === 'checkbox'

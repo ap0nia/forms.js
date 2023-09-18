@@ -1,6 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULES } from '../../../src/constants'
+import type { InternalFieldErrors } from '../../../src/logic/errors'
 import { nativeValidatePattern } from '../../../src/logic/native-validation/pattern'
 import type { NativeValidationContext } from '../../../src/logic/native-validation/types'
 import { noop } from '../../../src/utils/noop'
@@ -27,7 +28,9 @@ describe('nativeValidatePattern', () => {
 
     nativeValidatePattern(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('no errors if pattern matches', () => {
@@ -54,7 +57,9 @@ describe('nativeValidatePattern', () => {
 
     nativeValidatePattern(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('calls setCustomValidity if pattern does not match', () => {
@@ -81,15 +86,17 @@ describe('nativeValidatePattern', () => {
 
     nativeValidatePattern(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: INPUT_VALIDATION_RULES.pattern,
         message: '',
         ref,
       },
-    })
+    }
 
-    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+    expect(context.errors).toEqual(expectedErrors)
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith(expectedErrors[ref.name]?.message)
   })
 
   test('correctly sets errors when pattern does not match', () => {
@@ -121,8 +128,8 @@ describe('nativeValidatePattern', () => {
 
     nativeValidatePattern(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: INPUT_VALIDATION_RULES.pattern,
         message: '',
         ref,
@@ -130,6 +137,8 @@ describe('nativeValidatePattern', () => {
           [INPUT_VALIDATION_RULES.pattern]: true,
         },
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 })

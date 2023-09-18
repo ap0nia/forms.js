@@ -60,10 +60,6 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
   let validationResult = {} as FieldError
 
   for (const key in field._f.validate) {
-    if (!isEmptyObject(validationResult) && !validateAllFieldCriteria) {
-      break
-    }
-
     const currentValidateResult = await validate[key]?.(inputValue, formValues)
 
     const validateError = parseValidationResult(currentValidateResult, inputRef, key)
@@ -75,7 +71,7 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
           ...errors[name],
           types: {
             ...errors[name]?.types,
-            [key]: validateError.message || true,
+            [INPUT_VALIDATION_RULES.validate]: validateError.message || true,
           },
         }),
       }

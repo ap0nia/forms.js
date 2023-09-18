@@ -4,7 +4,7 @@ export function isRadioInput(element: FieldElement): element is HTMLInputElement
   return element.type === 'radio'
 }
 
-type RadioFieldResult = {
+export type RadioFieldResult = {
   isValid: boolean
   value: number | string | null
 }

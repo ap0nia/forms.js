@@ -1,6 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULES } from '../../../src/constants'
+import type { InternalFieldErrors } from '../../../src/logic/errors'
 import { nativeValidateMinMaxLength } from '../../../src/logic/native-validation/min-max-length'
 import type { NativeValidationContext } from '../../../src/logic/native-validation/types'
 import { noop } from '../../../src/utils/noop'
@@ -27,7 +28,9 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('no errors if inside bounds', () => {
@@ -53,7 +56,9 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('calls setCustomValidity if maxLength exceeded', () => {
@@ -80,15 +85,17 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         ref: context.field._f.ref,
         type: INPUT_VALIDATION_RULES.maxLength,
         message: '',
       },
-    })
+    }
 
-    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+    expect(context.errors).toEqual(expectedErrors)
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith(expectedErrors[ref.name]?.message)
   })
 
   test('calls setCustomValidity if minLength exceeded', () => {
@@ -115,15 +122,17 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         ref: context.field._f.ref,
         type: INPUT_VALIDATION_RULES.minLength,
         message: '',
       },
-    })
+    }
 
-    expect(ref.setCustomValidity).toHaveBeenCalledWith('')
+    expect(context.errors).toEqual(expectedErrors)
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith(expectedErrors[ref.name]?.message)
   })
 
   test('correctly sets errors when maxLength exceeded', () => {
@@ -155,8 +164,8 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         ref: context.field._f.ref,
         type: INPUT_VALIDATION_RULES.maxLength,
         message: '',
@@ -164,7 +173,9 @@ describe('nativeValidateMinMaxLength', () => {
           [INPUT_VALIDATION_RULES.maxLength]: true,
         },
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('correctly sets errors when minLength exceeded', () => {
@@ -189,8 +200,8 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         ref: context.field._f.ref,
         type: INPUT_VALIDATION_RULES.minLength,
         message: '',
@@ -198,7 +209,9 @@ describe('nativeValidateMinMaxLength', () => {
           [INPUT_VALIDATION_RULES.minLength]: true,
         },
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('no errors for array length within bounds', () => {
@@ -223,6 +236,8 @@ describe('nativeValidateMinMaxLength', () => {
 
     nativeValidateMinMaxLength(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 })

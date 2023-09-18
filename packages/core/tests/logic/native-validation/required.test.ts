@@ -1,6 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULES } from '../../../src/constants'
+import type { InternalFieldErrors } from '../../../src/logic/errors'
 import type { Field } from '../../../src/logic/fields'
 import {
   nativeValidateRequired,
@@ -31,7 +32,9 @@ describe('nativeValidateRequired', () => {
 
     nativeValidateRequired(context, noop)
 
-    expect(context.errors).toEqual({})
+    const expectedErrors: InternalFieldErrors = {}
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('correctly sets error if required validation rule and missing', () => {
@@ -59,13 +62,15 @@ describe('nativeValidateRequired', () => {
 
     nativeValidateRequired(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: 'required',
         message: 'Please enter a value',
         ref,
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('correctly sets error if required string and missing', () => {
@@ -90,13 +95,15 @@ describe('nativeValidateRequired', () => {
 
     nativeValidateRequired(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: 'required',
         message: 'Please enter a value',
         ref,
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 
   test('calls setCustomValidity if missing', () => {
@@ -106,7 +113,7 @@ describe('nativeValidateRequired', () => {
 
     ref.setCustomValidity = vi.fn()
 
-    const context: NativeValidationContext = {
+    const context = {
       field: {
         _f: {
           name: ref.name,
@@ -122,19 +129,21 @@ describe('nativeValidateRequired', () => {
       inputValue: '',
       formValues: {},
       shouldSetCustomValidity: true,
-    }
+    } satisfies NativeValidationContext
 
     nativeValidateRequired(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: 'required',
-        message: 'Please enter a value',
+        message: context.field._f.required.message,
         ref,
       },
-    })
+    }
 
-    expect(ref.setCustomValidity).toHaveBeenCalledWith('Please enter a value')
+    expect(context.errors).toEqual(expectedErrors)
+
+    expect(ref.setCustomValidity).toHaveBeenCalledWith(expectedErrors[ref.name]?.message)
   })
 
   test('correctly sets error if missing', () => {
@@ -166,8 +175,8 @@ describe('nativeValidateRequired', () => {
 
     nativeValidateRequired(context, noop)
 
-    expect(context.errors).toEqual({
-      test: {
+    const expectedErrors: InternalFieldErrors = {
+      [ref.name]: {
         type: 'required',
         message: '',
         ref,
@@ -175,7 +184,9 @@ describe('nativeValidateRequired', () => {
           [INPUT_VALIDATION_RULES.required]: true,
         },
       },
-    })
+    }
+
+    expect(context.errors).toEqual(expectedErrors)
   })
 })
 

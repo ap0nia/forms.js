@@ -4,7 +4,7 @@
 
 import { describe, test, expect } from 'vitest'
 
-import { isRadioInput, getRadioValue } from '../../../src/logic/html/radio'
+import { isRadioInput, getRadioValue, type RadioFieldResult } from '../../../src/logic/html/radio'
 
 describe('isRadioInput', () => {
   test('returns true for radio input', () => {
@@ -29,57 +29,53 @@ describe('isRadioInput', () => {
  */
 describe('getRadioValue', () => {
   test('returns default value if invalid or empty options', () => {
-    expect(getRadioValue(undefined)).toEqual({
-      isValid: false,
-      value: null,
-    })
+    expect(getRadioValue(undefined)).toEqual({ isValid: false, value: null })
   })
 
   test('returns valid when value found', () => {
-    expect(
-      getRadioValue([
-        { name: 'bill', checked: false, value: '1' } as HTMLInputElement,
-        { name: 'bill', checked: true, value: '2' } as HTMLInputElement,
-      ]),
-    ).toEqual({
+    const options: HTMLInputElement[] = []
+
+    options[0] = document.createElement('input')
+    options[0].type = 'radio'
+    options[0].name = 'bill'
+    options[0].checked = false
+    options[0].value = '1'
+
+    options[1] = document.createElement('input')
+    options[1].type = 'radio'
+    options[1].name = 'bill'
+    options[1].checked = true
+    options[1].value = '2'
+
+    const expectedResult: RadioFieldResult = {
       isValid: true,
-      value: '2',
-    })
+      value: options.find((option) => option.checked)?.value ?? '',
+    }
+
+    expect(getRadioValue(options)).toEqual(expectedResult)
   })
 
   test('returns disabled input correctly', () => {
-    expect(
-      getRadioValue([
-        {
-          name: 'bill',
-          checked: false,
-          value: '1',
-          disabled: true,
-        } as HTMLInputElement,
-        { name: 'bill', checked: true, value: '2' } as HTMLInputElement,
-      ]),
-    ).toEqual({
-      isValid: true,
-      value: '2',
-    })
+    const options: HTMLInputElement[] = []
 
-    expect(
-      getRadioValue([
-        {
-          name: 'bill',
-          checked: false,
-          value: '1',
-        } as HTMLInputElement,
-        {
-          name: 'bill',
-          checked: true,
-          disabled: true,
-          value: '2',
-        } as HTMLInputElement,
-      ]),
-    ).toEqual({
-      isValid: false,
-      value: null,
-    })
+    options[0] = document.createElement('input')
+    options[0].type = 'radio'
+    options[0].name = 'bill'
+    options[0].checked = false
+    options[0].value = '1'
+    options[0].disabled = true
+
+    options[1] = document.createElement('input')
+    options[1].type = 'radio'
+    options[1].name = 'bill'
+    options[1].checked = true
+    options[1].value = '2'
+
+    const expectedResult: RadioFieldResult = {
+      isValid: true,
+      value: options.find((option) => option.checked)?.value ?? '',
+    }
+
+    expect(getRadioValue(options)).toEqual(expectedResult)
   })
 })

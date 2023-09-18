@@ -4,20 +4,32 @@ import { isSingleSelectInput, isMultipleSelectInput } from '../../../src/logic/h
 
 describe('isSingleSelectInput', () => {
   test('returns true for single select', () => {
-    expect(isSingleSelectInput({ name: 'test', type: 'select-one' })).toBeTruthy()
+    const input = document.createElement('select')
+
+    expect(isSingleSelectInput(input)).toBeTruthy()
   })
 
   test('returns false for non-single select', () => {
-    expect(isSingleSelectInput({ name: 'test', type: 'select-multiple' })).toBeFalsy()
+    const input = document.createElement('select')
+
+    input.multiple = true
+
+    expect(isSingleSelectInput(input)).toBeFalsy()
   })
 })
 
 describe('isMultipleSelectInput', () => {
   test('returns true for multiple select', () => {
-    expect(isMultipleSelectInput({ name: 'test', type: 'select-multiple' })).toBeTruthy()
+    const input = document.createElement('select')
+
+    input.multiple = true
+
+    expect(isMultipleSelectInput(input)).toBeTruthy()
   })
 
   test('returns false for non-multiple select', () => {
-    expect(isMultipleSelectInput({ name: 'test', type: 'select-one' })).toBeFalsy()
+    const input = document.createElement('select')
+
+    expect(isMultipleSelectInput(input)).toBeFalsy()
   })
 })
