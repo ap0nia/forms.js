@@ -13,6 +13,7 @@ import { Writable } from './store'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
 import { deepSet } from './utils/deep-set'
+import { deepUnset } from './utils/deep-unset'
 import { isObject } from './utils/is-object'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
@@ -272,21 +273,6 @@ export class FormControl<
 
   state: State
 
-  /**
-   * Idk.
-   */
-  proxyFormState = {
-    /**
-     * Whether to update the form's dirty state?
-     */
-    isDirty: false,
-    dirtyFields: false,
-    touchedFields: false,
-    isValidating: false,
-    isValid: false,
-    errors: false,
-  }
-
   shouldDisplayAllAssociatedErrors: boolean
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
@@ -361,6 +347,27 @@ export class FormControl<
     // } else {
     //   this.updateValidAndValue(name, true, options.value)
     // }
+  }
+
+  /**
+   * Updates a field's dirty status.
+   *
+   * @returns Whether the field's dirty status changed.
+   */
+  updateDirtyField(name: string, fieldValue?: unknown): boolean {
+    const currentFieldIsClean = deepEqual(safeGet(this.defaultValues, name), fieldValue)
+
+    const previousIsDirty = safeGet(this.formState.dirtyFields, name)
+
+    if (currentFieldIsClean && previousIsDirty) {
+      deepUnset(this.formState.dirtyFields, name)
+    }
+
+    if (!currentFieldIsClean && !previousIsDirty) {
+      deepSet(this.formState.dirtyFields, name, true)
+    }
+
+    return !previousIsDirty === !currentFieldIsClean
   }
 
   /**
