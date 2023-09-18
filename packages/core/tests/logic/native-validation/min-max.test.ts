@@ -14,10 +14,12 @@ describe('nativeValidateMinMax', () => {
   test('no errors if no constraints', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
         },
       },
@@ -36,10 +38,12 @@ describe('nativeValidateMinMax', () => {
   test('no errors if inside bounds', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           min: 1,
           max: 10,
@@ -60,12 +64,14 @@ describe('nativeValidateMinMax', () => {
   test('calls setCustomValidity if max exceeded', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     ref.setCustomValidity = vi.fn()
 
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           max: 10,
         },
@@ -93,12 +99,14 @@ describe('nativeValidateMinMax', () => {
   test('calls setCustomValidity if min exceeded', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     ref.setCustomValidity = vi.fn()
 
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           min: 10,
         },
@@ -131,7 +139,7 @@ describe('nativeValidateMinMax', () => {
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           max: 1,
         },
@@ -167,10 +175,12 @@ describe('nativeValidateMinMax', () => {
   test('correctly sets errors when min exceeded', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           min: 10,
         },
@@ -201,9 +211,11 @@ describe('fieldExceedsBounds', () => {
   test('number in bounds', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'number'
+
     const field: Field = {
       _f: {
-        name: 'test',
+        name: ref.name,
         min: 0,
         max: 10,
         ref,
@@ -229,9 +241,11 @@ describe('fieldExceedsBounds', () => {
   test('date string that exceeds min', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'date'
+
     const field: Field = {
       _f: {
-        name: 'test',
+        name: ref.name,
         min: '2021-01-01',
         max: '2021-01-10',
         ref,
@@ -257,11 +271,12 @@ describe('fieldExceedsBounds', () => {
   test('time that exceeds max', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'time'
     ref.type = 'time'
 
     const field: Field = {
       _f: {
-        name: 'test',
+        name: ref.name,
         min: '00:00',
         max: '10:00',
         ref,
@@ -287,11 +302,12 @@ describe('fieldExceedsBounds', () => {
   test('week that exceeds max', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
     ref.type = 'week'
 
     const field: Field = {
       _f: {
-        name: 'test',
+        name: ref.name,
         min: '2021-W01',
         max: '2021-W10',
         ref,

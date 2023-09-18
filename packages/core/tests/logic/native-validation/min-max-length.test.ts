@@ -9,10 +9,12 @@ describe('nativeValidateMinMaxLength', () => {
   test('no errors if no constraints', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
         },
       },
@@ -31,10 +33,12 @@ describe('nativeValidateMinMaxLength', () => {
   test('no errors if inside bounds', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           minLength: 1,
           maxLength: 10,
@@ -62,7 +66,7 @@ describe('nativeValidateMinMaxLength', () => {
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           maxLength: 1,
         },
@@ -90,12 +94,14 @@ describe('nativeValidateMinMaxLength', () => {
   test('calls setCustomValidity if minLength exceeded', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     ref.setCustomValidity = vi.fn()
 
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           minLength: 10,
         },
@@ -128,7 +134,7 @@ describe('nativeValidateMinMaxLength', () => {
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           maxLength: 1,
         },
@@ -164,10 +170,12 @@ describe('nativeValidateMinMaxLength', () => {
   test('correctly sets errors when minLength exceeded', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
           minLength: 10,
         },
@@ -196,10 +204,12 @@ describe('nativeValidateMinMaxLength', () => {
   test('no errors for array length within bounds', () => {
     const ref = document.createElement('input')
 
+    ref.name = 'test'
+
     const context: NativeValidationContext = {
       field: {
         _f: {
-          name: 'test',
+          name: ref.name,
           ref,
         },
       },

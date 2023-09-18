@@ -25,14 +25,7 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
     return next?.(context)
   }
 
-  const { value, message } =
-    typeof required === 'string'
-      ? { value: !!required, message: required }
-      : parseValidationRule(required)
-
-  if (!value) {
-    return next?.(context)
-  }
+  const message = typeof required === 'string' ? required : parseValidationRule(required).message
 
   errors[name] = {
     type: INPUT_VALIDATION_RULES.required,
@@ -68,10 +61,13 @@ export function requiredButMissing(field: Field, inputValue: any, isFieldArray?:
     return false
   }
 
-  const isRadio = isRadioInput(field._f.ref)
-  const isCheckBox = isCheckBoxInput(field._f.ref)
-  const isRadioOrCheckbox = isRadio || isCheckBox
   const isEmpty = fieldIsEmpty(field, inputValue)
+
+  const isRadio = isRadioInput(field._f.ref)
+
+  const isCheckBox = isCheckBoxInput(field._f.ref)
+
+  const isRadioOrCheckbox = isRadio || isCheckBox
 
   // If it's __not__ a radio or checkbox and there's no value, then it's missing.
   if (!isRadioOrCheckbox && (isEmpty || inputValue == null)) {
