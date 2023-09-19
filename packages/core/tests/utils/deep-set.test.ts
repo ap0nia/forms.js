@@ -20,6 +20,10 @@ describe('deepSet', () => {
 
     expect(test2[key]).toEqual('world')
   })
+
+  test('does not do anything for null object', () => {
+    expect(deepSet(null, 'foo', 'bar')).toEqual('bar')
+  })
 })
 
 /**

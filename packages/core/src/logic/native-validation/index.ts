@@ -34,11 +34,6 @@ const defaultNativeValidators = [
 
 export type ValidationOptions = {
   /**
-   * Whether to exit immediately upon encountering the first error for the __form__.
-   */
-  validateAllFieldCriteria?: boolean
-
-  /**
    * Whether to exit immediately upon encountering the first error for a single field.
    */
   shouldDisplayAllAssociatedErrors?: boolean
@@ -51,22 +46,22 @@ export type ValidationOptions = {
   shouldUseNativeValidation?: boolean
 
   /**
+   * Whether to stop validating fields after the first invalid field is found.
+   */
+  shouldOnlyCheckValid?: boolean
+
+  /**
    * Callback to determine if a field is a field array root.
    *
    * Should be handled by a parent FormControl.
    */
   isFieldArrayRoot?: (name: string) => boolean
-
-  /**
-   * Whether to stop validating fields after the first invalid field is found.
-   */
-  shouldOnlyCheckValid?: boolean
 }
 
 /**
  * Natively validates all the provided fields.
  */
-export async function nativelyValidateFields(
+export async function nativeValidateFields(
   fields: FieldRecord,
   values: any,
   options?: ValidationOptions,
@@ -89,7 +84,7 @@ export async function nativelyValidateFields(
         field,
         values,
         options?.shouldDisplayAllAssociatedErrors,
-        options?.shouldUseNativeValidation && !options?.validateAllFieldCriteria,
+        options?.shouldUseNativeValidation && !options?.shouldOnlyCheckValid,
         isFieldArrayRoot,
       )
 
@@ -110,7 +105,7 @@ export async function nativelyValidateFields(
       continue
     }
 
-    const subResult = await nativelyValidateFields(nestedField, values, options)
+    const subResult = await nativeValidateFields(nestedField, values, options)
 
     valid &&= subResult.valid
     errors = { ...errors, ...subResult.errors }

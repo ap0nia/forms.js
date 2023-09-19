@@ -3,7 +3,11 @@ import { isObject } from './is-object'
 /**
  * Given a dot-concatenated string path, deeply set a property, filling in any missing objects along the way.
  */
-export function deepSet<T>(obj: NonNullable<unknown>, key: PropertyKey, value: unknown): T {
+export function deepSet<T>(obj: unknown, key: PropertyKey, value: unknown): T {
+  if (obj == null) {
+    return value as any
+  }
+
   if (typeof key === 'number' || typeof key === 'symbol') {
     obj[key as keyof typeof obj] = value as never
     return obj[key as keyof typeof obj] as T

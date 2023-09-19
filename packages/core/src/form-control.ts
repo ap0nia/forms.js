@@ -154,6 +154,10 @@ export type SetValueOptions = {
   shouldTouch?: boolean
 }
 
+export type TriggerOptions = {
+  shouldFocus?: boolean
+}
+
 /**
  * Overall form state.
  */

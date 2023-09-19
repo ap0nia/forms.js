@@ -2,7 +2,7 @@ import { vi, describe, test, expect } from 'vitest'
 
 import type { FieldRecord } from '../../../src/logic/fields'
 import {
-  nativelyValidateFields,
+  nativeValidateFields,
   nativeValidateSingleField,
 } from '../../../src/logic/native-validation'
 
@@ -29,7 +29,7 @@ describe('nativelyValidateFields', async () => {
 
     const values = {}
 
-    const validationResult = await nativelyValidateFields(fields, values, {
+    const validationResult = await nativeValidateFields(fields, values, {
       shouldOnlyCheckValid: true,
     })
 
@@ -43,7 +43,7 @@ describe('nativelyValidateFields', async () => {
 
     const values = {}
 
-    const validationResult = await nativelyValidateFields(fields, values)
+    const validationResult = await nativeValidateFields(fields, values)
 
     expect(validationResult.valid).toBeTruthy()
   })
@@ -62,7 +62,7 @@ describe('nativelyValidateFields', async () => {
 
     const values = { test: '' }
 
-    const validationResult = await nativelyValidateFields(fields, values)
+    const validationResult = await nativeValidateFields(fields, values)
 
     expect(validationResult.valid).toBeFalsy()
   })
@@ -81,7 +81,7 @@ describe('nativelyValidateFields', async () => {
 
     const values = { test: '' }
 
-    const validationResult = await nativelyValidateFields(fields, values, {
+    const validationResult = await nativeValidateFields(fields, values, {
       validateAllFieldCriteria: true,
       isFieldArrayRoot: () => false,
     })
@@ -102,7 +102,7 @@ describe('nativelyValidateFields', async () => {
 
     const values = { test: '' }
 
-    const validationResult = await nativelyValidateFields(fields, values, {
+    const validationResult = await nativeValidateFields(fields, values, {
       shouldUseNativeValidation: true,
     })
 
@@ -130,7 +130,7 @@ describe('nativelyValidateFields', async () => {
     }
     const values = { test: 'valid', nested: '' }
 
-    const validationResult = await nativelyValidateFields(fields, values)
+    const validationResult = await nativeValidateFields(fields, values)
 
     expect(validationResult.valid).toBeFalsy()
   })
