@@ -7,17 +7,19 @@ import {
 } from './constants'
 import type { FieldErrors } from './logic/errors'
 import type { Field, FieldRecord } from './logic/fields'
+import { focusFieldBy } from './logic/helpers/focus-field-by'
+import { getResolverOptions } from './logic/helpers/get-resolver-options'
 import { nativeValidateFields } from './logic/native-validation'
 import type { NativeValidationResult } from './logic/native-validation/types'
 import type { RegisterOptions } from './logic/register'
-import type { Resolver } from './logic/resolver'
+import type { Resolver, ResolverResult } from './logic/resolver'
 import { Writable } from './store'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
-import { isObject } from './utils/is-object'
+import { isEmptyObject, isObject } from './utils/is-object'
 import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
@@ -161,6 +163,10 @@ export type SetValueOptions = {
 export type TriggerOptions = {
   shouldFocus?: boolean
 }
+
+export type TriggerResult<T> =
+  | { resolverResult: ResolverResult<T>; validationResult?: never; isValid: boolean }
+  | { resolverResult?: never; validationResult: NativeValidationResult; isValid: boolean }
 
 /**
  * Overall form state.
@@ -357,6 +363,72 @@ export class FormControl<
     // }
   }
 
+  async trigger(
+    name?: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
+    options?: TriggerOptions,
+  ): Promise<TriggerResult<TValues>> {
+    this.stores.state.set({ isValidating: true })
+
+    const fieldNames = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
+
+    // Fallback to native validation if no resolver provided.
+
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate(fieldNames)
+
+      const isValid = validationResult.valid
+
+      this.stores.state.set({
+        ...(typeof name === 'string' && isValid === this.formState.isValid && { name }),
+        ...(!name && { isValid }),
+        errors: this.formState.errors,
+        isValidating: false,
+      })
+
+      if (options?.shouldFocus && !isValid) {
+        const callback = (key?: string) => key && safeGet(this.formState.errors, key)
+        focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
+      }
+
+      return { validationResult, isValid }
+    }
+
+    // Pass the form values through the provided resolver.
+
+    const resolverOptions = getResolverOptions(
+      fieldNames ?? this.names.mount,
+      this.fields,
+      this.options.criteriaMode,
+      this.options.shouldUseNativeValidation,
+    )
+
+    const resolverResult = await this.options.resolver(
+      this.values,
+      this.options.context,
+      resolverOptions,
+    )
+
+    this.processResolverResult(resolverResult, fieldNames)
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    this.formState.isValid = isValid
+
+    this.stores.state.set({
+      ...(typeof name === 'string' && isValid === this.formState.isValid && { name }),
+      isValid,
+      errors: this.formState.errors,
+      isValidating: false,
+    })
+
+    if (options?.shouldFocus && !isValid) {
+      const callback = (key?: string) => key && safeGet(this.formState.errors, key)
+      focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
+    }
+
+    return { resolverResult, isValid }
+  }
+
   async nativeValidate(
     names?: string | string[] | Nullish,
     shouldOnlyCheckValid?: boolean,
@@ -392,6 +464,23 @@ export class FormControl<
     })
 
     return validationResult
+  }
+
+  processResolverResult(result: ResolverResult<TValues>, names?: string[]): void {
+    if (!names?.length) {
+      this.formState.errors = result.errors ?? {}
+      return
+    }
+
+    for (const name of names) {
+      const error = safeGet(result.errors, name)
+
+      if (error) {
+        deepSet(this.formState.errors, name, error)
+      } else {
+        deepUnset(this.formState.errors, name)
+      }
+    }
   }
 
   /**

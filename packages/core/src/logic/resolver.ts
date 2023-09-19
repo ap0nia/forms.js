@@ -57,14 +57,14 @@ export type ResolverSuccess<T> = {
   /**
    * Don't return any errors.
    */
-  errors?: never
+  errors?: {}
 }
 
 export type ResolverError<T> = {
   /**
    * Don't return any form values.
    */
-  values?: never
+  values?: {}
 
   /**
    * Return the form errors.
