@@ -15,6 +15,20 @@ describe('FormContol', () => {
     })
   })
 
+  test('filters fields to validate', async () => {
+    const formControl = new FormControl()
+
+    formControl.register('name', { required: true })
+
+    // The 'name' field is invalid since it has no value, but is required.
+    // But we're filtering it out from validation.
+    const result = await formControl.nativeValidate('not-a-field')
+
+    expect(result.valid).toBeTruthy()
+    expect(result.names).toEqual([])
+    expect(result.errors).toEqual({})
+  })
+
   test('validates a single valid input', async () => {
     const formControl = new FormControl()
 
