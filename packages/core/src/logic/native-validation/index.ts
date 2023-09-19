@@ -88,16 +88,17 @@ export async function nativeValidateFields(
         isFieldArrayRoot,
       )
 
-      names.push(_f.name)
-
-      errors = { ...errors, ...fieldValidationResult }
-
       if (fieldValidationResult[_f.name]) {
         valid = false
 
         if (options?.shouldOnlyCheckValid) {
           return { names, errors, valid }
         }
+      }
+
+      if (!options?.shouldOnlyCheckValid) {
+        names.push(_f.name)
+        errors = { ...errors, ...fieldValidationResult }
       }
     }
 

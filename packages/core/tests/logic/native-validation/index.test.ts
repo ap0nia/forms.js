@@ -82,7 +82,6 @@ describe('nativelyValidateFields', async () => {
     const values = { test: '' }
 
     const validationResult = await nativeValidateFields(fields, values, {
-      validateAllFieldCriteria: true,
       isFieldArrayRoot: () => false,
     })
 

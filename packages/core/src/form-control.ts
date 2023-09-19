@@ -7,14 +7,18 @@ import {
 } from './constants'
 import type { FieldErrors } from './logic/errors'
 import type { Field, FieldRecord } from './logic/fields'
+import { nativeValidateFields } from './logic/native-validation'
+import type { NativeValidationResult } from './logic/native-validation/types'
 import type { RegisterOptions } from './logic/register'
 import type { Resolver } from './logic/resolver'
 import { Writable } from './store'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
+import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { isObject } from './utils/is-object'
+import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
@@ -351,6 +355,43 @@ export class FormControl<
     // } else {
     //   this.updateValidAndValue(name, true, options.value)
     // }
+  }
+
+  async nativeValidate(
+    names?: string | string[] | Nullish,
+    shouldOnlyCheckValid?: boolean,
+  ): Promise<NativeValidationResult> {
+    const fields = deepFilter<FieldRecord>(this.fields, names)
+
+    const validationResult = await nativeValidateFields(fields, this.values, {
+      shouldOnlyCheckValid,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      shouldDisplayAllAssociatedErrors: this.shouldDisplayAllAssociatedErrors,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+    })
+
+    validationResult.names.forEach((name) => {
+      const fieldError = safeGet(validationResult.errors, name)
+
+      // After validation, an affected field name has no errors.
+      if (fieldError == null) {
+        deepUnset(this.formState.errors, name)
+        return
+      }
+
+      // After validation, a regular field name has errors.
+      if (!this.names.array.has(name)) {
+        deepSet(this.formState.errors, name, safeGet(validationResult.errors, name))
+        return
+      }
+
+      // After validation, a field array root name has errors.
+      const fieldArrayErrors = safeGet(this.formState.errors, name)
+      deepSet(fieldArrayErrors, 'root', fieldError[name])
+      deepSet(this.formState.errors, name, fieldArrayErrors)
+    })
+
+    return validationResult
   }
 
   /**
