@@ -6,9 +6,15 @@ import {
   type State,
 } from './constants'
 import type { FieldErrors } from './logic/errors'
-import type { Field, FieldRecord } from './logic/fields'
+import type { Field, FieldElement, FieldRecord } from './logic/fields'
 import { focusFieldBy } from './logic/helpers/focus-field-by'
+import { getFieldValue, getFieldValueAs } from './logic/helpers/get-field-value'
 import { getResolverOptions } from './logic/helpers/get-resolver-options'
+import { getRuleValue } from './logic/helpers/get-rule-value'
+import { updateFieldReference } from './logic/helpers/update-field-reference'
+import { isCheckBoxInput } from './logic/html/checkbox'
+import { isHTMLElement } from './logic/html/is-html-element'
+import { isRadioInput } from './logic/html/radio'
 import { nativeValidateFields } from './logic/native-validation'
 import type { NativeValidationResult } from './logic/native-validation/types'
 import type { RegisterOptions } from './logic/register'
@@ -287,6 +293,8 @@ export class FormControl<
 
   state: State
 
+  storeState = new Writable<FormState<TValues>>()
+
   shouldDisplayAllAssociatedErrors: boolean
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
@@ -316,6 +324,8 @@ export class FormControl<
       dirtyFields: {},
       errors: {},
     }
+
+    this.storeState.set(this.formState)
 
     this.state = 'idle'
 
@@ -354,13 +364,101 @@ export class FormControl<
 
     this.names.mount.add(name)
 
-    // const disabledIsDefined = options.disabled
+    if (alreadyRegisteredField) {
+      this.updateDisabledField({ field: alreadyRegisteredField, disabled: options.disabled, name })
+    } else {
+      this.updateValidAndValue(name, true, options.value)
+    }
 
-    // if (field) {
-    //   this.updateDisabledField({ field, disabled: options.disabled, name })
-    // } else {
-    //   this.updateValidAndValue(name, true, options.value)
-    // }
+    const disabledIsDefined = options.disabled
+
+    return {
+      ...(disabledIsDefined ? { disabled: options.disabled } : {}),
+      ...(this.options.progressive
+        ? {
+            required: !!options.required,
+            min: getRuleValue(options.min),
+            max: getRuleValue(options.max),
+            minLength: getRuleValue<number>(options.minLength) as number,
+            maxLength: getRuleValue(options.maxLength) as number,
+            pattern: getRuleValue(options.pattern) as string,
+          }
+        : {}),
+      name,
+      // onChange,
+      // onBlur: onChange,
+      ref: (ref: HTMLInputElement | null): void => {
+        if (ref) {
+          this.register(name, options)
+          const field = safeGet(this.fields, name)
+
+          const fieldRef =
+            ref.value == null
+              ? ref.querySelectorAll
+                ? (ref.querySelectorAll('input,select,textarea')[0] as FieldElement) || ref
+                : ref
+              : ref
+
+          const radioOrCheckbox = isRadioInput(fieldRef) || isCheckBoxInput(fieldRef)
+
+          const refs = field._f.refs || []
+
+          const existingField = radioOrCheckbox
+            ? refs.find((option: FieldElement) => option === fieldRef)
+            : fieldRef === field._f.ref
+
+          if (existingField) {
+            return
+          }
+
+          deepSet(this.fields, name, {
+            _f: {
+              ...field._f,
+              ...(radioOrCheckbox
+                ? {
+                    refs: [
+                      ...refs.filter((ref: FieldElement) => isHTMLElement(ref) && ref.isConnected),
+                      fieldRef,
+                      ...(Array.isArray(safeGet(this.defaultValues, name)) ? [{}] : []),
+                    ],
+                    ref: { type: fieldRef.type, name },
+                  }
+                : { ref: fieldRef }),
+            },
+          })
+
+          this.updateValidAndValue(name, false, undefined, fieldRef)
+        } else {
+          const field = safeGet(this.fields, name) ?? {}
+
+          if (field._f) {
+            field._f.mount = false
+          }
+
+          if (
+            (this.options.shouldUnregister || options.shouldUnregister) &&
+            !(this.names.array.has(name) && this.state === 'action')
+          ) {
+            this.names.unMount.add(name)
+          }
+        }
+      },
+    }
+  }
+
+  updateDisabledField(options: any) {
+    const { disabled, name, field, fields } = options
+    if (typeof disabled !== 'boolean') {
+      return
+    }
+
+    const value =
+      (disabled ? undefined : safeGet(this.values, name)) ??
+      getFieldValue(field ? field._f : safeGet(fields, name)._f)
+
+    deepSet(this.values, name, value)
+
+    this.updateDirtyField(name, value)
   }
 
   async trigger(
@@ -427,6 +525,81 @@ export class FormControl<
     }
 
     return { resolverResult, isValid }
+  }
+
+  setFieldValue(name: string, value: any, options: SetValueOptions = {}) {
+    const field = safeGet<Field | undefined>(this.fields, name)
+
+    const fieldReference = field?._f
+
+    if (fieldReference == null) {
+      this.touch(name, value, options)
+      return
+    }
+
+    if (!fieldReference.disabled) {
+      deepSet(this.values, name, getFieldValueAs(value, fieldReference))
+    }
+
+    /**
+     * TODO: testing, register a real DOM element for the ref.
+     */
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    const updateResult = updateFieldReference(fieldReference, fieldValue)
+
+    if (updateResult === 'custom') {
+      this.stores.values.set({ name, values: { ...this.values } })
+    }
+
+    this.touch(name, fieldValue, options)
+  }
+
+  async touch(name: string, value: unknown, options?: SetValueOptions) {
+    const dirtyResult =
+      (!options?.shouldTouch || options.shouldDirty) && this.updateDirtyField(name, value)
+
+    const touchedResult = options?.shouldTouch && this.updateTouchedFields(name)
+
+    if (dirtyResult || touchedResult) {
+      this.stores.state.set({
+        ...(dirtyResult && {
+          isDirty: this.formState.isDirty,
+          dirtyFields: this.formState.dirtyFields,
+        }),
+        ...(touchedResult && { touchedFields: this.formState.touchedFields }),
+      })
+    }
+
+    if (options?.shouldValidate) {
+      await this.trigger(name as any)
+    }
+  }
+
+  updateValidAndValue(
+    name: string,
+    shouldSkipSetValueAs: boolean,
+    value?: unknown,
+    ref?: FieldElement,
+  ) {
+    const field: Field = safeGet(this.fields, name)
+
+    if (field) {
+      const defaultValue =
+        safeGet(this.values, name) ?? value == null ? safeGet(this.defaultValues, name) : value
+
+      if (defaultValue == null || (ref && (ref as HTMLInputElement).defaultChecked)) {
+        if (shouldSkipSetValueAs) {
+          deepSet(this.values, name, shouldSkipSetValueAs ? defaultValue : getFieldValue(field._f))
+        } else {
+          this.setFieldValue(name, defaultValue)
+        }
+      }
+
+      if (this.state === 'mount') {
+        this.updateValid()
+      }
+    }
   }
 
   async nativeValidate(
@@ -533,6 +706,49 @@ export class FormControl<
     this.formState.isDirty = isDirty
 
     return previousIsDirty !== isDirty
+  }
+
+  async updateValid(shouldUpdateValid?: boolean) {
+    if (!shouldUpdateValid) {
+      return
+    }
+
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate()
+
+      const isValid = validationResult.valid
+
+      if (isValid !== this.formState.isValid) {
+        this.formState.isValid = isValid
+        this.stores.state.set({ isValid })
+      }
+
+      return
+    }
+
+    // Pass the form values through the provided resolver.
+
+    const resolverOptions = getResolverOptions(
+      this.names.mount,
+      this.fields,
+      this.options.criteriaMode,
+      this.options.shouldUseNativeValidation,
+    )
+
+    const resolverResult = await this.options.resolver(
+      this.values,
+      this.options.context,
+      resolverOptions,
+    )
+
+    this.processResolverResult(resolverResult)
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    if (isValid !== this.formState.isValid) {
+      this.formState.isValid = isValid
+      this.stores.state.set({ isValid })
+    }
   }
 
   /**
