@@ -150,7 +150,7 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
 
-  packages/v6:
+  packages/v5:
     devDependencies:
       typescript:
         specifier: ^5.1.6
