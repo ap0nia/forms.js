@@ -18,10 +18,14 @@ export class Writable<T> {
 
   subscribers = new Set<SubscribeInvalidateTuple<T>>()
 
-  constructor(
-    private value?: T,
-    private start: StartStopNotifier<T> = noop,
-  ) {}
+  value: T
+
+  start: StartStopNotifier<T>
+
+  constructor(value?: T, start: StartStopNotifier<T> = noop) {
+    this.value = value as T
+    this.start = start
+  }
 
   set(value: T): void {
     if (!safeNotEqual(this.value, value)) {

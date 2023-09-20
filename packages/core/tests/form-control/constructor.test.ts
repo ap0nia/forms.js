@@ -7,9 +7,9 @@ describe('FormControl', () => {
     test('no default values and no values sets both as empty object', () => {
       const form = new FormControl()
 
-      expect(form.defaultValues).toEqual({})
+      expect(form.state.defaultValues.value).toEqual({})
 
-      expect(form.values).toEqual({})
+      expect(form.state.values.value).toEqual({})
     })
 
     test('default values and no values sets both', () => {
@@ -17,9 +17,9 @@ describe('FormControl', () => {
 
       const form = new FormControl({ defaultValues })
 
-      expect(form.defaultValues).toEqual(defaultValues)
+      expect(form.state.defaultValues.value).toEqual(defaultValues)
 
-      expect(form.values).toEqual(defaultValues)
+      expect(form.state.values.value).toEqual(defaultValues)
     })
 
     test('values and no default values sets both', () => {
@@ -27,9 +27,9 @@ describe('FormControl', () => {
 
       const form = new FormControl({ values })
 
-      expect(form.defaultValues).toEqual(values)
+      expect(form.state.defaultValues.value).toEqual(values)
 
-      expect(form.values).toEqual(values)
+      expect(form.state.values.value).toEqual(values)
     })
 
     test('shouldUnregister and default values does not set values', () => {
@@ -37,9 +37,9 @@ describe('FormControl', () => {
 
       const form = new FormControl({ defaultValues, shouldUnregister: true })
 
-      expect(form.defaultValues).toEqual(defaultValues)
+      expect(form.state.defaultValues.value).toEqual(defaultValues)
 
-      expect(form.values).toEqual({})
+      expect(form.state.values.value).toEqual({})
     })
   })
 })

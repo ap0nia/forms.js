@@ -8,6 +8,7 @@ import {
 } from './constants'
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
+import type { FieldRecord } from './types/fields'
 import type { Resolver } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
 import { isObject } from './utils/is-object'
@@ -90,6 +91,11 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
    * Debounce setting?
    */
   delayError?: number
+
+  /**
+   * Mostly an internal option. Whether to continue validating after the first error is found.
+   */
+  shouldDisplayAllAssociatedErrors?: boolean
 }
 
 /**
@@ -187,11 +193,6 @@ export type FormState<T> = {
   submitCount: number
 
   /**
-   * The default values? Why is this duplicated?
-   */
-  defaultValues?: undefined | Readonly<DeepPartial<T>>
-
-  /**
    * Fields that have been modified.
    */
   dirtyFields: Partial<Readonly<DeepMap<T, boolean>>>
@@ -200,6 +201,16 @@ export type FormState<T> = {
    * Fields that have been touched.
    */
   touchedFields: Partial<Readonly<DeepMap<T, boolean>>>
+
+  /**
+   * The default values?
+   */
+  defaultValues: Writable<DeepPartial<T>>
+
+  /**
+   * The current form values.
+   */
+  values: Writable<T>
 
   /**
    * A record of field names mapped to their errors.
@@ -234,20 +245,51 @@ export class FormControl<
   TContext = any,
   TParsedForm extends ParsedForm<TValues> = ParsedForm<TValues>,
 > {
+  /**
+   * The resolved options for the form.
+   *
+   * @public
+   */
   options: FormControlOptions<TValues, TContext>
 
-  defaultValues: DeepPartial<TValues>
-
-  values: TValues
-
+  /**
+   * The current state of the form. All top-level properties are observables.
+   *
+   * @public
+   */
   state: { [Key in keyof FormState<TValues>]: Writable<FormState<TValues>[Key]> }
 
+  /**
+   * The current stage of the form. Certain operations are performed during certain stages.
+   *
+   * @public
+   */
   stage: Stage[keyof Stage]
 
-  shouldDisplayAllAssociatedErrors: boolean
+  /**
+   * Registered fields.
+   *
+   * @internal
+   */
+  fields: FieldRecord = {}
+
+  /**
+   * Names of fields doing something.
+   *
+   * @internal
+   */
+  names = {
+    mount: new Set<string>(),
+    unMount: new Set<string>(),
+    array: new Set<string>(),
+    watch: new Set<string>(),
+  }
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
     const resolvedOptions = { ...defaultOptions, ...options }
+
+    resolvedOptions.shouldDisplayAllAssociatedErrors ??=
+      resolvedOptions.criteriaMode === VALIDATION_MODE.all
 
     const defaultValues =
       isObject(resolvedOptions.defaultValues) || isObject(resolvedOptions.values)
@@ -255,10 +297,6 @@ export class FormControl<
         : {}
 
     this.options = resolvedOptions
-
-    this.defaultValues = defaultValues
-
-    this.values = resolvedOptions.shouldUnregister ? {} : cloneObject(defaultValues)
 
     this.state = {
       submitCount: new Writable(0),
@@ -271,12 +309,12 @@ export class FormControl<
       isValid: new Writable(false),
       touchedFields: new Writable({}),
       dirtyFields: new Writable({}),
+      defaultValues: new Writable(defaultValues),
+      values: new Writable(resolvedOptions.shouldUnregister ? {} : cloneObject(defaultValues)),
       errors: new Writable({}),
     }
 
     this.stage = STAGE.IDLE
-
-    this.shouldDisplayAllAssociatedErrors = resolvedOptions.criteriaMode === VALIDATION_MODE.all
   }
 
   getValues(): TValues
@@ -293,6 +331,6 @@ export class FormControl<
 
   getValues(...fieldNames: any[]): any {
     const names = fieldNames.length > 1 ? fieldNames : fieldNames[0]
-    return safeGetMultiple(this.values, names)
+    return safeGetMultiple(this.state.values.value, names)
   }
 }
