@@ -1,6 +1,5 @@
 import type { CriteriaMode } from '../constants'
 import type { FlattenObject } from '../utils/types/flatten-object'
-import type { MaybePromise } from '../utils/types/maybe-promise'
 
 import type { FieldErrors } from './errors'
 import type { FieldReference } from './fields'
@@ -13,7 +12,7 @@ export type Resolver<TFieldValues, TContext = any> = (
   values: TFieldValues,
   context: TContext | undefined,
   options: ResolverOptions<TFieldValues>,
-) => MaybePromise<ResolverResult<TFieldValues>>
+) => ResolverResult<TFieldValues> | Promise<ResolverResult<TFieldValues>>
 
 /**
  * Resolver options.
