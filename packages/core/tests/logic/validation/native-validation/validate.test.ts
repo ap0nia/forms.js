@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { INPUT_VALIDATION_RULES } from '../../../../src/constants'
+import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import type { NativeValidationContext } from '../../../../src/logic/validation/native-validation/types'
 import {
   nativeValidateValidate,
@@ -147,7 +147,7 @@ describe('nativeValidateValidate', () => {
         message: '',
         ref,
         types: {
-          [INPUT_VALIDATION_RULES.validate]: true,
+          [INPUT_VALIDATION_RULE.validate]: true,
         },
       },
     }

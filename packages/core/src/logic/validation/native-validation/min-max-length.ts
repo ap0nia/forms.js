@@ -1,4 +1,4 @@
-import { INPUT_VALIDATION_RULES } from '../../../constants'
+import { INPUT_VALIDATION_RULE } from '../../../constants'
 import { fieldIsEmpty } from '../../fields/field-is-empty'
 import { setCustomValidity } from '../../html/set-custom-validity'
 import { parseValidationRule } from '../../validation/parse-validation-rule'
@@ -49,8 +49,8 @@ export const nativeValidateMinMaxLength: NativeValidationFunction = (context, ne
   const message = exceedMax ? parsedMaxLengthRule.message : parsedMinLengthRule.message
 
   const validationType = exceedMax
-    ? INPUT_VALIDATION_RULES.maxLength
-    : INPUT_VALIDATION_RULES.minLength
+    ? INPUT_VALIDATION_RULE.maxLength
+    : INPUT_VALIDATION_RULE.minLength
 
   errors[name] = {
     type: validationType,

@@ -1,4 +1,4 @@
-import { INPUT_VALIDATION_RULES } from '../../../constants'
+import { INPUT_VALIDATION_RULE } from '../../../constants'
 import { fieldIsEmpty } from '../../fields/field-is-empty'
 import { setCustomValidity } from '../../html/set-custom-validity'
 import { parseValidationRule } from '../../validation/parse-validation-rule'
@@ -24,14 +24,14 @@ export const nativeValidatePattern: NativeValidationFunction = (context, next) =
   }
 
   errors[name] = {
-    type: INPUT_VALIDATION_RULES.pattern,
+    type: INPUT_VALIDATION_RULE.pattern,
     message,
     ref,
     ...(validateAllFieldCriteria && {
       ...errors[name],
       types: {
         ...errors[name]?.types,
-        [INPUT_VALIDATION_RULES.pattern]: message || true,
+        [INPUT_VALIDATION_RULE.pattern]: message || true,
       },
     }),
   }

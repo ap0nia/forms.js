@@ -1,4 +1,4 @@
-import { INPUT_VALIDATION_RULES } from '../../../constants'
+import { INPUT_VALIDATION_RULE } from '../../../constants'
 import type { FieldError } from '../../../types/errors'
 import type { FieldElement } from '../../../types/fields'
 import type { ValidateResult } from '../../../types/validation'
@@ -39,7 +39,7 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
           ...errors[name],
           types: {
             ...errors[name]?.types,
-            [INPUT_VALIDATION_RULES.validate]: validateError.message || true,
+            [INPUT_VALIDATION_RULE.validate]: validateError.message || true,
           },
         }),
       }

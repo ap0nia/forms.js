@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { INPUT_VALIDATION_RULES } from '../../../../src/constants'
+import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import { nativeValidatePattern } from '../../../../src/logic/validation/native-validation/pattern'
 import type { NativeValidationContext } from '../../../../src/logic/validation/native-validation/types'
 import type { InternalFieldErrors } from '../../../../src/types/errors'
@@ -88,7 +88,7 @@ describe('nativeValidatePattern', () => {
 
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
-        type: INPUT_VALIDATION_RULES.pattern,
+        type: INPUT_VALIDATION_RULE.pattern,
         message: '',
         ref,
       },
@@ -130,11 +130,11 @@ describe('nativeValidatePattern', () => {
 
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
-        type: INPUT_VALIDATION_RULES.pattern,
+        type: INPUT_VALIDATION_RULE.pattern,
         message: '',
         ref,
         types: {
-          [INPUT_VALIDATION_RULES.pattern]: true,
+          [INPUT_VALIDATION_RULE.pattern]: true,
         },
       },
     }

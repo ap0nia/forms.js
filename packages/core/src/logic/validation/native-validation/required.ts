@@ -1,4 +1,4 @@
-import { INPUT_VALIDATION_RULES } from '../../../constants'
+import { INPUT_VALIDATION_RULE } from '../../../constants'
 import type { Field } from '../../../types/fields'
 import { fieldIsEmpty } from '../../fields/field-is-empty'
 import { getCheckBoxValue, isCheckBoxInput } from '../../html/checkbox'
@@ -36,14 +36,14 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
   }
 
   errors[name] = {
-    type: INPUT_VALIDATION_RULES.required,
+    type: INPUT_VALIDATION_RULE.required,
     message,
     ref: inputRef,
     ...(validateAllFieldCriteria && {
       ...errors[name],
       types: {
         ...errors[name]?.types,
-        [INPUT_VALIDATION_RULES.required]: message || true,
+        [INPUT_VALIDATION_RULE.required]: message || true,
       },
     }),
   }

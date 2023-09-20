@@ -16,7 +16,7 @@ export const VALIDATION_MODE = {
   all: 'all',
 } as const
 
-export const INPUT_VALIDATION_RULES = {
+export const INPUT_VALIDATION_RULE = {
   max: 'max',
   min: 'min',
   maxLength: 'maxLength',
@@ -31,14 +31,14 @@ export const CRITERIA_MODE = {
   all: 'all',
 }
 
-export const STATES = {
+export const STAGE = {
   IDLE: 'idle',
   ACTION: 'action',
   MOUNT: 'mount',
   WATCH: 'watch',
 } as const
 
-export type InputValidationRules = typeof INPUT_VALIDATION_RULES
+export type InputValidationRule = typeof INPUT_VALIDATION_RULE
 
 export type ValidationMode = typeof VALIDATION_MODE
 
@@ -46,4 +46,4 @@ export type RevalidationMode = typeof REVALIDATION_MODE
 
 export type CriteriaMode = typeof CRITERIA_MODE
 
-export type State = typeof STATES
+export type Stage = typeof STAGE

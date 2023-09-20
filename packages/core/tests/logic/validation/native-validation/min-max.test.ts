@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { INPUT_VALIDATION_RULES } from '../../../../src/constants'
+import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import {
   nativeValidateMinMax,
   fieldExceedsBounds,
@@ -93,7 +93,7 @@ describe('nativeValidateMinMax', () => {
 
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
-        type: INPUT_VALIDATION_RULES.max,
+        type: INPUT_VALIDATION_RULE.max,
         message: '',
         ref,
       },
@@ -130,7 +130,7 @@ describe('nativeValidateMinMax', () => {
 
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
-        type: INPUT_VALIDATION_RULES.min,
+        type: INPUT_VALIDATION_RULE.min,
         message: '',
         ref,
       },
@@ -173,10 +173,10 @@ describe('nativeValidateMinMax', () => {
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
         ref: context.field._f.ref,
-        type: INPUT_VALIDATION_RULES.max,
+        type: INPUT_VALIDATION_RULE.max,
         message: '',
         types: {
-          [INPUT_VALIDATION_RULES.max]: true,
+          [INPUT_VALIDATION_RULE.max]: true,
         },
       },
     }
@@ -209,10 +209,10 @@ describe('nativeValidateMinMax', () => {
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
         ref: context.field._f.ref,
-        type: INPUT_VALIDATION_RULES.min,
+        type: INPUT_VALIDATION_RULE.min,
         message: '',
         types: {
-          [INPUT_VALIDATION_RULES.min]: true,
+          [INPUT_VALIDATION_RULE.min]: true,
         },
       },
     }

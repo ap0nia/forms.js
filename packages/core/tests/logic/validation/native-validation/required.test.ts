@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { INPUT_VALIDATION_RULES } from '../../../../src/constants'
+import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import {
   nativeValidateRequired,
   requiredButMissing,
@@ -181,7 +181,7 @@ describe('nativeValidateRequired', () => {
         message: '',
         ref,
         types: {
-          [INPUT_VALIDATION_RULES.required]: true,
+          [INPUT_VALIDATION_RULE.required]: true,
         },
       },
     }

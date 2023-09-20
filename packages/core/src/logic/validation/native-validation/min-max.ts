@@ -1,4 +1,4 @@
-import { INPUT_VALIDATION_RULES } from '../../../constants'
+import { INPUT_VALIDATION_RULE } from '../../../constants'
 import type { Field } from '../../../types/fields'
 import type { ValidationValueMessage } from '../../../types/validation'
 import { fieldIsEmpty } from '../../fields/field-is-empty'
@@ -33,7 +33,7 @@ export const nativeValidateMinMax: NativeValidationFunction = (context, next) =>
 
   const message = exceedMax ? maxLength.message : minLength.message
 
-  const validationType = exceedMax ? INPUT_VALIDATION_RULES.max : INPUT_VALIDATION_RULES.min
+  const validationType = exceedMax ? INPUT_VALIDATION_RULE.max : INPUT_VALIDATION_RULE.min
 
   errors[name] = {
     type: validationType,

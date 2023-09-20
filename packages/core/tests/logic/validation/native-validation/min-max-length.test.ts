@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { INPUT_VALIDATION_RULES } from '../../../../src/constants'
+import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import { nativeValidateMinMaxLength } from '../../../../src/logic/validation/native-validation/min-max-length'
 import type { NativeValidationContext } from '../../../../src/logic/validation/native-validation/types'
 import type { InternalFieldErrors } from '../../../../src/types/errors'
@@ -88,7 +88,7 @@ describe('nativeValidateMinMaxLength', () => {
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
         ref: context.field._f.ref,
-        type: INPUT_VALIDATION_RULES.maxLength,
+        type: INPUT_VALIDATION_RULE.maxLength,
         message: '',
       },
     }
@@ -125,7 +125,7 @@ describe('nativeValidateMinMaxLength', () => {
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
         ref: context.field._f.ref,
-        type: INPUT_VALIDATION_RULES.minLength,
+        type: INPUT_VALIDATION_RULE.minLength,
         message: '',
       },
     }
@@ -167,10 +167,10 @@ describe('nativeValidateMinMaxLength', () => {
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
         ref: context.field._f.ref,
-        type: INPUT_VALIDATION_RULES.maxLength,
+        type: INPUT_VALIDATION_RULE.maxLength,
         message: '',
         types: {
-          [INPUT_VALIDATION_RULES.maxLength]: true,
+          [INPUT_VALIDATION_RULE.maxLength]: true,
         },
       },
     }
@@ -203,10 +203,10 @@ describe('nativeValidateMinMaxLength', () => {
     const expectedErrors: InternalFieldErrors = {
       [ref.name]: {
         ref: context.field._f.ref,
-        type: INPUT_VALIDATION_RULES.minLength,
+        type: INPUT_VALIDATION_RULE.minLength,
         message: '',
         types: {
-          [INPUT_VALIDATION_RULES.minLength]: true,
+          [INPUT_VALIDATION_RULE.minLength]: true,
         },
       },
     }
