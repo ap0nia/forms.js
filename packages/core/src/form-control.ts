@@ -13,6 +13,7 @@ import type { NativeValidationResult } from './logic/validation/native-validatio
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
+import type { RegisterOptions } from './types/register'
 import type { Resolver } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
@@ -350,44 +351,44 @@ export class FormControl<
     return safeGetMultiple(this.state.values.value, names)
   }
 
-  // register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
-  //   const existingField: Field | undefined = safeGet(this.fields, name)
+  register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
+    const existingField: Field | undefined = safeGet(this.fields, name)
 
-  //   const field: Field = {
-  //     ...existingField,
-  //     _f: {
-  //       ...(existingField?._f ?? { ref: { name } }),
-  //       name,
-  //       mount: true,
-  //       ...options,
-  //     },
-  //   }
+    const field: Field = {
+      ...existingField,
+      _f: {
+        ...(existingField?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
+    }
 
-  //   deepSet(this.fields, name, field)
+    deepSet(this.fields, name, field)
 
-  //   this.names.mount.add(name)
+    this.names.mount.add(name)
 
-  //   const props = {}
+    const props = {}
 
-  //   if (existingField) {
-  //     this.updateDisabledField({ field, disabled: options.disabled, name })
-  //     return props
-  //   }
+    if (existingField) {
+      this.updateDisabledField({ field, disabled: options.disabled, name })
+      return props
+    }
 
-  //   const defaultValue =
-  //     safeGet(this.state.values.value, name) ?? options.value == null
-  //       ? safeGet(this.state.defaultValues.value, name)
-  //       : options.value
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? options.value == null
+        ? safeGet(this.state.defaultValues.value, name)
+        : options.value
 
-  //   this.state.values.update((values) => {
-  //     deepSet(values, name, defaultValue)
-  //     return values
-  //   })
+    this.state.values.update((values) => {
+      deepSet(values, name, defaultValue)
+      return values
+    })
 
-  //   this.updateValid()
+    this.updateValid()
 
-  //   return props
-  // }
+    return props
+  }
 
   /**
    */
