@@ -361,42 +361,43 @@ export class FormControl<
 
     this.names.mount.add(name)
 
+    const props = {}
+
     if (existingField) {
       this.updateDisabledField({ field, disabled: options.disabled, name })
-    } else {
-      const defaultValue =
-        safeGet(this.state.values.value, name) ?? options.value == null
-          ? safeGet(this.state.defaultValues.value, name)
-          : options.value
-
-      this.state.values.update((values) => {
-        deepSet(values, name, defaultValue)
-        return values
-      })
-
-      this.updateValid()
+      return props
     }
 
-    return {}
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? options.value == null
+        ? safeGet(this.state.defaultValues.value, name)
+        : options.value
+
+    this.state.values.update((values) => {
+      deepSet(values, name, defaultValue)
+      return values
+    })
+
+    this.updateValid()
+
+    return props
   }
 
   updateDisabledField(options: any) {
-    const { disabled, name, field, fields } = options
-
-    if (typeof disabled !== 'boolean') {
+    if (typeof options.disabled !== 'boolean') {
       return
     }
 
     const value =
-      (disabled ? undefined : safeGet(this.state.values.value, name)) ??
-      getFieldValue(field ? field._f : safeGet(fields, name)._f)
+      (options.disabled ? undefined : safeGet(this.state.values.value, options.name)) ??
+      getFieldValue(options.field._f ?? safeGet(options.fields, options.name)._f)
 
     this.state.values.update((values) => {
-      deepSet(values, name, value)
+      deepSet(values, options.name, value)
       return values
     })
 
-    this.updateDirtyField(name, value)
+    this.updateDirtyField(options.name, value)
   }
 
   async updateValid() {
