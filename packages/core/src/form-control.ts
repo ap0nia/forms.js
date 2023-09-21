@@ -461,26 +461,29 @@ export class FormControl<
   //   return currentIsDirty !== previousIsDirty
   // }
 
-  // processResolverResult(result: ResolverResult<TValues>, names?: string[]): void {
-  //   if (!names?.length) {
-  //     this.state.errors.set(result.errors ?? {})
-  //     return
-  //   }
+  /**
+   * Merges a new errors object into the form state's errors.
+   * A resolver can generate an errors object after validating the form values.
+   *
+   * @internal
+   */
+  mergeErrors(errors: FieldErrors<TValues>, names?: string[]): void {
+    const namesToMerge = names ?? Object.keys(errors)
 
-  //   this.state.errors.update((errors) => {
-  //     for (const name of names) {
-  //       const error = safeGet(result.errors, name)
+    this.state.errors.update((currentErrors) => {
+      for (const name of namesToMerge) {
+        const error = safeGet(errors, name)
 
-  //       if (error) {
-  //         deepSet(errors, name, error)
-  //       } else {
-  //         deepUnset(errors, name)
-  //       }
-  //     }
+        if (error) {
+          deepSet(currentErrors, name, error)
+        } else {
+          deepUnset(currentErrors, name)
+        }
+      }
 
-  //     return errors
-  //   })
-  // }
+      return currentErrors
+    })
+  }
 
   /**
    * Validate a field using native HTML input constraints.
