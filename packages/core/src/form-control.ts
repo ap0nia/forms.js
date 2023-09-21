@@ -13,6 +13,7 @@ import type { FieldErrors } from './types/errors'
 import type { FieldRecord } from './types/fields'
 import type { Resolver } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
+import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
@@ -434,32 +435,32 @@ export class FormControl<
    *
    * @returns Whether the field's dirty status changed.
    */
-  // updateDirtyField(name: string, value?: unknown): boolean {
-  //   const defaultValue = safeGet(this.state.defaultValues.value, name)
+  updateDirtyField(name: string, value?: unknown): boolean {
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
 
-  //   // The field will be dirty if its value is different from its default value.
-  //   const currentIsDirty = !deepEqual(defaultValue, value)
+    // The field will be dirty if its value is different from its default value.
+    const currentIsDirty = !deepEqual(defaultValue, value)
 
-  //   const previousIsDirty = safeGet(this.state.dirtyFields.value, name)
+    const previousIsDirty = safeGet(this.state.dirtyFields.value, name)
 
-  //   // The field is turning dirty to clean.
-  //   if (previousIsDirty && !currentIsDirty) {
-  //     this.state.dirtyFields.update((dirtyFields) => {
-  //       deepUnset(dirtyFields, name)
-  //       return dirtyFields
-  //     })
-  //   }
+    // The field is turning dirty to clean.
+    if (previousIsDirty && !currentIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => {
+        deepUnset(dirtyFields, name)
+        return dirtyFields
+      })
+    }
 
-  //   // The field is turning clean to dirty.
-  //   if (!currentIsDirty && !previousIsDirty) {
-  //     this.state.isDirty.update((dirtyFields) => {
-  //       deepSet(dirtyFields, name, true)
-  //       return dirtyFields
-  //     })
-  //   }
+    // The field is turning clean to dirty.
+    if (!currentIsDirty && !previousIsDirty) {
+      this.state.isDirty.update((dirtyFields) => {
+        deepSet(dirtyFields, name, true)
+        return dirtyFields
+      })
+    }
 
-  //   return currentIsDirty !== previousIsDirty
-  // }
+    return currentIsDirty !== previousIsDirty
+  }
 
   /**
    * Merges a new errors object into the form state's errors.
