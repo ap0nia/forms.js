@@ -441,7 +441,7 @@ export class FormControl<
     // The field will be dirty if its value is different from its default value.
     const currentIsDirty = !deepEqual(defaultValue, value)
 
-    const previousIsDirty = safeGet(this.state.dirtyFields.value, name)
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
 
     // The field is turning dirty to clean.
     if (previousIsDirty && !currentIsDirty) {
@@ -452,8 +452,8 @@ export class FormControl<
     }
 
     // The field is turning clean to dirty.
-    if (!currentIsDirty && !previousIsDirty) {
-      this.state.isDirty.update((dirtyFields) => {
+    if (!previousIsDirty && currentIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => {
         deepSet(dirtyFields, name, true)
         return dirtyFields
       })
