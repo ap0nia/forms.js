@@ -6,21 +6,17 @@ import {
   type Stage,
   STAGE,
 } from './constants'
-import { getFieldValue } from './logic/fields/get-field-value'
-import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
-import type { Field, FieldRecord } from './types/fields'
-import type { RegisterOptions } from './types/register'
-import type { Resolver, ResolverResult } from './types/resolver'
+import type { FieldRecord } from './types/fields'
+import type { Resolver } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
-import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
-import { isEmptyObject, isObject } from './utils/is-object'
+import { isObject } from './utils/is-object'
 import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
@@ -344,147 +340,147 @@ export class FormControl<
     return safeGetMultiple(this.state.values.value, names)
   }
 
-  register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
-    const existingField: Field | undefined = safeGet(this.fields, name)
+  // register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
+  //   const existingField: Field | undefined = safeGet(this.fields, name)
 
-    const field: Field = {
-      ...existingField,
-      _f: {
-        ...(existingField?._f ?? { ref: { name } }),
-        name,
-        mount: true,
-        ...options,
-      },
-    }
+  //   const field: Field = {
+  //     ...existingField,
+  //     _f: {
+  //       ...(existingField?._f ?? { ref: { name } }),
+  //       name,
+  //       mount: true,
+  //       ...options,
+  //     },
+  //   }
 
-    deepSet(this.fields, name, field)
+  //   deepSet(this.fields, name, field)
 
-    this.names.mount.add(name)
+  //   this.names.mount.add(name)
 
-    const props = {}
+  //   const props = {}
 
-    if (existingField) {
-      this.updateDisabledField({ field, disabled: options.disabled, name })
-      return props
-    }
+  //   if (existingField) {
+  //     this.updateDisabledField({ field, disabled: options.disabled, name })
+  //     return props
+  //   }
 
-    const defaultValue =
-      safeGet(this.state.values.value, name) ?? options.value == null
-        ? safeGet(this.state.defaultValues.value, name)
-        : options.value
+  //   const defaultValue =
+  //     safeGet(this.state.values.value, name) ?? options.value == null
+  //       ? safeGet(this.state.defaultValues.value, name)
+  //       : options.value
 
-    this.state.values.update((values) => {
-      deepSet(values, name, defaultValue)
-      return values
-    })
+  //   this.state.values.update((values) => {
+  //     deepSet(values, name, defaultValue)
+  //     return values
+  //   })
 
-    this.updateValid()
+  //   this.updateValid()
 
-    return props
-  }
+  //   return props
+  // }
 
-  updateDisabledField(options: any) {
-    if (typeof options.disabled !== 'boolean') {
-      return
-    }
+  // updateDisabledField(options: any) {
+  //   if (typeof options.disabled !== 'boolean') {
+  //     return
+  //   }
 
-    const value =
-      (options.disabled ? undefined : safeGet(this.state.values.value, options.name)) ??
-      getFieldValue(options.field._f ?? safeGet(options.fields, options.name)._f)
+  //   const value =
+  //     (options.disabled ? undefined : safeGet(this.state.values.value, options.name)) ??
+  //     getFieldValue(options.field._f ?? safeGet(options.fields, options.name)._f)
 
-    this.state.values.update((values) => {
-      deepSet(values, options.name, value)
-      return values
-    })
+  //   this.state.values.update((values) => {
+  //     deepSet(values, options.name, value)
+  //     return values
+  //   })
 
-    this.updateDirtyField(options.name, value)
-  }
+  //   this.updateDirtyField(options.name, value)
+  // }
 
-  async updateValid() {
-    if (this.options.resolver == null) {
-      const validationResult = await this.nativeValidate()
+  // async updateValid() {
+  //   if (this.options.resolver == null) {
+  //     const validationResult = await this.nativeValidate()
 
-      const isValid = validationResult.valid
+  //     const isValid = validationResult.valid
 
-      this.state.isValid.set(isValid)
+  //     this.state.isValid.set(isValid)
 
-      return
-    }
+  //     return
+  //   }
 
-    // Pass the form values through the provided resolver.
+  //   // Pass the form values through the provided resolver.
 
-    const resolverOptions = getResolverOptions(
-      this.names.mount,
-      this.fields,
-      this.options.criteriaMode,
-      this.options.shouldUseNativeValidation,
-    )
+  //   const resolverOptions = getResolverOptions(
+  //     this.names.mount,
+  //     this.fields,
+  //     this.options.criteriaMode,
+  //     this.options.shouldUseNativeValidation,
+  //   )
 
-    const resolverResult = await this.options.resolver(
-      this.state.values.value,
-      this.options.context,
-      resolverOptions,
-    )
+  //   const resolverResult = await this.options.resolver(
+  //     this.state.values.value,
+  //     this.options.context,
+  //     resolverOptions,
+  //   )
 
-    this.processResolverResult(resolverResult)
+  //   this.processResolverResult(resolverResult)
 
-    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+  //   const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
 
-    this.state.isValid.set(isValid)
-  }
+  //   this.state.isValid.set(isValid)
+  // }
 
   /**
    * Updates a field's dirty status.
    *
    * @returns Whether the field's dirty status changed.
    */
-  updateDirtyField(name: string, value?: unknown): boolean {
-    const defaultValue = safeGet(this.state.defaultValues.value, name)
+  // updateDirtyField(name: string, value?: unknown): boolean {
+  //   const defaultValue = safeGet(this.state.defaultValues.value, name)
 
-    // The field will be dirty if its value is different from its default value.
-    const currentIsDirty = !deepEqual(defaultValue, value)
+  //   // The field will be dirty if its value is different from its default value.
+  //   const currentIsDirty = !deepEqual(defaultValue, value)
 
-    const previousIsDirty = safeGet(this.state.dirtyFields.value, name)
+  //   const previousIsDirty = safeGet(this.state.dirtyFields.value, name)
 
-    // The field is turning dirty to clean.
-    if (previousIsDirty && !currentIsDirty) {
-      this.state.dirtyFields.update((dirtyFields) => {
-        deepUnset(dirtyFields, name)
-        return dirtyFields
-      })
-    }
+  //   // The field is turning dirty to clean.
+  //   if (previousIsDirty && !currentIsDirty) {
+  //     this.state.dirtyFields.update((dirtyFields) => {
+  //       deepUnset(dirtyFields, name)
+  //       return dirtyFields
+  //     })
+  //   }
 
-    // The field is turning clean to dirty.
-    if (!currentIsDirty && !previousIsDirty) {
-      this.state.isDirty.update((dirtyFields) => {
-        deepSet(dirtyFields, name, true)
-        return dirtyFields
-      })
-    }
+  //   // The field is turning clean to dirty.
+  //   if (!currentIsDirty && !previousIsDirty) {
+  //     this.state.isDirty.update((dirtyFields) => {
+  //       deepSet(dirtyFields, name, true)
+  //       return dirtyFields
+  //     })
+  //   }
 
-    return currentIsDirty !== previousIsDirty
-  }
+  //   return currentIsDirty !== previousIsDirty
+  // }
 
-  processResolverResult(result: ResolverResult<TValues>, names?: string[]): void {
-    if (!names?.length) {
-      this.state.errors.set(result.errors ?? {})
-      return
-    }
+  // processResolverResult(result: ResolverResult<TValues>, names?: string[]): void {
+  //   if (!names?.length) {
+  //     this.state.errors.set(result.errors ?? {})
+  //     return
+  //   }
 
-    this.state.errors.update((errors) => {
-      for (const name of names) {
-        const error = safeGet(result.errors, name)
+  //   this.state.errors.update((errors) => {
+  //     for (const name of names) {
+  //       const error = safeGet(result.errors, name)
 
-        if (error) {
-          deepSet(errors, name, error)
-        } else {
-          deepUnset(errors, name)
-        }
-      }
+  //       if (error) {
+  //         deepSet(errors, name, error)
+  //       } else {
+  //         deepUnset(errors, name)
+  //       }
+  //     }
 
-      return errors
-    })
-  }
+  //     return errors
+  //   })
+  // }
 
   async nativeValidate(
     names?: string | string[] | Nullish,
