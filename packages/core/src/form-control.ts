@@ -7,6 +7,7 @@ import {
   STAGE,
 } from './constants'
 import { getFieldValue } from './logic/fields/get-field-value'
+import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
@@ -18,7 +19,7 @@ import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
-import { isObject } from './utils/is-object'
+import { isEmptyObject, isObject } from './utils/is-object'
 import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
@@ -408,38 +409,38 @@ export class FormControl<
     this.updateDirtyField(options.name, value)
   }
 
-  // async updateValid() {
-  //   if (this.options.resolver == null) {
-  //     const validationResult = await this.nativeValidate()
+  async updateValid() {
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate()
 
-  //     const isValid = validationResult.valid
+      const isValid = validationResult.valid
 
-  //     this.state.isValid.set(isValid)
+      this.state.isValid.set(isValid)
 
-  //     return
-  //   }
+      return
+    }
 
-  //   // Pass the form values through the provided resolver.
+    // Pass the form values through the provided resolver.
 
-  //   const resolverOptions = getResolverOptions(
-  //     this.names.mount,
-  //     this.fields,
-  //     this.options.criteriaMode,
-  //     this.options.shouldUseNativeValidation,
-  //   )
+    const resolverOptions = getResolverOptions(
+      this.names.mount,
+      this.fields,
+      this.options.criteriaMode,
+      this.options.shouldUseNativeValidation,
+    )
 
-  //   const resolverResult = await this.options.resolver(
-  //     this.state.values.value,
-  //     this.options.context,
-  //     resolverOptions,
-  //   )
+    const resolverResult = await this.options.resolver(
+      this.state.values.value,
+      this.options.context,
+      resolverOptions,
+    )
 
-  //   this.processResolverResult(resolverResult)
+    this.mergeErrors(resolverResult.errors)
 
-  //   const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
 
-  //   this.state.isValid.set(isValid)
-  // }
+    this.state.isValid.set(isValid)
+  }
 
   /**
    * Updates a field's dirty status.
@@ -479,8 +480,8 @@ export class FormControl<
    *
    * @internal
    */
-  mergeErrors(errors: FieldErrors<TValues>, names?: string[]): void {
-    const namesToMerge = names ?? Object.keys(errors)
+  mergeErrors(errors?: FieldErrors<TValues>, names?: string[]): void {
+    const namesToMerge = names ?? Object.keys(errors ?? {})
 
     this.state.errors.update((currentErrors) => {
       for (const name of namesToMerge) {
