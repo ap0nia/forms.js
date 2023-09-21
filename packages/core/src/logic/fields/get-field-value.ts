@@ -8,29 +8,27 @@ import { isMultipleSelectInput } from '../html/select'
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/getFieldValue.ts
  */
 export function getFieldValue(_f: FieldReference) {
-  const ref = _f.ref
-
-  if (_f.refs ? _f.refs.every((ref) => ref.disabled) : ref.disabled) {
+  if (_f.refs ? _f.refs.every((ref) => ref.disabled) : _f.ref.disabled) {
     return
   }
 
-  if (isFileInput(ref)) {
-    return ref.files
+  if (isFileInput(_f.ref)) {
+    return _f.ref.files
   }
 
-  if (isRadioInput(ref)) {
+  if (isRadioInput(_f.ref)) {
     return getRadioValue(_f.refs).value
   }
 
-  if (isMultipleSelectInput(ref)) {
-    return [...ref.selectedOptions].map(({ value }) => value)
+  if (isMultipleSelectInput(_f.ref)) {
+    return [..._f.ref.selectedOptions].map(({ value }) => value)
   }
 
-  if (isCheckBoxInput(ref)) {
+  if (isCheckBoxInput(_f.ref)) {
     return getCheckBoxValue(_f.refs).value
   }
 
-  return getFieldValueAs(ref.value == null ? _f.ref.value : ref.value, _f)
+  return getFieldValueAs(_f.value ?? _f.ref.value, _f)
 }
 
 /**

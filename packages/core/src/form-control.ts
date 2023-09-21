@@ -6,11 +6,12 @@ import {
   type Stage,
   STAGE,
 } from './constants'
+import { getFieldValue } from './logic/fields/get-field-value'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
-import type { FieldRecord } from './types/fields'
+import type { Field, FieldRecord } from './types/fields'
 import type { Resolver } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
@@ -244,6 +245,13 @@ export type ParsedForm<T = Record<string, any>> = {
   keys: Extract<keyof FlattenObject<T>, string>
 }
 
+export type UpdateDisabledFieldOptions = {
+  disabled?: boolean
+  name: string
+  field?: Field
+  fields?: FieldRecord
+}
+
 /**
  * The core functionality of the library is encompassed by a form control that controls field/form behavior.
  */
@@ -380,22 +388,25 @@ export class FormControl<
   //   return props
   // }
 
-  // updateDisabledField(options: any) {
-  //   if (typeof options.disabled !== 'boolean') {
-  //     return
-  //   }
+  /**
+   */
+  updateDisabledField(options: UpdateDisabledFieldOptions): void {
+    if (typeof options.disabled !== 'boolean') {
+      return
+    }
 
-  //   const value =
-  //     (options.disabled ? undefined : safeGet(this.state.values.value, options.name)) ??
-  //     getFieldValue(options.field._f ?? safeGet(options.fields, options.name)._f)
+    const value = options.disabled
+      ? undefined
+      : safeGet(this.state.values.value, options.name) ??
+        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
-  //   this.state.values.update((values) => {
-  //     deepSet(values, options.name, value)
-  //     return values
-  //   })
+    this.state.values.update((values) => {
+      deepSet(values, options.name, value)
+      return values
+    })
 
-  //   this.updateDirtyField(options.name, value)
-  // }
+    this.updateDirtyField(options.name, value)
+  }
 
   // async updateValid() {
   //   if (this.options.resolver == null) {
