@@ -7,12 +7,15 @@ import {
   STAGE,
 } from './constants'
 import { getFieldValue } from './logic/fields/get-field-value'
+import { isCheckBoxInput } from './logic/html/checkbox'
+import { isHTMLElement } from './logic/html/is-html-element'
+import { isRadioInput } from './logic/html/radio'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
-import type { Field, FieldRecord } from './types/fields'
+import type { Field, FieldElement, FieldRecord, FieldReference } from './types/fields'
 import type { RegisterOptions } from './types/register'
 import type { Resolver } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
@@ -247,11 +250,42 @@ export type ParsedForm<T = Record<string, any>> = {
   keys: Extract<keyof FlattenObject<T>, string>
 }
 
+/**
+ * Options when disabling a field.
+ */
 export type UpdateDisabledFieldOptions = {
+  /**
+   */
   disabled?: boolean
+
+  /**
+   */
   name: string
+
+  /**
+   */
   field?: Field
+
+  /**
+   */
   fields?: FieldRecord
+}
+
+/**
+ * Options when setting a value.
+ */
+export type SetValueOptions = {
+  /**
+   */
+  shouldValidate?: boolean
+
+  /**
+   */
+  shouldDirty?: boolean
+
+  /**
+   */
+  shouldTouch?: boolean
 }
 
 /**
@@ -371,7 +405,10 @@ export class FormControl<
 
     this.names.mount.add(name)
 
-    const props = {}
+    const props = {
+      registerElement: (this.registerElement<T>).bind(this, name, options),
+      unregisterElement: (this.unregisterElement<T>).bind(this, name, options),
+    }
 
     if (existingField) {
       this.updateDisabledField({ field, disabled: options.disabled, name })
@@ -391,6 +428,86 @@ export class FormControl<
     this.updateValid()
 
     return props
+  }
+
+  unregisterElement<T extends TParsedForm['keys']>(
+    name: T,
+    options: RegisterOptions<TValues, T> = {},
+  ): void {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f) {
+      field._f.mount = false
+    }
+
+    const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
+
+    if (shouldUnregister && !this.names.array.has(name)) {
+      this.names.unMount.add(name)
+    }
+  }
+
+  registerElement<T extends TParsedForm['keys']>(
+    name: T,
+    options: RegisterOptions<TValues, T> = {},
+    element: HTMLInputElement,
+  ): void {
+    this.register(name, options)
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const ref =
+      element.value == null
+        ? element.querySelectorAll
+          ? (element.querySelectorAll('input,select,textarea')[0] as FieldElement) || element
+          : element
+        : element
+
+    const radioOrCheckbox = isRadioInput(ref) || isCheckBoxInput(ref)
+
+    const refs = field?._f.refs ?? []
+
+    if (radioOrCheckbox ? refs.find((option) => option === ref) : ref === field?._f.ref) {
+      return
+    }
+
+    /**
+     * An extra object was appended to the refs array for some reason?
+     * ...(Array.isArray(safeGet(this.state.defaultValues.value, name)) ? [{}] : []),
+     */
+    const a: FieldReference = radioOrCheckbox
+      ? {
+          name,
+          ref,
+          refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
+        }
+      : {
+          name,
+          ref,
+        }
+
+    const newField: Field = {
+      _f: {
+        ...field?._f,
+        ...a,
+      },
+    }
+
+    deepSet(this.fields, name, newField)
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+    if (defaultValue == null || (ref as HTMLInputElement)?.defaultChecked) {
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValue(newField._f))
+        return values
+      })
+    } else {
+      // setFieldValue(name, defaultValue);
+    }
+
+    this.updateValid()
   }
 
   /**
@@ -451,6 +568,24 @@ export class FormControl<
   }
 
   /**
+   * Updates the specified field name to be touched.
+   *
+   * @returns Whether the field's touched status changed.
+   */
+  updateTouchedField(name: string): boolean {
+    const previousIsTouched = safeGet(this.state.touchedFields.value, name)
+
+    if (!previousIsTouched) {
+      this.state.touchedFields.update((touchedFields) => {
+        deepSet(touchedFields, name, true)
+        return touchedFields
+      })
+    }
+
+    return !previousIsTouched
+  }
+
+  /**
    * Updates a field's dirty status.
    *
    * @returns Whether the field's dirty status changed.
@@ -492,17 +627,21 @@ export class FormControl<
     const namesToMerge = names ?? Object.keys(errors ?? {})
 
     this.state.errors.update((currentErrors) => {
+      // If there are names, then mutate the current errors.
+      // Otherwise, create a new errors object.
+      const newErrors = names?.length ? currentErrors : {}
+
       for (const name of namesToMerge) {
         const error = safeGet(errors, name)
 
         if (error) {
-          deepSet(currentErrors, name, error)
+          deepSet(newErrors, name, error)
         } else {
-          deepUnset(currentErrors, name)
+          deepUnset(newErrors, name)
         }
       }
 
-      return currentErrors
+      return newErrors
     })
   }
 

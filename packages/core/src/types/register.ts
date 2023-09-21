@@ -1,3 +1,4 @@
+import type { Nullish } from '../utils/null'
 import type { FlattenObject } from '../utils/types/flatten-object'
 
 import type { Validate, ValidationRule } from './validation'
@@ -95,4 +96,20 @@ export type RegisterOptions<
    * Native validation, indicates the value is a date.
    */
   valueAsDate?: boolean
+}
+
+export type RegisterResult<
+  // TValues extends Record<string, any> = Record<string, any>,
+  // TFieldName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
+  // TFieldValue = FlattenObject<TValues>[TFieldName],
+> = {
+  /**
+   * After registering a field, an HTML element can be registered to it.
+   */
+  registerElement: (element?: HTMLInputElement | Nullish) => void
+
+  /**
+   * Unregister the field.
+   */
+  unregisterElement: () => void
 }
