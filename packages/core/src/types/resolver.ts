@@ -21,7 +21,7 @@ export interface ResolverOptions<T> {
   /**
    * How to handle encountered errors.
    */
-  criteriaMode?: CriteriaMode
+  criteriaMode?: CriteriaMode[keyof CriteriaMode]
 
   /**
    * Override the form fields to parse.

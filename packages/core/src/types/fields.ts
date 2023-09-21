@@ -68,7 +68,7 @@ export type FieldReference = {
    * When the actual HTML element is registered, then mounted should be set to true.
    */
   mount?: boolean
-} & RegisterOptions
+} & RegisterOptions<any, any>
 
 /**
  * A field element is any element that can be registered as a valid form component.

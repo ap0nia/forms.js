@@ -7,7 +7,7 @@ import { safeGet } from '../../utils/safe-get'
 export function getResolverOptions<T>(
   fieldsNames: Set<string> | string[],
   _fields: FieldRecord,
-  criteriaMode?: CriteriaMode,
+  criteriaMode?: CriteriaMode[keyof CriteriaMode],
   shouldUseNativeValidation?: boolean | undefined,
 ): ResolverOptions<T> {
   const fields: Record<string, FieldReference> = {}

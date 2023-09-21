@@ -1,6 +1,6 @@
 import type { FlattenObject } from '../utils/types/flatten-object'
 
-import type { Validate, ValidationRule, ValidationValue } from './validation'
+import type { Validate, ValidationRule } from './validation'
 
 /**
  * Options when registering a new field component or element.
@@ -80,38 +80,51 @@ export type RegisterOptions<
    * Dependencies?
    */
   deps?: string | string[]
-} & AdditionalRegisterOptions
 
-/**
- * Additional register options.
- *
- * Valid combinations for the `pattern`, `valueAsNumber`, and `valueAsDate` properties.
- */
-export type AdditionalRegisterOptions =
-  | AdditionalValidationOptions<RegExp, false, false>
-  | AdditionalValidationOptions<never, false, true>
-  | AdditionalValidationOptions<never, true, false>
-
-/**
- * More native validation options.
- */
-export type AdditionalValidationOptions<
-  TPattern extends ValidationValue,
-  TValueAsNumber,
-  TValueAsDate,
-> = {
   /**
    * Regular expression to validate the field.
    */
-  pattern?: ValidationRule<TPattern>
+  pattern?: ValidationRule<RegExp>
 
   /**
    * Native validation, indicates the value is a number.
    */
-  valueAsNumber?: TValueAsNumber
+  valueAsNumber?: boolean
 
   /**
    * Native validation, indicates the value is a date.
    */
-  valueAsDate?: TValueAsDate
+  valueAsDate?: boolean
 }
+
+// & AdditionalRegisterOptions
+
+// /**
+//  * Additional register options.
+//  *
+//  * Valid combinations for the `pattern`, `valueAsNumber`, and `valueAsDate` properties.
+//  */
+// export type AdditionalRegisterOptions =
+//   | AdditionalValidationOptions<RegExp, false, false>
+//   | AdditionalValidationOptions<undefined, false, true>
+//   | AdditionalValidationOptions<undefined, true, false>
+//
+// /**
+//  * More native validation options.
+//  */
+// export type AdditionalValidationOptions<TPattern, TValueAsNumber, TValueAsDate> = {
+//   /**
+//    * Regular expression to validate the field.
+//    */
+//   pattern?: ValidationRule<TPattern>
+//
+//   /**
+//    * Native validation, indicates the value is a number.
+//    */
+//   valueAsNumber?: TValueAsNumber
+//
+//   /**
+//    * Native validation, indicates the value is a date.
+//    */
+//   valueAsDate?: TValueAsDate
+// }
