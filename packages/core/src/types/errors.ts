@@ -16,17 +16,6 @@ export type InternalFieldErrors = Partial<Record<string, FieldError>>
  */
 export type FieldError = {
   /**
-   * All errors will be associated with at least one type.
-   * Multiple can be reported in {@link FieldError.types}.
-   */
-  type: LiteralUnion<keyof RegisterOptions, string>
-
-  /**
-   * Idk.
-   */
-  root?: FieldError
-
-  /**
    * The field element that the error is attached to.
    */
   ref?: FieldElement
@@ -40,7 +29,20 @@ export type FieldError = {
    * The parsed message from the validation rule.
    */
   message?: string
-}
+} & (
+  | {
+      /**
+       * Errors of field arrays will be grouped under the `root` property.
+       */
+      root: FieldError
+    }
+  | {
+      /**
+       * All other errors will have a `type` property indicating what kind of error occurred.
+       */
+      type: LiteralUnion<keyof RegisterOptions, string>
+    }
+)
 
 /**
  * Options when manually setting an error.

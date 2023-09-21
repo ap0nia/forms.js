@@ -482,6 +482,14 @@ export class FormControl<
   //   })
   // }
 
+  /**
+   * Validate a field using native HTML input constraints.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation#validation-related_attributes
+   *
+   * @param names Names of fields to filter. If not null, only specified fields will be validated.
+   * @param shouldOnlyCheckValid Whether to stop checking the remaining fields after the first error is found.
+   */
   async nativeValidate(
     names?: string | string[] | Nullish,
     shouldOnlyCheckValid?: boolean,
@@ -512,9 +520,9 @@ export class FormControl<
         }
 
         // After validation, a field array root name has errors.
-        const fieldArrayErrors = safeGet(errors, name)
+        const fieldArrayErrors = safeGet(errors, name) ?? {}
 
-        deepSet(fieldArrayErrors, 'root', fieldError[name])
+        deepSet(fieldArrayErrors, 'root', validationResult.errors[name])
 
         deepSet(errors, name, fieldArrayErrors)
       })
