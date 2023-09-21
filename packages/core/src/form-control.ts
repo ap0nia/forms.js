@@ -376,9 +376,9 @@ export class FormControl<
     }
 
     const defaultValue =
-      safeGet(this.state.values.value, name) ?? options.value == null
-        ? safeGet(this.state.defaultValues.value, name)
-        : options.value
+      safeGet(this.state.values.value, name) ??
+      options.value ??
+      safeGet(this.state.defaultValues.value, name)
 
     this.state.values.update((values) => {
       deepSet(values, name, defaultValue)
