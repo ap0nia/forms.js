@@ -351,6 +351,9 @@ export class FormControl<
     return safeGetMultiple(this.state.values.value, names)
   }
 
+  /**
+   * Register a new field
+   */
   register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
     const existingField: Field | undefined = safeGet(this.fields, name)
 
@@ -391,6 +394,7 @@ export class FormControl<
   }
 
   /**
+   * Updates a field's disabled status and the corresponding value in the form values.
    */
   updateDisabledField(options: UpdateDisabledFieldOptions): void {
     if (typeof options.disabled !== 'boolean') {
@@ -410,6 +414,9 @@ export class FormControl<
     this.updateDirtyField(options.name, value)
   }
 
+  /**
+   * Either natively validates the form or runs the form's resolver to validate the form.
+   */
   async updateValid() {
     if (this.options.resolver == null) {
       const validationResult = await this.nativeValidate()
