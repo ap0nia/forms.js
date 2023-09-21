@@ -96,35 +96,3 @@ export type RegisterOptions<
    */
   valueAsDate?: boolean
 }
-
-// & AdditionalRegisterOptions
-
-// /**
-//  * Additional register options.
-//  *
-//  * Valid combinations for the `pattern`, `valueAsNumber`, and `valueAsDate` properties.
-//  */
-// export type AdditionalRegisterOptions =
-//   | AdditionalValidationOptions<RegExp, false, false>
-//   | AdditionalValidationOptions<undefined, false, true>
-//   | AdditionalValidationOptions<undefined, true, false>
-//
-// /**
-//  * More native validation options.
-//  */
-// export type AdditionalValidationOptions<TPattern, TValueAsNumber, TValueAsDate> = {
-//   /**
-//    * Regular expression to validate the field.
-//    */
-//   pattern?: ValidationRule<TPattern>
-//
-//   /**
-//    * Native validation, indicates the value is a number.
-//    */
-//   valueAsNumber?: TValueAsNumber
-//
-//   /**
-//    * Native validation, indicates the value is a date.
-//    */
-//   valueAsDate?: TValueAsDate
-// }
