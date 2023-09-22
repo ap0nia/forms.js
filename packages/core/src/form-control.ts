@@ -10,6 +10,7 @@ import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
@@ -664,7 +665,7 @@ export class FormControl<
    * Sets a field's value.
    */
   setFieldValue(name: string, value: any, options: SetValueOptions = {}) {
-    const field = safeGet<Field | undefined>(this.fields, name)
+    const field: Field | undefined = safeGet(this.fields, name)
 
     const fieldReference = field?._f
 
@@ -719,66 +720,31 @@ export class FormControl<
     }
   }
 
-  // registerElement<T extends TParsedForm['keys']>(
-  //   name: T,
-  //   options: RegisterOptions<TValues, T> = {},
-  //   element: HTMLInputElement,
-  // ): void {
-  //   this.register(name, options)
+  registerElement<T extends TParsedForm['keys']>(
+    name: T,
+    element: HTMLInputElement,
+    options: RegisterOptions<TValues, T> = {},
+  ): void {
+    this.register(name, options)
 
-  //   const field: Field | undefined = safeGet(this.fields, name)
+    const field: Field | undefined = safeGet(this.fields, name)
 
-  //   const ref =
-  //     element.value == null
-  //       ? element.querySelectorAll
-  //         ? (element.querySelectorAll('input,select,textarea')[0] as FieldElement) || element
-  //         : element
-  //       : element
+    const newField = mergeElementWithField(name, field, element)
 
-  //   const radioOrCheckbox = isRadioInput(ref) || isCheckBoxInput(ref)
+    deepSet(this.fields, name, newField)
 
-  //   const refs = field?._f.refs ?? []
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
-  //   if (radioOrCheckbox ? refs.find((option) => option === ref) : ref === field?._f.ref) {
-  //     return
-  //   }
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValue(newField._f))
+        return values
+      })
+    } else {
+      this.setFieldValue(name, defaultValue)
+    }
 
-  //   /**
-  //    * An extra object was appended to the refs array for some reason?
-  //    * ...(Array.isArray(safeGet(this.state.defaultValues.value, name)) ? [{}] : []),
-  //    */
-  //   const a: FieldReference = radioOrCheckbox
-  //     ? {
-  //       name,
-  //       ref,
-  //       refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
-  //     }
-  //     : {
-  //       name,
-  //       ref,
-  //     }
-
-  //   const newField: Field = {
-  //     _f: {
-  //       ...field?._f,
-  //       ...a,
-  //     },
-  //   }
-
-  //   deepSet(this.fields, name, newField)
-
-  //   const defaultValue =
-  //     safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
-
-  //   if (defaultValue == null || (ref as HTMLInputElement)?.defaultChecked) {
-  //     this.state.values.update((values) => {
-  //       deepSet(values, name, getFieldValue(newField._f))
-  //       return values
-  //     })
-  //   } else {
-  //     this.setFieldValue(name, defaultValue);
-  //   }
-
-  //   this.updateValid()
-  // }
+    this.updateValid()
+  }
 }

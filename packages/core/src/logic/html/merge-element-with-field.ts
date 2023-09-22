@@ -22,7 +22,7 @@ export const dummyRef = {} as HTMLInputElement
  */
 export function mergeElementWithField(
   name: string,
-  field: Field,
+  field: Field | undefined,
   element: HTMLInputElement,
   defaultValues?: unknown,
 ): Field {
@@ -33,7 +33,7 @@ export function mergeElementWithField(
   const refs = field?._f.refs ?? []
 
   // The element is already registered to the field, nothing to change to the field.
-  if (radioOrCheckbox ? refs.find((option) => option === ref) : ref === field?._f.ref) {
+  if (field && (radioOrCheckbox ? refs.find((option) => option === ref) : ref === field?._f.ref)) {
     return field
   }
 
@@ -44,7 +44,7 @@ export function mergeElementWithField(
   if (!radioOrCheckbox) {
     return {
       _f: {
-        ...field._f,
+        ...field?._f,
         name,
         ref,
       },
