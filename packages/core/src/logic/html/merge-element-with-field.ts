@@ -1,9 +1,16 @@
-import type { Field, FieldElement } from '../../types/fields'
+import type { Field } from '../../types/fields'
 import { safeGet } from '../../utils/safe-get'
 
 import { isCheckBoxInput } from './checkbox'
+import { getRefFromElement } from './get-ref-from-element'
 import { isHTMLElement } from './is-html-element'
 import { isRadioInput } from './radio'
+
+/**
+ * A dummy ref that can be added to an array of refs,
+ * i.e. to coerce a single checkbox into a group checkbox.
+ */
+export const dummyRef = {} as HTMLInputElement
 
 /**
  * Given an element to register to a field, merge the element with the existing field.
@@ -19,12 +26,7 @@ export function mergeElementWithField(
   element: HTMLInputElement,
   defaultValues?: unknown,
 ): Field {
-  const ref =
-    element.value == null
-      ? element.querySelectorAll
-        ? (element.querySelectorAll('input,select,textarea')[0] as FieldElement) || element
-        : element
-      : element
+  const ref = getRefFromElement(element)
 
   const radioOrCheckbox = isRadioInput(ref) || isCheckBoxInput(ref)
 
@@ -52,7 +54,10 @@ export function mergeElementWithField(
   const newField = {
     _f: {
       name,
-      ref,
+      ref: {
+        name,
+        type: ref.type,
+      },
       refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
     },
   } satisfies Field
@@ -68,7 +73,7 @@ export function mergeElementWithField(
    * @see https://github.com/react-hook-form/react-hook-form/pull/7938
    */
   if (Array.isArray(safeGet(defaultValues, name))) {
-    newField._f.refs.push({} as HTMLInputElement)
+    newField._f.refs.push(dummyRef)
   }
 
   return newField
