@@ -1,12 +1,13 @@
-import type { AnyEvent } from '../../types/event'
 import { isObject } from '../../utils/is-object'
 
 import { isCheckBoxInput } from './checkbox'
 
-export function getEventValue(event: AnyEvent): any {
-  if (!isObject(event) || !event.target) {
+export function getEventValue(event: unknown): any {
+  if (!isObject(event) || !('target' in event) || !event.target) {
     return event
   }
 
-  return isCheckBoxInput(event.target) ? event.target.checked : event.target.value
+  const target: any = event.target
+
+  return isCheckBoxInput(target) ? target.checked : target.value
 }
