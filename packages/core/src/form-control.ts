@@ -17,7 +17,7 @@ import type { NativeValidationResult } from './logic/validation/native-validatio
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
-import type { RegisterOptions } from './types/register'
+import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver, ResolverResult } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
@@ -397,7 +397,10 @@ export class FormControl<
   /**
    * Register a new field
    */
-  register<T extends TParsedForm['keys']>(name: T, options: RegisterOptions<TValues, T> = {}) {
+  register<T extends TParsedForm['keys']>(
+    name: T,
+    options: RegisterOptions<TValues, T> = {},
+  ): RegisterResult {
     const existingField: Field | undefined = safeGet(this.fields, name)
 
     const field: Field = {
@@ -414,13 +417,13 @@ export class FormControl<
 
     this.names.mount.add(name)
 
-    const props = {
-      // registerElement: (this.registerElement<T>).bind(this, name, options),
-      // unregisterElement: (this.unregisterElement<T>).bind(this, name, options),
+    const props: RegisterResult = {
+      registerElement: (element) => this.registerElement(name, element, options),
+      unregisterElement: () => this.unregisterElement(name, options),
     }
 
     if (existingField) {
-      // this.updateDisabledField({ field, disabled: options.disabled, name })
+      this.updateDisabledField({ field, disabled: options.disabled, name })
       return props
     }
 

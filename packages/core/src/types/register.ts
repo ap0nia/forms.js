@@ -1,4 +1,3 @@
-import type { Nullish } from '../utils/null'
 import type { FlattenObject } from '../utils/types/flatten-object'
 
 import type { Validate, ValidationRule } from './validation'
@@ -106,7 +105,7 @@ export type RegisterResult<
   /**
    * After registering a field, an HTML element can be registered to it.
    */
-  registerElement: (element?: HTMLInputElement | Nullish) => void
+  registerElement: (element: HTMLInputElement) => void
 
   /**
    * Unregister the field.
