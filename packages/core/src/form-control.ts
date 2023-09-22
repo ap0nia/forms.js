@@ -7,7 +7,9 @@ import {
   STAGE,
 } from './constants'
 import { focusFieldBy } from './logic/fields/focus-field-by'
-import { getFieldValue } from './logic/fields/get-field-value'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { updateFieldReference } from './logic/fields/update-field-reference'
+import { isHTMLElement } from './logic/html/is-html-element'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
@@ -526,6 +528,8 @@ export class FormControl<
   /**
    * Updates the specified field name to be touched.
    *
+   * @remarks Will mutate the touchedFields.
+   *
    * @returns Whether the field's touched status changed.
    */
   updateTouchedField(name: string): boolean {
@@ -544,6 +548,8 @@ export class FormControl<
   /**
    * Updates a field's dirty status.
    *
+   * @remarks Will mutate dirtyFields and isDirty.
+   *
    * @returns Whether the field's dirty status changed.
    */
   updateDirtyField(name: string, value?: unknown): boolean {
@@ -553,6 +559,8 @@ export class FormControl<
     const currentIsDirty = !deepEqual(defaultValue, value)
 
     const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    this.state.isDirty.set(currentIsDirty)
 
     // The field is turning dirty to clean.
     if (previousIsDirty && !currentIsDirty) {
@@ -650,6 +658,48 @@ export class FormControl<
     })
 
     return validationResult
+  }
+
+  /**
+   * Sets a field's value.
+   */
+  setFieldValue(name: string, value: any, options: SetValueOptions = {}) {
+    const field = safeGet<Field | undefined>(this.fields, name)
+
+    const fieldReference = field?._f
+
+    if (fieldReference == null) {
+      this.touch(name, value, options)
+      return
+    }
+
+    // If the field exists and isn't disabled, then also update the form values.
+    if (!fieldReference.disabled) {
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValueAs(value, fieldReference))
+        return values
+      })
+    }
+
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    updateFieldReference(fieldReference, fieldValue)
+
+    this.touch(name, fieldValue, options)
+  }
+
+  async touch(name: string, value?: unknown, options?: SetValueOptions) {
+    if (!options?.shouldTouch || options.shouldDirty) {
+      this.updateDirtyField(name, value)
+    }
+
+    if (options?.shouldTouch) {
+      this.updateTouchedField(name)
+    }
+
+    if (options?.shouldValidate) {
+      await this.updateValid(name as TParsedForm['keys'])
+    }
   }
 
   // unregisterElement<T extends TParsedForm['keys']>(
