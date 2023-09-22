@@ -702,22 +702,22 @@ export class FormControl<
     }
   }
 
-  // unregisterElement<T extends TParsedForm['keys']>(
-  //   name: T,
-  //   options: RegisterOptions<TValues, T> = {},
-  // ): void {
-  //   const field: Field | undefined = safeGet(this.fields, name)
+  unregisterElement<T extends TParsedForm['keys']>(
+    name: T,
+    options: RegisterOptions<TValues, T> = {},
+  ): void {
+    const field: Field | undefined = safeGet(this.fields, name)
 
-  //   if (field?._f) {
-  //     field._f.mount = false
-  //   }
+    if (field?._f) {
+      field._f.mount = false
+    }
 
-  //   const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
+    const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
 
-  //   if (shouldUnregister && !this.names.array.has(name)) {
-  //     this.names.unMount.add(name)
-  //   }
-  // }
+    if (shouldUnregister && !this.names.array.has(name)) {
+      this.names.unMount.add(name)
+    }
+  }
 
   // registerElement<T extends TParsedForm['keys']>(
   //   name: T,
@@ -749,14 +749,14 @@ export class FormControl<
   //    */
   //   const a: FieldReference = radioOrCheckbox
   //     ? {
-  //         name,
-  //         ref,
-  //         refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
-  //       }
+  //       name,
+  //       ref,
+  //       refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
+  //     }
   //     : {
-  //         name,
-  //         ref,
-  //       }
+  //       name,
+  //       ref,
+  //     }
 
   //   const newField: Field = {
   //     _f: {
@@ -776,7 +776,7 @@ export class FormControl<
   //       return values
   //     })
   //   } else {
-  //     // setFieldValue(name, defaultValue);
+  //     this.setFieldValue(name, defaultValue);
   //   }
 
   //   this.updateValid()
