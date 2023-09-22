@@ -5,17 +5,23 @@ import {
   type CriteriaMode,
   type Stage,
   STAGE,
+  EVENTS,
+  type SubmissionValidationMode,
+  getValidationModes,
 } from './constants'
 import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
 import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
+import { shouldSkipValidationAfter } from './logic/validation/skip-validation-during-submission'
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
+import type { AnyEvent } from './types/event'
 import type { Field, FieldRecord } from './types/fields'
 import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver, ResolverResult } from './types/resolver'
@@ -345,6 +351,8 @@ export class FormControl<
     watch: new Set<string>(),
   }
 
+  submissionValidationMode: SubmissionValidationMode
+
   constructor(options?: FormControlOptions<TValues, TContext>) {
     const resolvedOptions = { ...defaultOptions, ...options }
 
@@ -375,6 +383,11 @@ export class FormControl<
     }
 
     this.stage = STAGE.IDLE
+
+    this.submissionValidationMode = {
+      beforeSubmission: getValidationModes(resolvedOptions.mode),
+      afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
+    }
   }
 
   getValues(): TValues
@@ -749,5 +762,113 @@ export class FormControl<
     }
 
     this.updateValid()
+  }
+
+  async handleChange(event: AnyEvent): Promise<void | boolean> {
+    const target = event.target
+
+    const name = target.name
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field == null) {
+      return
+    }
+
+    // const fieldValue = getCurrentFieldValue(event, field)
+
+    const isBlurEvent = event.type === EVENTS.BLUR || event.type === EVENTS.FOCUS_OUT
+
+    const nothingToValidate =
+      !hasValidation(field._f) &&
+      !this.options.resolver &&
+      !safeGet(this.state.errors.value, name) &&
+      !field._f.deps
+
+    const shouldSkipValidation =
+      nothingToValidate ||
+      shouldSkipValidationAfter(
+        isBlurEvent ? 'blur' : 'change',
+        safeGet(this.state.touchedFields.value, name),
+        this.state.isSubmitted.value,
+        this.submissionValidationMode,
+      )
+
+    console.log({ shouldSkipValidation })
+
+    // const watched = isWatched(name, _names, isBlurEvent)
+
+    // this.state.values.update((values) => {
+    //   deepSet(values, name, fieldValue)
+    //   return values
+    // })
+
+    // if (isBlurEvent) {
+    //   field._f.onBlur && field._f.onBlur(event)
+    //   delayErrorCallback && delayErrorCallback(0)
+    // } else if (field._f.onChange) {
+    //   field._f.onChange(event)
+    // }
+
+    // const fieldState = updateTouchAndDirty(name, fieldValue, isBlurEvent, false)
+
+    // const shouldRender = !isEmptyObject(fieldState) || watched
+
+    // !isBlurEvent &&
+    //   _subjects.values.next({
+    //     name,
+    //     type: event.type,
+    //     values: { ..._formValues },
+    //   })
+
+    // if (shouldSkipValidation) {
+    //   _proxyFormState.isValid && _updateValid()
+
+    //   return shouldRender && _subjects.state.next({ name, ...(watched ? {} : fieldState) })
+    // }
+
+    // !isBlurEvent && watched && _subjects.state.next({ ..._formState })
+
+    // _updateIsValidating(true)
+
+    // if (_options.resolver) {
+    //   const { errors } = await _executeSchema([name])
+    //   const previousErrorLookupResult = schemaErrorLookup(_formState.errors, _fields, name)
+    //   const errorLookupResult = schemaErrorLookup(
+    //     errors,
+    //     _fields,
+    //     previousErrorLookupResult.name || name,
+    //   )
+
+    //   error = errorLookupResult.error
+    //   name = errorLookupResult.name
+
+    //   isValid = isEmptyObject(errors)
+    // } else {
+    //   error = (
+    //     await validateField(
+    //       field,
+    //       _formValues,
+    //       shouldDisplayAllAssociatedErrors,
+    //       _options.shouldUseNativeValidation,
+    //     )
+    //   )[name]
+
+    //   isFieldValueUpdated =
+    //     Number.isNaN(fieldValue) || fieldValue === get(_formValues, name, fieldValue)
+
+    //   if (isFieldValueUpdated) {
+    //     if (error) {
+    //       isValid = false
+    //     } else if (_proxyFormState.isValid) {
+    //       isValid = await executeBuiltInValidation(_fields, true)
+    //     }
+    //   }
+    // }
+
+    // if (isFieldValueUpdated) {
+    //   field._f.deps && trigger(field._f.deps as FieldPath<TFieldValues> | FieldPath<TFieldValues>[])
+    //   shouldRenderByError(name, isValid, error, fieldState)
+    // }
   }
 }
