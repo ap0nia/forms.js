@@ -31,5 +31,45 @@ describe('FormControl', () => {
 
       expect(formControl.state.isValid.value).toBeTruthy()
     })
+
+    test('no resolver with focus and errors', async () => {
+      const formControl = new FormControl()
+
+      formControl.register('name', { required: true })
+
+      await formControl.updateValid(undefined, { shouldFocus: true })
+
+      expect(formControl.state.isValid.value).toBeFalsy()
+    })
+
+    test('resolver with focus and errors', async () => {
+      const formControl = new FormControl({
+        resolver: () => ({ values: {}, errors: { name: { type: 'required' } } }),
+      })
+
+      await formControl.updateValid(undefined, { shouldFocus: true })
+
+      expect(formControl.state.isValid.value).toBeFalsy()
+    })
+
+    test('with name and errors for different names', async () => {
+      const formControl = new FormControl()
+
+      formControl.register('name', { required: true })
+
+      await formControl.updateValid('name', { shouldFocus: true })
+
+      expect(formControl.state.isValid.value).toBeFalsy()
+    })
+
+    test('with name array and errors for different names', async () => {
+      const formControl = new FormControl()
+
+      formControl.register('name', { required: true })
+
+      await formControl.updateValid(['name'], { shouldFocus: true })
+
+      expect(formControl.state.isValid.value).toBeFalsy()
+    })
   })
 })

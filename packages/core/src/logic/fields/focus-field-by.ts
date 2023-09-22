@@ -5,9 +5,9 @@ import { safeGet } from '../../utils/safe-get'
 export function focusFieldBy(
   fields: FieldRecord,
   callback: (name?: string) => unknown,
-  fieldsNames?: Set<string> | string[],
+  fieldNames?: Set<string> | string[],
 ): void {
-  for (const key of fieldsNames || Object.keys(fields)) {
+  for (const key of fieldNames || Object.keys(fields)) {
     const field = safeGet<Field | undefined>(fields, key)
 
     if (field == null) {

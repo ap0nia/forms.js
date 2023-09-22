@@ -6,18 +6,16 @@ import {
   type Stage,
   STAGE,
 } from './constants'
+import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getFieldValue } from './logic/fields/get-field-value'
-import { isCheckBoxInput } from './logic/html/checkbox'
-import { isHTMLElement } from './logic/html/is-html-element'
-import { isRadioInput } from './logic/html/radio'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
 import type { FieldErrors } from './types/errors'
-import type { Field, FieldElement, FieldRecord, FieldReference } from './types/fields'
+import type { Field, FieldRecord } from './types/fields'
 import type { RegisterOptions } from './types/register'
-import type { Resolver } from './types/resolver'
+import type { Resolver, ResolverResult } from './types/resolver'
 import { cloneObject } from './utils/clone-object'
 import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
@@ -36,6 +34,14 @@ const defaultOptions: FormControlOptions<any> = {
   revalidateMode: VALIDATION_MODE.onChange,
   shouldFocusError: true,
 }
+
+export type TriggerOptions = {
+  shouldFocus?: boolean
+}
+
+export type TriggerResult<T> =
+  | { resolverResult: ResolverResult<T>; validationResult?: never; isValid: boolean }
+  | { resolverResult?: never; validationResult: NativeValidationResult; isValid: boolean }
 
 export type FormControlOptions<TValues extends Record<string, any>, TContext = any> = {
   /**
@@ -406,12 +412,12 @@ export class FormControl<
     this.names.mount.add(name)
 
     const props = {
-      registerElement: (this.registerElement<T>).bind(this, name, options),
-      unregisterElement: (this.unregisterElement<T>).bind(this, name, options),
+      // registerElement: (this.registerElement<T>).bind(this, name, options),
+      // unregisterElement: (this.unregisterElement<T>).bind(this, name, options),
     }
 
     if (existingField) {
-      this.updateDisabledField({ field, disabled: options.disabled, name })
+      // this.updateDisabledField({ field, disabled: options.disabled, name })
       return props
     }
 
@@ -428,86 +434,6 @@ export class FormControl<
     this.updateValid()
 
     return props
-  }
-
-  unregisterElement<T extends TParsedForm['keys']>(
-    name: T,
-    options: RegisterOptions<TValues, T> = {},
-  ): void {
-    const field: Field | undefined = safeGet(this.fields, name)
-
-    if (field?._f) {
-      field._f.mount = false
-    }
-
-    const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
-
-    if (shouldUnregister && !this.names.array.has(name)) {
-      this.names.unMount.add(name)
-    }
-  }
-
-  registerElement<T extends TParsedForm['keys']>(
-    name: T,
-    options: RegisterOptions<TValues, T> = {},
-    element: HTMLInputElement,
-  ): void {
-    this.register(name, options)
-
-    const field: Field | undefined = safeGet(this.fields, name)
-
-    const ref =
-      element.value == null
-        ? element.querySelectorAll
-          ? (element.querySelectorAll('input,select,textarea')[0] as FieldElement) || element
-          : element
-        : element
-
-    const radioOrCheckbox = isRadioInput(ref) || isCheckBoxInput(ref)
-
-    const refs = field?._f.refs ?? []
-
-    if (radioOrCheckbox ? refs.find((option) => option === ref) : ref === field?._f.ref) {
-      return
-    }
-
-    /**
-     * An extra object was appended to the refs array for some reason?
-     * ...(Array.isArray(safeGet(this.state.defaultValues.value, name)) ? [{}] : []),
-     */
-    const a: FieldReference = radioOrCheckbox
-      ? {
-          name,
-          ref,
-          refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
-        }
-      : {
-          name,
-          ref,
-        }
-
-    const newField: Field = {
-      _f: {
-        ...field?._f,
-        ...a,
-      },
-    }
-
-    deepSet(this.fields, name, newField)
-
-    const defaultValue =
-      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
-
-    if (defaultValue == null || (ref as HTMLInputElement)?.defaultChecked) {
-      this.state.values.update((values) => {
-        deepSet(values, name, getFieldValue(newField._f))
-        return values
-      })
-    } else {
-      // setFieldValue(name, defaultValue);
-    }
-
-    this.updateValid()
   }
 
   /**
@@ -532,17 +458,39 @@ export class FormControl<
   }
 
   /**
+   * Given a dot-concatenated string path, return whether the error for the field exists.
+   */
+  errorExists(key?: string): boolean {
+    return Boolean(key && safeGet(this.state.errors.value, key))
+  }
+
+  /**
    * Either natively validates the form or runs the form's resolver to validate the form.
    */
-  async updateValid() {
+  async updateValid(
+    name?: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
+    options?: TriggerOptions,
+  ) {
+    const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
+
+    const allFieldNames = nameArray ?? this.names.mount
+
     if (this.options.resolver == null) {
-      const validationResult = await this.nativeValidate()
+      this.state.isValidating.set(true)
+
+      const validationResult = await this.nativeValidate(nameArray)
+
+      this.state.isValidating.set(false)
 
       const isValid = validationResult.valid
 
       this.state.isValid.set(isValid)
 
-      return
+      if (options?.shouldFocus && !isValid) {
+        focusFieldBy(this.fields, this.errorExists.bind(this), allFieldNames)
+      }
+
+      return { validationResult, isValid }
     }
 
     // Pass the form values through the provided resolver.
@@ -554,6 +502,8 @@ export class FormControl<
       this.options.shouldUseNativeValidation,
     )
 
+    this.state.isValidating.set(true)
+
     const resolverResult = await this.options.resolver(
       this.state.values.value,
       this.options.context,
@@ -564,7 +514,13 @@ export class FormControl<
 
     const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
 
+    if (options?.shouldFocus && !isValid) {
+      focusFieldBy(this.fields, this.errorExists.bind(this), allFieldNames)
+    }
+
     this.state.isValid.set(isValid)
+
+    return { resolverResult, isValid }
   }
 
   /**
@@ -695,4 +651,84 @@ export class FormControl<
 
     return validationResult
   }
+
+  // unregisterElement<T extends TParsedForm['keys']>(
+  //   name: T,
+  //   options: RegisterOptions<TValues, T> = {},
+  // ): void {
+  //   const field: Field | undefined = safeGet(this.fields, name)
+
+  //   if (field?._f) {
+  //     field._f.mount = false
+  //   }
+
+  //   const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
+
+  //   if (shouldUnregister && !this.names.array.has(name)) {
+  //     this.names.unMount.add(name)
+  //   }
+  // }
+
+  // registerElement<T extends TParsedForm['keys']>(
+  //   name: T,
+  //   options: RegisterOptions<TValues, T> = {},
+  //   element: HTMLInputElement,
+  // ): void {
+  //   this.register(name, options)
+
+  //   const field: Field | undefined = safeGet(this.fields, name)
+
+  //   const ref =
+  //     element.value == null
+  //       ? element.querySelectorAll
+  //         ? (element.querySelectorAll('input,select,textarea')[0] as FieldElement) || element
+  //         : element
+  //       : element
+
+  //   const radioOrCheckbox = isRadioInput(ref) || isCheckBoxInput(ref)
+
+  //   const refs = field?._f.refs ?? []
+
+  //   if (radioOrCheckbox ? refs.find((option) => option === ref) : ref === field?._f.ref) {
+  //     return
+  //   }
+
+  //   /**
+  //    * An extra object was appended to the refs array for some reason?
+  //    * ...(Array.isArray(safeGet(this.state.defaultValues.value, name)) ? [{}] : []),
+  //    */
+  //   const a: FieldReference = radioOrCheckbox
+  //     ? {
+  //         name,
+  //         ref,
+  //         refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
+  //       }
+  //     : {
+  //         name,
+  //         ref,
+  //       }
+
+  //   const newField: Field = {
+  //     _f: {
+  //       ...field?._f,
+  //       ...a,
+  //     },
+  //   }
+
+  //   deepSet(this.fields, name, newField)
+
+  //   const defaultValue =
+  //     safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+  //   if (defaultValue == null || (ref as HTMLInputElement)?.defaultChecked) {
+  //     this.state.values.update((values) => {
+  //       deepSet(values, name, getFieldValue(newField._f))
+  //       return values
+  //     })
+  //   } else {
+  //     // setFieldValue(name, defaultValue);
+  //   }
+
+  //   this.updateValid()
+  // }
 }
