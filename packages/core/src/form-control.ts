@@ -9,7 +9,6 @@ import {
   type SubmissionValidationMode,
   getValidationModes,
 } from './constants'
-import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
@@ -489,40 +488,23 @@ export class FormControl<
    */
   async updateValid(
     name?: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
-    options?: TriggerOptions,
   ) {
     const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
 
-    const allFieldNames = nameArray ?? this.names.mount
-
     if (this.options.resolver == null) {
-      this.state.isValidating.set(true)
-
       const validationResult = await this.nativeValidate(nameArray)
 
-      this.state.isValidating.set(false)
-
       const isValid = validationResult.valid
-
-      this.state.isValid.set(isValid)
-
-      if (options?.shouldFocus && !isValid) {
-        focusFieldBy(this.fields, this.errorExists.bind(this), allFieldNames)
-      }
 
       return { validationResult, isValid }
     }
 
-    // Pass the form values through the provided resolver.
-
     const resolverOptions = getResolverOptions(
-      this.names.mount,
+      nameArray ?? this.names.mount,
       this.fields,
       this.options.criteriaMode,
       this.options.shouldUseNativeValidation,
     )
-
-    this.state.isValidating.set(true)
 
     const resolverResult = await this.options.resolver(
       this.state.values.value,
@@ -530,15 +512,7 @@ export class FormControl<
       resolverOptions,
     )
 
-    this.mergeErrors(resolverResult.errors)
-
     const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
-
-    if (options?.shouldFocus && !isValid) {
-      focusFieldBy(this.fields, this.errorExists.bind(this), allFieldNames)
-    }
-
-    this.state.isValid.set(isValid)
 
     return { resolverResult, isValid }
   }
@@ -714,10 +688,6 @@ export class FormControl<
     if (options?.shouldTouch) {
       this.updateTouchedField(name)
     }
-
-    // if (options?.shouldValidate) {
-    //   await this.updateValid(name as TParsedForm['keys'])
-    // }
   }
 
   unregisterElement<T extends TParsedForm['keys']>(

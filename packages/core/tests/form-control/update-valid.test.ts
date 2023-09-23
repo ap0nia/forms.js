@@ -7,9 +7,9 @@ describe('FormControl', () => {
     test('no resolver and valid', async () => {
       const formControl = new FormControl()
 
-      await formControl.updateValid()
+      const result = await formControl.updateValid()
 
-      expect(formControl.state.isValid.value).toBeTruthy()
+      expect(result.isValid).toBeTruthy()
     })
 
     test('resolver that returns null errors', async () => {
@@ -17,9 +17,9 @@ describe('FormControl', () => {
         resolver: () => ({ values: {} }),
       })
 
-      await formControl.updateValid()
+      const result = await formControl.updateValid()
 
-      expect(formControl.state.isValid.value).toBeTruthy()
+      expect(result.isValid).toBeTruthy()
     })
 
     test('resolver that returns empty object errors', async () => {
@@ -27,9 +27,9 @@ describe('FormControl', () => {
         resolver: () => ({ values: {}, errors: {} }),
       })
 
-      await formControl.updateValid()
+      const result = await formControl.updateValid()
 
-      expect(formControl.state.isValid.value).toBeTruthy()
+      expect(result.isValid).toBeTruthy()
     })
 
     test('no resolver with focus and errors', async () => {
@@ -37,9 +37,9 @@ describe('FormControl', () => {
 
       formControl.register('name', { required: true })
 
-      await formControl.updateValid(undefined, { shouldFocus: true })
+      const result = await formControl.updateValid()
 
-      expect(formControl.state.isValid.value).toBeFalsy()
+      expect(result.isValid).toBeFalsy()
     })
 
     test('resolver with focus and errors', async () => {
@@ -47,9 +47,9 @@ describe('FormControl', () => {
         resolver: () => ({ values: {}, errors: { name: { type: 'required' } } }),
       })
 
-      await formControl.updateValid(undefined, { shouldFocus: true })
+      const result = await formControl.updateValid()
 
-      expect(formControl.state.isValid.value).toBeFalsy()
+      expect(result.isValid).toBeFalsy()
     })
 
     test('with name and errors for different names', async () => {
@@ -57,9 +57,9 @@ describe('FormControl', () => {
 
       formControl.register('name', { required: true })
 
-      await formControl.updateValid('name', { shouldFocus: true })
+      const result = await formControl.updateValid('name')
 
-      expect(formControl.state.isValid.value).toBeFalsy()
+      expect(result.isValid).toBeFalsy()
     })
 
     test('with name array and errors for different names', async () => {
@@ -67,9 +67,9 @@ describe('FormControl', () => {
 
       formControl.register('name', { required: true })
 
-      await formControl.updateValid(['name'], { shouldFocus: true })
+      const result = await formControl.updateValid(['name'])
 
-      expect(formControl.state.isValid.value).toBeFalsy()
+      expect(result.isValid).toBeFalsy()
     })
   })
 })

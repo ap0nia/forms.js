@@ -11,7 +11,7 @@ describe('FormControl', () => {
 
       formControl.updateTouchedField = vi.fn()
 
-      await formControl.touch(name, undefined, { shouldTouch: true })
+      formControl.touch(name, undefined, { shouldTouch: true })
 
       expect(formControl.updateTouchedField).toHaveBeenCalledWith(name)
     })
@@ -25,21 +25,9 @@ describe('FormControl', () => {
 
       formControl.updateDirtyField = vi.fn()
 
-      await formControl.touch(name, value, { shouldDirty: true })
+      formControl.touch(name, value, { shouldDirty: true })
 
       expect(formControl.updateDirtyField).toHaveBeenCalledWith(name, value)
-    })
-
-    test('shouldValidate', async () => {
-      const formControl = new FormControl()
-
-      const name = 'name'
-
-      formControl.updateValid = vi.fn()
-
-      await formControl.touch(name, undefined, { shouldValidate: true })
-
-      expect(formControl.updateValid).toHaveBeenCalledWith(name)
     })
   })
 })
