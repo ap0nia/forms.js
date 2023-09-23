@@ -450,7 +450,7 @@ export class FormControl<
       return values
     })
 
-    this.updateValid()
+    this.validate()
 
     return props
   }
@@ -486,7 +486,7 @@ export class FormControl<
   /**
    * Either natively validates the form or runs the form's resolver to validate the form.
    */
-  async updateValid(
+  async validate(
     name?: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
   ) {
     const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
@@ -732,7 +732,7 @@ export class FormControl<
       this.setFieldValue(name, defaultValue)
     }
 
-    this.updateValid()
+    this.validate()
   }
 
   async handleChange(event: AnyEvent): Promise<void | boolean> {

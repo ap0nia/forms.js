@@ -7,7 +7,7 @@ describe('FormControl', () => {
     test('no resolver and valid', async () => {
       const formControl = new FormControl()
 
-      const result = await formControl.updateValid()
+      const result = await formControl.validate()
 
       expect(result.isValid).toBeTruthy()
     })
@@ -17,7 +17,7 @@ describe('FormControl', () => {
         resolver: () => ({ values: {} }),
       })
 
-      const result = await formControl.updateValid()
+      const result = await formControl.validate()
 
       expect(result.isValid).toBeTruthy()
     })
@@ -27,7 +27,7 @@ describe('FormControl', () => {
         resolver: () => ({ values: {}, errors: {} }),
       })
 
-      const result = await formControl.updateValid()
+      const result = await formControl.validate()
 
       expect(result.isValid).toBeTruthy()
     })
@@ -37,7 +37,7 @@ describe('FormControl', () => {
 
       formControl.register('name', { required: true })
 
-      const result = await formControl.updateValid()
+      const result = await formControl.validate()
 
       expect(result.isValid).toBeFalsy()
     })
@@ -47,7 +47,7 @@ describe('FormControl', () => {
         resolver: () => ({ values: {}, errors: { name: { type: 'required' } } }),
       })
 
-      const result = await formControl.updateValid()
+      const result = await formControl.validate()
 
       expect(result.isValid).toBeFalsy()
     })
@@ -57,7 +57,7 @@ describe('FormControl', () => {
 
       formControl.register('name', { required: true })
 
-      const result = await formControl.updateValid('name')
+      const result = await formControl.validate('name')
 
       expect(result.isValid).toBeFalsy()
     })
@@ -67,7 +67,7 @@ describe('FormControl', () => {
 
       formControl.register('name', { required: true })
 
-      const result = await formControl.updateValid(['name'])
+      const result = await formControl.validate(['name'])
 
       expect(result.isValid).toBeFalsy()
     })
