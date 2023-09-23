@@ -26,13 +26,13 @@ export function shouldSkipValidationAfter(
   const validateOnBlurEvents = isSubmitted ? afterSubmission?.blur : beforeSubmission?.blur
 
   if (validateOnBlurEvents) {
-    return eventType === 'blur'
+    return eventType !== 'blur'
   }
 
   const validateOnChangeEvents = isSubmitted ? afterSubmission?.change : beforeSubmission?.change
 
   if (validateOnChangeEvents) {
-    return eventType === 'change'
+    return eventType !== 'change'
   }
 
   return true
