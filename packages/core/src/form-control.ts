@@ -10,6 +10,7 @@ import {
   getValidationModes,
 } from './constants'
 import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
@@ -705,7 +706,7 @@ export class FormControl<
     this.touch(name, fieldValue, options)
   }
 
-  async touch(name: string, value?: unknown, options?: SetValueOptions) {
+  touch(name: string, value?: unknown, options?: SetValueOptions) {
     if (!options?.shouldTouch || options.shouldDirty) {
       this.updateDirtyField(name, value)
     }
@@ -714,9 +715,9 @@ export class FormControl<
       this.updateTouchedField(name)
     }
 
-    if (options?.shouldValidate) {
-      await this.updateValid(name as TParsedForm['keys'])
-    }
+    // if (options?.shouldValidate) {
+    //   await this.updateValid(name as TParsedForm['keys'])
+    // }
   }
 
   unregisterElement<T extends TParsedForm['keys']>(
@@ -775,8 +776,6 @@ export class FormControl<
       return
     }
 
-    // const fieldValue = getCurrentFieldValue(event, field)
-
     const isBlurEvent = event.type === EVENTS.BLUR || event.type === EVENTS.FOCUS_OUT
 
     const nothingToValidate =
@@ -794,20 +793,32 @@ export class FormControl<
         this.submissionValidationMode,
       )
 
-    console.log({ shouldSkipValidation })
+    const fieldValue = getCurrentFieldValue(event, field)
 
-    // const watched = isWatched(name, _names, isBlurEvent)
+    this.state.values.update((values) => {
+      deepSet(values, name, fieldValue)
+      return values
+    })
 
-    // this.state.values.update((values) => {
-    //   deepSet(values, name, fieldValue)
-    //   return values
-    // })
+    if (isBlurEvent) {
+      field._f.onBlur?.(event)
+      // delayErrorCallback(0)
+    } else {
+      field._f.onChange?.(event)
+    }
 
-    // if (isBlurEvent) {
-    //   field._f.onBlur && field._f.onBlur(event)
-    //   delayErrorCallback && delayErrorCallback(0)
-    // } else if (field._f.onChange) {
-    //   field._f.onChange(event)
+    if (!isBlurEvent) {
+      this.updateDirtyField(name, fieldValue)
+    } else {
+      this.updateTouchedField(name)
+    }
+
+    if (shouldSkipValidation) {
+      return
+    }
+
+    // if (this.options.resolver) {
+    // } else {
     // }
 
     // const fieldState = updateTouchAndDirty(name, fieldValue, isBlurEvent, false)
