@@ -17,5 +17,6 @@ describe('isPlainObject', () => {
     expect(isPlainObject(['foo', 'bar'])).toBeFalsy()
     expect(isPlainObject(() => null)).toBeFalsy()
     expect(isPlainObject(new Blob())).toBeFalsy()
+    expect(isPlainObject(null)).toBeFalsy()
   })
 })
