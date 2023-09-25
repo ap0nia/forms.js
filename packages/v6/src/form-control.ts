@@ -1,11 +1,9 @@
 import {
   VALIDATION_MODE,
+  EVENTS,
   type RevalidationMode,
   type ValidationMode,
   type CriteriaMode,
-  type Stage,
-  STAGE,
-  EVENTS,
   type SubmissionValidationMode,
   getValidationModes,
 } from './constants'
@@ -326,13 +324,6 @@ export class FormControl<
   state: { [Key in keyof FormState<TValues>]: Writable<FormState<TValues>[Key]> }
 
   /**
-   * The current stage of the form. Certain operations are performed during certain stages.
-   *
-   * @public
-   */
-  stage: Stage[keyof Stage]
-
-  /**
    * Registered fields.
    *
    * @internal
@@ -382,26 +373,43 @@ export class FormControl<
       errors: new Writable({}),
     }
 
-    this.stage = STAGE.IDLE
-
     this.submissionValidationMode = {
       beforeSubmission: getValidationModes(resolvedOptions.mode),
       afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
     }
   }
 
+  /**
+   * Gets all the values.
+   */
   getValues(): TValues
 
+  /**
+   * Gets a single value.
+   */
   getValues<T extends TParsedForm['keys']>(fieldName: T): TParsedForm['flattened'][T]
 
+  /**
+   * Get an array of values.
+   */
   getValues<T extends TParsedForm['keys'][]>(
     names: readonly [...T],
   ): KeysToProperties<TParsedForm['flattened'], T>
 
+  /**
+   * Get an array of values.
+   */
   getValues<T extends TParsedForm['keys'][]>(
     ...names: readonly [...T]
   ): KeysToProperties<TParsedForm['flattened'], T>
 
+  /**
+   * Implementation.
+   *
+   * The loose typing has lower priority than the overloads, so it's not observed publicly.
+   *
+   * @internal
+   */
   getValues(...fieldNames: any[]): any {
     const names = fieldNames.length > 1 ? fieldNames : fieldNames[0]
     return safeGetMultiple(this.state.values.value, names)
@@ -450,9 +458,24 @@ export class FormControl<
       return values
     })
 
-    this.validate()
+    this.updateValid()
 
     return props
+  }
+
+  /**
+   * Updates is valid, does not mutate errors.
+   */
+  async updateValid() {
+    const result = await this.validate()
+
+    const noResolverErrors = isEmptyObject(result.resolverResult?.errors ?? {})
+
+    const noNativeValidationErrors = isEmptyObject(result.validationResult?.errors ?? {})
+
+    const isValid = noResolverErrors && noNativeValidationErrors
+
+    this.state.isValid.set(isValid)
   }
 
   /**
@@ -485,10 +508,10 @@ export class FormControl<
 
   /**
    * Either natively validates the form or runs the form's resolver to validate the form.
+   *
+   * @internal
    */
-  async validate(
-    name?: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
-  ) {
+  async validate(name?: string | string[]) {
     const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
 
     if (this.options.resolver == null) {
@@ -786,6 +809,23 @@ export class FormControl<
     if (shouldSkipValidation) {
       return
     }
+
+    // const result = await this.validate(name)
+
+    // if (result.resolverResult?.errors) {
+    //   const previousErrorLookupResult = lookupError(this.state.errors.value, this.fields, name)
+
+    //   const errorLookupResult = lookupError(
+    //     result.resolverResult.errors,
+    //     this.fields,
+    //     previousErrorLookupResult.name || name,
+    //   )
+
+    //   const isValid = isEmptyObject(result.resolverResult.errors)
+    // }
+
+    // if (result.validationResult) {
+    // }
 
     // if (this.options.resolver) {
     // } else {

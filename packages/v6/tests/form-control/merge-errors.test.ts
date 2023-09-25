@@ -1,8 +1,7 @@
+import type { FieldErrors } from 'packages/core/src/types/errors'
 import { describe, test, expect } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
-
-import type { FieldErrors } from 'packages/core/src/types/errors'
 
 describe('FormControl', () => {
   describe('mergeErrors', () => {
