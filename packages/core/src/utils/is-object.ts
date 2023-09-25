@@ -14,7 +14,11 @@ export function isObject<T extends object>(value: unknown): value is T {
  *
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/isPlainObject.ts
  */
-export function isPlainObject(value: object): boolean {
+export function isPlainObject(value: unknown): boolean {
+  if (value == null) {
+    return false
+  }
+
   const prototypeCopy = value.constructor?.prototype
 
   return (

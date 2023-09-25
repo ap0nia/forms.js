@@ -2,9 +2,6 @@ import { describe, test, expect } from 'vitest'
 
 import { isPrimitive } from '../../src/utils/is-primitive'
 
-/**
- * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/utils/isPrimitive.test.ts
- */
 describe('isPrimitive', () => {
   test('true for string', () => {
     expect(isPrimitive('foobar')).toBeTruthy()
