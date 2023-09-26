@@ -14,14 +14,50 @@ describe('deepSet', () => {
   test('mutates top level property for symbol key', () => {
     const key = Symbol.for('a')
 
-    const test2 = { [key]: 'hello' }
+    const obj = { [key]: 'hello' }
 
-    expect(deepSet(test2, key, 'world')).toEqual('world')
+    expect(deepSet(obj, key, 'world')).toEqual('world')
 
-    expect(test2[key]).toEqual('world')
+    expect(obj).toEqual({ [key]: 'world' })
   })
 
   test('does not do anything for null object', () => {
-    expect(deepSet(null, 'foo', 'bar')).toEqual('bar')
+    const obj = null
+
+    expect(deepSet(obj, 'foo', 'bar')).toEqual('bar')
+
+    expect(obj).toEqual(null)
+  })
+
+  test('sets existing property for nested objects', () => {
+    const obj = { foo: { bar: 'baz' } }
+
+    expect(deepSet(obj, 'foo.bar', 'world')).toEqual('world')
+
+    expect(obj).toEqual({ foo: { bar: 'world' } })
+  })
+
+  test('sets new property for nested objects', () => {
+    const obj = {}
+
+    expect(deepSet(obj, 'foo.baz', 'world')).toEqual('world')
+
+    expect(obj).toEqual({ foo: { baz: 'world' } })
+  })
+
+  test('sets existing property for nested arrays', () => {
+    const obj = { foo: { bar: ['baz'] } }
+
+    expect(deepSet(obj, 'foo.bar[0]', 'world')).toEqual('world')
+
+    expect(obj).toEqual({ foo: { bar: ['world'] } })
+  })
+
+  test('sets new property for nested arrays', () => {
+    const obj = {}
+
+    expect(deepSet(obj, 'foo.bar[1]', 'world')).toEqual('world')
+
+    expect(obj).toEqual({ foo: { bar: [undefined, 'world'] } })
   })
 })
