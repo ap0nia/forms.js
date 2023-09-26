@@ -32,7 +32,7 @@ export function getDirtyFieldsFromDefaultValues<T>(data: T, formValues: T, dirty
   return dirtyFields
 }
 
-function markFieldsDirty<T>(data: T, fields: Record<string, any> = {}) {
+export function markFieldsDirty<T>(data: T, fields: Record<string, any> = {}) {
   const isParentNodeArray = Array.isArray(data)
 
   if (!isObject(data) && !isParentNodeArray) {
