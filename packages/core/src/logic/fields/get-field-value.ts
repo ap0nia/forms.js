@@ -5,6 +5,11 @@ import { getRadioValue, isRadioInput } from '../html/radio'
 import { isMultipleSelectInput } from '../html/select'
 
 /**
+ * Subset of input element properties that describe the input's value.
+ */
+type ValueAs = Pick<FieldReference, 'valueAsNumber' | 'valueAsDate' | 'setValueAs'>
+
+/**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/getFieldValue.ts
  */
 export function getFieldValue(_f: FieldReference) {
@@ -34,20 +39,22 @@ export function getFieldValue(_f: FieldReference) {
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/getFieldValueAs.ts
  */
-export function getFieldValueAs(value: unknown, _f: FieldReference) {
-  const { valueAsNumber, valueAsDate, setValueAs } = _f
+export function getFieldValueAs(value: unknown, as: ValueAs) {
+  const { valueAsNumber, valueAsDate, setValueAs } = as
 
-  return value == null
-    ? value
-    : valueAsNumber
-    ? value === ''
-      ? NaN
-      : value
-      ? +value
-      : value
+  const convertedValue = valueAsNumber
+    ? valueToNumber(value)
     : valueAsDate && typeof value === 'string'
     ? new Date(value)
-    : setValueAs
-    ? setValueAs(value)
-    : value
+    : setValueAs?.(value)
+
+  return convertedValue ?? value
+}
+
+export function valueToNumber(value: unknown) {
+  if (value === '') {
+    return NaN
+  }
+
+  return value ? +value : value
 }
