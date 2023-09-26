@@ -4,8 +4,10 @@ import { Writable } from '../src/store'
 
 describe('store', () => {
   describe('writable', () => {
-    test('subscription function is called once', () => {
-      const count = new Writable(0)
+    test('subscription function is called once with the current value upon subscribing', () => {
+      const value = 69
+
+      const count = new Writable(value)
 
       const mock = vi.fn().mockImplementation(() => {
         /* noop */
@@ -14,12 +16,14 @@ describe('store', () => {
       count.subscribe(mock)
 
       expect(mock).toHaveBeenCalledTimes(1)
+
+      expect(mock).toHaveBeenCalledWith(value)
     })
 
     test('subscription function is not called for same value', () => {
-      const number = 0
+      const value = 0
 
-      const count = new Writable(number)
+      const count = new Writable(value)
 
       const mock = vi.fn().mockImplementation(() => {
         /* noop */
@@ -27,7 +31,9 @@ describe('store', () => {
 
       count.subscribe(mock)
 
-      count.set(number)
+      expect(mock).toHaveBeenCalledTimes(1)
+
+      count.set(value)
 
       expect(mock).toHaveBeenCalledTimes(1)
     })

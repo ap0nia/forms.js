@@ -7,13 +7,13 @@
 import { noop, type Noop } from './utils/noop'
 import { safeNotEqual } from './utils/safe-not-equal'
 
-/**
- * Subscribe functions paired with a value to be passed to them.
- * Populated by {@link Writable.set} to update subscribers.
- */
-const subscriberQueue: [Subscriber<any>, unknown][] = []
-
 export class Writable<T> {
+  /**
+   * Subscribe functions paired with a value to be passed to them.
+   * Populated by {@link Writable.set} to update subscribers.
+   */
+  static subscriberQueue: [Subscriber<any>, unknown][] = []
+
   stop?: Noop
 
   subscribers = new Set<SubscribeInvalidateTuple<T>>()
@@ -38,18 +38,18 @@ export class Writable<T> {
       return
     }
 
-    const shouldRunQueue = !subscriberQueue.length
+    const shouldRunQueue = !Writable.subscriberQueue.length
 
     this.subscribers.forEach(([subscribe, invalidate]) => {
       invalidate()
-      subscriberQueue.push([subscribe, value])
+      Writable.subscriberQueue.push([subscribe, value])
     })
 
     if (shouldRunQueue) {
-      subscriberQueue.forEach(([subscriber, value]) => {
+      Writable.subscriberQueue.forEach(([subscriber, value]) => {
         subscriber(value)
       })
-      subscriberQueue.length = 0
+      Writable.subscriberQueue.length = 0
     }
   }
 
