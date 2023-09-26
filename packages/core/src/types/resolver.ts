@@ -8,7 +8,7 @@ import type { FieldReference } from './fields'
  * A resolver processes the form values and returns a result.
  * i.e. resolving the values/errors of the form.
  */
-export type Resolver<TFieldValues, TContext = any> = (
+export type Resolver<TFieldValues = Record<string, any>, TContext = any> = (
   values: TFieldValues,
   context: TContext | undefined,
   options: ResolverOptions<TFieldValues>,
@@ -42,7 +42,7 @@ export interface ResolverOptions<T> {
 /**
  * A resolver can return a successful result or an error result.
  */
-export type ResolverResult<T> = ResolverSuccess<T> | ResolverError<T>
+export type ResolverResult<T = Record<string, any>> = ResolverSuccess<T> | ResolverError<T>
 
 /**
  * Successful resolver result.

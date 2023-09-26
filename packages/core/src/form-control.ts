@@ -20,7 +20,7 @@ import { Writable } from './store'
 import type { FieldErrors, InternalFieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
 import type { RegisterOptions, RegisterResult } from './types/register'
-import type { Resolver } from './types/resolver'
+import type { Resolver, ResolverResult } from './types/resolver'
 import type { SubmitErrorHandler, SubmitHandler } from './types/submit'
 import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
@@ -527,29 +527,25 @@ export class FormControl<
     }
   }
 
-  handleSubmit(onValid: SubmitHandler<TValues>, onInvalid: SubmitErrorHandler<TValues>) {
-    return async (event: BaseSyntheticEvent) => {
-      if (event) {
-        event.preventDefault && event.preventDefault()
-        event.persist && event.persist()
-      }
+  handleSubmit(onValid?: SubmitHandler<TValues>, onInvalid?: SubmitErrorHandler<TValues>) {
+    return async (event?: BaseSyntheticEvent) => {
+      event?.preventDefault()
+
+      event?.persist()
 
       this.state.isSubmitting.set(true)
 
-      const result = await this.validate()
+      const { isValid, resolverResult, validationResult } = await this.validate()
 
       deepUnset(this.state.errors.value, 'root')
 
-      if (result.isValid) {
+      if (isValid) {
         const data = structuredClone(this.state.values.value)
-        await onValid(data, event)
+        await onValid?.(data, event)
       } else {
-        if (onInvalid) {
-          const errors = result.resolverResult?.errors ?? result.validationResult?.errors ?? {}
-          await onInvalid(errors, event)
-        }
+        await onInvalid?.(resolverResult?.errors ?? validationResult?.errors ?? {}, event)
         this.focusError()
-        setTimeout(this.focusError)
+        setTimeout(this.focusError.bind(this))
       }
 
       this.state.isSubmitted.set(true)
@@ -713,7 +709,12 @@ export class FormControl<
    *
    * @returns Whether the form is valid and the resolver or native validation result.
    */
-  async validate(name?: string | string[] | Nullish) {
+  async validate(
+    name?: string | string[] | Nullish,
+  ): Promise<
+    | { isValid: boolean; validationResult: NativeValidationResult; resolverResult?: undefined }
+    | { isValid: boolean; validationResult?: undefined; resolverResult: ResolverResult<TValues> }
+  > {
     const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
 
     if (this.options.resolver == null) {
