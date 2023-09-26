@@ -48,14 +48,14 @@ export function deepEqual(left: unknown, right: unknown): boolean {
   return true
 }
 
-function bothDates(val1: unknown, val2: unknown): boolean {
+export function bothDates(val1: unknown, val2: unknown): boolean {
   return val1 instanceof Date && val2 instanceof Date
 }
 
-function bothObjects(val1: unknown, val2: unknown): boolean {
+export function bothObjects(val1: unknown, val2: unknown): boolean {
   return isObject(val1) && isObject(val2)
 }
 
-function bothArrays(val1: unknown, val2: unknown): boolean {
+export function bothArrays(val1: unknown, val2: unknown): boolean {
   return Array.isArray(val1) && Array.isArray(val2)
 }
