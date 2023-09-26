@@ -28,28 +28,34 @@ export function deepEqual(left: unknown, right: unknown): boolean {
   }
 
   for (const key of leftKeys) {
-    const val1: any = left[key as keyof typeof left]
-
     if (!rightKeys.includes(key)) {
       return false
     }
 
-    const val2: any = right[key as keyof typeof right]
+    const a: any = left[key as keyof typeof left]
 
-    if (isPrimitive(val1) && isPrimitive(val2) && val1 !== val2) {
+    const b: any = right[key as keyof typeof right]
+
+    if (isPrimitive(a) && isPrimitive(b) && a !== b) {
       return false
     }
 
-    const bothDates = val1 instanceof Date && val2 instanceof Date
-
-    const bothObjects = isObject(val1) && isObject(val2)
-
-    const bothArrays = Array.isArray(val1) && Array.isArray(val2)
-
-    if ((bothDates || bothObjects || bothArrays) && !deepEqual(val1, val2)) {
+    if ((bothDates(a, b) || bothObjects(a, b) || bothArrays(a, b)) && !deepEqual(a, b)) {
       return false
     }
   }
 
   return true
+}
+
+function bothDates(val1: unknown, val2: unknown): boolean {
+  return val1 instanceof Date && val2 instanceof Date
+}
+
+function bothObjects(val1: unknown, val2: unknown): boolean {
+  return isObject(val1) && isObject(val2)
+}
+
+function bothArrays(val1: unknown, val2: unknown): boolean {
+  return Array.isArray(val1) && Array.isArray(val2)
 }
