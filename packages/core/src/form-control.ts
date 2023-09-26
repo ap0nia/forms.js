@@ -6,10 +6,13 @@ import {
   type ValidationMode,
 } from './constants'
 import { getValidationModes } from './logic/validation/get-validation-modes'
+import { nativeValidateFields } from './logic/validation/native-validation'
+import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
 import type { FieldErrors, InternalFieldErrors } from './types/errors'
 import type { FieldRecord } from './types/fields'
 import type { Resolver } from './types/resolver'
+import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { isObject } from './utils/is-object'
@@ -518,21 +521,21 @@ export class FormControl<
   //   }
   // }
 
-  // async nativeValidate(
-  //   names?: string | string[] | Nullish,
-  //   shouldOnlyCheckValid?: boolean,
-  // ): Promise<NativeValidationResult> {
-  //   const fields = deepFilter<FieldRecord>(this.fields, names)
+  async nativeValidate(
+    names?: string | string[],
+    shouldOnlyCheckValid?: boolean,
+  ): Promise<NativeValidationResult> {
+    const fields = deepFilter<FieldRecord>(this.fields, names)
 
-  //   const validationResult = await nativeValidateFields(fields, this.state.values.value, {
-  //     shouldOnlyCheckValid,
-  //     shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-  //     shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
-  //     isFieldArrayRoot: (name) => this.names.array.has(name),
-  //   })
+    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
+      shouldOnlyCheckValid,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+    })
 
-  //   return validationResult
-  // }
+    return validationResult
+  }
 
   /**
    * Merges errors into the form state's errors.
