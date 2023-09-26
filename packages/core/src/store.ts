@@ -27,7 +27,36 @@ export class Writable<T> {
     this.start = start
   }
 
-  set(value: T): void {
+  public get hasSubscribers(): boolean {
+    return this.subscribers.size > 0
+  }
+
+  public update(updater: Updater<T>) {
+    this.set(updater(this.value as T))
+  }
+
+  public subscribe(run: Subscriber<T>, invalidate = noop) {
+    const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
+
+    this.subscribers.add(subscriber)
+
+    if (this.subscribers.size === 1) {
+      this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
+    }
+
+    run(this.value as T)
+
+    return () => {
+      this.subscribers.delete(subscriber)
+
+      if (this.subscribers.size === 0 && this.stop != null) {
+        this.stop()
+        this.stop = undefined
+      }
+    }
+  }
+
+  public set(value: T): void {
     if (!safeNotEqual(this.value, value)) {
       return
     }
@@ -50,31 +79,6 @@ export class Writable<T> {
         subscriber(value)
       })
       subscriberQueue.length = 0
-    }
-  }
-
-  update(updater: Updater<T>) {
-    this.set(updater(this.value as T))
-  }
-
-  subscribe(run: Subscriber<T>, invalidate = noop) {
-    const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
-
-    this.subscribers.add(subscriber)
-
-    if (this.subscribers.size === 1) {
-      this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
-    }
-
-    run(this.value as T)
-
-    return () => {
-      this.subscribers.delete(subscriber)
-
-      if (this.subscribers.size === 0 && this.stop != null) {
-        this.stop()
-        this.stop = undefined
-      }
     }
   }
 }

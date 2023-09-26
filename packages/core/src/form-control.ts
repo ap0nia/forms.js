@@ -5,20 +5,13 @@ import {
   type SubmissionValidationMode,
   type ValidationMode,
 } from './constants'
-import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { getValidationModes } from './logic/validation/get-validation-modes'
-import { nativeValidateFields } from './logic/validation/native-validation'
-import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
-import type { FieldErrors, InternalFieldErrors } from './types/errors'
+import type { FieldErrors } from './types/errors'
 import type { FieldRecord } from './types/fields'
 import type { Resolver } from './types/resolver'
-import { deepFilter } from './utils/deep-filter'
-import { deepSet } from './utils/deep-set'
-import { deepUnset } from './utils/deep-unset'
-import { isEmptyObject, isObject } from './utils/is-object'
-import type { Nullish } from './utils/null'
-import { safeGet, safeGetMultiple } from './utils/safe-get'
+import { isObject } from './utils/is-object'
+import { safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
 import type { FlattenObject } from './utils/types/flatten-object'
@@ -484,88 +477,88 @@ export class FormControl<
   //   },
   // }
 
-  async updateValid(force?: boolean): Promise<void> {
-    if (!force && !this.state.isValid.hasSubscribers) {
-      return
-    }
+  // async updateValid(force?: boolean): Promise<void> {
+  //   if (!force && !this.state.isValid.value) {
+  //     return
+  //   }
 
-    const result = await this.validate()
+  //   const result = await this.validate()
 
-    this.state.isValid.set(result.isValid)
-  }
+  //   this.state.isValid.set(result.isValid)
+  // }
 
-  async validate(name?: string | string[]) {
-    const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
+  // async validate(name?: string | string[]) {
+  //   const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
 
-    if (this.options.resolver == null) {
-      const validationResult = await this.nativeValidate(nameArray)
+  //   if (this.options.resolver == null) {
+  //     const validationResult = await this.nativeValidate(nameArray)
 
-      const isValid = validationResult.valid
+  //     const isValid = validationResult.valid
 
-      return { validationResult, isValid }
-    } else {
-      const resolverOptions = getResolverOptions(
-        nameArray ?? this.names.mount,
-        this.fields,
-        this.options.criteriaMode,
-        this.options.shouldUseNativeValidation,
-      )
+  //     return { validationResult, isValid }
+  //   } else {
+  //     const resolverOptions = getResolverOptions(
+  //       nameArray ?? this.names.mount,
+  //       this.fields,
+  //       this.options.criteriaMode,
+  //       this.options.shouldUseNativeValidation,
+  //     )
 
-      const resolverResult = await this.options.resolver(
-        this.state.values.value,
-        this.options.context,
-        resolverOptions,
-      )
+  //     const resolverResult = await this.options.resolver(
+  //       this.state.values.value,
+  //       this.options.context,
+  //       resolverOptions,
+  //     )
 
-      const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+  //     const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
 
-      return { resolverResult, isValid }
-    }
-  }
+  //     return { resolverResult, isValid }
+  //   }
+  // }
 
-  async nativeValidate(
-    names?: string | string[] | Nullish,
-    shouldOnlyCheckValid?: boolean,
-  ): Promise<NativeValidationResult> {
-    const fields = deepFilter<FieldRecord>(this.fields, names)
+  // async nativeValidate(
+  //   names?: string | string[] | Nullish,
+  //   shouldOnlyCheckValid?: boolean,
+  // ): Promise<NativeValidationResult> {
+  //   const fields = deepFilter<FieldRecord>(this.fields, names)
 
-    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
-      shouldOnlyCheckValid,
-      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
-      isFieldArrayRoot: (name) => this.names.array.has(name),
-    })
+  //   const validationResult = await nativeValidateFields(fields, this.state.values.value, {
+  //     shouldOnlyCheckValid,
+  //     shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+  //     shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
+  //     isFieldArrayRoot: (name) => this.names.array.has(name),
+  //   })
 
-    return validationResult
-  }
+  //   return validationResult
+  // }
 
-  mergeErrors(errors: FieldErrors<TValues> | InternalFieldErrors, names?: string[]): void {
-    const namesToMerge = names ?? Object.keys(errors ?? {})
+  // mergeErrors(errors: FieldErrors<TValues> | InternalFieldErrors, names?: string[]): void {
+  //   const namesToMerge = names ?? Object.keys(errors ?? {})
 
-    this.state.errors.update((currentErrors) => {
-      const newErrors = names?.length ? currentErrors : {}
+  //   this.state.errors.update((currentErrors) => {
+  //     const newErrors = names?.length ? currentErrors : {}
 
-      namesToMerge.forEach((name) => {
-        const fieldError = safeGet(errors, name)
+  //     namesToMerge.forEach((name) => {
+  //       const fieldError = safeGet(errors, name)
 
-        if (fieldError == null) {
-          deepUnset(errors, name)
-          return
-        }
+  //       if (fieldError == null) {
+  //         deepUnset(errors, name)
+  //         return
+  //       }
 
-        if (!this.names.array.has(name)) {
-          deepSet(errors, name, fieldError)
-          return
-        }
+  //       if (!this.names.array.has(name)) {
+  //         deepSet(errors, name, fieldError)
+  //         return
+  //       }
 
-        const fieldArrayErrors = safeGet(errors, name) ?? {}
+  //       const fieldArrayErrors = safeGet(errors, name) ?? {}
 
-        deepSet(fieldArrayErrors, 'root', errors[name])
+  //       deepSet(fieldArrayErrors, 'root', errors[name])
 
-        deepSet(errors, name, fieldArrayErrors)
-      })
+  //       deepSet(errors, name, fieldArrayErrors)
+  //     })
 
-      return newErrors
-    })
-  }
+  //     return newErrors
+  //   })
+  // }
 }
