@@ -7,11 +7,13 @@ import {
 } from './constants'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { Writable } from './store'
-import type { FieldErrors } from './types/errors'
+import type { FieldErrors, InternalFieldErrors } from './types/errors'
 import type { FieldRecord } from './types/fields'
 import type { Resolver } from './types/resolver'
+import { deepSet } from './utils/deep-set'
+import { deepUnset } from './utils/deep-unset'
 import { isObject } from './utils/is-object'
-import { safeGetMultiple } from './utils/safe-get'
+import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
 import type { FlattenObject } from './utils/types/flatten-object'
@@ -532,33 +534,47 @@ export class FormControl<
   //   return validationResult
   // }
 
-  // mergeErrors(errors: FieldErrors<TValues> | InternalFieldErrors, names?: string[]): void {
-  //   const namesToMerge = names ?? Object.keys(errors ?? {})
+  /**
+   * Merges errors into the form state's errors.
+   *
+   * Errors from a resolver or native validator can be generated without updating the form state.
+   * This method merges those errors into form state's errors store and notifies subscribers.
+   *
+   * The names array is helpful for capturing names of fields with removed errors.
+   *
+   * @param errors The errors into the form state's errors.
+   * @param names The names of the affected fields.
+   */
+  mergeErrors(errors: FieldErrors<TValues> | InternalFieldErrors, names?: string[]): void {
+    const namesToMerge = names ?? Object.keys(errors)
 
-  //   this.state.errors.update((currentErrors) => {
-  //     const newErrors = names?.length ? currentErrors : {}
+    this.state.errors.update((currentErrors) => {
+      const newErrors = names?.length ? currentErrors : {}
 
-  //     namesToMerge.forEach((name) => {
-  //       const fieldError = safeGet(errors, name)
+      namesToMerge.forEach((name) => {
+        const fieldError = safeGet(errors, name)
 
-  //       if (fieldError == null) {
-  //         deepUnset(errors, name)
-  //         return
-  //       }
+        // Removed error.
+        if (fieldError == null) {
+          deepUnset(newErrors, name)
+          return
+        }
 
-  //       if (!this.names.array.has(name)) {
-  //         deepSet(errors, name, fieldError)
-  //         return
-  //       }
+        // Added regular error.
+        if (!this.names.array.has(name)) {
+          deepSet(newErrors, name, fieldError)
+          return
+        }
 
-  //       const fieldArrayErrors = safeGet(errors, name) ?? {}
+        // Added field array error.
+        const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
 
-  //       deepSet(fieldArrayErrors, 'root', errors[name])
+        deepSet(fieldArrayErrors, 'root', errors[name])
 
-  //       deepSet(errors, name, fieldArrayErrors)
-  //     })
+        deepSet(newErrors, name, fieldArrayErrors)
+      })
 
-  //     return newErrors
-  //   })
-  // }
+      return newErrors
+    })
+  }
 }

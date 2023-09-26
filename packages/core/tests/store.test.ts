@@ -4,6 +4,24 @@ import { Writable } from '../src/store'
 
 describe('store', () => {
   describe('writable', () => {
+    test('initially has no subscribers', () => {
+      const count = new Writable(0)
+
+      expect(count.hasSubscribers).toBeFalsy()
+    })
+
+    test('subscribing adds a subscriber', () => {
+      const count = new Writable(0)
+
+      const mock = vi.fn().mockImplementation(() => {
+        /* noop */
+      })
+
+      count.subscribe(mock)
+
+      expect(count.hasSubscribers).toBeTruthy()
+    })
+
     test('subscription function is called once with the current value upon subscribing', () => {
       const value = 69
 
