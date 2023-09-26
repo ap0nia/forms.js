@@ -14,6 +14,7 @@ import type { FieldErrors, InternalFieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
 import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver } from './types/resolver'
+import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
@@ -496,6 +497,62 @@ export class FormControl<
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
     }
+  }
+
+  /**
+   * Updates the specified field name to be touched.
+   *
+   * @remarks Will mutate the touchedFields.
+   *
+   * @returns Whether the field's touched status changed.
+   */
+  updateTouchedField(name: string): boolean {
+    const previousIsTouched = safeGet(this.state.touchedFields.value, name)
+
+    if (!previousIsTouched) {
+      this.state.touchedFields.update((touchedFields) => {
+        deepSet(touchedFields, name, true)
+        return touchedFields
+      })
+    }
+
+    return !previousIsTouched
+  }
+
+  /**
+   * Updates a field's dirty status.
+   *
+   * @remarks Will mutate dirtyFields and isDirty.
+   *
+   * @returns Whether the field's dirty status changed.
+   */
+  updateDirtyField(name: string, value?: unknown): boolean {
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
+
+    // The field will be dirty if its value is different from its default value.
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    this.state.isDirty.set(currentIsDirty)
+
+    // The field is turning dirty to clean.
+    if (previousIsDirty && !currentIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => {
+        deepUnset(dirtyFields, name)
+        return dirtyFields
+      })
+    }
+
+    // The field is turning clean to dirty.
+    if (!previousIsDirty && currentIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => {
+        deepSet(dirtyFields, name, true)
+        return dirtyFields
+      })
+    }
+
+    return currentIsDirty !== previousIsDirty
   }
 
   /**
