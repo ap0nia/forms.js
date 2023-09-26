@@ -521,11 +521,17 @@ export class FormControl<
   //   }
   // }
 
+  /**
+   * Natively validate all of the form's registered fields.
+   *
+   * @param names The name or names of the fields to validate. If not provided, all fields will be validated.
+   * @param shouldOnlyCheckValid Whether to stop validating after the first error is found.
+   */
   async nativeValidate(
     names?: string | string[],
     shouldOnlyCheckValid?: boolean,
   ): Promise<NativeValidationResult> {
-    const fields = deepFilter<FieldRecord>(this.fields, names)
+    const fields = deepFilter(this.fields, names)
 
     const validationResult = await nativeValidateFields(fields, this.state.values.value, {
       shouldOnlyCheckValid,
