@@ -7,13 +7,13 @@
 import { noop, type Noop } from './utils/noop'
 import { safeNotEqual } from './utils/safe-not-equal'
 
-export class Writable<T> {
-  /**
-   * Subscribe functions paired with a value to be passed to them.
-   * Populated by {@link Writable.set} to update subscribers.
-   */
-  static subscriberQueue: [Subscriber<any>, unknown][] = []
+/**
+ * Subscribe functions paired with a value to be passed to them.
+ * Populated by {@link Writable.set} to update subscribers.
+ */
+const subscriberQueue: [Subscriber<any>, unknown][] = []
 
+export class Writable<T> {
   stop?: Noop
 
   subscribers = new Set<SubscribeInvalidateTuple<T>>()
@@ -27,11 +27,37 @@ export class Writable<T> {
     this.start = start
   }
 
-  public get hasSubscribers(): boolean {
-    return this.subscribers.size > 0
+  set(value: T): void {
+    if (!safeNotEqual(this.value, value)) {
+      return
+    }
+
+    this.value = value
+
+    if (this.stop == null) {
+      return
+    }
+
+    const shouldRunQueue = !subscriberQueue.length
+
+    this.subscribers.forEach(([subscribe, invalidate]) => {
+      invalidate()
+      subscriberQueue.push([subscribe, value])
+    })
+
+    if (shouldRunQueue) {
+      subscriberQueue.forEach(([subscriber, value]) => {
+        subscriber(value)
+      })
+      subscriberQueue.length = 0
+    }
   }
 
-  public subscribe(run: Subscriber<T>, invalidate = noop) {
+  update(updater: Updater<T>) {
+    this.set(updater(this.value as T))
+  }
+
+  subscribe(run: Subscriber<T>, invalidate = noop) {
     const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
 
     this.subscribers.add(subscriber)
@@ -49,57 +75,6 @@ export class Writable<T> {
         this.stop()
         this.stop = undefined
       }
-    }
-  }
-
-  public update(updater: Updater<T>) {
-    this.set(updater(this.value as T))
-  }
-
-  public quietUpdate(updater: Updater<T>): void {
-    this.quietSet(updater(this.value as T))
-  }
-
-  public set(value: T): void {
-    const changed = this.quietSet(value)
-
-    if (changed) {
-      this.notify(value)
-    }
-  }
-
-  /**
-   * Set the value without notifying subscribers.
-   *
-   * @returns Whether the value changed.
-   */
-  public quietSet(value: T): boolean {
-    if (!safeNotEqual(this.value, value)) {
-      return false
-    }
-
-    this.value = value
-
-    return true
-  }
-
-  public notify(value: T): void {
-    if (this.stop == null) {
-      return
-    }
-
-    const shouldRunQueue = Writable.subscriberQueue.length > 0
-
-    this.subscribers.forEach(([subscribe, invalidate]) => {
-      invalidate()
-      Writable.subscriberQueue.push([subscribe, value])
-    })
-
-    if (shouldRunQueue) {
-      Writable.subscriberQueue.forEach(([subscriber, value]) => {
-        subscriber(value)
-      })
-      Writable.subscriberQueue.length = 0
     }
   }
 }
