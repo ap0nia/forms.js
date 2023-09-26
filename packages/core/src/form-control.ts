@@ -395,7 +395,7 @@ export class FormControl<
 
     const props: RegisterResult = {
       // registerElement: (element) => this.registerElement(name, element, options),
-      // unregisterElement: () => this.unregisterElement(name, options),
+      unregisterElement: () => this.unregisterElement(name, options),
     } as any
 
     if (existingField) {
@@ -417,6 +417,7 @@ export class FormControl<
     // if (this.state.component.value.mounted) {
     //   this.updateValid()
     // }
+
     this.updateValid()
 
     return props
@@ -478,6 +479,23 @@ export class FormControl<
     //         _names.unMount.add(name)
     //     }
     //   },
+  }
+
+  unregisterElement<T extends TParsedForm['keys']>(
+    name: T,
+    options: RegisterOptions<TValues, T> = {},
+  ): void {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f) {
+      field._f.mount = false
+    }
+
+    const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
+
+    if (shouldUnregister && !this.names.array.has(name)) {
+      this.names.unMount.add(name)
+    }
   }
 
   /**
