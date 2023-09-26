@@ -5,6 +5,9 @@ import {
   type SubmissionValidationMode,
   type ValidationMode,
 } from './constants'
+import { getFieldValueAs } from './logic/fields/get-field-value'
+import { updateFieldReference } from './logic/fields/update-field-reference'
+import { isHTMLElement } from './logic/html/is-html-element'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { nativeValidateFields } from './logic/validation/native-validation'
@@ -514,6 +517,34 @@ export class FormControl<
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
     }
+  }
+
+  /**
+   * Sets a field's value.
+   */
+  setFieldValue(name: string, value: unknown, options: SetValueOptions = {}) {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const fieldReference = field?._f
+
+    if (fieldReference == null) {
+      this.touch(name, value, options)
+      return
+    }
+
+    // If the field exists and isn't disabled, then also update the form values.
+    if (!fieldReference.disabled) {
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValueAs(value, fieldReference))
+        return values
+      })
+    }
+
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    updateFieldReference(fieldReference, fieldValue)
+
+    this.touch(name, fieldValue, options)
   }
 
   /**
