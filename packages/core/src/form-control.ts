@@ -5,9 +5,10 @@ import {
   type SubmissionValidationMode,
   type ValidationMode,
 } from './constants'
-import { getFieldValueAs } from './logic/fields/get-field-value'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { nativeValidateFields } from './logic/validation/native-validation'
@@ -502,6 +503,40 @@ export class FormControl<
     //   },
   }
 
+  /**
+   * Register an HTML input element.
+   */
+  registerElement<T extends TParsedForm['keys']>(
+    name: T,
+    element: HTMLInputElement,
+    options: RegisterOptions<TValues, T> = {},
+  ): void {
+    this.register(name, options)
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const newField = mergeElementWithField(name, field, element)
+
+    deepSet(this.fields, name, newField)
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValue(newField._f))
+        return values
+      })
+    } else {
+      this.setFieldValue(name, defaultValue)
+    }
+
+    this.validate()
+  }
+
+  /**
+   * Unregister a field.
+   */
   unregisterElement<T extends TParsedForm['keys']>(
     name: T,
     options: RegisterOptions<TValues, T> = {},
