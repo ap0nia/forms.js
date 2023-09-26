@@ -91,6 +91,9 @@ importers:
 
   packages/core:
     devDependencies:
+      '@types/react':
+        specifier: ^18.2.23
+        version: 18.2.23
       typescript:
         specifier: ^5.1.6
         version: 5.1.6
@@ -1593,6 +1596,31 @@ packages:
     resolution:
       {
         integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==,
+      }
+    dev: true
+
+  /@types/prop-types@15.7.7:
+    resolution:
+      {
+        integrity: sha512-FbtmBWCcSa2J4zL781Zf1p5YUBXQomPEcep9QZCfRfQgTxz3pJWiDFLebohZ9fFntX5ibzOkSsrJ0TEew8cAog==,
+      }
+    dev: true
+
+  /@types/react@18.2.23:
+    resolution:
+      {
+        integrity: sha512-qHLW6n1q2+7KyBEYnrZpcsAmU/iiCh9WGCKgXvMxx89+TYdJWRjZohVIo9XTcoLhfX3+/hP0Pbulu3bCZQ9PSA==,
+      }
+    dependencies:
+      '@types/prop-types': 15.7.7
+      '@types/scheduler': 0.16.4
+      csstype: 3.1.2
+    dev: true
+
+  /@types/scheduler@0.16.4:
+    resolution:
+      {
+        integrity: sha512-2L9ifAGl7wmXwP4v3pN4p2FLhD0O1qsJpvKmNin5VA8+UvNVb447UDaAEV6UdrkA+m/Xs58U1RFps44x6TFsVQ==,
       }
     dev: true
 

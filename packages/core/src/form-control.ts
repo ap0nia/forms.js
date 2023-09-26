@@ -1,3 +1,5 @@
+import type { BaseSyntheticEvent } from 'react'
+
 import {
   VALIDATION_MODE,
   type CriteriaMode,
@@ -5,6 +7,7 @@ import {
   type SubmissionValidationMode,
   type ValidationMode,
 } from './constants'
+import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
@@ -18,11 +21,13 @@ import type { FieldErrors, InternalFieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
 import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver } from './types/resolver'
+import type { SubmitErrorHandler, SubmitHandler } from './types/submit'
 import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { isEmptyObject, isObject } from './utils/is-object'
+import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
@@ -437,12 +442,12 @@ export class FormControl<
     this.names.mount.add(name)
 
     const props: RegisterResult = {
-      // registerElement: (element) => this.registerElement(name, element, options),
-      // unregisterElement: () => this.unregisterElement(name, options),
-    } as any
+      registerElement: (element) => this.registerElement(name, element, options),
+      unregisterElement: () => this.unregisterElement(name, options),
+    }
 
     if (existingField) {
-      // this.updateDisabledField({ field, disabled: options.disabled, name })
+      this.updateDisabledField({ field, disabled: options.disabled, name })
       return props
     }
 
@@ -464,64 +469,6 @@ export class FormControl<
     this.updateValid()
 
     return props
-    //   ...(typeof options.diabled === 'boolean' && { disabled: options.disabled }),
-    //   ...(_options.progressive
-    //     ? {
-    //         required: !!options.required,
-    //         min: getRuleValue(options.min),
-    //         max: getRuleValue(options.max),
-    //         minLength: getRuleValue<number>(options.minLength) as number,
-    //         maxLength: getRuleValue(options.maxLength) as number,
-    //         pattern: getRuleValue(options.pattern) as string,
-    //       }
-    //     : {}),
-    //   name,
-    //   onChange,
-    //   onBlur: onChange,
-    //   ref: (ref: HTMLInputElement | null): void => {
-    //     if (ref) {
-    //       register(name, options)
-    //       field = get(_fields, name)
-    //       const fieldRef = isUndefined(ref.value)
-    //         ? ref.querySelectorAll
-    //           ? (ref.querySelectorAll('input,select,textarea')[0] as Ref) || ref
-    //           : ref
-    //         : ref
-    //       const radioOrCheckbox = isRadioOrCheckbox(fieldRef)
-    //       const refs = field._f.refs || []
-    //       if (
-    //         radioOrCheckbox
-    //           ? refs.find((option: Ref) => option === fieldRef)
-    //           : fieldRef === field._f.ref
-    //       ) {
-    //         return
-    //       }
-    //       set(_fields, name, {
-    //         _f: {
-    //           ...field._f,
-    //           ...(radioOrCheckbox
-    //             ? {
-    //                 refs: [
-    //                   ...refs.filter(live),
-    //                   fieldRef,
-    //                   ...(Array.isArray(get(_defaultValues, name)) ? [{}] : []),
-    //                 ],
-    //                 ref: { type: fieldRef.type, name },
-    //               }
-    //             : { ref: fieldRef }),
-    //         },
-    //       })
-    //       updateValidAndValue(name, false, undefined, fieldRef)
-    //     } else {
-    //       field = get(_fields, name, {})
-    //       if (field._f) {
-    //         field._f.mount = false
-    //       }
-    //       ;(_options.shouldUnregister || options.shouldUnregister) &&
-    //         !(isNameInFieldArray(_names.array, name) && _state.action) &&
-    //         _names.unMount.add(name)
-    //     }
-    //   },
   }
 
   /**
@@ -552,7 +499,12 @@ export class FormControl<
       this.setFieldValue(name, defaultValue)
     }
 
-    this.validate()
+    // TODO: not sure what's the best way to preserve this semantic.
+    // if (this.state.component.value.mounted) {
+    //   this.updateValid()
+    // }
+
+    this.updateValid()
   }
 
   /**
@@ -573,6 +525,48 @@ export class FormControl<
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
     }
+  }
+
+  handleSubmit(onValid: SubmitHandler<TValues>, onInvalid: SubmitErrorHandler<TValues>) {
+    return async (event: BaseSyntheticEvent) => {
+      if (event) {
+        event.preventDefault && event.preventDefault()
+        event.persist && event.persist()
+      }
+
+      this.state.isSubmitting.set(true)
+
+      const result = await this.validate()
+
+      deepUnset(this.state.errors.value, 'root')
+
+      if (result.isValid) {
+        const data = structuredClone(this.state.values.value)
+        await onValid(data, event)
+      } else {
+        if (onInvalid) {
+          const errors = result.resolverResult?.errors ?? result.validationResult?.errors ?? {}
+          await onInvalid(errors, event)
+        }
+        this.focusError()
+        setTimeout(this.focusError)
+      }
+
+      this.state.isSubmitted.set(true)
+      this.state.isSubmitting.set(false)
+      this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value))
+      this.state.submitCount.update((count) => count + 1)
+    }
+  }
+
+  focusError() {
+    if (this.options.shouldFocusError) {
+      focusFieldBy(this.fields, this.focusFieldByCallback.bind(this), this.names.mount)
+    }
+  }
+
+  focusFieldByCallback(key?: string | Nullish): boolean {
+    return Boolean(key && safeGet(this.state.errors.value, key))
   }
 
   /**
@@ -719,7 +713,7 @@ export class FormControl<
    *
    * @returns Whether the form is valid and the resolver or native validation result.
    */
-  async validate(name?: string | string[]) {
+  async validate(name?: string | string[] | Nullish) {
     const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
 
     if (this.options.resolver == null) {
