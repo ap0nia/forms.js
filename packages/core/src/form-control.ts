@@ -5,6 +5,7 @@ import {
   type SubmissionValidationMode,
   type ValidationMode,
 } from './constants'
+import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
@@ -15,7 +16,7 @@ import type { Resolver } from './types/resolver'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
-import { isObject } from './utils/is-object'
+import { isEmptyObject, isObject } from './utils/is-object'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
@@ -482,44 +483,60 @@ export class FormControl<
   //   },
   // }
 
-  // async updateValid(force?: boolean): Promise<void> {
-  //   if (!force && !this.state.isValid.value) {
-  //     return
-  //   }
+  /**
+   * Updates whether the form is valid.
+   *
+   * Saves on computation by only updating if the store has subscribers.
+   *
+   * @param force Whether to force the validation and the store to update and notify subscribers.
+   */
+  async updateValid(force?: boolean): Promise<void> {
+    if (!force && !this.state.isValid.hasSubscribers) {
+      return
+    }
 
-  //   const result = await this.validate()
+    const result = await this.validate()
 
-  //   this.state.isValid.set(result.isValid)
-  // }
+    this.state.isValid.set(result.isValid)
+  }
 
-  // async validate(name?: string | string[]) {
-  //   const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
+  /**
+   * Validate the form using either a provided resolver or native validation.
+   *
+   * @param name The name or names of the fields to validate. If not provided, all fields will be validated.
+   *
+   * TODO: return type.
+   *
+   * @returns Whether the form is valid and the resolver or native validation result.
+   */
+  async validate(name?: string | string[]) {
+    const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
 
-  //   if (this.options.resolver == null) {
-  //     const validationResult = await this.nativeValidate(nameArray)
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate(nameArray)
 
-  //     const isValid = validationResult.valid
+      const isValid = validationResult.valid
 
-  //     return { validationResult, isValid }
-  //   } else {
-  //     const resolverOptions = getResolverOptions(
-  //       nameArray ?? this.names.mount,
-  //       this.fields,
-  //       this.options.criteriaMode,
-  //       this.options.shouldUseNativeValidation,
-  //     )
+      return { validationResult, isValid }
+    } else {
+      const resolverOptions = getResolverOptions(
+        nameArray ?? this.names.mount,
+        this.fields,
+        this.options.criteriaMode,
+        this.options.shouldUseNativeValidation,
+      )
 
-  //     const resolverResult = await this.options.resolver(
-  //       this.state.values.value,
-  //       this.options.context,
-  //       resolverOptions,
-  //     )
+      const resolverResult = await this.options.resolver(
+        this.state.values.value,
+        this.options.context,
+        resolverOptions,
+      )
 
-  //     const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+      const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
 
-  //     return { resolverResult, isValid }
-  //   }
-  // }
+      return { resolverResult, isValid }
+    }
+  }
 
   /**
    * Natively validate all of the form's registered fields.
