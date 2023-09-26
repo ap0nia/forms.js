@@ -260,6 +260,23 @@ export type ParsedForm<T = Record<string, any>> = {
 }
 
 /**
+ * Options when setting a value.
+ */
+export type SetValueOptions = {
+  /**
+   */
+  shouldValidate?: boolean
+
+  /**
+   */
+  shouldDirty?: boolean
+
+  /**
+   */
+  shouldTouch?: boolean
+}
+
+/**
  * The core functionality of the library is encompassed by a form control that controls field/form behavior.
  */
 export class FormControl<
@@ -396,7 +413,7 @@ export class FormControl<
 
     const props: RegisterResult = {
       // registerElement: (element) => this.registerElement(name, element, options),
-      unregisterElement: () => this.unregisterElement(name, options),
+      // unregisterElement: () => this.unregisterElement(name, options),
     } as any
 
     if (existingField) {
@@ -496,6 +513,19 @@ export class FormControl<
 
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
+    }
+  }
+
+  /**
+   * Touches a field.
+   */
+  touch(name: string, value?: unknown, options?: SetValueOptions) {
+    if (!options?.shouldTouch || options.shouldDirty) {
+      this.updateDirtyField(name, value)
+    }
+
+    if (options?.shouldTouch) {
+      this.updateTouchedField(name)
     }
   }
 
