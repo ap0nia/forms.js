@@ -27,37 +27,11 @@ export class Writable<T> {
     this.start = start
   }
 
-  set(value: T): void {
-    if (!safeNotEqual(this.value, value)) {
-      return
-    }
-
-    this.value = value
-
-    if (this.stop == null) {
-      return
-    }
-
-    const shouldRunQueue = !Writable.subscriberQueue.length
-
-    this.subscribers.forEach(([subscribe, invalidate]) => {
-      invalidate()
-      Writable.subscriberQueue.push([subscribe, value])
-    })
-
-    if (shouldRunQueue) {
-      Writable.subscriberQueue.forEach(([subscriber, value]) => {
-        subscriber(value)
-      })
-      Writable.subscriberQueue.length = 0
-    }
+  public get hasSubscribers(): boolean {
+    return this.subscribers.size > 0
   }
 
-  update(updater: Updater<T>) {
-    this.set(updater(this.value as T))
-  }
-
-  subscribe(run: Subscriber<T>, invalidate = noop) {
+  public subscribe(run: Subscriber<T>, invalidate = noop) {
     const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
 
     this.subscribers.add(subscriber)
@@ -75,6 +49,57 @@ export class Writable<T> {
         this.stop()
         this.stop = undefined
       }
+    }
+  }
+
+  public update(updater: Updater<T>) {
+    this.set(updater(this.value as T))
+  }
+
+  public quietUpdate(updater: Updater<T>): void {
+    this.quietSet(updater(this.value as T))
+  }
+
+  public set(value: T): void {
+    const changed = this.quietSet(value)
+
+    if (changed) {
+      this.notify(value)
+    }
+  }
+
+  /**
+   * Set the value without notifying subscribers.
+   *
+   * @returns Whether the value changed.
+   */
+  public quietSet(value: T): boolean {
+    if (!safeNotEqual(this.value, value)) {
+      return false
+    }
+
+    this.value = value
+
+    return true
+  }
+
+  public notify(value: T): void {
+    if (this.stop == null) {
+      return
+    }
+
+    const shouldRunQueue = Writable.subscriberQueue.length > 0
+
+    this.subscribers.forEach(([subscribe, invalidate]) => {
+      invalidate()
+      Writable.subscriberQueue.push([subscribe, value])
+    })
+
+    if (shouldRunQueue) {
+      Writable.subscriberQueue.forEach(([subscriber, value]) => {
+        subscriber(value)
+      })
+      Writable.subscriberQueue.length = 0
     }
   }
 }
