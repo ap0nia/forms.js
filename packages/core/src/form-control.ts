@@ -403,19 +403,23 @@ export class FormControl<
       return props
     }
 
+    const defaultValue =
+      safeGet(this.state.values.value, name) ??
+      options.value ??
+      safeGet(this.state.defaultValues.value, name)
+
+    this.state.values.update((values) => {
+      deepSet(values, name, defaultValue)
+      return values
+    })
+
+    // TODO: not sure what's the best way to preserve this semantic.
+    // if (this.state.component.value.mounted) {
+    //   this.updateValid()
+    // }
+    this.updateValid()
+
     return props
-    //   const defaultValue =
-    //     safeGet(this.state.values.value, name) ??
-    //     options.value ??
-    //     safeGet(this.state.defaultValues.value, name)
-    //   this.state.values.update((values) => {
-    //     deepSet(values, name, defaultValue)
-    //     return values
-    //   })
-    //   if (this.state.component.value.mounted) {
-    //     this.updateValid()
-    //   }
-    //   return props
     //   ...(typeof options.diabled === 'boolean' && { disabled: options.disabled }),
     //   ...(_options.progressive
     //     ? {
