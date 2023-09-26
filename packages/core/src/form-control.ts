@@ -281,6 +281,27 @@ export type SetValueOptions = {
 }
 
 /**
+ * Options when disabling a field.
+ */
+export type UpdateDisabledFieldOptions = {
+  /**
+   */
+  disabled?: boolean
+
+  /**
+   */
+  name: string
+
+  /**
+   */
+  field?: Field
+
+  /**
+   */
+  fields?: FieldRecord
+}
+
+/**
  * The core functionality of the library is encompassed by a form control that controls field/form behavior.
  */
 export class FormControl<
@@ -613,6 +634,27 @@ export class FormControl<
     }
 
     return !previousIsTouched
+  }
+
+  /**
+   * Updates a field's disabled status and the corresponding value in the form values.
+   */
+  updateDisabledField(options: UpdateDisabledFieldOptions): void {
+    if (typeof options.disabled !== 'boolean') {
+      return
+    }
+
+    const value = options.disabled
+      ? undefined
+      : safeGet(this.state.values.value, options.name) ??
+        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+
+    this.state.values.update((values) => {
+      deepSet(values, options.name, value)
+      return values
+    })
+
+    this.updateDirtyField(options.name, value)
   }
 
   /**
