@@ -11,7 +11,8 @@ import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { Writable } from './store'
 import type { FieldErrors, InternalFieldErrors } from './types/errors'
-import type { FieldRecord } from './types/fields'
+import type { Field, FieldRecord } from './types/fields'
+import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver } from './types/resolver'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
@@ -372,116 +373,108 @@ export class FormControl<
     return safeGetMultiple(this.state.values.value, names)
   }
 
-  // register<T extends TParsedForm['keys']>(
-  //   name: T,
-  //   options: RegisterOptions<TValues, T> = {},
-  // ): RegisterResult {
-  //   const existingField: Field | undefined = safeGet(this.fields, name)
+  register<T extends TParsedForm['keys']>(
+    name: T,
+    options: RegisterOptions<TValues, T> = {},
+  ): RegisterResult {
+    const existingField: Field | undefined = safeGet(this.fields, name)
 
-  //   const field: Field = {
-  //     ...existingField,
-  //     _f: {
-  //       ...(existingField?._f ?? { ref: { name } }),
-  //       name,
-  //       mount: true,
-  //       ...options,
-  //     },
-  //   }
+    const field: Field = {
+      ...existingField,
+      _f: {
+        ...(existingField?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
+    }
 
-  //   deepSet(this.fields, name, field)
+    deepSet(this.fields, name, field)
 
-  //   this.names.mount.add(name)
+    this.names.mount.add(name)
 
-  //   const props: RegisterResult = {
-  //     // registerElement: (element) => this.registerElement(name, element, options),
-  //     // unregisterElement: () => this.unregisterElement(name, options),
-  //   } as any
+    const props: RegisterResult = {
+      // registerElement: (element) => this.registerElement(name, element, options),
+      // unregisterElement: () => this.unregisterElement(name, options),
+    } as any
 
-  //   if (existingField) {
-  //     // this.updateDisabledField({ field, disabled: options.disabled, name })
-  //     return props
-  //   }
+    if (existingField) {
+      // this.updateDisabledField({ field, disabled: options.disabled, name })
+      return props
+    }
 
-  //   const defaultValue =
-  //     safeGet(this.state.values.value, name) ??
-  //     options.value ??
-  //     safeGet(this.state.defaultValues.value, name)
-
-  //   this.state.values.update((values) => {
-  //     deepSet(values, name, defaultValue)
-  //     return values
-  //   })
-
-  //   if (this.state.component.value.mounted) {
-  //     this.updateValid()
-  //   }
-
-  //   return props
-  //   ...(typeof options.diabled === 'boolean' && { disabled: options.disabled }),
-  //   ...(_options.progressive
-  //     ? {
-  //         required: !!options.required,
-  //         min: getRuleValue(options.min),
-  //         max: getRuleValue(options.max),
-  //         minLength: getRuleValue<number>(options.minLength) as number,
-  //         maxLength: getRuleValue(options.maxLength) as number,
-  //         pattern: getRuleValue(options.pattern) as string,
-  //       }
-  //     : {}),
-  //   name,
-  //   onChange,
-  //   onBlur: onChange,
-  //   ref: (ref: HTMLInputElement | null): void => {
-  //     if (ref) {
-  //       register(name, options)
-  //       field = get(_fields, name)
-
-  //       const fieldRef = isUndefined(ref.value)
-  //         ? ref.querySelectorAll
-  //           ? (ref.querySelectorAll('input,select,textarea')[0] as Ref) || ref
-  //           : ref
-  //         : ref
-  //       const radioOrCheckbox = isRadioOrCheckbox(fieldRef)
-  //       const refs = field._f.refs || []
-
-  //       if (
-  //         radioOrCheckbox
-  //           ? refs.find((option: Ref) => option === fieldRef)
-  //           : fieldRef === field._f.ref
-  //       ) {
-  //         return
-  //       }
-
-  //       set(_fields, name, {
-  //         _f: {
-  //           ...field._f,
-  //           ...(radioOrCheckbox
-  //             ? {
-  //                 refs: [
-  //                   ...refs.filter(live),
-  //                   fieldRef,
-  //                   ...(Array.isArray(get(_defaultValues, name)) ? [{}] : []),
-  //                 ],
-  //                 ref: { type: fieldRef.type, name },
-  //               }
-  //             : { ref: fieldRef }),
-  //         },
-  //       })
-
-  //       updateValidAndValue(name, false, undefined, fieldRef)
-  //     } else {
-  //       field = get(_fields, name, {})
-
-  //       if (field._f) {
-  //         field._f.mount = false
-  //       }
-
-  //       ;(_options.shouldUnregister || options.shouldUnregister) &&
-  //         !(isNameInFieldArray(_names.array, name) && _state.action) &&
-  //         _names.unMount.add(name)
-  //     }
-  //   },
-  // }
+    return props
+    //   const defaultValue =
+    //     safeGet(this.state.values.value, name) ??
+    //     options.value ??
+    //     safeGet(this.state.defaultValues.value, name)
+    //   this.state.values.update((values) => {
+    //     deepSet(values, name, defaultValue)
+    //     return values
+    //   })
+    //   if (this.state.component.value.mounted) {
+    //     this.updateValid()
+    //   }
+    //   return props
+    //   ...(typeof options.diabled === 'boolean' && { disabled: options.disabled }),
+    //   ...(_options.progressive
+    //     ? {
+    //         required: !!options.required,
+    //         min: getRuleValue(options.min),
+    //         max: getRuleValue(options.max),
+    //         minLength: getRuleValue<number>(options.minLength) as number,
+    //         maxLength: getRuleValue(options.maxLength) as number,
+    //         pattern: getRuleValue(options.pattern) as string,
+    //       }
+    //     : {}),
+    //   name,
+    //   onChange,
+    //   onBlur: onChange,
+    //   ref: (ref: HTMLInputElement | null): void => {
+    //     if (ref) {
+    //       register(name, options)
+    //       field = get(_fields, name)
+    //       const fieldRef = isUndefined(ref.value)
+    //         ? ref.querySelectorAll
+    //           ? (ref.querySelectorAll('input,select,textarea')[0] as Ref) || ref
+    //           : ref
+    //         : ref
+    //       const radioOrCheckbox = isRadioOrCheckbox(fieldRef)
+    //       const refs = field._f.refs || []
+    //       if (
+    //         radioOrCheckbox
+    //           ? refs.find((option: Ref) => option === fieldRef)
+    //           : fieldRef === field._f.ref
+    //       ) {
+    //         return
+    //       }
+    //       set(_fields, name, {
+    //         _f: {
+    //           ...field._f,
+    //           ...(radioOrCheckbox
+    //             ? {
+    //                 refs: [
+    //                   ...refs.filter(live),
+    //                   fieldRef,
+    //                   ...(Array.isArray(get(_defaultValues, name)) ? [{}] : []),
+    //                 ],
+    //                 ref: { type: fieldRef.type, name },
+    //               }
+    //             : { ref: fieldRef }),
+    //         },
+    //       })
+    //       updateValidAndValue(name, false, undefined, fieldRef)
+    //     } else {
+    //       field = get(_fields, name, {})
+    //       if (field._f) {
+    //         field._f.mount = false
+    //       }
+    //       ;(_options.shouldUnregister || options.shouldUnregister) &&
+    //         !(isNameInFieldArray(_names.array, name) && _state.action) &&
+    //         _names.unMount.add(name)
+    //     }
+    //   },
+  }
 
   /**
    * Updates whether the form is valid.
