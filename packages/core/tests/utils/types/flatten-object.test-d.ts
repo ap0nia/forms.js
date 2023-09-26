@@ -46,4 +46,43 @@ describe('FlattenObject', () => {
 
     expectTypeOf<FlattenObject<Nested>>().toEqualTypeOf<Expected>()
   })
+
+  test('nested object with array', () => {
+    type Nested = {
+      a: {
+        b: string
+        c: {
+          d: number[]
+        }
+      }
+      e: string[]
+      g: {
+        h: boolean[]
+      }
+    }
+
+    type Expected = {
+      [x: `a.c.d.${number}`]: number
+      [x: `e.${number}`]: string
+      [x: `g.h.${number}`]: boolean
+      'a.b': string
+      'a.c.d': number[]
+      'a.c': {
+        d: number[]
+      }
+      'g.h': boolean[]
+      g: {
+        h: boolean[]
+      }
+      a: {
+        b: string
+        c: {
+          d: number[]
+        }
+      }
+      e: string[]
+    }
+
+    expectTypeOf<FlattenObject<Nested>>().toEqualTypeOf<Expected>()
+  })
 })

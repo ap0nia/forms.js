@@ -62,17 +62,16 @@ export type ObjectToUnion<T, Keys extends unknown[] = []> = IsAny<T> extends tru
   ? any
   :
       | {
-          [K in keyof T]: ExplicitlyAnyOrArray<T[K]> extends true
-            ? { [SubKey in JoinArray<[...Keys, K]>]: T[K] } // Preserve the current key/value pair and don't recur.
+          [K in keyof T]: IsAny<T[K]> extends true
+            ? { [SubKey in JoinArray<[...Keys, K]>]: T[K] }
+            : T[K] extends any[]
+            ?
+                | { [SubKey in JoinArray<[...Keys, K]>]: T[K] }
+                | { [SubKey in JoinArray<[...Keys, K, number]>]: ExtractArray<T[K]> }
             : T[K] extends Record<string, any>
-            ? ObjectToUnion<T[K], [...Keys, K]> // Recursive.
-            : { [SubKey in JoinArray<[...Keys, K]>]: T[K] } // Probably a primitive, so preserve the current key/value pair and don't recur.
+            ? ObjectToUnion<T[K], [...Keys, K]>
+            : { [SubKey in JoinArray<[...Keys, K]>]: T[K] }
         }[keyof T]
       | (Keys['length'] extends 0 ? never : { [SubKey in JoinArray<Keys>]: T })
 
-/**
- * Don't recur into explicit `any` or array types.
- *
- * Arrays are technically records, but we don't want to retrieve their properties, i.e. "pop", "push", etc.
- */
-type ExplicitlyAnyOrArray<T> = IsAny<T> extends true ? true : T extends any[] ? true : false
+type ExtractArray<T> = T extends (infer U)[] ? U : T

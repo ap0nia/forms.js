@@ -12,7 +12,7 @@ describe('ObjectToUnion', () => {
   })
 
   test('nested any array', () => {
-    expectTypeOf<ObjectToUnion<{ a: any[] }>>().toEqualTypeOf<{ a: any[] }>()
+    expectTypeOf<ObjectToUnion<{ a: any[] }>>().toMatchTypeOf<{ [x: `a.${number}`]: any }>()
   })
 
   test('nested array', () => {
@@ -23,9 +23,14 @@ describe('ObjectToUnion', () => {
       }
     }
 
-    type Expected = { a: string[] } | { b: { c: number[] } } | { 'b.c': number[] }
+    type Expected =
+      | { a: string[] }
+      | { [x: `a.${number}`]: string }
+      | { b: { c: number[] } }
+      | { 'b.c': number[] }
+      | { [x: `b.c.${number}`]: number }
 
-    expectTypeOf<ObjectToUnion<MyType>>().toEqualTypeOf<Expected>()
+    expectTypeOf<ObjectToUnion<MyType>>().toMatchTypeOf<Expected>()
   })
 
   test('nested object', () => {

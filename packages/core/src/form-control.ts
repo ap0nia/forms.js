@@ -27,6 +27,7 @@ import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { isEmptyObject, isObject } from './utils/is-object'
+import type { Noop } from './utils/noop'
 import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
 import type { DeepMap } from './utils/types/deep-map'
@@ -349,6 +350,11 @@ export class FormControl<
 
   submissionValidationMode: SubmissionValidationMode
 
+  /**
+   * Actions to run when the form is unmounted.
+   */
+  unmountActions: Noop[] = []
+
   constructor(options?: FormControlOptions<TValues, TContext>) {
     const resolvedOptions = { ...defaultOptions, ...options }
 
@@ -441,9 +447,13 @@ export class FormControl<
 
     this.names.mount.add(name)
 
+    const unregisterElement = () => this.unregisterElement(name, options)
+
+    this.unmountActions.push(unregisterElement)
+
     const props: RegisterResult = {
       registerElement: (element) => this.registerElement(name, element, options),
-      unregisterElement: () => this.unregisterElement(name, options),
+      unregisterElement,
     }
 
     if (existingField) {
@@ -469,6 +479,10 @@ export class FormControl<
     this.updateValid()
 
     return props
+  }
+
+  unmount() {
+    this.unmountActions.forEach((action) => action())
   }
 
   /**
@@ -537,13 +551,17 @@ export class FormControl<
 
       const { isValid, resolverResult, validationResult } = await this.validate()
 
+      const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
+
       deepUnset(this.state.errors.value, 'root')
+
+      this.mergeErrors(errors)
 
       if (isValid) {
         const data = structuredClone(this.state.values.value)
         await onValid?.(data, event)
       } else {
-        await onInvalid?.(resolverResult?.errors ?? validationResult?.errors ?? {}, event)
+        await onInvalid?.(errors, event)
         this.focusError()
         setTimeout(this.focusError.bind(this))
       }
