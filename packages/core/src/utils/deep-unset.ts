@@ -1,7 +1,7 @@
 import { isEmptyObject } from './is-object'
 import { stringToPath } from './string-to-path'
 
-function baseGet(object: any, updatePath: (string | number)[]) {
+export function baseGet(object: any, updatePath: (string | number)[]) {
   const length = updatePath.slice(0, -1).length
 
   let index = 0
@@ -13,7 +13,7 @@ function baseGet(object: any, updatePath: (string | number)[]) {
   return object
 }
 
-function isEmptyArray(obj: unknown): obj is unknown[] {
+export function isEmptyArray(obj: unknown): obj is unknown[] {
   if (!Array.isArray(obj)) {
     return false
   }

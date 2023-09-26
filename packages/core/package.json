@@ -25,7 +25,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest",
-    "typecheck": "vitest typecheck"
+    "test:hf": "vitest __tests__"
   },
   "devDependencies": {
     "typescript": "^5.1.6"
