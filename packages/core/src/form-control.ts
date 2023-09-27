@@ -585,9 +585,10 @@ export class FormControl<
 
     element.name = name
 
+    // TODO: what are the equivalent DOM events for React's "onChange" prop?
     element.addEventListener('change', this.handleChange.bind(this))
-
     element.addEventListener('blur', this.handleChange.bind(this))
+    element.addEventListener('input', this.handleChange.bind(this))
 
     // TODO: not sure what's the best way to preserve this semantic.
     // if (this.state.component.value.mounted) {
@@ -713,9 +714,9 @@ export class FormControl<
 
   handleSubmit(onValid?: SubmitHandler<TValues>, onInvalid?: SubmitErrorHandler<TValues>) {
     return async (event?: BaseSyntheticEvent) => {
-      event?.preventDefault()
+      event?.preventDefault?.()
 
-      event?.persist()
+      event?.persist?.()
 
       this.state.isSubmitting.set(true)
 
