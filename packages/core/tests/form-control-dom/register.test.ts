@@ -132,7 +132,7 @@ describe('FormControl', () => {
 
         const handleSubmit = formControl.handleSubmit(undefined, onInvalid)
 
-        form.addEventListener('submit', handleSubmit as any)
+        form.addEventListener('submit', handleSubmit)
 
         fireEvent.submit(form)
 
@@ -161,7 +161,7 @@ describe('FormControl', () => {
 
         const onValid = vi.fn()
 
-        button.addEventListener('click', formControl.handleSubmit(onValid) as any)
+        button.addEventListener('click', formControl.handleSubmit(onValid))
 
         fireEvent.click(button)
 
@@ -186,7 +186,7 @@ describe('FormControl', () => {
 
         const handleSubmit = formControl.handleSubmit(onValid, onInvalid)
 
-        form.addEventListener('submit', handleSubmit as any)
+        form.addEventListener('submit', handleSubmit)
 
         const firstName = formControl.register('firstName', { maxLength: 3 })
 
@@ -230,6 +230,86 @@ describe('FormControl', () => {
         await waitFor(() => expect(formControl.state.submitCount.value).toEqual(2))
 
         await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+      })
+
+      // test.only('', async () => {
+      //   const radio1Input = document.createElement('input')
+      //   radio1Input.type = 'radio'
+      //   radio1Input.value = '1'
+
+      //   const radio2Input = document.createElement('input')
+      //   radio2Input.type = 'radio'
+      //   radio2Input.value = '2'
+
+      //   const form = document.createElement('form')
+
+      //   console.log(radio1Input.isConnected, radio2Input.isConnected)
+
+      //   form.appendChild(radio1Input)
+
+      //   form.appendChild(radio2Input)
+
+      //   document.body.appendChild(form)
+
+      //   console.log(radio1Input.isConnected, radio2Input.isConnected)
+      // })
+
+      test('only unregisters inputs when all checkboxes are unmounted', async () => {
+        const formControl = new FormControl({ shouldUnregister: true })
+
+        const radio1 = formControl.register('test', { required: true })
+
+        const radio1Input = document.createElement('input')
+        radio1Input.type = 'radio'
+        radio1Input.value = '1'
+
+        const radio2 = formControl.register('test', { required: true })
+
+        const radio2Input = document.createElement('input')
+        radio2Input.type = 'radio'
+        radio2Input.value = '2'
+
+        const form = document.createElement('form')
+
+        form.appendChild(radio1Input)
+
+        form.appendChild(radio2Input)
+
+        document.body.appendChild(form)
+
+        radio1.registerElement(radio1Input)
+
+        radio2.registerElement(radio2Input)
+
+        const onValid = vi.fn()
+
+        const onInvalid = vi.fn()
+
+        const handleSubmit = formControl.handleSubmit(onValid, onInvalid)
+
+        form.addEventListener('submit', handleSubmit)
+
+        form.removeChild(radio1Input)
+
+        radio1.unregisterElement()
+
+        formControl.render()
+
+        fireEvent.submit(form)
+
+        await waitFor(() =>
+          expect(onValid).toHaveBeenLastCalledWith({ test: null }, expect.anything()),
+        )
+
+        form.removeChild(radio2Input)
+
+        radio2.unregisterElement()
+
+        fireEvent.submit(form)
+
+        formControl.render()
+
+        await waitFor(() => expect(onValid).toHaveBeenLastCalledWith({}, expect.anything()))
       })
     })
   })

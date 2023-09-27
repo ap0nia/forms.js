@@ -1,5 +1,3 @@
-import type { BaseSyntheticEvent } from 'react'
-
 import {
   INPUT_EVENTS,
   VALIDATION_MODE,
@@ -14,6 +12,7 @@ import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
+import { elementIsLive } from './logic/html/element-is-live'
 import { isHTMLElement } from './logic/html/is-html-element'
 import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getResolverOptions } from './logic/resolver/get-resolver-options'
@@ -713,10 +712,11 @@ export class FormControl<
   }
 
   handleSubmit(onValid?: SubmitHandler<TValues>, onInvalid?: SubmitErrorHandler<TValues>) {
-    return async (event?: BaseSyntheticEvent) => {
+    return async (event?: Event) => {
       event?.preventDefault?.()
 
-      event?.persist?.()
+      // https://deepscan.io/docs/rules/react-missing-event-persist
+      // event?.persist?.()
 
       this.state.isSubmitting.set(true)
 
@@ -729,7 +729,7 @@ export class FormControl<
       this.mergeErrors(errors)
 
       if (isValid) {
-        const data = structuredClone(this.state.values.value)
+        const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
         await onValid?.(data, event)
       } else {
         await onInvalid?.(errors, event)
@@ -1027,5 +1027,37 @@ export class FormControl<
     if (options?.shouldFocus && !result.isValid) {
       this.focusError()
     }
+  }
+
+  /**
+   * Renders the form.
+   */
+  render() {
+    this.removeUnmounted()
+  }
+
+  /**
+   * Remove unmounted fields.
+   */
+  removeUnmounted() {
+    if (!this.names.unMount.size) {
+      return
+    }
+
+    for (const name of this.names.unMount) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      const noCheckboxesLive =
+        field?._f &&
+        (field._f.refs
+          ? field._f.refs.every((ref) => !elementIsLive(ref))
+          : !elementIsLive(field._f.ref))
+
+      if (noCheckboxesLive) {
+        this.unregister(name as any)
+      }
+    }
+
+    this.names.unMount = new Set()
   }
 }
