@@ -19,7 +19,8 @@
  * //   ^? true
  * ```
  *
- * @see [StackOverflow](https://stackoverflow.com/a/49928360)
- * @see [TypeScript playground](https://www.typescriptlang.org/play?#code/KYDwDg9gTgLgBDAnmYcCSBnAggO0QHgBUA+OAXjgAY5QZgcATDOARjgDI5C4B+BKAK6oAXHABmAQwA2GYACg5SFHCxsKmXARwCAtgCNgUYnID0JuBYB6PBUtQAhNemx58GGFACWOAObGzFnDWtsioAMJOGq4A3gC+-uZWNoqhcAAikS4EEngJgcEKAQBqhnoQsnAMwDoQOO5QEjCetQB0IcpY5FQ0IHSMzAAUbJza+oYAlLz8QnCikjLyAUlycCnK9l3UtPRMcEMccPXePpN8HjNz0rKmiUE2q3ZwYZs9fbv7nHGn0yLiV4u3YIPVJpF7bfp7YZwHKIb7nX7za5LO5AA)
+ * [StackOverflow](https://stackoverflow.com/a/49928360)
+ *
+ * [Playground Link](https://www.typescriptlang.org/play?#code/KYDwDg9gTgLgBDAnmYcCSBnAggO0QHgBUA+OAXjgAY5QZgcATDOARjgDI5C4B+BKAK6oAXHABmAQwA2GYACg5SFHCxsKmXARwCAtgCNgUYnID0JuBYB6PBUtQAhNemx58GGFACWOAObGzFnDWtsioAMJOGq4A3gC+-uZWNoqhcAAikS4EEngJgcEKAQBqhnoQsnAMwDoQOO5QEjCetQB0IcpY5FQ0IHSMzAAUbJza+oYAlLz8QnCikjLyAUlycCnK9l3UtPRMcEMccPXePpN8HjNz0rKmiUE2q3ZwYZs9fbv7nHGn0yLiV4u3YIPVJpF7bfp7YZwHKIb7nX7za5LO5AA)
  */
 export type IsAny<T> = 0 extends 1 & T ? true : false
