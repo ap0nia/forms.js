@@ -64,6 +64,7 @@ type FormControlOptions<TValues extends Record<string, any>, TContext = any> = {
    */
   defaultValues?:
     | DeepPartial<TValues>
+    | Promise<DeepPartial<TValues>>
     | (() => DeepPartial<TValues> | Promise<DeepPartial<TValues>>)
 
   /**
@@ -387,7 +388,7 @@ export class FormControl<
     this.state = {
       submitCount: new Writable(0),
       isDirty: new Writable(false),
-      isLoading: new Writable(typeof resolvedOptions.defaultValues === 'function'),
+      isLoading: new Writable(false),
       isValidating: new Writable(false),
       isSubmitted: new Writable(false),
       isSubmitting: new Writable(false),
@@ -405,6 +406,11 @@ export class FormControl<
       beforeSubmission: getValidationModes(resolvedOptions.mode),
       afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
     }
+
+    /**
+     * Ensure that any promises are resolved.
+     */
+    this.resetDefaultValues(true)
   }
 
   /**
@@ -729,6 +735,8 @@ export class FormControl<
         this.trigger(field._f.deps as any)
       }
     }
+
+    this.state.isValidating.set(false)
   }
 
   handleSubmit(onValid?: SubmitHandler<TValues>, onInvalid?: SubmitErrorHandler<TValues>) {
@@ -856,6 +864,10 @@ export class FormControl<
     updateFieldReference(fieldReference, fieldValue)
 
     this.touch(name, fieldValue, options)
+
+    if (options.shouldValidate) {
+      this.trigger(name as any)
+    }
   }
 
   /**
@@ -1153,6 +1165,38 @@ export class FormControl<
 
     if (options?.shouldFocus) {
       ref?.focus?.()
+    }
+  }
+
+  /**
+   * @param resetValues Whether to reset the form's values too.
+   */
+  async resetDefaultValues(resetValues?: boolean) {
+    const { defaultValues } = this.options
+
+    if (defaultValues == null) {
+      return
+    }
+
+    const maybePromise = typeof defaultValues === 'function' ? defaultValues() : defaultValues
+
+    const isPromise = maybePromise instanceof Promise
+
+    if (isPromise) {
+      this.state.isLoading.set(true)
+    }
+
+    const resolvedDefaultValues = await maybePromise
+
+    this.state.defaultValues.set(resolvedDefaultValues)
+
+    if (resetValues) {
+      const newValues = structuredClone(resolvedDefaultValues)
+      this.state.values.set(newValues as TValues)
+    }
+
+    if (isPromise) {
+      this.state.isLoading.set(false)
     }
   }
 }

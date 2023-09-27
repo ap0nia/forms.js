@@ -2,6 +2,7 @@ import { fireEvent, waitFor, screen } from '@testing-library/dom'
 import { describe, test, expect, vi, afterEach } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
+import { Writable } from '../../src/store'
 import type { RegisterOptions } from '../../src/types/register'
 import { noop } from '../../src/utils/noop'
 
@@ -989,7 +990,7 @@ describe('FormControl', () => {
         await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
       })
 
-      test.only('should not clear errors for non checkbox parent inputs', async () => {
+      test('should not clear errors for non checkbox parent inputs', async () => {
         type MyForm = {
           checkbox: [{ test: string }, { test1: string }]
         }
@@ -1064,6 +1065,165 @@ describe('FormControl', () => {
           }),
         )
       })
+
+      test('should have formState.isValid equals true with defined default values after executing resolver', async () => {
+        const formControl = new FormControl({
+          defaultValues: { test: 'Test' },
+          mode: 'onChange',
+          resolver: async (values) => {
+            if (!values.test) {
+              return {
+                values: {},
+                errors: {
+                  test: {
+                    type: 'required',
+                  },
+                },
+              }
+            }
+
+            return {
+              values,
+              errors: {},
+            }
+          },
+        })
+
+        const input = document.createElement('input')
+        input.id = 'test'
+
+        document.body.appendChild(input)
+
+        const { registerElement, unregisterElement } = formControl.register('test')
+
+        const toggle = new Writable(false)
+
+        const unsubscribeToggle = toggle.subscribe((value) => {
+          if (value) {
+            document.body.appendChild(input)
+            registerElement(input)
+          } else {
+            document.body.removeChild(input)
+            unregisterElement()
+          }
+          formControl.render()
+        })
+
+        const unsubscribeIsValid = formControl.state.isValid.subscribe(noop)
+
+        expect(formControl.state.isValid.value).toBeFalsy()
+
+        toggle.set(true)
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeTruthy())
+
+        toggle.set(false)
+        toggle.set(true)
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeTruthy())
+
+        unsubscribeToggle()
+        unsubscribeIsValid()
+      })
+    })
+
+    describe('control', () => {
+      // This doesn't really need to be tested for vanilla DOM operations.
+      test.todo('does not change across re-renders', () => {})
+    })
+
+    describe('when input is not registered', () => {
+      test('trigger should not throw warn', async () => {
+        const formControl = new FormControl()
+
+        formControl
+        // async () => expect(await formControl.trigger('test')).toBeTruthy()
+      })
+    })
+
+    // Don't need to test for vanilla DOM operations.
+    test.todo('should unsubscribe to all subject when hook unmounts', () => {})
+
+    test('should update isValidating to true when other validation still running', async () => {
+      vi.useFakeTimers()
+
+      const formControl = new FormControl({ mode: 'all' })
+
+      const firstNameInput = document.createElement('input')
+      const lastNameInput = document.createElement('input')
+
+      let isValidating = formControl.state.isValidating.value
+      const stateIsValidating = new Writable(false)
+
+      const unsubscribe = formControl.state.isValidating.subscribe((value) => {
+        isValidating = value
+      })
+
+      const firstName = formControl.register('firstName', {
+        required: true,
+        validate: () => {
+          stateIsValidating.set(true)
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              stateIsValidating.set(false)
+              resolve(true)
+            }, 5000)
+          })
+        },
+      })
+
+      const lastName = formControl.register('lastName', { required: true })
+
+      firstName.registerElement(firstNameInput)
+      lastName.registerElement(lastNameInput)
+
+      fireEvent.change(firstNameInput, { target: { value: 'test' } })
+      fireEvent.change(lastNameInput, { target: { value: 'test' } })
+
+      expect(isValidating).toBeTruthy()
+      expect(stateIsValidating.value).toBeTruthy()
+
+      await vi.runAllTimersAsync()
+
+      expect(isValidating).toBeFalsy()
+      expect(stateIsValidating.value).toBeFalsy()
+
+      unsubscribe()
+
+      vi.useRealTimers()
+    })
+
+    test('should update defaultValues async', async () => {
+      const formControl = new FormControl<{ test: string }>({
+        defaultValues: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+
+          return {
+            test: 'test',
+          }
+        },
+      })
+
+      const input = document.createElement('input')
+
+      const { registerElement } = formControl.register('test')
+
+      registerElement(input)
+
+      const loading = document.createElement('p')
+
+      const unsubscribe = formControl.state.isLoading.subscribe((isLoading) => {
+        loading.textContent = isLoading ? 'loading' : 'done'
+      })
+
+      await waitFor(() => expect(loading.textContent).toEqual('loading'))
+
+      // TODO: idk how to or if the refs should have their values explicitly set
+      // await waitFor(() => expect(input.value).toEqual('test'))
+
+      await waitFor(() => expect(loading.textContent).toEqual('done'))
+
+      unsubscribe()
     })
   })
 })
