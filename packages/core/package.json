@@ -28,6 +28,7 @@
     "test:hf": "vitest __tests__"
   },
   "devDependencies": {
+    "@testing-library/dom": "^9.3.3",
     "@types/react": "^18.2.23",
     "typescript": "^5.1.6"
   },

@@ -583,7 +583,10 @@ export class FormControl<
       this.setFieldValue(name, defaultValue)
     }
 
+    element.name = name
+
     element.addEventListener('change', this.handleChange.bind(this))
+
     element.addEventListener('blur', this.handleChange.bind(this))
 
     // TODO: not sure what's the best way to preserve this semantic.

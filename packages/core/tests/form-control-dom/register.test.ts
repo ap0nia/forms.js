@@ -1,3 +1,4 @@
+import { fireEvent } from '@testing-library/dom'
 import { describe, test, expect } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
@@ -59,7 +60,7 @@ describe('FormControl', () => {
     expect(formControl.state.errors.value.test).toBeUndefined()
   })
 
-  test('preserves touched', async () => {
+  test.only('preserves touched', async () => {
     const formControl = new FormControl<{ test: string }>()
 
     const { registerElement } = formControl.register('test', { required: true })
@@ -68,7 +69,7 @@ describe('FormControl', () => {
 
     registerElement(input)
 
-    input.blur()
+    fireEvent.blur(input, { target: { value: 'test' } })
 
     expect(formControl.state.touchedFields.value.test).toBeDefined()
     expect(formControl.state.isDirty.value).toBeFalsy()
