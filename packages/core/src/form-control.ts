@@ -1,14 +1,18 @@
 import type { BaseSyntheticEvent } from 'react'
 
 import {
+  INPUT_EVENTS,
   VALIDATION_MODE,
   type CriteriaMode,
   type RevalidationMode,
   type SubmissionValidationMode,
   type ValidationMode,
 } from './constants'
+import { lookupError } from './logic/errors/lookup-error'
 import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
 import { mergeElementWithField } from './logic/html/merge-element-with-field'
@@ -16,8 +20,10 @@ import { getResolverOptions } from './logic/resolver/get-resolver-options'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
+import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
 import { Writable } from './store'
 import type { FieldErrors, InternalFieldErrors } from './types/errors'
+import type { AnyEvent } from './types/event'
 import type { Field, FieldRecord } from './types/fields'
 import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver, ResolverResult } from './types/resolver'
@@ -307,6 +313,15 @@ export type UpdateDisabledFieldOptions = {
   fields?: FieldRecord
 }
 
+export type TriggerOptions = {
+  shouldFocus?: boolean
+}
+
+export type UnregisterOptions = Omit<
+  KeepStateOptions,
+  'keepIsSubmitted' | 'keepSubmitCount' | 'keepValues' | 'keepDefaultValues' | 'keepErrors'
+> & { keepValue?: boolean; keepDefaultValue?: boolean; keepError?: boolean }
+
 /**
  * The core functionality of the library is encompassed by a form control that controls field/form behavior.
  */
@@ -427,6 +442,10 @@ export class FormControl<
     return safeGetMultiple(this.state.values.value, names)
   }
 
+  unmount() {
+    this.unmountActions.forEach((action) => action())
+  }
+
   register<T extends TParsedForm['keys']>(
     name: T,
     options: RegisterOptions<TValues, T> = {},
@@ -481,8 +500,59 @@ export class FormControl<
     return props
   }
 
-  unmount() {
-    this.unmountActions.forEach((action) => action())
+  unregister<T extends TParsedForm['keys']>(
+    name?: T | T[] | readonly T[],
+    options: UnregisterOptions = {},
+  ): void {
+    const nameArray = (Array.isArray(name) ? name : name ? [name] : this.names.mount) as string[]
+
+    for (const fieldName of nameArray) {
+      this.names.mount.delete(fieldName)
+      this.names.array.delete(fieldName)
+
+      if (!options.keepValue) {
+        deepUnset(this.fields, fieldName)
+
+        this.state.values.update((values) => {
+          deepUnset(values, fieldName)
+          return values
+        })
+      }
+
+      if (!options.keepError) {
+        this.state.errors.update((errors) => {
+          deepUnset(errors, fieldName)
+          return errors
+        })
+      }
+
+      if (!options.keepDirty) {
+        this.state.dirtyFields.update((dirtyFields) => {
+          deepUnset(dirtyFields, fieldName)
+          return dirtyFields
+        })
+
+        this.state.isDirty.set(this.getDirty())
+      }
+
+      if (!options.keepTouched) {
+        this.state.touchedFields.update((touchedFields) => {
+          deepUnset(touchedFields, fieldName)
+          return touchedFields
+        })
+      }
+
+      if (!this.options.shouldUnregister && !options.keepDefaultValue) {
+        this.state.defaultValues.update((defaultValues) => {
+          deepUnset(defaultValues, fieldName)
+          return defaultValues
+        })
+      }
+    }
+
+    if (!options.keepIsValid) {
+      this.updateValid()
+    }
   }
 
   /**
@@ -513,6 +583,9 @@ export class FormControl<
       this.setFieldValue(name, defaultValue)
     }
 
+    element.addEventListener('change', this.handleChange.bind(this))
+    element.addEventListener('blur', this.handleChange.bind(this))
+
     // TODO: not sure what's the best way to preserve this semantic.
     // if (this.state.component.value.mounted) {
     //   this.updateValid()
@@ -538,6 +611,100 @@ export class FormControl<
 
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
+    }
+  }
+
+  async handleChange(event: AnyEvent): Promise<void | boolean> {
+    const target = event.target
+
+    const name = target.name
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field == null) {
+      return
+    }
+
+    const fieldValue = getCurrentFieldValue(event, field)
+
+    this.state.values.update((values) => {
+      deepSet(values, name, fieldValue)
+      return values
+    })
+
+    const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
+
+    if (isBlurEvent) {
+      field._f.onBlur?.(event)
+      // delayErrorCallback(0)
+    } else {
+      field._f.onChange?.(event)
+    }
+
+    if (!isBlurEvent) {
+      this.updateDirtyField(name, fieldValue)
+    } else {
+      this.updateTouchedField(name)
+    }
+
+    const nothingToValidate =
+      !hasValidation(field._f) &&
+      !this.options.resolver &&
+      !safeGet(this.state.errors.value, name) &&
+      !field._f.deps
+
+    const shouldSkipValidation =
+      nothingToValidate ||
+      shouldSkipValidationAfter(
+        isBlurEvent ? 'blur' : 'change',
+        safeGet(this.state.touchedFields.value, name),
+        this.state.isSubmitted.value,
+        this.submissionValidationMode,
+      )
+
+    if (shouldSkipValidation) {
+      this.updateValid()
+      return
+    }
+
+    this.state.isValidating.set(true)
+
+    const result = await this.validate(name)
+
+    if (result.resolverResult) {
+      const previousError = lookupError(this.state.errors.value, this.fields, name)
+
+      const error = lookupError(
+        result.resolverResult.errors ?? {},
+        this.fields,
+        previousError.name || name,
+      )
+
+      if (field._f.deps) {
+        this.trigger(field._f.deps as any)
+      }
+
+      error
+    }
+
+    if (result.validationResult) {
+      const isFieldValueUpdated =
+        Number.isNaN(fieldValue) ||
+        (fieldValue === safeGet(this.state.values.value, name) ?? fieldValue)
+
+      const error = result.validationResult.errors[name]
+
+      if (isFieldValueUpdated && !error && this.state.isValid.hasSubscribers) {
+        const fullResult = await this.validate()
+
+        if (fullResult.validationResult?.errors) {
+          this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
+        }
+
+        if (field._f.deps) {
+          this.trigger(field._f.deps as any)
+        }
+      }
     }
   }
 
@@ -825,5 +992,36 @@ export class FormControl<
 
       return newErrors
     })
+  }
+
+  getDirty() {
+    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+  }
+
+  async trigger(
+    name?: TParsedForm['keys'] | TParsedForm['keys'][] | readonly TParsedForm['keys'][],
+    options?: TriggerOptions,
+  ) {
+    this.state.isValidating.set(true)
+
+    this.updateValid()
+
+    const result = await this.validate(name as any)
+
+    if (result.validationResult) {
+      this.mergeErrors(result.validationResult?.errors ?? {}, result.validationResult?.names)
+    }
+
+    if (result.resolverResult) {
+      this.mergeErrors(result.resolverResult?.errors ?? {})
+    }
+
+    this.state.isValid.set(result.isValid)
+
+    this.state.isValidating.set(false)
+
+    if (options?.shouldFocus && !result.isValid) {
+      this.focusError()
+    }
   }
 }

@@ -44,4 +44,38 @@ describe('FormControl', () => {
 
     expect(formControl.state.errors.value.test).toBeDefined()
   })
+
+  test('unregisters errors when unregister invoked', async () => {
+    const formControl = new FormControl<{ test: string }>()
+
+    formControl.register('test', { required: true })
+
+    await formControl.handleSubmit()()
+
+    expect(formControl.state.errors.value.test).toBeDefined()
+
+    formControl.unregister('test')
+
+    expect(formControl.state.errors.value.test).toBeUndefined()
+  })
+
+  test('preserves touched', async () => {
+    const formControl = new FormControl<{ test: string }>()
+
+    const { registerElement } = formControl.register('test', { required: true })
+
+    const input = document.createElement('input')
+
+    registerElement(input)
+
+    input.blur()
+
+    expect(formControl.state.touchedFields.value.test).toBeDefined()
+    expect(formControl.state.isDirty.value).toBeFalsy()
+
+    formControl.unmount()
+
+    expect(formControl.state.touchedFields.value.test).toBeDefined()
+    expect(formControl.state.isDirty.value).toBeFalsy()
+  })
 })
