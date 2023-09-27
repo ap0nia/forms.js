@@ -28,13 +28,13 @@ export type ValueIfNotEmpty<T extends string, Value> = T extends '' ? '' : Value
  *
  * ```ts
  * type A = JoinArray<['a', 'b', 'c'], '.'>
- * //  ^?
+ * //  ^? type A = 'a.b.c'
  *
  * type B = JoinArray<[1, undefined, true, 'hello'], '__'>
- * //   ^?
+ * //   ^? type B = '1__undefined__true__hello'
  *
  * type C = JoinArray<[ { invalid: 'string template' } ], '.'>
- * //   ^?
+ * //   ^? type C = never
  * ```
  *
  * [Playground Link](https://www.typescriptlang.org/play?ssl=26&ssc=8&pln=19&pc=1#code/C4TwDgpgBAysBOBLAdgcwIYCMA20C8UAzgiqlAD5TICuAtphPBVJgPau7rLOaKorBmNbNmbVkAEwgAzFBAkAoBaEhQAaumzUIASWkA5VsACitMKAA8AFSgQAHsAiTCREmgA06zdoB8UAjb2js5QAOShUAD8YREAXF5aEEr2YKzwgirQAFKsKACC8PDoIBYKUFCBDk4SLuIA1sisAO7IANoAuu5lsBBg6EXAabZVIcRIaP5hAHShXeUAShCE1NiCQdUuY6ST4V1+AcPBNVAd3dGLy6vd8ZVHLq0o0oxQABIQ6BKeU9+PzxfA7TOUBy+UKxVK5UhUH+cyhPT6AzSsKhAAMACQAbwuK2AAF9MRpEnpDCYzJZsatPDBev10IN4D58RjjA4igBjYAWN4fKluDA4CCMlHdco+a7QpY4pSZKB5SYg5AFIolVqhdCzMKYDWhNmhTrTUJigD0RshAD1ItLwNAAELy3KKsEqgCMnnEUlkyHkngQ2k8oQAFhARKw9f6APrhw0KE3my3Ka1QADC9tByosrSgGKgKAAbppEBJ4qEthNHGZsHSIBFcVB9aEZsbTeULQogA)

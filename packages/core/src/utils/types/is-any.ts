@@ -7,16 +7,16 @@
  *
  * ```ts
  * type A = 0 extends (1 & number) ? true : false
- * //   ^? false
+ * //   ^? type A = false
  *
  * type B = 0 extends (1 & string) ? true : false
- * //   ^? false
+ * //   ^? type B = false
  *
  * type C = 0 extends (1 & {}) ? true : false
- * //   ^? false
+ * //   ^? type C = false
  *
  * type D = 0 extends (1 & any) ? true : false
- * //   ^? true
+ * //   ^? type D = true
  * ```
  *
  * [StackOverflow](https://stackoverflow.com/a/49928360)

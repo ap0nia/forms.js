@@ -13,13 +13,13 @@ import type { IsAny } from './is-any'
  * type C = { c: boolean }
  *
  * type ABC = A & B & C
- * //   ^? A & B & C
+ * //   ^? type ABC = A & B & C
  *
  * type Prettified = Prettify<ABC>
- * //   ^? { a: string; b: number; c: boolean; }
+ * //   ^? type Prettified = { a: string; b: number; c: boolean; }
  *
  * type Ignored = Prettify<any>
- * //   ^? any
+ * //   ^? type Ignored = any
  * ```
  *
  * [Matt Pocock's Tweet](https://twitter.com/mattpocockuk/status/1622730173446557697)
