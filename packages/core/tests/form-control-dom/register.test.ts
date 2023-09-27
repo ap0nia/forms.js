@@ -132,9 +132,9 @@ describe('FormControl', () => {
 
       fireEvent.submit(form)
 
-      waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1))
+      await waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1))
 
-      waitFor(() =>
+      await waitFor(() =>
         expect(formControl.state.errors.value).toEqual({
           firstName: { type: 'required', message: '', ref: firstNameInput },
           lastName: { type: 'required', message: '', ref: lastNameInput },
@@ -148,7 +148,7 @@ describe('FormControl', () => {
 
     test.todo('should not mutate defaultValues', () => {})
 
-    test('should not register or shallow defaultValues into submission data', () => {
+    test('should not register or shallow defaultValues into submission data', async () => {
       const formControl = new FormControl()
 
       const button = document.createElement('button')
@@ -159,12 +159,13 @@ describe('FormControl', () => {
 
       fireEvent.click(button)
 
-      waitFor(() => expect(onValid).toHaveBeenCalledTimes(1))
-      waitFor(() => expect(onValid).toHaveBeenCalledWith({}))
+      await waitFor(() => expect(onValid).toHaveBeenCalledTimes(1))
+
+      await waitFor(() => expect(onValid).toHaveBeenCalledWith({}, expect.anything()))
     })
   })
 
-  test.only('keeps validation during unmount', async () => {
+  test('keeps validation during unmount', async () => {
     type MyForm = {
       firstName: string
       moreDetail: boolean
@@ -201,11 +202,13 @@ describe('FormControl', () => {
 
     fireEvent.submit(form)
 
-    waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(onValid).toHaveBeenCalledTimes(0))
 
-    waitFor(() => expect(formControl.state.submitCount.value).toEqual(1))
+    await waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1))
 
-    waitFor(() =>
+    await waitFor(() => expect(formControl.state.submitCount.value).toEqual(1))
+
+    await waitFor(() =>
       expect(formControl.state.errors.value).toEqual({
         firstName: { type: 'maxLength', message: '', ref: firstNameInput },
       }),
@@ -215,10 +218,12 @@ describe('FormControl', () => {
 
     fireEvent.submit(form)
 
-    waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(onValid).toHaveBeenCalledTimes(1))
 
-    waitFor(() => expect(formControl.state.submitCount.value).toEqual(2))
+    await waitFor(() => expect(onInvalid).toHaveBeenCalledTimes(1))
 
-    waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+    await waitFor(() => expect(formControl.state.submitCount.value).toEqual(2))
+
+    await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
   })
 })
