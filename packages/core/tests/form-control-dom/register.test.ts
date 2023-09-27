@@ -4,6 +4,39 @@ import { describe, test, expect, vi } from 'vitest'
 import { FormControl } from '../../src/form-control'
 import type { RegisterOptions } from '../../src/types/register'
 
+function createComponent(options?: {
+  resolver?: any
+  mode?: 'onBlur' | 'onSubmit' | 'onChange'
+  rules?: RegisterOptions<{ test: string }, 'test'>
+  onSubmit?: () => void
+  onError?: () => void
+}) {
+  const rules = options?.rules ?? { required: true }
+
+  const input = document.createElement('input')
+  input.type = 'text'
+
+  const button = document.createElement('button')
+
+  const form = document.createElement('form')
+
+  document.body.appendChild(form)
+  form.appendChild(input)
+  form.appendChild(button)
+
+  const formControl = new FormControl<{ test: string }>(options)
+
+  const { registerElement } = formControl.register('test', options?.resolver ? {} : rules)
+
+  registerElement(input)
+
+  const handleSubmit = formControl.handleSubmit(options?.onSubmit, options?.onError)
+
+  button.addEventListener('click', handleSubmit)
+
+  return { input, button, formControl, form }
+}
+
 describe('FormControl', () => {
   describe('register', () => {
     describe('unmount', () => {
@@ -299,33 +332,6 @@ describe('FormControl', () => {
     })
 
     describe('handle change', () => {
-      function createComponent(options?: {
-        resolver?: any
-        mode?: 'onBlur' | 'onSubmit' | 'onChange'
-        rules?: RegisterOptions<{ test: string }, 'test'>
-        onSubmit?: () => void
-        onError?: () => void
-      }) {
-        const rules = options?.rules ?? { required: true }
-
-        const input = document.createElement('input')
-        input.type = 'text'
-
-        const button = document.createElement('button')
-
-        const formControl = new FormControl<{ test: string }>(options)
-
-        const { registerElement } = formControl.register('test', options?.resolver ? {} : rules)
-
-        registerElement(input)
-
-        const handleSubmit = formControl.handleSubmit(options?.onSubmit, options?.onError)
-
-        button.addEventListener('click', handleSubmit)
-
-        return { input, button, formControl }
-      }
-
       describe('onSubmit mode', () => {
         test('should not contain errors for valid values', async () => {
           const onSubmit = vi.fn()
@@ -435,6 +441,70 @@ describe('FormControl', () => {
             }),
           )
         })
+      })
+    })
+
+    describe('onChange', () => {
+      test('display error with onChange', async () => {
+        const formControl = new FormControl<{ test: string }>({
+          mode: 'onChange',
+        })
+
+        const input = document.createElement('input')
+        input.type = 'text'
+
+        const { registerElement } = formControl.register('test', { required: true })
+        registerElement(input)
+
+        fireEvent.change(input, { target: { value: '' } })
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            test: { type: 'required', message: '', ref: input },
+          }),
+        )
+      })
+
+      test('display error with onSubmit', async () => {
+        const { input, button, formControl } = createComponent({ mode: 'onSubmit' })
+
+        fireEvent.click(button)
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            test: {
+              type: 'required',
+              message: '',
+              ref: input,
+            },
+          }),
+        )
+      })
+
+      test('should not display error with onBlur', async () => {
+        const { input, formControl } = createComponent({ mode: 'onSubmit' })
+
+        fireEvent.blur(input, { target: { value: '' } })
+
+        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+      })
+    })
+
+    describe('onBlur', () => {
+      test.only('should display error with onBlur', async () => {
+        const { input, formControl } = createComponent({ mode: 'onBlur' })
+
+        fireEvent.blur(input, { target: { value: '' } })
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            test: {
+              type: 'required',
+              message: '',
+              ref: input,
+            },
+          }),
+        )
       })
     })
   })
