@@ -683,7 +683,7 @@ describe('FormControl', () => {
         )
       })
 
-      test.only('should call the resolver with the field being validated when `trigger` is called', async () => {
+      test('should call the resolver with the field being validated when `trigger` is called', async () => {
         const resolver = vi.fn((values: any) => ({ values, errors: {} }))
 
         const defaultValues = { test: { sub: 'test' }, test1: 'test1' }
@@ -739,6 +739,69 @@ describe('FormControl', () => {
           fields,
           names: ['test.sub', 'test1'],
         })
+      })
+    })
+
+    describe('updateValid', () => {
+      test('should be called resolver with default values if default value is defined', async () => {
+        type FormValues = {
+          test: string
+        }
+
+        const resolver = vi.fn(async (data: FormValues) => {
+          return {
+            values: data,
+            errors: {},
+          }
+        })
+
+        const formControl = new FormControl<FormValues>({
+          resolver,
+          defaultValues: { test: 'default' },
+        })
+
+        const { registerElement } = formControl.register('test')
+
+        const input = document.createElement('input')
+
+        registerElement(input)
+
+        await formControl.trigger()
+
+        expect(resolver).toHaveBeenCalledWith(
+          {
+            test: 'default',
+          },
+          undefined,
+          {
+            criteriaMode: undefined,
+            fields: {
+              test: {
+                mount: true,
+                name: 'test',
+                ref: input,
+              },
+            },
+            names: ['test'],
+          },
+        )
+      })
+
+      test('should be called resolver with field values if value is undefined', async () => {
+        type FormValues = {
+          test: string
+        }
+
+        const resolver = vi.fn(async (data: FormValues) => {
+          return {
+            values: data,
+            errors: {},
+          }
+        })
+
+        const formControl = new FormControl<FormValues>({ resolver })
+
+        formControl.register('test')
       })
     })
   })

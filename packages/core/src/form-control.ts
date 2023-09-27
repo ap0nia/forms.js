@@ -9,6 +9,7 @@ import {
 import { lookupError } from './logic/errors/lookup-error'
 import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
+import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
@@ -32,6 +33,7 @@ import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
 import { isEmptyObject, isObject } from './utils/is-object'
+import { isPrimitive } from './utils/is-primitive'
 import type { Noop } from './utils/noop'
 import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
@@ -759,6 +761,62 @@ export class FormControl<
 
   focusFieldByCallback(key?: string | Nullish): boolean {
     return Boolean(key && safeGet(this.state.errors.value, key))
+  }
+
+  setValues(name: string, value: any, options: SetValueOptions) {
+    for (const fieldKey in value) {
+      const fieldValue = value[fieldKey]
+      const fieldName = `${name}.${fieldKey}`
+      const field: Field | undefined = safeGet(this.fields, fieldName)
+
+      const isFieldArray = this.names.array.has(fieldName)
+      const missingReference = field && !field._f
+      const isDate = fieldValue instanceof Date
+
+      if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
+        this.setValues(fieldName, fieldValue, options)
+      } else {
+        this.setFieldValue(fieldName, fieldValue, options)
+      }
+    }
+  }
+
+  setValue<T extends TParsedForm['keys']>(
+    name: T,
+    value: TParsedForm['flattened'][T],
+    options: SetValueOptions = {},
+  ) {
+    const field: Field | undefined = safeGet(this.fields, name)
+    const cloneValue = structuredClone(value)
+
+    this.state.values.update((values) => {
+      deepSet(values, name, cloneValue)
+      return values
+    })
+
+    if (!this.names.array.has(name)) {
+      if (field && !field._f && cloneValue != null) {
+        this.setValues(name, cloneValue, options)
+      } else {
+        this.setFieldValue(name, cloneValue, options)
+      }
+
+      return
+    }
+
+    const hasSubscribers =
+      this.state.isDirty.hasSubscribers || this.state.dirtyFields.hasSubscribers
+
+    if (hasSubscribers && options.shouldDirty) {
+      this.state.dirtyFields.set(
+        getDirtyFields(this.state.defaultValues.value, this.state.values.value),
+      )
+      this.state.isDirty.set(this.getDirty())
+    }
+
+    // if (!this.state.mount) {
+    //   flushRootRender()
+    // }
   }
 
   /**

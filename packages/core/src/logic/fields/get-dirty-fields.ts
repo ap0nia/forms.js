@@ -2,8 +2,9 @@ import { deepEqual } from '../../utils/deep-equal'
 import { isObject } from '../../utils/is-object'
 import { isPrimitive } from '../../utils/is-primitive'
 import { objectHasFunction } from '../../utils/object-has-function'
+import type { DeepPartial } from '../../utils/types/deep-partial'
 
-export function getDirtyFields<T>(defaultValues: T, formValues: T) {
+export function getDirtyFields<T>(defaultValues: DeepPartial<T>, formValues: T) {
   return getDirtyFieldsFromDefaultValues(defaultValues, formValues, markFieldsDirty(formValues))
 }
 
