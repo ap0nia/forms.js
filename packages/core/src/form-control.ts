@@ -21,9 +21,9 @@ import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
 import { Writable } from './store'
-import type { FieldErrors, InternalFieldErrors } from './types/errors'
+import type { ErrorOption, FieldErrors, InternalFieldErrors } from './types/errors'
 import type { AnyEvent } from './types/event'
-import type { Field, FieldRecord } from './types/fields'
+import type { Field, FieldElement, FieldRecord } from './types/fields'
 import type { RegisterOptions, RegisterResult } from './types/register'
 import type { Resolver, ResolverResult } from './types/resolver'
 import type { SubmitErrorHandler, SubmitHandler } from './types/submit'
@@ -703,10 +703,15 @@ export class FormControl<
         if (fullResult.validationResult?.errors) {
           this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
         }
+      } else {
+        this.state.errors.update((errors) => {
+          deepSet(errors, name, error)
+          return errors
+        })
+      }
 
-        if (field._f.deps) {
-          this.trigger(field._f.deps as any)
-        }
+      if (isFieldValueUpdated && field._f.deps) {
+        this.trigger(field._f.deps as any)
       }
     }
   }
@@ -1059,5 +1064,24 @@ export class FormControl<
     }
 
     this.names.unMount = new Set()
+  }
+
+  setError(
+    name: TParsedForm['keys'] | `root.${string}` | 'root',
+    error: ErrorOption,
+    options?: TriggerOptions,
+  ) {
+    const ref: FieldElement | undefined = (safeGet(this.fields, name)._f ?? {}).ref
+
+    this.state.errors.update((errors) => {
+      deepSet(errors, name, { ...error, ref })
+      return errors
+    })
+
+    this.state.isValid.set(false)
+
+    if (options?.shouldFocus) {
+      ref?.focus?.()
+    }
   }
 }
