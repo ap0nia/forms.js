@@ -1,4 +1,4 @@
-import { fireEvent, waitFor } from '@testing-library/dom'
+import { fireEvent, waitFor, screen } from '@testing-library/dom'
 import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
@@ -802,6 +802,111 @@ describe('FormControl', () => {
         const formControl = new FormControl<FormValues>({ resolver })
 
         formControl.register('test')
+
+        formControl.setValue('test', 'value')
+
+        await formControl.trigger()
+
+        expect(resolver).toHaveBeenCalledWith({ test: 'value' }, undefined, {
+          criteriaMode: undefined,
+          fields: {
+            test: {
+              mount: true,
+              name: 'test',
+              ref: { name: 'test', value: 'value' },
+            },
+          },
+          names: ['test'],
+        })
+      })
+    })
+
+    describe('mode with onTouched', () => {
+      test('should validate form only when input is been touched', async () => {
+        const formControl = new FormControl<{ test: string }>({ mode: 'onTouched' })
+
+        const input = document.createElement('input')
+
+        const message = document.createElement('span')
+
+        document.body.appendChild(input)
+        document.body.appendChild(message)
+
+        const unsubscribe = formControl.state.errors.subscribe((errors) => {
+          message.textContent = errors.test?.message ?? ''
+        })
+
+        const { registerElement } = formControl.register('test', { required: 'This is required.' })
+
+        registerElement(input)
+
+        fireEvent.focus(input)
+
+        fireEvent.blur(input)
+
+        expect(await screen.findByText('This is required.')).toBeTruthy()
+
+        fireEvent.input(input, {
+          target: {
+            value: 'test',
+          },
+        })
+
+        await waitFor(() => expect(screen.queryByText('This is required.')).toBeFalsy())
+
+        fireEvent.input(input, {
+          target: {
+            value: '',
+          },
+        })
+
+        expect(await screen.findByText('This is required.')).toBeTruthy()
+
+        unsubscribe()
+      })
+
+      test.only('should validate onFocusout event', async () => {
+        const formControl = new FormControl<{ test: string }>({ mode: 'onTouched' })
+
+        const input = document.createElement('input')
+        input.type = 'text'
+
+        const message = document.createElement('span')
+
+        document.body.appendChild(input)
+        document.body.appendChild(message)
+
+        const unsubscribe = formControl.state.errors.subscribe((errors) => {
+          message.textContent = errors.test?.message ?? ''
+        })
+
+        const { registerElement } = formControl.register('test', { required: 'This is required.' })
+
+        registerElement(input)
+
+        fireEvent.focus(input)
+
+        fireEvent.focusOut(input)
+
+        expect(await screen.findByText('This is required.')).toBeTruthy()
+
+        fireEvent.input(input, {
+          target: {
+            value: 'test',
+          },
+        })
+
+        await waitFor(() => expect(screen.queryByText('This is required.')).toBeFalsy())
+
+        fireEvent.input(input, {
+          target: {
+            value: '',
+          },
+        })
+
+        expect(await screen.findByText('This is required.')).toBeTruthy()
+
+        unsubscribe()
       })
     })
   })

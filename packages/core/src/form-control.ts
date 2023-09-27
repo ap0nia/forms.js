@@ -589,6 +589,7 @@ export class FormControl<
     // TODO: what are the equivalent DOM events for React's "onChange" prop?
     element.addEventListener('change', this.handleChange.bind(this))
     element.addEventListener('blur', this.handleChange.bind(this))
+    element.addEventListener('focusout', this.handleChange.bind(this))
     element.addEventListener('input', this.handleChange.bind(this))
 
     // TODO: not sure what's the best way to preserve this semantic.
