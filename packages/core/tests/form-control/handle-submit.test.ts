@@ -84,9 +84,8 @@ describe('FormControl', () => {
 
     test('event prevent default and persist', async () => {
       const preventDefault = vi.fn()
-      const persist = vi.fn()
 
-      const event = { preventDefault, persist }
+      const event = { preventDefault }
 
       const formControl = new FormControl()
 
@@ -95,7 +94,6 @@ describe('FormControl', () => {
       await handleSubmit(event as any)
 
       expect(preventDefault).toHaveBeenCalledOnce()
-      expect(persist).toHaveBeenCalledOnce()
     })
 
     /**

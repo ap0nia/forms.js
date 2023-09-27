@@ -1,5 +1,5 @@
 import { fireEvent, waitFor, screen } from '@testing-library/dom'
-import { describe, test, expect, vi } from 'vitest'
+import { describe, test, expect, vi, afterEach } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 import type { RegisterOptions } from '../../src/types/register'
@@ -46,6 +46,10 @@ function createComponent(options?: {
 
   return { input, button, formControl, form }
 }
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})
 
 describe('FormControl', () => {
   describe('register', () => {
@@ -865,7 +869,7 @@ describe('FormControl', () => {
         unsubscribe()
       })
 
-      test.only('should validate onFocusout event', async () => {
+      test('should validate onFocusout event', async () => {
         const formControl = new FormControl<{ test: string }>({ mode: 'onTouched' })
 
         const input = document.createElement('input')
@@ -873,6 +877,7 @@ describe('FormControl', () => {
 
         const message = document.createElement('span')
 
+        document.body.innerHTML = ''
         document.body.appendChild(input)
         document.body.appendChild(message)
 
@@ -907,6 +912,81 @@ describe('FormControl', () => {
         expect(await screen.findByText('This is required.')).toBeTruthy()
 
         unsubscribe()
+      })
+    })
+
+    describe('with schema validation', () => {
+      test('should trigger and clear errors for group errors object', async () => {
+        const formControl = new FormControl<{ checkbox: string[] }>({
+          mode: 'onChange',
+          resolver: (data) => {
+            return {
+              errors: {
+                ...(data.checkbox.every((value) => !value)
+                  ? { checkbox: { type: 'error', message: 'wrong' } }
+                  : {}),
+              },
+              values: {},
+            }
+          },
+        })
+
+        function createCheckboxInput(index: number, value: any) {
+          const checkbox = document.createElement('input')
+          checkbox.type = 'checkbox'
+          checkbox.id = `checkbox.${index}`
+          checkbox.value = value
+
+          return checkbox
+        }
+
+        const checkbox0Input = createCheckboxInput(0, '1')
+        const checkbox1Input = createCheckboxInput(1, '2')
+        const checkbox2Input = createCheckboxInput(2, '3')
+
+        const form = document.createElement('form')
+
+        document.body.innerHTML = ''
+        document.body.appendChild(form)
+        form.appendChild(checkbox0Input)
+        form.appendChild(checkbox1Input)
+        form.appendChild(checkbox2Input)
+
+        const checkbox0 = formControl.register('checkbox.0')
+        const checkbox1 = formControl.register('checkbox.1')
+        const checkbox2 = formControl.register('checkbox.2')
+
+        checkbox0.registerElement(checkbox0Input)
+        checkbox1.registerElement(checkbox1Input)
+        checkbox2.registerElement(checkbox2Input)
+
+        fireEvent.click(checkbox0Input)
+
+        fireEvent.click(checkbox0Input)
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            checkbox: { type: 'error', message: 'wrong' },
+          }),
+        )
+
+        fireEvent.click(checkbox0Input)
+
+        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+
+        fireEvent.click(checkbox0Input)
+
+        fireEvent.submit(form)
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            checkbox: { type: 'error', message: 'wrong' },
+          }),
+        )
+
+        fireEvent.click(checkbox0Input)
+
+        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
       })
     })
   })

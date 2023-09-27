@@ -682,7 +682,7 @@ export class FormControl<
     if (result.resolverResult) {
       const previousError = lookupError(this.state.errors.value, this.fields, name)
 
-      const error = lookupError(
+      const currentError = lookupError(
         result.resolverResult.errors ?? {},
         this.fields,
         previousError.name || name,
@@ -692,7 +692,14 @@ export class FormControl<
         this.trigger(field._f.deps as any)
       }
 
-      error
+      this.state.errors.update((errors) => {
+        if (currentError.error) {
+          deepSet(errors, currentError.name, currentError.error)
+        } else {
+          deepUnset(errors, currentError.name)
+        }
+        return errors
+      })
     }
 
     if (result.validationResult) {
