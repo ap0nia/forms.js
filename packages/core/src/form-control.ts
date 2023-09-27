@@ -674,6 +674,8 @@ export class FormControl<
 
     const result = await this.validate(name)
 
+    this.state.isValid.set(result.isValid)
+
     if (result.resolverResult) {
       const previousError = lookupError(this.state.errors.value, this.fields, name)
 

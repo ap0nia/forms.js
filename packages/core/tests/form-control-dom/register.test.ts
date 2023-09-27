@@ -3,6 +3,7 @@ import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 import type { RegisterOptions } from '../../src/types/register'
+import { noop } from '../../src/utils/noop'
 
 function createComponent(options?: {
   resolver?: any
@@ -11,6 +12,8 @@ function createComponent(options?: {
   onSubmit?: () => void
   onError?: () => void
 }) {
+  document.body.innerHTML = ''
+
   const rules = options?.rules ?? { required: true }
 
   const input = document.createElement('input')
@@ -26,6 +29,11 @@ function createComponent(options?: {
 
   const formControl = new FormControl<{ test: string }>(options)
 
+  /**
+   * The form control only runs "updateValid" if there are subscribers to the "isValid" store.
+   */
+  formControl.state.isValid.subscribe(noop)
+
   const { registerElement } = formControl.register('test', options?.resolver ? {} : rules)
 
   registerElement(input)
@@ -33,6 +41,8 @@ function createComponent(options?: {
   const handleSubmit = formControl.handleSubmit(options?.onSubmit, options?.onError)
 
   button.addEventListener('click', handleSubmit)
+
+  form.addEventListener('submit', handleSubmit)
 
   return { input, button, formControl, form }
 }
@@ -491,7 +501,7 @@ describe('FormControl', () => {
     })
 
     describe('onBlur', () => {
-      test.only('should display error with onBlur', async () => {
+      test('should display error with onBlur', async () => {
         const { input, formControl } = createComponent({ mode: 'onBlur' })
 
         fireEvent.blur(input, { target: { value: '' } })
@@ -505,6 +515,230 @@ describe('FormControl', () => {
             },
           }),
         )
+      })
+
+      test('should display error with onSubmit', async () => {
+        const { input, button, formControl } = createComponent({ mode: 'onSubmit' })
+
+        fireEvent.click(button)
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            test: {
+              type: 'required',
+              message: '',
+              ref: input,
+            },
+          }),
+        )
+      })
+
+      test('should not display error with onChange', async () => {
+        const { input, formControl } = createComponent({ mode: 'onBlur' })
+
+        fireEvent.input(input, { target: { value: '' } })
+
+        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+      })
+    })
+
+    describe.todo('with watch', () => {})
+
+    describe('with resolver', () => {
+      test('should contain error if value is invalid with resolver', async () => {
+        const resolver = vi.fn(async (data: any) => {
+          if (data.test) {
+            return { values: data, errors: {} }
+          }
+          return {
+            values: data,
+            errors: {
+              test: {
+                message: 'resolver error',
+              },
+            },
+          }
+        })
+
+        const { input, formControl } = createComponent({ resolver, mode: 'onChange' })
+
+        fireEvent.input(input, { target: { name: 'test', value: 'test' } })
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeTruthy())
+
+        fireEvent.input(input, { target: { name: 'test', value: '' } })
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeFalsy())
+      })
+
+      test('with sync resolver it should contain error if value is invalid with resolver', async () => {
+        const resolver = vi.fn((data: any) => {
+          if (data.test) {
+            return { values: data, errors: {} }
+          }
+
+          return {
+            values: data,
+            errors: {
+              test: {
+                message: 'resolver error',
+              },
+            },
+          }
+        })
+
+        const { input, formControl } = createComponent({ resolver, mode: 'onChange' })
+
+        fireEvent.input(input, { target: { name: 'test', value: 'test' } })
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeTruthy())
+
+        fireEvent.input(input, { target: { name: 'test', value: '' } })
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeFalsy())
+
+        await waitFor(() => expect(resolver).toHaveBeenCalled())
+      })
+
+      test('should make isValid change to false if it contain error that is not related name with onChange mode', async () => {
+        const resolver = vi.fn(async (data: any) => {
+          if (data.test) {
+            return { values: data, errors: {} }
+          }
+          return {
+            values: data,
+            errors: {
+              notRelatedName: {
+                message: 'resolver error',
+              },
+            },
+          }
+        })
+
+        const { input, formControl } = createComponent({ resolver, mode: 'onChange' })
+
+        fireEvent.input(input, { target: { name: 'test', value: 'test' } })
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeTruthy())
+
+        fireEvent.input(input, { target: { name: 'test', value: '' } })
+
+        await waitFor(() => expect(formControl.state.isValid.value).toBeFalsy())
+
+        await waitFor(() => expect(resolver).toHaveBeenCalled())
+      })
+
+      test("should call the resolver with the field being validated when an input's value change", async () => {
+        const resolver = vi.fn((values: any) => ({ values, errors: {} }))
+        const onSubmit = vi.fn()
+
+        const { input, form } = createComponent({ resolver, onSubmit, mode: 'onChange' })
+
+        expect(resolver).toHaveBeenCalledWith(
+          {
+            test: '',
+          },
+          undefined,
+          {
+            criteriaMode: undefined,
+            fields: {
+              test: {
+                mount: true,
+                name: 'test',
+                ref: input,
+              },
+            },
+            names: ['test'],
+            shouldUseNativeValidation: undefined,
+          },
+        )
+
+        resolver.mockClear()
+
+        fireEvent.input(input, { target: { name: 'test', value: 'test' } })
+
+        fireEvent.submit(form)
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+
+        await waitFor(() =>
+          expect(resolver).toHaveBeenLastCalledWith(
+            {
+              test: 'test',
+            },
+            undefined,
+            {
+              criteriaMode: undefined,
+              fields: {
+                test: {
+                  mount: true,
+                  name: 'test',
+                  ref: input,
+                },
+              },
+              names: ['test'],
+              shouldUseNativeValidation: undefined,
+            },
+          ),
+        )
+      })
+
+      test.only('should call the resolver with the field being validated when `trigger` is called', async () => {
+        const resolver = vi.fn((values: any) => ({ values, errors: {} }))
+
+        const defaultValues = { test: { sub: 'test' }, test1: 'test1' }
+
+        const formControl = new FormControl({
+          mode: 'onChange',
+          resolver,
+          defaultValues,
+        })
+
+        expect(resolver).not.toHaveBeenCalled()
+
+        formControl.register('test.sub')
+        formControl.register('test1')
+
+        const fields = {
+          test: {
+            sub: {
+              mount: true,
+              name: 'test.sub',
+              ref: { name: 'test.sub' },
+            },
+          },
+          test1: {
+            mount: true,
+            name: 'test1',
+            ref: {
+              name: 'test1',
+            },
+          },
+        }
+
+        await formControl.trigger('test.sub')
+
+        expect(resolver).toHaveBeenNthCalledWith(1, defaultValues, undefined, {
+          criteriaMode: undefined,
+          fields: { test: fields.test },
+          names: ['test.sub'],
+        })
+
+        await formControl.trigger()
+
+        expect(resolver).toHaveBeenNthCalledWith(2, defaultValues, undefined, {
+          criteriaMode: undefined,
+          fields,
+          names: ['test.sub', 'test1'],
+        })
+
+        await formControl.trigger(['test.sub', 'test1'])
+
+        expect(resolver).toHaveBeenNthCalledWith(3, defaultValues, undefined, {
+          criteriaMode: undefined,
+          fields,
+          names: ['test.sub', 'test1'],
+        })
       })
     })
   })
