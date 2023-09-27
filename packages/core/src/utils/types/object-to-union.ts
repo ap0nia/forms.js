@@ -9,7 +9,7 @@ import type { JoinArray } from './join-array'
  * @example
  *
  * ```ts
- * type MyType = {
+ * type X = {
  *   a: string
  *   b: {
  *     c: number
@@ -21,15 +21,24 @@ import type { JoinArray } from './join-array'
  *   }
  * }
  *
- * type MyTypeUnion = ObjectToUnion<MyType>
+ * type Y = {
+ *   a: { b: string }[]
+ * }
  *
- * type MyTypeUnion =
- *  | { a: string }
- *  | { b: { c: number } }
- *  | { 'b.c': number }
- *  | { d: { e: { f: boolean } } }
- *  | { 'd.e': { f: boolean } }
- *  | { 'd.e.f': boolean }
+ * type A = ObjectToUnion<X>
+ * //   ^? type A =
+ *                | { a: string }
+ *                | { b: { c: number } }
+ *                | { d: { e: { f: boolean } } }
+ *                | { 'a.b': { c: string } }
+ *                | { 'd.e': { f: boolean } }
+ *                | { 'd.e.f': boolean }
+ *
+ * type B = ObjectToUnion<Y>
+ * //   ^? type B =
+ *                | { a: { b: string }[] }
+ *                | { [x: `a.${number}`]: { b: string } }
+ *                | { [x: `a.${number}.b`]: string }
  * ```
  *
  * @see https://stackoverflow.com/a/68518494
