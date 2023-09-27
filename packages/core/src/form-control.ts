@@ -32,6 +32,7 @@ import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
 import { deepSet } from './utils/deep-set'
 import { deepUnset } from './utils/deep-unset'
+import { isBrowser } from './utils/is-browser'
 import { isEmptyObject, isObject } from './utils/is-object'
 import { isPrimitive } from './utils/is-primitive'
 import type { Noop } from './utils/noop'
@@ -156,6 +157,11 @@ type KeepStateOptions = {
    * Whether to keep the submission status.
    */
   keepIsSubmitted?: boolean
+
+  /**
+   * Whether to keep if the most recent submission was successful.
+   */
+  keepIsSubmitSuccessful?: boolean
 
   /**
    * Whether to keep the touched status.
@@ -367,6 +373,8 @@ export class FormControl<
 
   submissionValidationMode: SubmissionValidationMode
 
+  shouldCaptureDirtyFields: boolean
+
   /**
    * Actions to run when the form is unmounted.
    */
@@ -406,6 +414,10 @@ export class FormControl<
       beforeSubmission: getValidationModes(resolvedOptions.mode),
       afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
     }
+
+    this.shouldCaptureDirtyFields = Boolean(
+      resolvedOptions.resetOptions && resolvedOptions.resetOptions.keepDirtyValues,
+    )
 
     /**
      * Ensure that any promises are resolved.
@@ -1198,5 +1210,108 @@ export class FormControl<
     if (isPromise) {
       this.state.isLoading.set(false)
     }
+  }
+
+  reset(formValues?: TValues, options: KeepStateOptions = {}) {
+    const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
+
+    const cloneUpdatedValues = structuredClone(updatedValues)
+
+    const values =
+      formValues && isEmptyObject(formValues) ? this.state.defaultValues.value : cloneUpdatedValues
+
+    if (!options.keepDefaultValues) {
+      this.state.defaultValues.set(updatedValues as DeepPartial<TValues>)
+    }
+
+    if (!options.keepValues) {
+      if (options.keepDirtyValues || this.shouldCaptureDirtyFields) {
+        for (const fieldName of this.names.mount) {
+          if (safeGet(this.state.dirtyFields.value, fieldName)) {
+            deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
+          } else {
+            this.setValue(fieldName as any, safeGet(values, fieldName))
+          }
+        }
+      } else {
+        if (isBrowser() && formValues == null) {
+          for (const name of this.names.mount) {
+            const field: Field | undefined = safeGet(this.fields, name)
+
+            if (field?._f == null) {
+              continue
+            }
+
+            const fieldReference = Array.isArray(field._f.refs) ? field._f.refs[0] : field._f.ref
+
+            if (!isHTMLElement(fieldReference)) {
+              continue
+            }
+
+            const form = fieldReference.closest('form')
+
+            if (form) {
+              form.reset()
+              break
+            }
+          }
+        }
+
+        this.fields = {}
+      }
+
+      const newValues = this.options.shouldUnregister
+        ? options.keepDefaultValues
+          ? structuredClone(this.state.defaultValues.value)
+          : {}
+        : structuredClone(values)
+
+      this.state.values.set(newValues as TValues)
+    }
+
+    this.names = {
+      mount: new Set(),
+      unMount: new Set(),
+      array: new Set(),
+      watch: new Set(),
+    }
+
+    if (!options.keepSubmitCount) {
+      this.state.submitCount.set(0)
+    }
+
+    if (!options.keepDirty) {
+      this.state.isDirty.set(
+        Boolean(
+          options.keepDefaultValues && !deepEqual(formValues, this.state.defaultValues.value),
+        ),
+      )
+    }
+
+    if (!options.keepDirtyValues) {
+      if (options.keepDefaultValues && formValues) {
+        this.state.dirtyFields.set(getDirtyFields(this.state.defaultValues.value, formValues))
+      } else {
+        this.state.dirtyFields.set({})
+      }
+    }
+
+    if (!options.keepTouched) {
+      this.state.touchedFields.set({})
+    }
+
+    if (!options.keepErrors) {
+      this.state.errors.set({})
+    }
+
+    if (!options.keepIsSubmitSuccessful) {
+      this.state.isSubmitSuccessful.set(false)
+    }
+
+    this.state.isSubmitting.set(false)
+
+    // !_state.mount && flushRootRender()
+    // _state.mount = !_proxyFormState.isValid || !!keepStateOptions.keepIsValid
+    // _state.watch = !!props.shouldUnregister
   }
 }
