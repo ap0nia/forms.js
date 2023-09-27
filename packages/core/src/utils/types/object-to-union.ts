@@ -64,10 +64,11 @@ export type ObjectToUnion<T, Keys extends unknown[] = []> = IsAny<T> extends tru
       | {
           [K in keyof T]: IsAny<T[K]> extends true
             ? { [SubKey in JoinArray<[...Keys, K]>]: T[K] }
-            : T[K] extends any[]
+            : T[K] extends (infer U)[]
             ?
                 | { [SubKey in JoinArray<[...Keys, K]>]: T[K] }
                 | { [SubKey in JoinArray<[...Keys, K, number]>]: ExtractArray<T[K]> }
+                | (U extends Record<string, any> ? ObjectToUnion<U, [...Keys, K, number]> : never)
             : T[K] extends Record<string, any>
             ? ObjectToUnion<T[K], [...Keys, K]>
             : { [SubKey in JoinArray<[...Keys, K]>]: T[K] }

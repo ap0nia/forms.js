@@ -5,7 +5,11 @@ import { objectHasFunction } from '../../utils/object-has-function'
 import type { DeepPartial } from '../../utils/types/deep-partial'
 
 export function getDirtyFields<T>(defaultValues: DeepPartial<T>, formValues: T) {
-  return getDirtyFieldsFromDefaultValues(defaultValues, formValues, markFieldsDirty(formValues))
+  return getDirtyFieldsFromDefaultValues(
+    defaultValues as T,
+    formValues,
+    markFieldsDirty(formValues),
+  )
 }
 
 export function getDirtyFieldsFromDefaultValues<T>(data: T, formValues: T, dirtyFields: any) {

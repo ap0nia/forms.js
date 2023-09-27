@@ -988,6 +988,82 @@ describe('FormControl', () => {
 
         await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
       })
+
+      test.only('should not clear errors for non checkbox parent inputs', async () => {
+        type MyForm = {
+          checkbox: [{ test: string }, { test1: string }]
+        }
+
+        const formControl = new FormControl<MyForm>({
+          mode: 'onChange',
+          resolver: (data) => {
+            return {
+              errors: {
+                ...(!data.checkbox[0].test || !data.checkbox[1].test1
+                  ? {
+                      checkbox: [
+                        {
+                          ...(!data.checkbox[0].test
+                            ? { test: { type: 'error', message: 'wrong' } }
+                            : {}),
+                          ...(!data.checkbox[1].test1
+                            ? { test1: { type: 'error', message: 'wrong' } }
+                            : {}),
+                        },
+                      ],
+                    }
+                  : {}),
+              },
+              values: {},
+            }
+          },
+        })
+
+        const checkbox0Input = document.createElement('input')
+        checkbox0Input.type = 'checkbox'
+
+        const checkbox1Input = document.createElement('input')
+        checkbox1Input.type = 'checkbox'
+
+        const form = document.createElement('form')
+
+        document.body.appendChild(form)
+        form.appendChild(checkbox0Input)
+        form.appendChild(checkbox1Input)
+
+        const checkbox0 = formControl.register('checkbox.0.test')
+        const checkbox1 = formControl.register('checkbox.1.test1')
+
+        checkbox0.registerElement(checkbox0Input)
+        checkbox1.registerElement(checkbox1Input)
+
+        form.addEventListener('submit', formControl.handleSubmit())
+
+        fireEvent.submit(form)
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            checkbox: [
+              {
+                test: { type: 'error', message: 'wrong' },
+                test1: { type: 'error', message: 'wrong' },
+              },
+            ],
+          }),
+        )
+
+        fireEvent.click(checkbox0Input)
+
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            checkbox: [
+              {
+                test1: { type: 'error', message: 'wrong' },
+              },
+            ],
+          }),
+        )
+      })
     })
   })
 })

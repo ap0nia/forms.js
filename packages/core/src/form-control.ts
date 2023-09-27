@@ -590,7 +590,10 @@ export class FormControl<
     element.addEventListener('change', this.handleChange.bind(this))
     element.addEventListener('blur', this.handleChange.bind(this))
     element.addEventListener('focusout', this.handleChange.bind(this))
-    element.addEventListener('input', this.handleChange.bind(this))
+
+    if (element.type !== 'radio' && element.type !== 'checkbox') {
+      element.addEventListener('input', this.handleChange.bind(this))
+    }
 
     // TODO: not sure what's the best way to preserve this semantic.
     // if (this.state.component.value.mounted) {
@@ -688,10 +691,6 @@ export class FormControl<
         previousError.name || name,
       )
 
-      if (field._f.deps) {
-        this.trigger(field._f.deps as any)
-      }
-
       this.state.errors.update((errors) => {
         if (currentError.error) {
           deepSet(errors, currentError.name, currentError.error)
@@ -700,6 +699,10 @@ export class FormControl<
         }
         return errors
       })
+
+      if (field._f.deps) {
+        this.trigger(field._f.deps as any)
+      }
     }
 
     if (result.validationResult) {

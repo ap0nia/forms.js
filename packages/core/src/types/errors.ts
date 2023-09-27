@@ -84,8 +84,8 @@ export type FieldErrors<T = Record<string, any>> = Partial<FieldErrorsImpl<DeepR
 export type FieldErrorsImpl<T = Record<string, any>> = {
   [K in keyof T]?: K extends 'root' | `root.${string}`
     ? GlobalError
-    : T[K] extends any[] // TODO: more sophisticated type for field array errors?
-    ? FieldError
+    : T[K] extends (infer U)[]
+    ? FieldError | { [k in keyof U]?: FieldError }[]
     : T[K] extends object
     ? DeepMerge<FieldError, FieldErrorsImpl<T[K]>>
     : FieldError
