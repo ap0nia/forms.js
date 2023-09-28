@@ -2,8 +2,8 @@ import type { Field } from '../../types/fields'
 import { safeGet } from '../../utils/safe-get'
 
 import { isCheckBoxInput } from './checkbox'
+import { elementIsLive } from './element-is-live'
 import { getRefFromElement } from './get-ref-from-element'
-import { isHTMLElement } from './is-html-element'
 import { isRadioInput } from './radio'
 
 /**
@@ -58,7 +58,7 @@ export function mergeElementWithField(
         name,
         type: ref.type,
       },
-      refs: [...refs.filter((ref) => isHTMLElement(ref) && ref.isConnected), ref],
+      refs: [...refs.filter(elementIsLive), ref],
     },
   } satisfies Field
 
