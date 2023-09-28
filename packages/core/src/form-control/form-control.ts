@@ -1,13 +1,15 @@
 import { VALIDATION_MODE } from '../constants'
 import { getValidationModes } from '../logic/validation/get-validation-modes'
 import { Writable } from '../store'
-import type { FieldRecord } from '../types/fields'
+import type { Field, FieldRecord } from '../types/fields'
+import { deepSet } from '../utils/deep-set'
 import { isObject } from '../utils/is-object'
 import type { Noop } from '../utils/noop'
-import { safeGetMultiple } from '../utils/safe-get'
+import { safeGet, safeGetMultiple } from '../utils/safe-get'
 
 import type { GetValues } from './types/get-values'
 import type { FormControlOptions } from './types/options'
+import type { SetError } from './types/set-error'
 import type { FormControlState, FormControlStatus } from './types/state'
 
 export const defaultFormControlOptions: FormControlOptions<any> = {
@@ -106,5 +108,23 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   getValues: GetValues<TValues> = (...args: any[]): any => {
     const names = args.length > 1 ? args : args[0]
     return safeGetMultiple(this.state.values.value, names)
+  }
+
+  /**
+   * Set an error.
+   */
+  setError: SetError<TValues> = (name, error, options) => {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    this.state.errors.update((errors) => {
+      deepSet(errors, name, { ...error, ref: field?._f?.ref })
+      return errors
+    })
+
+    this.state.isValid.set(false)
+
+    if (options?.shouldFocus) {
+      field?._f?.ref?.focus?.()
+    }
   }
 }
