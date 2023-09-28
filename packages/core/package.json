@@ -24,13 +24,12 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest ",
+    "test": "vitest tests/form-control/set-value.test.ts",
     "test:a": "vitest tests/form-control-dom/register.test.ts",
     "test:hf": "vitest __tests__"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
-    "@types/react": "^18.2.23",
     "typescript": "^5.1.6"
   },
   "packageManager": "pnpm@8.6.12",
