@@ -4,12 +4,12 @@ import { isPrimitive } from '../../utils/is-primitive'
 import { objectHasFunction } from '../../utils/object-has-function'
 import type { DeepPartial } from '../../utils/types/deep-partial'
 
-export function getDirtyFields<T>(defaultValues: DeepPartial<T>, formValues: T) {
+export function getDirtyFields<T>(defaultValues: DeepPartial<T>, values: T) {
   const dirtyFields = markFieldsDirty(defaultValues)
-  return getDirtyFieldsFromDefaultValues(defaultValues as T, formValues, dirtyFields)
+  return getDirtyFieldsFromDefaultValues(defaultValues as T, values, dirtyFields)
 }
 
-export function getDirtyFieldsFromDefaultValues<T>(data: T, formValues: T, dirtyFields: any) {
+export function getDirtyFieldsFromDefaultValues<T>(data: T, values: T, dirtyFields: any) {
   if (!isObject(data) && !Array.isArray(data)) {
     return dirtyFields
   }
@@ -18,14 +18,14 @@ export function getDirtyFieldsFromDefaultValues<T>(data: T, formValues: T, dirty
     const isArray = Array.isArray(data[key])
 
     if (!(isArray || (isObject(data[key]) && !objectHasFunction(data[key])))) {
-      dirtyFields[key] = !deepEqual(data[key], formValues[key])
+      dirtyFields[key] = !deepEqual(data[key], values[key])
       continue
     }
 
-    if (formValues == null || isPrimitive(dirtyFields[key])) {
+    if (values == null || isPrimitive(dirtyFields[key])) {
       dirtyFields[key] = isArray ? markFieldsDirty(data[key], []) : markFieldsDirty(data[key])
     } else {
-      getDirtyFieldsFromDefaultValues(data[key], (formValues?.[key] || {}) as any, dirtyFields[key])
+      getDirtyFieldsFromDefaultValues(data[key], (values?.[key] || {}) as any, dirtyFields[key])
     }
   }
 

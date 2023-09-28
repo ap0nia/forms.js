@@ -1,11 +1,70 @@
 import { Blob } from 'node:buffer'
 
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 
 describe('FormControl', () => {
   describe('setValue', () => {
+    test('fills in nested field', () => {
+      const ref = document.createElement('input')
+
+      const formControl = new FormControl()
+
+      const name0 = 'abc'
+      const name1 = 'def'
+
+      formControl.fields[name0] = {
+        [name1]: {
+          _f: {
+            name: ref.name,
+            ref,
+          },
+        },
+      }
+
+      const value = 'Elysia'
+
+      formControl.setValue(name0, { [name1]: value })
+
+      expect(ref.value).toEqual(value)
+
+      expect(formControl.state.values.value).toEqual({
+        [name0]: {
+          [name1]: value,
+        },
+      })
+    })
+
+    test('field array updates dirty states if there are subscribers', () => {
+      const ref = document.createElement('input')
+
+      const formControl = new FormControl()
+
+      const subscriber = vi.fn()
+
+      const unsubscribe = formControl.state.dirtyFields.subscribe(subscriber)
+
+      const name = 'abc'
+
+      formControl.names.array.add(name)
+
+      formControl.fields[name] = {
+        _f: {
+          name: ref.name,
+          ref,
+        },
+      }
+
+      formControl.setValue(name, 'Elysia', { shouldDirty: true })
+
+      expect(formControl.state.isDirty.value).toBeTruthy()
+
+      unsubscribe()
+    })
+  })
+
+  describe('setValue, react-hook-form', () => {
     test('sets element value to empty string for HTML element ref if value is nullish', () => {
       const ref = document.createElement('input')
 
@@ -31,7 +90,7 @@ describe('FormControl', () => {
       expect(ref.value).toEqual('')
     })
 
-    test.only('sets value of file input correctly if value is FileList', async () => {
+    test('sets value of file input correctly if value is FileList', async () => {
       const blob = new Blob([''], { type: 'image/png' })
 
       const file: File = blob as any
