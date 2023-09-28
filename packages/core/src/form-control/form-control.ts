@@ -2,6 +2,7 @@ import { VALIDATION_MODE } from '../constants'
 import { getFieldValue } from '../logic/fields/get-field-value'
 import { getValidationModes } from '../logic/validation/get-validation-modes'
 import { Writable } from '../store'
+import type { FieldErrorRecord, FieldErrors } from '../types/errors'
 import type { Field, FieldRecord } from '../types/fields'
 import { deepEqual } from '../utils/deep-equal'
 import { deepSet } from '../utils/deep-set'
@@ -137,6 +138,50 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     if (options?.shouldFocus) {
       field?._f?.ref?.focus?.()
     }
+  }
+
+  /**
+   * Merges errors into the form state's errors.
+   *
+   * Errors from a resolver or native validator can be generated without updating the form state.
+   * This method merges those errors into form state's errors store and notifies subscribers.
+   *
+   * The names array is helpful for capturing names of fields with removed errors.
+   *
+   * @param errors The errors into the form state's errors.
+   * @param names The names of the affected fields.
+   */
+  mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
+    const namesToMerge = names ?? Object.keys(errors)
+
+    this.state.errors.update((currentErrors) => {
+      const newErrors = names?.length ? currentErrors : {}
+
+      namesToMerge.forEach((name) => {
+        const fieldError = safeGet(errors, name)
+
+        // Removed error.
+        if (fieldError == null) {
+          deepUnset(newErrors, name)
+          return
+        }
+
+        // Added regular error.
+        if (!this.names.array.has(name)) {
+          deepSet(newErrors, name, fieldError)
+          return
+        }
+
+        // Added field array error.
+        const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
+
+        deepSet(fieldArrayErrors, 'root', errors[name])
+
+        deepSet(newErrors, name, fieldArrayErrors)
+      })
+
+      return newErrors
+    })
   }
 
   /**
