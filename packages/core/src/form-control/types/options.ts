@@ -5,9 +5,9 @@ import {
   type ValidationMode,
 } from '../../constants'
 import type { Resolver } from '../../types/resolver'
-import type { DeepPartial } from '../../utils/types/deep-partial'
+import type { Defaults } from '../../utils/types/defaults'
 
-import type { KeepStateOptions } from './keep-state'
+import type { ResetOptions } from './reset'
 
 /**
  * Options for form control behavior.
@@ -28,10 +28,7 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
   /**
    * Default field values.
    */
-  defaultValues?:
-    | DeepPartial<TValues>
-    | Promise<DeepPartial<TValues>>
-    | (() => DeepPartial<TValues> | Promise<DeepPartial<TValues>>)
+  defaultValues?: Defaults<TValues>
 
   /**
    * The actual form values.
@@ -41,7 +38,7 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
   /**
    * Which state to preserve when resetting the form.
    */
-  resetOptions?: FormControlResetOptions
+  resetOptions?: ResetOptions
 
   /**
    * Override the native validation and process the form directly.
@@ -98,26 +95,4 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
    * @internal Derived from {@link resetOptions}.
    */
   shouldCaptureDirtyFields?: boolean
-}
-
-export interface FormControlResetOptions extends KeepStateOptions {
-  /**
-   * Whether to keep the form's current values.
-   */
-  keepValues?: boolean
-
-  /**
-   * Whether to keep the same default values.
-   */
-  keepDefaultValues?: boolean
-
-  /**
-   * Whether to keep the submission status.
-   */
-  keepIsSubmitted?: boolean
-
-  /**
-   * Whether to keep the form's current submit count.
-   */
-  keepSubmitCount?: boolean
 }

@@ -115,6 +115,13 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
+   * Determines whether the store is currently dirty. Does not update the state.
+   */
+  getDirty(): boolean {
+    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+  }
+
+  /**
    * Set an error.
    */
   setError: SetError<TValues> = (name, error, options) => {
