@@ -28,7 +28,7 @@ export type ValidationValueMessage<T = ValidationValue> = {
   /**
    * The message to display when validation fails.
    */
-  message: string
+  message?: string
 }
 
 /**
