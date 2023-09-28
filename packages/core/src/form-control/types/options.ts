@@ -26,6 +26,11 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
   revalidateMode?: RevalidationMode[keyof RevalidationMode]
 
   /**
+   * Shared data with all resolvers.
+   */
+  context?: TContext
+
+  /**
    * Default field values.
    */
   defaultValues?: Defaults<TValues>
@@ -42,8 +47,10 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
 
   /**
    * Override the native validation and process the form directly.
+   *
+   * TODO: allow array of resolvers and/or plugin API.
    */
-  resolver?: Resolver<TValues, TContext> | Resolver<TValues, TContext>[]
+  resolver?: Resolver<TValues, TContext> // | Resolver<TValues, TContext>[]
 
   /**
    * Whether HTML fields should be focused when an error occurs.

@@ -11,7 +11,7 @@ import type { Validate, ValidationRule } from './validation'
  * @remarks Please don't manually set TFieldValue :^)
  */
 export type RegisterOptions<
-  TValues extends Record<string, any> = Record<string, any>,
+  TValues = Record<string, any>,
   TFieldName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
   TFieldValue = FlattenObject<TValues>[TFieldName],
 > = {

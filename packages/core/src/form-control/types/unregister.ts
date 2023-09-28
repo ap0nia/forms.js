@@ -1,5 +1,17 @@
+import type { RegisterOptions } from '../../types/register'
+import type { FlattenObject } from '../../utils/types/flatten-object'
+
 import type { KeepStateOptions } from './keep-state'
 
+export type Unregister<T> = <TKey extends keyof FlattenObject<T>>(
+  name: TKey | TKey[] | readonly TKey[],
+  options?: UnregisterOptions,
+) => void
+
+export type UnregisterElement<T> = <TKey extends keyof FlattenObject<T>>(
+  name: Extract<TKey, string>,
+  options?: RegisterOptions<T, TKey>,
+) => void
 /**
  * Options when unregistering a field.
  */

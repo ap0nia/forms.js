@@ -23,7 +23,7 @@ export const dummyRef = {} as HTMLInputElement
 export function mergeElementWithField(
   name: string,
   field: Field | undefined,
-  element: HTMLInputElement,
+  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
   defaultValues?: unknown,
 ): Field {
   const ref = getRefFromElement(element)
