@@ -10,10 +10,22 @@ describe('FormControl', () => {
       formControl.focusError()
     })
 
-    test('should focus error', () => {
+    test('should not focus error', () => {
       const formControl = new FormControl({ shouldFocusError: false })
 
       formControl.focusError()
+    })
+
+    test('should focus error with root option set', () => {
+      const formControl = new FormControl({ shouldFocusError: true })
+
+      formControl.focusError()
+    })
+
+    test('should focus error with local option set', () => {
+      const formControl = new FormControl({ shouldFocusError: false })
+
+      formControl.focusError({ shouldFocus: true })
     })
   })
 })

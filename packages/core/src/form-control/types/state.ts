@@ -1,3 +1,4 @@
+import type { Stage } from '../../constants'
 import type { FieldErrors } from '../../types/errors'
 import type { DeepMap } from '../../utils/types/deep-map'
 import type { DeepPartial } from '../../utils/types/deep-partial'
@@ -82,9 +83,4 @@ export type FormControlState<T> = {
  * The current rendering status of the form control.
  * i.e. For managing lifetimes in UI frameworks.
  */
-export type FormControlStatus = {
-  /**
-   * Whether the form has been mounted.
-   */
-  mounted: boolean
-}
+export type FormControlStatus = { [K in Stage[keyof Stage]]: boolean }

@@ -52,10 +52,8 @@ export const CRITERIA_MODE = {
  * The current stage of the form. May behave accordingly.
  */
 export const STAGE = {
-  IDLE: 'idle',
-  ACTION: 'action',
+  INIT: 'init',
   MOUNT: 'mount',
-  WATCH: 'watch',
 } as const
 
 export type InputEvent = typeof INPUT_EVENTS

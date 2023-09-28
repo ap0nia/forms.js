@@ -4,6 +4,7 @@ import {
   type SubmissionValidationMode,
   type ValidationMode,
 } from '../../constants'
+import type { Plugin } from '../../types/plugin'
 import type { Resolver } from '../../types/resolver'
 import type { Defaults } from '../../utils/types/defaults'
 
@@ -81,6 +82,11 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
    * Debounce setting?
    */
   delayError?: number
+
+  /**
+   * TODO: Allow both single plugin and array of plugins.
+   */
+  plugins?: Plugin<TValues, TContext>[]
 
   /**
    * Whether to continue validating after the first error is found.

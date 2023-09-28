@@ -27,6 +27,7 @@ import type { Noop } from '../utils/noop'
 import type { Nullish } from '../utils/null'
 import { safeGet, safeGetMultiple } from '../utils/safe-get'
 import type { DeepPartial } from '../utils/types/deep-partial'
+import type { Defaults } from '../utils/types/defaults'
 
 import type { GetValues } from './types/get-values'
 import type { FormControlOptions } from './types/options'
@@ -100,17 +101,29 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       resolvedOptions.resetOptions?.keepDirtyValues,
     )
 
+    // Default values are defined if they're a concrete (non-promise) object.
+    const isDefaultValuesDefined =
+      !(resolvedOptions.defaultValues instanceof Promise) && isObject(resolvedOptions.defaultValues)
+
+    // Default values fallsback to values and then an empty object.
     const defaultValues =
-      isObject(resolvedOptions.defaultValues) || isObject(resolvedOptions.values)
-        ? structuredClone(resolvedOptions.defaultValues || resolvedOptions.values)
-        : {}
+      (isDefaultValuesDefined && structuredClone(options?.defaultValues)) ||
+      structuredClone(resolvedOptions.values ?? {})
+
+    /**
+     * Possibly a promise that's resolving the default values.
+     */
+    const resolvingDefaultValues =
+      typeof resolvedOptions.defaultValues === 'function'
+        ? resolvedOptions.defaultValues()
+        : resolvedOptions.defaultValues
 
     this.options = resolvedOptions
 
     this.state = {
       submitCount: new Writable(0),
       isDirty: new Writable(false),
-      isLoading: new Writable(false),
+      isLoading: new Writable(resolvingDefaultValues instanceof Promise),
       isValidating: new Writable(false),
       isSubmitted: new Writable(false),
       isSubmitting: new Writable(false),
@@ -121,13 +134,17 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       defaultValues: new Writable(defaultValues),
       values: new Writable(resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues)),
       errors: new Writable({}),
-      status: new Writable({ mounted: false } as FormControlStatus),
+      status: new Writable({ init: true, mount: false } as FormControlStatus),
     }
+
+    resolvedOptions.plugins?.forEach((plugin) => {
+      plugin.onInit?.(this)
+    })
 
     /**
      * Ensure that default values are handled.
      */
-    this.resetDefaultValues(true)
+    this.resetDefaultValues(resolvingDefaultValues, true)
   }
 
   /**
@@ -386,18 +403,21 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    */
   setValue: SetValue<TValues> = (name, value, options = {}) => {
     const field: Field | undefined = safeGet(this.fields, name)
-    const cloneValue = structuredClone(value)
+
+    const clonedValue = structuredClone(value)
 
     this.state.values.update((values) => {
-      deepSet(values, name, cloneValue)
+      deepSet(values, name, clonedValue)
       return values
     })
 
-    if (!this.names.array.has(name)) {
-      if (field && !field._f && cloneValue != null) {
-        this.setValues(name, cloneValue, options)
+    const isFieldArray = this.names.array.has(name)
+
+    if (!isFieldArray) {
+      if (field && !field._f && clonedValue != null) {
+        this.setValues(name, clonedValue, options)
       } else {
-        this.setFieldValue(name, cloneValue, options)
+        this.setFieldValue(name, clonedValue, options)
       }
 
       return
@@ -415,9 +435,17 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
-   * Set multiple values.
+   * Appends the values from the value object to the given field name.
+   *
+   * @example
+   *
+   * ```ts
+   * const name = 'a'
+   * const value = { b: 'c' }
+   * const result = { a: { b: 'c' } }
+   * ```
    */
-  setValues(name: string, value: any, options: SetValueOptions) {
+  setValues(name: string, value: any, options?: SetValueOptions) {
     for (const fieldKey in value) {
       const fieldValue = value[fieldKey]
       const fieldName = `${name}.${fieldKey}`
@@ -448,6 +476,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       return
     }
 
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    updateFieldReference(fieldReference, fieldValue)
+
     // If the field exists and isn't disabled, then also update the form values.
     if (!fieldReference.disabled) {
       this.state.values.update((values) => {
@@ -455,10 +487,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         return values
       })
     }
-
-    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
-
-    updateFieldReference(fieldReference, fieldValue)
 
     this.touch(name, fieldValue, options)
 
@@ -714,31 +742,31 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * @param resetValues Whether to reset the form's values too.
    */
-  async resetDefaultValues(resetValues?: boolean) {
-    const { defaultValues } = this.options
-
-    if (defaultValues == null) {
+  async resetDefaultValues(resolvingDefaultValues: Defaults<TValues>, resetValues?: boolean) {
+    if (resolvingDefaultValues == null) {
+      // Ensure that the form is not loading.
+      if (this.state.isLoading.value) {
+        this.state.isLoading.set(false)
+      }
       return
     }
 
-    const maybePromise = typeof defaultValues === 'function' ? defaultValues() : defaultValues
-
-    const isPromise = maybePromise instanceof Promise
-
-    if (isPromise) {
+    // If the form wasn't loading, it should be now since it's waiting for the default values to resolve.
+    if (!this.state.isLoading.value && resolvingDefaultValues instanceof Promise) {
       this.state.isLoading.set(true)
     }
 
-    const resolvedDefaultValues = await maybePromise
+    const resolvedDefaultValues = await resolvingDefaultValues
 
-    this.state.defaultValues.set(resolvedDefaultValues as any)
+    this.state.defaultValues.set((resolvedDefaultValues ?? {}) as any)
 
     if (resetValues) {
       const newValues = structuredClone(resolvedDefaultValues)
       this.state.values.set(newValues as TValues)
     }
 
-    if (isPromise) {
+    // If the form was loading, it should be done now.
+    if (this.state.isLoading.value) {
       this.state.isLoading.set(false)
     }
   }
