@@ -12,7 +12,7 @@ export function filterFields(names: string[], fields: FieldRecord): Record<strin
     const field = safeGet<Field | undefined>(fields, name)
 
     if (field?._f) {
-      deepSet(fields, name, field._f)
+      deepSet(filteredFields, name, field._f)
     }
   }
 
