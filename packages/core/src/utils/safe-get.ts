@@ -17,7 +17,7 @@ import type { Nullish } from './null'
  */
 export function safeGet<T = any>(obj: unknown, key?: PropertyKey | Nullish): T {
   if (key == null || obj == null) {
-    return undefined as T
+    return obj as T
   }
 
   if (typeof key === 'number' || typeof key === 'symbol') {

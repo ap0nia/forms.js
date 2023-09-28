@@ -3,6 +3,14 @@ import { describe, test, expect } from 'vitest'
 import { safeGet, safeGetMultiple } from '../../src/utils/safe-get'
 
 describe('safeGet', () => {
+  test('returns the original object for nullish key or object ', () => {
+    const input = null
+    const key = null
+    const output = null
+
+    expect(safeGet(input, key)).toBe(output)
+  })
+
   test('empty object and empty key', () => {
     const input = {}
     const key = ''
