@@ -52,7 +52,7 @@ export type RegisterOptions<
   value?: TFieldValue
 
   /**
-   * Not sure what this is.
+   * Callback to fully control how the value is set.
    */
   setValueAs?: (value: any) => any
 
@@ -62,14 +62,14 @@ export type RegisterOptions<
   shouldUnregister?: boolean
 
   /**
-   * Not sure.
+   * Callback for the input's 'change' event.
    */
-  onChange?: (event: any) => void
+  onChange?: (event: Event) => void
 
   /**
-   * Something.
+   * Callback for the input's 'blur' event.
    */
-  onBlur?: (event: any) => void
+  onBlur?: (event: Event) => void
 
   /**
    * Whether the field is disabled.

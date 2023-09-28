@@ -1,11 +1,12 @@
-import { VALIDATION_MODE, type SubmissionValidationMode } from '../constants'
+import { VALIDATION_MODE } from '../constants'
 import { getValidationModes } from '../logic/validation/get-validation-modes'
 import { Writable } from '../store'
 import type { FieldRecord } from '../types/fields'
 import { isObject } from '../utils/is-object'
 import type { Noop } from '../utils/noop'
 
-import type { FormControlOptions, FormState, ComponentState } from './types'
+import type { FormControlOptions } from './types/options'
+import type { FormControlState, FormControlStatus } from './types/state'
 
 const defaultOptions: FormControlOptions<any> = {
   mode: VALIDATION_MODE.onSubmit,
@@ -16,11 +17,7 @@ const defaultOptions: FormControlOptions<any> = {
 /**
  * The core functionality of the library is encompassed by a form control that controls field/form behavior.
  */
-export class FormControl<
-  TValues extends Record<string, any>,
-  TContext = any,
-  // TParsedForm extends ParsedForm<TValues> = ParsedForm<TValues>,
-> {
+export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * The resolved options for the form.
    *
@@ -33,7 +30,7 @@ export class FormControl<
    *
    * @public
    */
-  state: { [Key in keyof FormState<TValues>]: Writable<FormState<TValues>[Key]> }
+  state: { [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key]> }
 
   /**
    * Registered fields.
@@ -54,10 +51,6 @@ export class FormControl<
     watch: new Set<string>(),
   }
 
-  submissionValidationMode: SubmissionValidationMode
-
-  shouldCaptureDirtyFields: boolean
-
   unmountActions: Noop[] = []
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
@@ -65,6 +58,15 @@ export class FormControl<
 
     resolvedOptions.shouldDisplayAllAssociatedErrors ??=
       resolvedOptions.criteriaMode === VALIDATION_MODE.all
+
+    resolvedOptions.submissionValidationMode ??= {
+      beforeSubmission: getValidationModes(resolvedOptions.mode),
+      afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
+    }
+
+    resolvedOptions.shouldCaptureDirtyFields ??= Boolean(
+      resolvedOptions.resetOptions?.keepDirtyValues,
+    )
 
     const defaultValues =
       isObject(resolvedOptions.defaultValues) || isObject(resolvedOptions.values)
@@ -87,20 +89,11 @@ export class FormControl<
       defaultValues: new Writable(defaultValues),
       values: new Writable(resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues)),
       errors: new Writable({}),
-      component: new Writable({ mounted: false } as ComponentState),
+      status: new Writable({ mounted: false } as FormControlStatus),
     }
-
-    this.submissionValidationMode = {
-      beforeSubmission: getValidationModes(resolvedOptions.mode),
-      afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
-    }
-
-    this.shouldCaptureDirtyFields = Boolean(
-      resolvedOptions.resetOptions && resolvedOptions.resetOptions.keepDirtyValues,
-    )
 
     /**
-     * Ensure that any promises are resolved.
+     * Ensure that default values are handled.
      */
     // this.resetDefaultValues(true)
   }
