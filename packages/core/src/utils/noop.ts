@@ -1,8 +1,8 @@
 /**
  * A shared noop function.
  */
-export function noop(): unknown {
-  return
+export function noop(): void {
+  /* noop */
 }
 
 /**
