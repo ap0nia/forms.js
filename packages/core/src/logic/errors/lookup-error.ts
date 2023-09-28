@@ -7,6 +7,11 @@ export type FoundError = {
   name: string
 }
 
+/**
+ * This primarily handles errors nested in arrays.
+ *
+ * e.g. It removes the index from the name. 'foo.bar[3]' => 'foo.bar'
+ */
 export function lookupError<T = Record<string, any>>(
   errors: FieldErrors<T>,
   fields: FieldRecord,
@@ -39,7 +44,5 @@ export function lookupError<T = Record<string, any>>(
     names.pop()
   }
 
-  return {
-    name,
-  }
+  return { name }
 }
