@@ -23,7 +23,7 @@
  * [TypeScript Playground](https://www.typescriptlang.org/play?#code/AQUwHgDg9gTgLsOBPCJgGkRIM4BUoAKMUq8AliNgDwBQwwuoYcIAdgCbbABKIAxrHZUiJEPCSYkAGmABDVkgB8UuhixdwLDlwCurANasoAd1YBtALor6AQVbZjYpls7A9hk+YvAAvMEsqir5qOM5srpaqAPzAdg5iqgBcIRrM4VxmZKwAZk4AEiCy7DIAdGVZuTAMsmQANhbRKfgipHAU1LgyuDW1MmZlJXGOMF1mAKLMMLJ8cFQFRTL6WFDZDIoWFopJDDQ0yKjAAGJQUMEA3qqyydhwMFkA5qoARsmsOgC2Twn0fMlPJ7VCqwaABfOh7FBoSRcPxmADksjhMjhTyRwDhfDRcPYcIawAhB142B0tQQfmhzWIrXaVGOUBk0K2AHomfRgAA9KI0IA)
  */
 export type KeysToProperties<
-  T extends Record<PropertyKey, any>,
+  T,
   Keys extends unknown[],
   Answer extends unknown[] = [],
 > = Keys extends []
