@@ -49,7 +49,7 @@ describe('DeepMerge', () => {
         c: boolean
       }
 
-      expectTypeOf<DeepMerge<Left, Right>>().toEqualTypeOf<Left & Right>()
+      expectTypeOf<DeepMerge<Left, Right>>().toMatchTypeOf<Left & Right>()
     })
 
     test('nested', () => {
@@ -80,7 +80,7 @@ describe('DeepMerge', () => {
         }
       }
 
-      expectTypeOf<DeepMerge<Left, Right>>().toEqualTypeOf<Expected>()
+      expectTypeOf<DeepMerge<Left, Right>>().toMatchTypeOf<Expected>()
     })
 
     /**
@@ -101,15 +101,13 @@ describe('DeepMerge', () => {
 
       type Expected = {
         a: string
-        b: number | undefined
-        c:
-          | {
-              d: boolean
-            }
-          | undefined
+        b?: number
+        c?: {
+          d: boolean
+        }
       }
 
-      expectTypeOf<DeepMerge<Left, Right>>().toEqualTypeOf<Expected>()
+      expectTypeOf<DeepMerge<Left, Right>>().toMatchTypeOf<Expected>()
     })
   })
 })

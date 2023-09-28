@@ -7,12 +7,7 @@ export type FoundError = {
   name: string
 }
 
-/**
- * This primarily handles errors nested in arrays.
- *
- * e.g. It removes the index from the name. 'foo.bar[3]' => 'foo.bar'
- */
-export function lookupError<T>(
+export function lookupError<T = Record<string, any>>(
   errors: FieldErrors<T>,
   fields: FieldRecord,
   name: string,
@@ -28,14 +23,13 @@ export function lookupError<T>(
   while (names.length) {
     const fieldName = names.join('.')
     const field = safeGet(fields, fieldName)
+    const foundError = safeGet(errors, fieldName)
 
     if (field && !Array.isArray(field) && name !== fieldName) {
       return { name }
     }
 
-    const foundError = safeGet(errors, fieldName)
-
-    if (foundError?.type) {
+    if (foundError && foundError.type) {
       return {
         name: fieldName,
         error: foundError,
@@ -45,5 +39,7 @@ export function lookupError<T>(
     names.pop()
   }
 
-  return { name }
+  return {
+    name,
+  }
 }

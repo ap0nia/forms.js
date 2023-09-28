@@ -7,6 +7,8 @@ import type { IsAny } from './is-any'
  *
  * Ignores top-level any for both left and right.
  *
+ * @remarks Makes everything partial.
+ *
  * @example
  *
  * ```ts
@@ -31,17 +33,37 @@ export type DeepMerge<Left, Right> = IsAny<Left> extends true
   ? Left
   : Left | Right extends any[]
   ? DeepMergeTuple<Left, Right>
-  : {
-      [K in keyof Left | keyof Right]: K extends keyof Left & keyof Right
-        ? [Left[K], Right[K]] extends [object, object]
-          ? DeepMerge<Left[K], Right[K]>
-          : Left[K] | Right[K]
-        : K extends keyof Left
-        ? Left[K]
-        : K extends keyof Right
-        ? Right[K]
-        : never
-    }
+  : DeepMergeObject<Left, Right>
+
+type DeepMergeObject<Left, Right> = {
+  [K in OptionalKeys<Left, Right>]?: DeepMergeObjectValue<Left, Right, K>
+} & {
+  [K in RequiredKeys<Left, Right>]: DeepMergeObjectValue<Left, Right, K>
+}
+
+type DeepMergeObjectValue<Left, Right, K> = K extends keyof Left & keyof Right
+  ? [Left[K], Right[K]] extends [object, object]
+    ? DeepMerge<Left[K], Right[K]>
+    : Left[K] | Right[K]
+  : K extends keyof Left
+  ? Left[K]
+  : K extends keyof Right
+  ? Right[K]
+  : never
+
+/**
+ * @see https://github.com/type-challenges/type-challenges/issues/2664#issuecomment-1514489577
+ */
+type RequiredKeys<Left, Right> = keyof {
+  [K in keyof Left | keyof Right as {} extends Pick<Left & Right, K> ? never : K]: (Left & Right)[K]
+}
+
+/**
+ * @see https://github.com/type-challenges/type-challenges/issues/210#issue-700899240
+ */
+type OptionalKeys<Left, Right> = keyof {
+  [P in keyof Left | keyof Right]-?: {} extends Pick<Left & Right, P> ? P : never
+}
 
 /**
  * Basically just joins the two tuples.

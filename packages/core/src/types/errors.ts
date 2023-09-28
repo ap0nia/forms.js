@@ -31,20 +31,17 @@ export type FieldError = {
    * The parsed message from the validation rule.
    */
   message?: string
-} & (
-  | {
-      /**
-       * Field array errors will be grouped under the `root` property.
-       */
-      root: FieldError
-    }
-  | {
-      /**
-       * Regular errors will have a `type` property indicating what kind of error occurred.
-       */
-      type: LiteralUnion<keyof RegisterOptions, string>
-    }
-)
+
+  /**
+   * Field array errors will be grouped under the `root` property.
+   */
+  root?: FieldError
+
+  /**
+   * Regular errors will have a `type` property indicating what kind of error occurred.
+   */
+  type?: LiteralUnion<keyof RegisterOptions, string>
+}
 
 /**
  * Options when manually setting an error.
