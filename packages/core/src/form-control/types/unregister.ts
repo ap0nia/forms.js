@@ -5,7 +5,7 @@ import type { LiteralUnion } from '../../utils/types/literal-union'
 import type { KeepStateOptions } from './keep-state'
 
 export type Unregister<T> = <TKey extends keyof FlattenObject<T>>(
-  name: TKey | TKey[] | readonly TKey[],
+  name?: TKey | TKey[] | readonly TKey[],
   options?: UnregisterOptions,
 ) => void
 

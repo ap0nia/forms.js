@@ -17,7 +17,10 @@ describe('FormControl', () => {
 
       const valueClone = structuredClone(values)
 
-      const formControl = new FormControl({ values })
+      const formControl = new FormControl({
+        values,
+        resolver: (values) => ({ values }),
+      })
 
       const onValid = vi.fn()
 
