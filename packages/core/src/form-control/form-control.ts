@@ -1,4 +1,5 @@
 import { VALIDATION_MODE } from '../constants'
+import { focusFieldBy } from '../logic/fields/focus-field-by'
 import { getFieldValue } from '../logic/fields/get-field-value'
 import { getValidationModes } from '../logic/validation/get-validation-modes'
 import { Writable } from '../store'
@@ -120,6 +121,19 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    */
   getDirty(): boolean {
     return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+  }
+
+  /**
+   * Focus on a field that has an error.
+   */
+  focusError() {
+    if (this.options.shouldFocusError) {
+      focusFieldBy(
+        this.fields,
+        (key) => key && safeGet(this.state.errors.value, key),
+        this.names.mount,
+      )
+    }
   }
 
   /**
