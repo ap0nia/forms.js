@@ -46,4 +46,77 @@ describe('FormContol', () => {
       expect(formControl.fields).toEqual(expectedFields2)
     })
   })
+
+  describe('register result', () => {
+    test('updates fields when registering an HTML element', () => {
+      const formControl = new FormControl()
+
+      const name = 'abc'
+      const { registerElement } = formControl.register(name)
+
+      const initialFields: FieldRecord = {
+        [name]: {
+          _f: {
+            name,
+            ref: { name },
+            mount: true,
+          },
+        },
+      }
+
+      expect(formControl.fields).toEqual(initialFields)
+
+      const ref = document.createElement('input')
+
+      registerElement(ref)
+
+      const expectedFields: FieldRecord = {
+        [name]: {
+          _f: {
+            name,
+            ref,
+            mount: true,
+          },
+        },
+      }
+
+      expect(formControl.fields).toEqual(expectedFields)
+    })
+
+    test('adds name to unMount when unregistering an HTML element', () => {
+      const formControl = new FormControl({ shouldUnregister: true })
+
+      const name = 'abc'
+
+      const { unregisterElement } = formControl.register(name)
+
+      const initialFields: FieldRecord = {
+        [name]: {
+          _f: {
+            name,
+            ref: { name },
+            mount: true,
+          },
+        },
+      }
+
+      expect(formControl.fields).toEqual(initialFields)
+      expect(formControl.names.unMount).not.toContain(name)
+
+      unregisterElement()
+
+      const expectedFields: FieldRecord = {
+        [name]: {
+          _f: {
+            name,
+            ref: { name },
+            mount: false,
+          },
+        },
+      }
+
+      expect(formControl.fields).toEqual(expectedFields)
+      expect(formControl.names.unMount).toContain(name)
+    })
+  })
 })
