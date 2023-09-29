@@ -108,75 +108,6 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
 
-  packages/v1:
-    dependencies:
-      '@legendapp/state':
-        specifier: ^1.11.1
-        version: 1.11.1(react@18.2.0)
-      react-hook-form:
-        specifier: ^7.45.4
-        version: 7.45.4(react@18.2.0)
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v2:
-    dependencies:
-      '@legendapp/state':
-        specifier: ^1.11.1
-        version: 1.11.1(react@18.2.0)
-      react-hook-form:
-        specifier: ^7.45.4
-        version: 7.45.4(react@18.2.0)
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v3:
-    dependencies:
-      '@legendapp/state':
-        specifier: ^1.11.1
-        version: 1.11.1(react@18.2.0)
-      react-hook-form:
-        specifier: ^7.45.4
-        version: 7.45.4(react@18.2.0)
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v4:
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v5:
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v6:
-    devDependencies:
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
-  packages/v7:
-    devDependencies:
-      '@testing-library/dom':
-        specifier: ^9.3.3
-        version: 9.3.3
-      '@types/react':
-        specifier: ^18.2.23
-        version: 18.2.23
-      typescript:
-        specifier: ^5.1.6
-        version: 5.1.6
-
 packages:
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution:
@@ -1399,17 +1330,6 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@legendapp/state@1.11.1(react@18.2.0):
-    resolution:
-      {
-        integrity: sha512-9bso1xOwgkHEgZo4IfzJ1FkGoHuyhOZoe2EATJabzSiYxZYOzKuZbbUSfwl6E22JDKMTbbCoqp9YQWgXQO5n9g==,
-      }
-    dependencies:
-      use-sync-external-store: 1.2.0(react@18.2.0)
-    transitivePeerDependencies:
-      - react
-    dev: false
-
   /@manypkg/find-root@1.1.0:
     resolution:
       {
@@ -1632,31 +1552,6 @@ packages:
     resolution:
       {
         integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==,
-      }
-    dev: true
-
-  /@types/prop-types@15.7.7:
-    resolution:
-      {
-        integrity: sha512-FbtmBWCcSa2J4zL781Zf1p5YUBXQomPEcep9QZCfRfQgTxz3pJWiDFLebohZ9fFntX5ibzOkSsrJ0TEew8cAog==,
-      }
-    dev: true
-
-  /@types/react@18.2.23:
-    resolution:
-      {
-        integrity: sha512-qHLW6n1q2+7KyBEYnrZpcsAmU/iiCh9WGCKgXvMxx89+TYdJWRjZohVIo9XTcoLhfX3+/hP0Pbulu3bCZQ9PSA==,
-      }
-    dependencies:
-      '@types/prop-types': 15.7.7
-      '@types/scheduler': 0.16.4
-      csstype: 3.1.2
-    dev: true
-
-  /@types/scheduler@0.16.4:
-    resolution:
-      {
-        integrity: sha512-2L9ifAGl7wmXwP4v3pN4p2FLhD0O1qsJpvKmNin5VA8+UvNVb447UDaAEV6UdrkA+m/Xs58U1RFps44x6TFsVQ==,
       }
     dev: true
 
@@ -5054,6 +4949,7 @@ packages:
         integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==,
       }
     requiresBuild: true
+    dev: true
 
   /js-yaml@3.14.1:
     resolution:
@@ -5438,16 +5334,6 @@ packages:
       }
     engines: { node: '>=0.10.0' }
     dev: true
-
-  /loose-envify@1.4.0:
-    resolution:
-      {
-        integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==,
-      }
-    hasBin: true
-    dependencies:
-      js-tokens: 4.0.0
-    dev: false
 
   /loupe@2.3.6:
     resolution:
@@ -6326,18 +6212,6 @@ packages:
     engines: { node: '>=8' }
     dev: true
 
-  /react-hook-form@7.45.4(react@18.2.0):
-    resolution:
-      {
-        integrity: sha512-HGDV1JOOBPZj10LB3+OZgfDBTn+IeEsNOKiq/cxbQAIbKaiJUe/KV8DBUzsx0Gx/7IG/orWqRRm736JwOfUSWQ==,
-      }
-    engines: { node: '>=12.22.0' }
-    peerDependencies:
-      react: ^16.8.0 || ^17 || ^18
-    dependencies:
-      react: 18.2.0
-    dev: false
-
   /react-is@17.0.2:
     resolution:
       {
@@ -6351,16 +6225,6 @@ packages:
         integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==,
       }
     dev: true
-
-  /react@18.2.0:
-    resolution:
-      {
-        integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==,
-      }
-    engines: { node: '>=0.10.0' }
-    dependencies:
-      loose-envify: 1.4.0
-    dev: false
 
   /read-pkg-up@7.0.1:
     resolution:
@@ -7641,17 +7505,6 @@ packages:
       querystringify: 2.2.0
       requires-port: 1.0.0
     dev: true
-
-  /use-sync-external-store@1.2.0(react@18.2.0):
-    resolution:
-      {
-        integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==,
-      }
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-    dependencies:
-      react: 18.2.0
-    dev: false
 
   /util-deprecate@1.0.2:
     resolution:
