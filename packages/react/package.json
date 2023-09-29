@@ -24,10 +24,21 @@
   "keywords": [],
   "type": "module",
   "scripts": {
+    "dev": "vite",
     "test": "vitest"
   },
+  "dependencies": {
+    "@forms.js/core": "workspace:^",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
   "devDependencies": {
-    "typescript": "^5.1.6"
+    "@testing-library/react": "^14.0.0",
+    "@types/react": "^18.2.23",
+    "@types/react-dom": "^18.2.8",
+    "@vitejs/plugin-react": "^4.1.0",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.9"
   },
   "packageManager": "pnpm@8.6.12",
   "engines": {

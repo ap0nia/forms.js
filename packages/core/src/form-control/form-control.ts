@@ -29,6 +29,7 @@ import type { Nullish } from '../utils/null'
 import { safeGet, safeGetMultiple } from '../utils/safe-get'
 import type { DeepPartial } from '../utils/types/deep-partial'
 import type { Defaults } from '../utils/types/defaults'
+import type { FlattenObject } from '../utils/types/flatten-object'
 
 import type { GetValues } from './types/get-values'
 import type { FormControlOptions } from './types/options'
@@ -41,6 +42,11 @@ import type { HandleSubmit } from './types/submit'
 import type { Trigger, TriggerOptions } from './types/trigger'
 import type { Unregister, UnregisterElement } from './types/unregister'
 import type { UpdateDisabledFieldOptions } from './types/update-disabled-field'
+
+/**
+ * Helper type to get the flattened form values object.
+ */
+export type FormControlValues<TValues extends Record<string, any>> = FlattenObject<TValues>
 
 export const defaultFormControlOptions: FormControlOptions<any> = {
   mode: VALIDATION_MODE.onSubmit,
@@ -367,8 +373,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     } else {
       this.setFieldValue(name, defaultValue)
     }
-
-    element.name = name
 
     // TODO: what are the equivalent DOM events for React's "onChange" prop?
     element.addEventListener('change', this.handleChange.bind(this))
