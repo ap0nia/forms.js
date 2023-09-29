@@ -561,7 +561,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       const currentError = lookupError(
         result.resolverResult.errors ?? {},
         this.fields,
-        previousError.name || name,
+        previousError.name,
       )
 
       this.state.errors.update((errors) => {
