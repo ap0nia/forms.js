@@ -1,3 +1,5 @@
+import { Writable } from '@forms.js/common/store'
+
 import { INPUT_EVENTS, VALIDATION_MODE } from '../constants'
 import { lookupError } from '../logic/errors/lookup-error'
 import { focusFieldBy } from '../logic/fields/focus-field-by'
@@ -12,7 +14,6 @@ import { getValidationModes } from '../logic/validation/get-validation-modes'
 import { nativeValidateFields } from '../logic/validation/native-validation'
 import type { NativeValidationResult } from '../logic/validation/native-validation/types'
 import { shouldSkipValidationAfter } from '../logic/validation/should-skip-validation-after'
-import { Writable } from '../store'
 import type { FieldErrorRecord, FieldErrors } from '../types/errors'
 import type { Field, FieldRecord } from '../types/fields'
 import type { RegisterResult } from '../types/register'
