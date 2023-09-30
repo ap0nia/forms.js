@@ -614,8 +614,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    */
   handleSubmit: HandleSubmit<TValues> = (onValid, onInvalid) => {
-    return async (event?: Event) => {
-      event?.preventDefault?.()
+    return async (event) => {
+      event.preventDefault?.()
 
       this.state.isSubmitting.set(true)
 

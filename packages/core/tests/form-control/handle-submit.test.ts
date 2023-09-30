@@ -24,7 +24,7 @@ describe('FormControl', () => {
 
       const onValid = vi.fn()
 
-      const event = undefined
+      const event = new Event('')
 
       const handleSubmit = formControl.handleSubmit(onValid)
 
@@ -44,7 +44,7 @@ describe('FormControl', () => {
 
       const onInvalid = vi.fn()
 
-      const event = undefined
+      const event = new Event('')
 
       const handleSubmit = formControl.handleSubmit(undefined, onInvalid)
 
@@ -64,7 +64,7 @@ describe('FormControl', () => {
 
       const onInvalid = vi.fn()
 
-      const event = undefined
+      const event = new Event('')
 
       const handleSubmit = formControl.handleSubmit(undefined, onInvalid)
 
@@ -88,13 +88,14 @@ describe('FormControl', () => {
     test('event prevent default and persist', async () => {
       const preventDefault = vi.fn()
 
-      const event = { preventDefault }
+      const event = new Event('')
+      event.preventDefault = preventDefault
 
       const formControl = new FormControl()
 
       const handleSubmit = formControl.handleSubmit()
 
-      await handleSubmit(event as any)
+      await handleSubmit(event)
 
       expect(preventDefault).toHaveBeenCalledOnce()
     })
@@ -107,7 +108,7 @@ describe('FormControl', () => {
     test('force validation to return not valid and null errors', async () => {
       const formControl = new FormControl()
 
-      const event = undefined
+      const event = new Event('')
 
       formControl.validate = async () => ({
         isValid: false,

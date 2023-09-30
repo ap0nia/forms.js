@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-
+import { useCallback, useState } from 'react'
 import { useForm } from './use-form'
 
 type MyForm = {
@@ -8,20 +7,8 @@ type MyForm = {
   email: string
 }
 
-export function App() {
-  const { register, formControl } = useForm<MyForm>()
-
-  console.log('render')
-
-  useEffect(() => {
-    const unsubscribe = formControl.state.values.subscribe((values) => {
-      console.log({ values })
-    })
-
-    return () => {
-      unsubscribe()
-    }
-  }, [formControl])
+export function Form() {
+  const { getValues, register, formControl, formState } = useForm<MyForm>()
 
   const handleSubmit = formControl.handleSubmit((data) => {
     console.log({ data })
@@ -29,10 +16,25 @@ export function App() {
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => handleSubmit(e.nativeEvent)}>
         <input {...register('name')} />
         <button>Submit</button>
       </form>
+    </div>
+  )
+}
+
+export function App() {
+  const [show, setShow] = useState(true)
+
+  const toggle = useCallback(() => {
+    setShow((prev) => !prev)
+  }, [])
+
+  return (
+    <div>
+      <button onClick={toggle}>Toggle</button>
+      {show && <Form />}
     </div>
   )
 }

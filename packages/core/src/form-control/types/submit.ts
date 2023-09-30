@@ -5,8 +5,8 @@ export type HandleSubmit<T> = (
   onInvalid?: SubmitErrorHandler<T>,
 ) => HandlerCallback
 
-export type HandlerCallback = (event?: Event) => Promise<void>
+export type HandlerCallback = (event: Event) => Promise<void>
 
-export type SubmitHandler<T> = (data: T, event?: Event) => unknown
+export type SubmitHandler<T> = (data: T, event: Event) => unknown
 
-export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event?: Event) => unknown
+export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event: Event) => unknown
