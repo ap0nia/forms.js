@@ -13,7 +13,7 @@ import { safeNotEqual } from './utils/safe-not-equal'
  */
 const subscriberQueue: [Subscriber<any>, unknown][] = []
 
-export class Writable<T> {
+export class Writable<T = any> {
   stop?: Noop
 
   subscribers = new Set<SubscribeInvalidateTuple<T>>()
@@ -44,7 +44,7 @@ export class Writable<T> {
       this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
     }
 
-    run(this.value as T)
+    // run(this.value as T)
 
     return () => {
       this.subscribers.delete(subscriber)
