@@ -4,8 +4,8 @@
  * @see https://github.com/sveltejs/svelte/blob/master/packages/svelte/src/runtime/store/index.js
  */
 
-import { noop, type Noop } from './utils/noop'
-import { safeNotEqual } from './utils/safe-not-equal'
+import { noop, type Noop } from '../utils/noop'
+import { safeNotEqual } from '../utils/safe-not-equal'
 
 /**
  * Subscribe functions paired with a value to be passed to them.

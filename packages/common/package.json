@@ -25,16 +25,16 @@
   "type": "module",
   "exports": {
     "./store": {
-      "types": "./src/store.ts",
-      "import": "./src/store.ts",
-      "require": "./src/store.ts",
-      "default": "./src/store.ts"
+      "types": "./src/store/index.ts",
+      "import": "./src/store/index.ts",
+      "require": "./src/store/index.ts",
+      "default": "./src/store/index.ts"
     }
   },
   "typesVersions": {
     "*": {
       "store": [
-        "./src/store.ts"
+        "./src/index/store.ts"
       ]
     }
   },
