@@ -18,6 +18,27 @@ describe('FormControl', () => {
       expect(formControl.names.array).not.toContain(name)
     })
 
+    test('removes single name from mount and array sets when specified explicitly', () => {
+      const formControl = new FormControl()
+
+      const name = 'Aponia'
+
+      formControl.names.mount.add(name)
+      formControl.names.array.add(name)
+
+      formControl.unregister(name, {
+        keepValue: false,
+        keepError: false,
+        keepDirty: false,
+        keepTouched: false,
+        keepDefaultValue: false,
+        keepIsValid: false,
+      })
+
+      expect(formControl.names.mount).not.toContain(name)
+      expect(formControl.names.array).not.toContain(name)
+    })
+
     test('removes name array from mount and array sets', () => {
       const formControl = new FormControl()
 

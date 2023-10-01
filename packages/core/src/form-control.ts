@@ -1,52 +1,370 @@
 import { Writable } from '@forms.js/common/store'
 
-import { INPUT_EVENTS, VALIDATION_MODE } from '../constants'
-import { lookupError } from '../logic/errors/lookup-error'
-import { focusFieldBy } from '../logic/fields/focus-field-by'
-import { getCurrentFieldValue } from '../logic/fields/get-current-field-value'
-import { getDirtyFields } from '../logic/fields/get-dirty-fields'
-import { getFieldValue, getFieldValueAs } from '../logic/fields/get-field-value'
-import { hasValidation } from '../logic/fields/has-validation'
-import { updateFieldReference } from '../logic/fields/update-field-reference'
-import { isHTMLElement } from '../logic/html/is-html-element'
-import { mergeElementWithField } from '../logic/html/merge-element-with-field'
-import { getValidationModes } from '../logic/validation/get-validation-modes'
-import { nativeValidateFields } from '../logic/validation/native-validation'
-import type { NativeValidationResult } from '../logic/validation/native-validation/types'
-import { shouldSkipValidationAfter } from '../logic/validation/should-skip-validation-after'
-import type { FieldErrorRecord, FieldErrors } from '../types/errors'
-import type { Field, FieldRecord } from '../types/fields'
-import type { RegisterResult } from '../types/register'
-import { deepEqual } from '../utils/deep-equal'
-import { deepFilter } from '../utils/deep-filter'
-import { deepSet } from '../utils/deep-set'
-import { deepUnset } from '../utils/deep-unset'
-import { isBrowser } from '../utils/is-browser'
-import { isEmptyObject, isObject } from '../utils/is-object'
-import { isPrimitive } from '../utils/is-primitive'
-import type { Noop } from '../utils/noop'
-import type { Nullish } from '../utils/null'
-import { safeGet, safeGetMultiple } from '../utils/safe-get'
-import type { DeepPartial } from '../utils/types/deep-partial'
-import type { Defaults } from '../utils/types/defaults'
-import type { FlattenObject } from '../utils/types/flatten-object'
+import {
+  INPUT_EVENTS,
+  VALIDATION_MODE,
+  type SubmissionValidationMode,
+  type CriteriaMode,
+  type ValidationMode,
+  type RevalidationMode,
+  type Stage,
+} from './constants'
+import { lookupError } from './logic/errors/lookup-error'
+import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
+import { getDirtyFields } from './logic/fields/get-dirty-fields'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
+import { updateFieldReference } from './logic/fields/update-field-reference'
+import { isHTMLElement } from './logic/html/is-html-element'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
+import { getValidationModes } from './logic/validation/get-validation-modes'
+import { nativeValidateFields } from './logic/validation/native-validation'
+import type { NativeValidationResult } from './logic/validation/native-validation/types'
+import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
+import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
+import type { Field, FieldRecord } from './types/fields'
+import type { InputElement } from './types/html'
+import type { Plugin } from './types/plugin'
+import type { RegisterOptions, RegisterResult } from './types/register'
+import type { Resolver } from './types/resolver'
+import { deepEqual } from './utils/deep-equal'
+import { deepFilter } from './utils/deep-filter'
+import { deepSet } from './utils/deep-set'
+import { deepUnset } from './utils/deep-unset'
+import { isBrowser } from './utils/is-browser'
+import { isEmptyObject, isObject } from './utils/is-object'
+import { isPrimitive } from './utils/is-primitive'
+import type { Noop } from './utils/noop'
+import type { Nullish } from './utils/null'
+import { safeGet, safeGetMultiple } from './utils/safe-get'
+import type { DeepMap } from './utils/types/deep-map'
+import type { DeepPartial } from './utils/types/deep-partial'
+import type { Defaults } from './utils/types/defaults'
+import type { FlattenObject } from './utils/types/flatten-object'
+import type { KeysToProperties } from './utils/types/keys-to-properties'
+import type { LiteralUnion } from './utils/types/literal-union'
 
-import type { GetValues } from './types/get-values'
-import type { FormControlOptions } from './types/options'
-import type { Register, RegisterElement } from './types/register'
-import type { Reset } from './types/reset'
-import type { SetError } from './types/set-error'
-import type { SetValue, SetValueOptions } from './types/set-value'
-import type { FormControlState, FormControlStatus } from './types/state'
-import type { HandleSubmit } from './types/submit'
-import type { Trigger, TriggerOptions } from './types/trigger'
-import type { Unregister, UnregisterElement } from './types/unregister'
-import type { UpdateDisabledFieldOptions } from './types/update-disabled-field'
+/**
+ * Overall form state.
+ */
+export type FormControlState<T> = {
+  /**
+   * Whether any of the fields have been modified.
+   */
+  isDirty: boolean
 
+  /**
+   * Whether the form is currently loading its default values.
+   * i.e. if it's a promise or a function that returned a promise.
+   */
+  isLoading: boolean
+
+  /**
+   * Whether the form has been submitted.
+   */
+  isSubmitted: boolean
+
+  /**
+   * Whether the form has been submitted successfully.
+   */
+  isSubmitSuccessful: boolean
+
+  /**
+   * Whether the form is currently submitting.
+   */
+  isSubmitting: boolean
+
+  /**
+   * Whether the form is currently validating.
+   */
+  isValidating: boolean
+
+  /**
+   * Whether the form is valid.
+   */
+  isValid: boolean
+
+  /**
+   * The number of times the form has been submitted.
+   */
+  submitCount: number
+
+  /**
+   * Fields that have been modified.
+   */
+  dirtyFields: Partial<Readonly<DeepMap<T, boolean>>>
+
+  /**
+   * Fields that have been touched.
+   */
+  touchedFields: Partial<Readonly<DeepMap<T, boolean>>>
+
+  /**
+   * Default field values.
+   */
+  defaultValues: DeepPartial<T>
+
+  /**
+   * The current form values.
+   */
+  values: T
+
+  /**
+   * A record of field names mapped to their errors.
+   */
+  errors: FieldErrors<T>
+
+  /**
+   * The rendering status of the form control.
+   */
+  status: FormControlStatus
+}
+
+/**
+ * The current rendering status of the form control.
+ * i.e. For managing lifetimes in UI frameworks.
+ */
+export type FormControlStatus = { [K in Stage[keyof Stage]]: boolean }
+
+/**
+ * Options when disabling a field.
+ */
+export type UpdateDisabledFieldOptions = {
+  /**
+   * The name of the field
+   */
+  name: string
+
+  /**
+   * Whether the field is disabled.
+   */
+  disabled?: boolean
+
+  /**
+   * The field itself.
+   */
+  field?: Field
+
+  /**
+   * Fields to retrieve the field from.
+   */
+  fields?: FieldRecord
+}
+
+/**
+ * Options for form control behavior.
+ *
+ * Some options are internal and set automatically based on other options.
+ */
+export type FormControlOptions<TValues extends Record<string, any>, TContext = any> = {
+  /**
+   * When to validate the form.
+   */
+  mode?: ValidationMode[keyof ValidationMode]
+
+  /**
+   * When to revalidate the form.
+   */
+  revalidateMode?: RevalidationMode[keyof RevalidationMode]
+
+  /**
+   * Shared data with all resolvers.
+   */
+  context?: TContext
+
+  /**
+   * Default field values.
+   */
+  defaultValues?: Defaults<TValues>
+
+  /**
+   * The actual form values.
+   */
+  values?: TValues
+
+  /**
+   * Which state to preserve when resetting the form.
+   */
+  resetOptions?: ResetOptions
+
+  /**
+   * Override the native validation and process the form directly.
+   *
+   * TODO: allow array of resolvers and/or plugin API.
+   */
+  resolver?: Resolver<TValues, TContext> // | Resolver<TValues, TContext>[]
+
+  /**
+   * Whether HTML fields should be focused when an error occurs.
+   */
+  shouldFocusError?: boolean
+
+  /**
+   * Whether to unregister fields when they are removed.
+   */
+  shouldUnregister?: boolean
+
+  /**
+   * Whether to use native HTML validation, i.e. use the {@link HTMLInputElement.setCustomValidity} API.
+   */
+  shouldUseNativeValidation?: boolean
+
+  /**
+   * Not sure.
+   */
+  progressive?: boolean
+
+  /**
+   * When to stop validating the form.
+   */
+  criteriaMode?: CriteriaMode[keyof CriteriaMode]
+
+  /**
+   * Debounce setting?
+   */
+  delayError?: number
+
+  /**
+   * TODO: Allow both single plugin and array of plugins.
+   */
+  plugins?: Plugin<TValues, TContext>[]
+
+  /**
+   * Whether to continue validating after the first error is found.
+   *
+   * @internal Derived from {@link criteriaMode}.
+   */
+  shouldDisplayAllAssociatedErrors?: boolean
+
+  /**
+   * Which events to validate on before/after submission.
+   *
+   * @internal Derived from {@link mode} and {@link revalidateMode}.
+   */
+  submissionValidationMode?: SubmissionValidationMode
+
+  /**
+   * Whether to capture dirty fields.
+   *
+   * @internal Derived from {@link resetOptions}.
+   */
+  shouldCaptureDirtyFields?: boolean
+}
+
+/**
+ * Generally describes state that can be preserved when doing certain operations.
+ *
+ * This is a universal subset of all the state that can be preserved,
+ * specific methods may allow more options.
+ */
+export type KeepStateOptions = {
+  /**
+   * Whether to keep the form's current values that are dirty.
+   */
+  keepDirtyValues?: boolean
+
+  /**
+   * Whether to keep errors.
+   */
+  keepErrors?: boolean
+
+  /**
+   * Whether to keep the form marked as dirty.
+   */
+  keepDirty?: boolean
+
+  /**
+   * Whether to keep if the most recent submission was successful.
+   */
+  keepIsSubmitSuccessful?: boolean
+
+  /**
+   * Whether to keep the touched status.
+   */
+  keepTouched?: boolean
+
+  /**
+   * Whether to keep the form's current validation status.
+   */
+  keepIsValid?: boolean
+}
 /**
  * Helper type to get the flattened form values object.
  */
 export type FormControlValues<TValues extends Record<string, any>> = FlattenObject<TValues>
+
+/**
+ * Options when triggering a field.
+ */
+export type TriggerOptions = {
+  shouldFocus?: boolean
+}
+
+export interface ResetOptions extends KeepStateOptions {
+  /**
+   * Whether to keep the form's current values.
+   */
+  keepValues?: boolean
+
+  /**
+   * Whether to keep the same default values.
+   */
+  keepDefaultValues?: boolean
+
+  /**
+   * Whether to keep the submission status.
+   */
+  keepIsSubmitted?: boolean
+
+  /**
+   * Whether to keep the form's current submit count.
+   */
+  keepSubmitCount?: boolean
+}
+
+/**
+ * Options when unregistering a field.
+ */
+export interface UnregisterOptions extends KeepStateOptions {
+  /**
+   * Whether to preserve its value in the form's values.
+   */
+  keepValue?: boolean
+
+  /**
+   * Whether to preserve its default value in the form's default values.
+   */
+  keepDefaultValue?: boolean
+
+  /**
+   * Whether to preserve any errors assigned to the field.
+   */
+  keepError?: boolean
+}
+
+/**
+ * Options when setting a value.
+ */
+export type SetValueOptions = {
+  /**
+   */
+  shouldValidate?: boolean
+
+  /**
+   */
+  shouldDirty?: boolean
+
+  /**
+   */
+  shouldTouch?: boolean
+}
+
+export type HandlerCallback = (event: Event) => Promise<void>
+
+export type SubmitHandler<T> = (data: T, event: Event) => unknown
+
+export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event: Event) => unknown
 
 export const defaultFormControlOptions: FormControlOptions<any> = {
   mode: VALIDATION_MODE.onSubmit,
@@ -154,10 +472,19 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     this.resetDefaultValues(resolvingDefaultValues, true)
   }
 
-  /**
-   * Gets the current form control's values.
-   */
-  getValues: GetValues<TValues> = (...args: any[]): any => {
+  getValues(): TValues
+
+  getValues<T extends keyof FlattenObject<TValues>>(field: T): FlattenObject<TValues>[T]
+
+  getValues<T extends (keyof FlattenObject<TValues>)[]>(
+    fields: T,
+  ): KeysToProperties<FlattenObject<TValues>, T>
+
+  getValues<T extends (keyof FlattenObject<TValues>)[]>(
+    ...fields: T
+  ): KeysToProperties<FlattenObject<TValues>, T>
+
+  getValues(...args: any[]): any {
     const names = args.length > 1 ? args : args[0]
     return safeGetMultiple(this.state.values.value, names)
   }
@@ -202,7 +529,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Trigger a field.
    */
-  trigger: Trigger<TValues> = async (name, options) => {
+  async trigger<T extends keyof FlattenObject<TValues>>(
+    name?: T | T[] | readonly T[],
+    options?: TriggerOptions,
+  ): Promise<void> {
     this.state.isValidating.set(true)
 
     this.updateValid()
@@ -233,7 +563,11 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Set an error.
    */
-  setError: SetError<TValues> = (name, error, options) => {
+  setError<T extends keyof FlattenObject<TValues>>(
+    name: T | 'root' | `root.${string}`,
+    error?: ErrorOption,
+    options?: TriggerOptions,
+  ): void {
     const field: Field | undefined = safeGet(this.fields, name)
 
     this.state.errors.update((errors) => {
@@ -250,7 +584,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    */
-  register: Register<TValues> = (name, options = {}) => {
+  register<T extends keyof FlattenObject<TValues>>(
+    name: Extract<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ): RegisterResult {
     const existingField: Field | undefined = safeGet(this.fields, name)
 
     const field: Field = {
@@ -277,13 +614,13 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     if (existingField) {
-      this.updateDisabledField({ field, disabled: options.disabled, name })
+      this.updateDisabledField({ field, disabled: options?.disabled, name })
       return props
     }
 
     const defaultValue =
       safeGet(this.state.values.value, name) ??
-      options.value ??
+      options?.value ??
       safeGet(this.state.defaultValues.value, name)
 
     this.state.values.update((values) => {
@@ -298,14 +635,17 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    */
-  unregister: Unregister<TValues> = (name, options = {}) => {
+  unregister<T extends keyof FlattenObject<TValues>>(
+    name?: T | T[] | readonly T[],
+    options?: UnregisterOptions,
+  ): void {
     const nameArray = (Array.isArray(name) ? name : name ? [name] : this.names.mount) as string[]
 
     for (const fieldName of nameArray) {
       this.names.mount.delete(fieldName)
       this.names.array.delete(fieldName)
 
-      if (!options.keepValue) {
+      if (!options?.keepValue) {
         deepUnset(this.fields, fieldName)
 
         this.state.values.update((values) => {
@@ -314,14 +654,14 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         })
       }
 
-      if (!options.keepError) {
+      if (!options?.keepError) {
         this.state.errors.update((errors) => {
           deepUnset(errors, fieldName)
           return errors
         })
       }
 
-      if (!options.keepDirty) {
+      if (!options?.keepDirty) {
         this.state.dirtyFields.update((dirtyFields) => {
           deepUnset(dirtyFields, fieldName)
           return dirtyFields
@@ -330,14 +670,14 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         this.state.isDirty.set(this.getDirty())
       }
 
-      if (!options.keepTouched) {
+      if (!options?.keepTouched) {
         this.state.touchedFields.update((touchedFields) => {
           deepUnset(touchedFields, fieldName)
           return touchedFields
         })
       }
 
-      if (!this.options.shouldUnregister && !options.keepDefaultValue) {
+      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
         this.state.defaultValues.update((defaultValues) => {
           deepUnset(defaultValues, fieldName)
           return defaultValues
@@ -345,7 +685,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       }
     }
 
-    if (!options.keepIsValid) {
+    if (!options?.keepIsValid) {
       this.updateValid()
     }
   }
@@ -353,7 +693,11 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Register an HTML input element.
    */
-  registerElement: RegisterElement<TValues> = (name, element, options = {}) => {
+  registerElement<T extends keyof FlattenObject<TValues>>(
+    name: Extract<T, string>,
+    element: InputElement,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
     this.register(name, options)
 
     const field: Field | undefined = safeGet(this.fields, name)
@@ -389,14 +733,17 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Unregister a field.
    */
-  unregisterElement: UnregisterElement<TValues> = (name, options = {}) => {
+  unregisterElement<T extends keyof FlattenObject<TValues>>(
+    name: LiteralUnion<Extract<T, string>, string>,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
     const field: Field | undefined = safeGet(this.fields, name)
 
     if (field?._f) {
       field._f.mount = false
     }
 
-    const shouldUnregister = this.options.shouldUnregister || options.shouldUnregister
+    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
 
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
@@ -406,7 +753,11 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Sets one field value.
    */
-  setValue: SetValue<TValues> = (name, value, options = {}) => {
+  setValue<T extends keyof FlattenObject<TValues>>(
+    name: Extract<T, string>,
+    value: FlattenObject<TValues>[T],
+    options?: SetValueOptions,
+  ): void {
     const field: Field | undefined = safeGet(this.fields, name)
 
     const clonedValue = structuredClone(value)
@@ -431,7 +782,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     const hasSubscribers =
       this.state.isDirty.hasSubscribers || this.state.dirtyFields.hasSubscribers
 
-    if (hasSubscribers && options.shouldDirty) {
+    if (hasSubscribers && options?.shouldDirty) {
       this.state.dirtyFields.set(
         getDirtyFields(this.state.defaultValues.value, this.state.values.value),
       )
@@ -450,7 +801,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    * const result = { a: { b: 'c' } }
    * ```
    */
-  setValues(name: string, value: any, options?: SetValueOptions) {
+  setValues(name: string, value: any, options?: SetValueOptions): void {
     for (const fieldKey in value) {
       const fieldValue = value[fieldKey]
       const fieldName = `${name}.${fieldKey}`
@@ -471,7 +822,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Sets a field's value.
    */
-  setFieldValue(name: string, value: unknown, options: SetValueOptions = {}) {
+  setFieldValue(name: string, value: unknown, options?: SetValueOptions): void {
     const field: Field | undefined = safeGet(this.fields, name)
 
     const fieldReference = field?._f
@@ -495,7 +846,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     this.touch(name, fieldValue, options)
 
-    if (options.shouldValidate) {
+    if (options?.shouldValidate) {
       this.trigger(name as any)
     }
   }
@@ -613,7 +964,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    */
-  handleSubmit: HandleSubmit<TValues> = (onValid, onInvalid) => {
+  handleSubmit(
+    onValid?: SubmitHandler<TValues>,
+    onInvalid?: SubmitErrorHandler<TValues>,
+  ): HandlerCallback {
     return async (event) => {
       event.preventDefault?.()
 
@@ -645,7 +999,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    */
-  reset: Reset<TValues> = (formValues, options = {}) => {
+  reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
     const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
 
     const cloneUpdatedValues = structuredClone(updatedValues)
@@ -653,12 +1007,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     const values =
       formValues && isEmptyObject(formValues) ? this.state.defaultValues.value : cloneUpdatedValues
 
-    if (!options.keepDefaultValues) {
+    if (!options?.keepDefaultValues) {
       this.state.defaultValues.set(updatedValues as DeepPartial<TValues>)
     }
 
-    if (!options.keepValues) {
-      if (options.keepDirtyValues || this.options.shouldCaptureDirtyFields) {
+    if (!options?.keepValues) {
+      if (options?.keepDirtyValues || this.options.shouldCaptureDirtyFields) {
         for (const fieldName of this.names.mount) {
           if (safeGet(this.state.dirtyFields.value, fieldName)) {
             deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
@@ -694,7 +1048,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       }
 
       const newValues = this.options.shouldUnregister
-        ? options.keepDefaultValues
+        ? options?.keepDefaultValues
           ? structuredClone(this.state.defaultValues.value)
           : {}
         : structuredClone(values)
@@ -709,35 +1063,35 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       watch: new Set(),
     }
 
-    if (!options.keepSubmitCount) {
+    if (!options?.keepSubmitCount) {
       this.state.submitCount.set(0)
     }
 
-    if (!options.keepDirty) {
+    if (!options?.keepDirty) {
       this.state.isDirty.set(
         Boolean(
-          options.keepDefaultValues && !deepEqual(formValues, this.state.defaultValues.value),
+          options?.keepDefaultValues && !deepEqual(formValues, this.state.defaultValues.value),
         ),
       )
     }
 
-    if (!options.keepDirtyValues) {
-      if (options.keepDefaultValues && formValues) {
+    if (!options?.keepDirtyValues) {
+      if (options?.keepDefaultValues && formValues) {
         this.state.dirtyFields.set(getDirtyFields(this.state.defaultValues.value, formValues))
       } else {
         this.state.dirtyFields.set({})
       }
     }
 
-    if (!options.keepTouched) {
+    if (!options?.keepTouched) {
       this.state.touchedFields.set({})
     }
 
-    if (!options.keepErrors) {
+    if (!options?.keepErrors) {
       this.state.errors.set({})
     }
 
-    if (!options.keepIsSubmitSuccessful) {
+    if (!options?.keepIsSubmitSuccessful) {
       this.state.isSubmitSuccessful.set(false)
     }
 
@@ -747,7 +1101,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * @param resetValues Whether to reset the form's values too.
    */
-  async resetDefaultValues(resolvingDefaultValues: Defaults<TValues>, resetValues?: boolean) {
+  async resetDefaultValues(
+    resolvingDefaultValues: Defaults<TValues>,
+    resetValues?: boolean,
+  ): Promise<void> {
     if (resolvingDefaultValues == null) {
       // Ensure that the form is not loading.
       if (this.state.isLoading.value) {
@@ -823,7 +1180,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Touches a field.
    */
-  touch(name: string, value?: unknown, options?: SetValueOptions) {
+  touch(name: string, value?: unknown, options?: SetValueOptions): void {
     if (!options?.shouldTouch || options.shouldDirty) {
       this.updateDirtyField(name, value)
     }

@@ -44,7 +44,7 @@ export class Writable<T = any> {
       this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
     }
 
-    // run(this.value as T)
+    run(this.value as T)
 
     return () => {
       this.subscribers.delete(subscriber)

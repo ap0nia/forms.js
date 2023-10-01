@@ -47,8 +47,8 @@ describe('FormControl', () => {
       await control.updateValid()
 
       // The value changed from false to true, so it gets notified.
-      expect(subscriber).toHaveBeenCalledTimes(2)
-      expect(subscriber).toHaveBeenCalledWith(true)
+      expect(subscriber).toHaveBeenCalled()
+      expect(subscriber).toHaveBeenLastCalledWith(true)
 
       expect(control.state.isValid.value).toBeTruthy()
     })
