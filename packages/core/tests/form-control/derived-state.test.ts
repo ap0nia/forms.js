@@ -29,7 +29,7 @@ describe('FormControl', () => {
       fn.mockReset()
 
       // Accessing this property makes the derived state reactive to changes to this store.
-      formControl.derivedState.value.submitCount
+      formControl.derivedState.proxy.submitCount
 
       formControl.state.submitCount.set(20)
       formControl.state.submitCount.set(100)

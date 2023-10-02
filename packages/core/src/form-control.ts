@@ -26,7 +26,7 @@ import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
 import type { InputElement } from './types/html'
 import type { Plugin } from './types/plugin'
-import type { RegisterOptions, RegisterResult } from './types/register'
+import type { RegisterOptions } from './types/register'
 import type { Resolver } from './types/resolver'
 import { deepEqual } from './utils/deep-equal'
 import { deepFilter } from './utils/deep-filter'
@@ -472,25 +472,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const derivedState = new RecordDerived(this.state, keys)
 
-    const originalValue = derivedState.value
-
-    const proxy: any = {}
-
-    for (const key in originalValue) {
-      Object.defineProperty(proxy, key, {
-        get() {
-          keys.add(key)
-          return originalValue[key as keyof typeof originalValue]
-        },
-        set(value: never) {
-          originalValue[key as keyof typeof originalValue] = value
-        },
-        enumerable: true,
-      })
-    }
-
-    derivedState.value = proxy
-
     this.derivedState = derivedState
 
     resolvedOptions.plugins?.forEach((plugin) => {
@@ -550,7 +531,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean): Promise<void> {
-    if (!force && !this.state.isValid.hasSubscribers) {
+    if (!force && !this.derivedState.keys?.has('isValid')) {
       return
     }
 
@@ -631,7 +612,73 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   register<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
     options?: RegisterOptions<TValues, T>,
-  ): RegisterResult {
+  ) {
+    this.registerField(name, options)
+
+    // GOOD
+
+    const props = {
+      registerElement: (element: InputElement) => this.registerElement(name, element, options),
+      unregisterElement: () => this.unregisterElement(name, options),
+    }
+
+    return props
+  }
+
+  /**
+   * Register an HTML input element.
+   */
+  registerElement<T extends keyof FlattenObject<TValues>>(
+    name: Extract<T, string>,
+    element: InputElement,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field = this.registerField(name, options)
+
+    const newField = mergeElementWithField(name, field, element)
+
+    deepSet(this.fields, name, newField)
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      deepSet(this.state.values.value, name, getFieldValue(newField._f))
+    } else {
+      const fieldReference = field?._f
+
+      if (fieldReference == null) {
+        this.mockUpdateDirtyField(name, defaultValue)
+        return
+      }
+
+      const fieldValue =
+        isHTMLElement(fieldReference.ref) && defaultValue == null ? '' : defaultValue
+
+      // updateFieldReference(fieldReference, fieldValue)
+
+      // If the field exists and isn't disabled, then also update the form values.
+      if (!fieldReference.disabled) {
+        deepSet(this.state.values.value, name, getFieldValueAs(defaultValue, fieldReference))
+      }
+
+      this.mockUpdateDirtyField(name, fieldValue)
+    }
+
+    if (this.derivedState.keys?.has('isValid')) {
+      this.validate().then(({ isValid }) => {
+        this.state.isValid.value = isValid
+      })
+    }
+  }
+
+  /**
+   * @updates values, isDirty, dirtyFields if the field exists, and values, isValid if new field.
+   */
+  registerField<T extends keyof FlattenObject<TValues>>(
+    name: Extract<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ) {
     const existingField: Field | undefined = safeGet(this.fields, name)
 
     const field: Field = {
@@ -648,19 +695,9 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     this.names.mount.add(name)
 
-    const unregisterElement = () => this.unregisterElement(name, options)
-
-    this.unmountActions.push(unregisterElement)
-
-    const props: RegisterResult = {
-      registerElement: this.registerElement.bind(this, name),
-      unregisterElement,
-    }
-
     if (existingField) {
-      // Updates values, isDirty, dirtyFields.
-      this.updateDisabledField({ field, disabled: options?.disabled, name })
-      return props
+      this.mockUpdateDisabledField({ field, disabled: options?.disabled, name })
+      return field
     }
 
     const defaultValue =
@@ -668,16 +705,15 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       options?.value ??
       safeGet(this.state.defaultValues.value, name)
 
-    // Updates values.
-    this.state.values.update((values) => {
-      deepSet(values, name, defaultValue)
-      return values
-    })
+    deepSet(this.state.values.value, name, defaultValue)
 
-    // Updates isValid.
-    this.updateValid()
+    if (this.derivedState.keys?.has('isValid')) {
+      this.validate().then(({ isValid }) => {
+        this.state.isValid.value = isValid
+      })
+    }
 
-    return props
+    return field
   }
 
   /**
@@ -735,36 +771,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     if (!options?.keepIsValid) {
       this.updateValid()
     }
-  }
-
-  /**
-   * Register an HTML input element.
-   */
-  registerElement<T extends keyof FlattenObject<TValues>>(
-    name: Extract<T, string>,
-    element: InputElement,
-  ): void {
-    const field: Field | undefined = safeGet(this.fields, name)
-
-    const newField = mergeElementWithField(name, field, element)
-
-    deepSet(this.fields, name, newField)
-
-    const defaultValue =
-      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
-
-    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      // Update values.
-      this.state.values.update((values) => {
-        deepSet(values, name, getFieldValue(newField._f))
-        return values
-      })
-    } else {
-      // update
-      this.setFieldValue(name, defaultValue)
-    }
-
-    this.updateValid()
   }
 
   /**
@@ -881,11 +887,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     // If the field exists and isn't disabled, then also update the form values.
     if (!fieldReference.disabled) {
-      // Update values.
-      this.state.values.update((values) => {
-        deepSet(values, name, getFieldValueAs(value, fieldReference))
-        return values
-      })
+      deepSet(this.state.values.value, name, getFieldValueAs(value, fieldReference))
     }
 
     // Update dirtyFields, isDirty, touchedFields.
@@ -950,7 +952,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     if (shouldSkipValidation) {
       // Update isValid.
-      this.updateValid()
+      await this.updateValid()
       return
     }
 
@@ -1273,6 +1275,41 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     return !previousIsTouched
   }
 
+  mockUpdateDisabledField(options: UpdateDisabledFieldOptions): void {
+    if (typeof options.disabled !== 'boolean') {
+      return
+    }
+
+    const value = options.disabled
+      ? undefined
+      : safeGet(this.state.values.value, options.name) ??
+        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+
+    const name = options.name
+
+    deepSet(this.state.values.value, options.name, value)
+
+    // Update dirtyFields, isDirty.
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
+
+    // The field will be dirty if its value is different from its default value.
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    this.state.isDirty.value = currentIsDirty
+
+    // The field is turning dirty to clean.
+    if (previousIsDirty && !currentIsDirty) {
+      deepUnset(this.state.dirtyFields.value, name)
+    }
+
+    // The field is turning clean to dirty.
+    if (!previousIsDirty && currentIsDirty) {
+      deepSet(this.state.dirtyFields.value, name, true)
+    }
+  }
+
   /**
    * Updates a field's disabled status and the corresponding value in the form values.
    *
@@ -1296,6 +1333,27 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     // Update dirtyFields, isDirty.
     this.updateDirtyField(options.name, value)
+  }
+
+  mockUpdateDirtyField(name: string, value?: unknown): void {
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
+
+    // The field will be dirty if its value is different from its default value.
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    this.state.isDirty.value = currentIsDirty
+
+    // The field is turning dirty to clean.
+    if (previousIsDirty && !currentIsDirty) {
+      deepUnset(this.state.dirtyFields.value, name)
+    }
+
+    // The field is turning clean to dirty.
+    if (!previousIsDirty && currentIsDirty) {
+      deepSet(this.state.dirtyFields.value, name, true)
+    }
   }
 
   /**

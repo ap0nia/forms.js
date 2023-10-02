@@ -6,51 +6,55 @@ import { noop } from '../../src/utils/noop'
 describe('FormControl', () => {
   describe('update valid', () => {
     test('does nothing if no subscribers', () => {
-      const control = new FormControl()
+      const formControl = new FormControl()
 
-      control.register('hello', { required: true })
+      formControl.register('hello', { required: true })
 
-      const originalValue = control.state.isValid.value
+      const originalValue = formControl.state.isValid.value
 
-      control.updateValid()
+      formControl.updateValid()
 
-      expect(control.state.isValid.value).toBe(originalValue)
+      expect(formControl.state.isValid.value).toBe(originalValue)
     })
 
-    test('updates valid state for invalid form when subscribers present', async () => {
-      const control = new FormControl()
+    test('updates valid state for invalid form when proxy state accessed', async () => {
+      const formControl = new FormControl()
 
-      control.register('hello', { required: true })
+      formControl.register('hello', { required: true })
+
+      formControl.derivedState.proxy.isValid
 
       const subscriber = vi.fn(noop)
 
-      control.state.isValid.subscribe(subscriber)
+      formControl.state.isValid.subscribe(subscriber)
 
-      await control.updateValid()
+      await formControl.updateValid()
 
       // Since the value stayed false, it doesn't get notified again.
       expect(subscriber).toHaveBeenCalledTimes(1)
       expect(subscriber).toHaveBeenCalledWith(false)
 
-      expect(control.state.isValid.value).toBeFalsy()
+      expect(formControl.state.isValid.value).toBeFalsy()
     })
 
     test('updates valid state for valid form when subscribers present', async () => {
-      const control = new FormControl()
+      const formControl = new FormControl()
 
-      control.register('hello')
+      formControl.register('hello')
+
+      formControl.derivedState.proxy.isValid
 
       const subscriber = vi.fn(noop)
 
-      control.state.isValid.subscribe(subscriber)
+      formControl.state.isValid.subscribe(subscriber)
 
-      await control.updateValid()
+      await formControl.updateValid()
 
       // The value changed from false to true, so it gets notified.
       expect(subscriber).toHaveBeenCalled()
       expect(subscriber).toHaveBeenLastCalledWith(true)
 
-      expect(control.state.isValid.value).toBeTruthy()
+      expect(formControl.state.isValid.value).toBeTruthy()
     })
   })
 })

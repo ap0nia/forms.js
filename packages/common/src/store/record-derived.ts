@@ -12,6 +12,8 @@ export class RecordDerived<
 
   value: T
 
+  proxy: T
+
   started = false
 
   pending = 0
@@ -20,39 +22,53 @@ export class RecordDerived<
 
   unsubscribers: Unsubscriber[] = []
 
+  key: any
+
   constructor(
     public stores: S,
     public keys: Set<PropertyKey> | undefined = undefined,
   ) {
     this.value = Object.entries(stores).reduce((acc, [key, store]) => {
-      acc[key as keyof typeof acc] = store.value
+      acc[key as keyof typeof acc] = structuredClone(store.value)
       return acc
     }, {} as T)
 
-    this.writable = new Writable(this.value, (set) => {
-      Object.entries(this.stores).forEach(([key, store]: [keyof S, Writable<any>], i) => {
-        const unsubscriber = store.subscribe(
-          (value) => {
-            this.value[key as keyof typeof this.value] = value
-            this.pending &= ~(1 << i)
-            if (this.started && (this.keys == null || this.keys.has(key))) {
-              this.sync(set)
-            }
-          },
-          () => {
-            this.pending |= 1 << i
-          },
-        )
+    this.proxy = {} as T
 
-        this.unsubscribers.push(unsubscriber)
+    for (const key in this.value) {
+      Object.defineProperty(this.proxy, key, {
+        get: () => {
+          this.keys?.add(key)
+          return this.value[key as keyof typeof this.value]
+        },
+        enumerable: true,
       })
+    }
 
-      this.started = true
-
-      this.sync(set)
-
+    this.writable = new Writable(this.value, () => {
       return this.unsubscribe.bind(this)
     })
+
+    Object.entries(this.stores).forEach(([key, store]: [keyof S, Writable<any>], i) => {
+      const unsubscriber = store.subscribe(
+        (value) => {
+          this.value = { ...this.value, [key]: value }
+          this.key = key
+          this.pending &= ~(1 << i)
+          if (this.started && (this.keys == null || this.keys.has(key))) {
+            this.sync()
+          }
+        },
+        () => {
+          this.pending |= 1 << i
+        },
+      )
+      this.unsubscribers.push(unsubscriber)
+    })
+
+    this.started = true
+
+    this.sync()
   }
 
   subscribe(run: Subscriber<T>, invalidate = noop) {
@@ -70,13 +86,13 @@ export class RecordDerived<
     this.started = false
   }
 
-  sync(set: (value: T) => void) {
+  sync() {
     if (this.pending) {
       return
     }
 
     this.cleanup()
 
-    set(this.value)
+    this.writable.set(this.value)
   }
 }

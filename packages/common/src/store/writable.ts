@@ -71,10 +71,10 @@ export class Writable<T = any> implements Readable<T> {
 
     const shouldRunQueue = !Writable.subscriberQueue.length
 
-    this.subscribers.forEach(([subscribe, invalidate]) => {
+    for (const [subscribe, invalidate] of this.subscribers) {
       invalidate()
       Writable.subscriberQueue.push([subscribe, value])
-    })
+    }
 
     if (shouldRunQueue) {
       for (const [subscriber, subscriberValue] of Writable.subscriberQueue) {
