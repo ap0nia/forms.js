@@ -2,10 +2,11 @@ import { describe, test, expect, vi } from 'vitest'
 
 import { Writable } from '../src/store'
 import { Derived } from '../src/store/derived'
+import { RecordDerived } from '../src/store/record-derived'
 import { get } from '../src/store/utils'
 
 describe('store', () => {
-  describe('writable', () => {
+  describe('Writable', () => {
     test('initially has no subscribers', () => {
       const count = new Writable(0)
 
@@ -58,13 +59,140 @@ describe('store', () => {
       expect(mock).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('RecordDerived', () => {
+    test('subscribes to all changes if no keys specified', () => {
+      const a = new Writable(1)
+      const b = new Writable(2)
+      const c = new Writable(3)
+
+      const fn = vi.fn()
+
+      const derived = new RecordDerived({ a, b, c })
+
+      derived.subscribe(fn)
+
+      a.set(4)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 })
+
+      b.set(5)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 3 })
+
+      c.set(6)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+    })
+
+    test('subscribes to all changes if all keys included', () => {
+      const a = new Writable(1)
+      const b = new Writable(2)
+      const c = new Writable(3)
+
+      const fn = vi.fn()
+
+      const derived = new RecordDerived({ a, b, c }, new Set(['a', 'b', 'c']))
+
+      derived.subscribe(fn)
+
+      a.set(4)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 })
+
+      b.set(5)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 3 })
+
+      c.set(6)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+    })
+
+    test('subscribes to specified keys', () => {
+      const a = new Writable(1)
+      const b = new Writable(2)
+      const c = new Writable(3)
+
+      const fn = vi.fn()
+
+      const derived = new RecordDerived({ a, b, c }, new Set(['a']))
+
+      derived.subscribe(fn)
+
+      a.set(4)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 })
+
+      fn.mockReset()
+
+      b.set(5)
+
+      expect(fn).not.toHaveBeenCalled()
+
+      c.set(6)
+
+      expect(fn).not.toHaveBeenCalled()
+    })
+
+    test('never subscribes if empty set of keys specified', () => {
+      const a = new Writable(1)
+      const b = new Writable(2)
+      const c = new Writable(3)
+
+      const fn = vi.fn()
+
+      const derived = new RecordDerived({ a, b, c }, new Set())
+
+      derived.subscribe(fn)
+      fn.mockReset()
+
+      a.set(4)
+
+      expect(fn).not.toHaveBeenCalled()
+
+      b.set(5)
+
+      expect(fn).not.toHaveBeenCalled()
+
+      c.set(6)
+
+      expect(fn).not.toHaveBeenCalled()
+    })
+
+    test('adapts if set of keys changes', () => {
+      const a = new Writable(1)
+      const b = new Writable(2)
+      const c = new Writable(3)
+
+      const fn = vi.fn()
+
+      const derived = new RecordDerived({ a, b, c }, new Set())
+
+      derived.subscribe(fn)
+      fn.mockReset()
+
+      a.set(4)
+
+      expect(fn).not.toHaveBeenCalled()
+
+      b.set(5)
+
+      expect(fn).not.toHaveBeenCalled()
+
+      derived.keys?.add('c')
+      c.set(6)
+
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+    })
+  })
 })
 
 /**
  * @see https://github.com/sveltejs/svelte/blob/master/packages/svelte/test/store/store.test.js
  */
 describe('store - svelte', () => {
-  describe('writable', () => {
+  describe('Writable', () => {
     test('creates a writable store', () => {
       const count = new Writable(0)
       const values: number[] = []
@@ -160,7 +288,7 @@ describe('store - svelte', () => {
     })
   })
 
-  describe('derived', () => {
+  describe('Derived', () => {
     test('maps a single store', () => {
       const a = new Writable(1)
       const b = new Derived(a, (n) => n * 2)
