@@ -1,5 +1,5 @@
 import { FormControl, type RegisterOptions } from '@forms.js/core'
-import { useMemo, useCallback, useSyncExternalStore, useEffect, useState } from 'react'
+import { useMemo, useCallback, useSyncExternalStore, useState } from 'react'
 
 function useProxyDerived() {
   const formControl = useMemo(() => {
@@ -31,12 +31,6 @@ function useProxyDerived() {
     },
     [formControl],
   )
-
-  useEffect(() => {
-    return formControl.state.isValid.subscribe((isValid) => {
-      console.log('isValid', isValid)
-    })
-  }, [])
 
   const subDerived = useCallback((callback: () => void) => {
     return formControl.derivedState.subscribe(() => {
