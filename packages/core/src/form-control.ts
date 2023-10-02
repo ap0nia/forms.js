@@ -1,4 +1,4 @@
-import { Writable } from '@forms.js/common/store'
+import { Writable, RecordDerived } from '@forms.js/common/store'
 
 import {
   INPUT_EVENTS,
@@ -390,6 +390,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    */
   state: { [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key]> }
 
+  derivedState: RecordDerived<{
+    [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key]>
+  }>
+
+  // formState: FormControlState<TValues>
+
   /**
    * Registered fields.
    *
@@ -462,6 +468,31 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       status: new Writable({ init: true, mount: false } as FormControlStatus),
     }
 
+    const keys = new Set<string>()
+
+    const derivedState = new RecordDerived(this.state, keys)
+
+    const originalValue = derivedState.value
+
+    const proxy: any = {}
+
+    for (const key in originalValue) {
+      Object.defineProperty(proxy, key, {
+        get() {
+          keys.add(key)
+          return originalValue[key as keyof typeof originalValue]
+        },
+        set(value: never) {
+          originalValue[key as keyof typeof originalValue] = value
+        },
+        enumerable: true,
+      })
+    }
+
+    derivedState.value = proxy
+
+    this.derivedState = derivedState
+
     resolvedOptions.plugins?.forEach((plugin) => {
       plugin.onInit?.(this)
     })
@@ -514,6 +545,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    *
    * Saves on computation by only updating if the store has subscribers.
    *
+   * @updates isValid.
+   *
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean): Promise<void> {
@@ -523,32 +556,38 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const result = await this.validate()
 
+    // Update isValid.
     this.state.isValid.set(result.isValid)
   }
 
   /**
    * Trigger a field.
+   *
+   * @updates isValidating, errors, isValid.
    */
   async trigger<T extends keyof FlattenObject<TValues>>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
   ): Promise<void> {
+    // Update isValidating.
     this.state.isValidating.set(true)
-
-    this.updateValid()
 
     const result = await this.validate(name as any)
 
     if (result.validationResult) {
+      // Update errors.
       this.mergeErrors(result.validationResult.errors, result.validationResult.names)
     }
 
     if (result.resolverResult?.errors) {
+      // Update errors.
       this.mergeErrors(result.resolverResult.errors)
     }
 
+    // Update isValid.
     this.state.isValid.set(result.isValid)
 
+    // Update isValidating.
     this.state.isValidating.set(false)
 
     if (options?.shouldFocus && !result.isValid) {
@@ -562,6 +601,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    * Set an error.
+   *
+   * @updates errors, isValid.
    */
   setError<T extends keyof FlattenObject<TValues>>(
     name: T | 'root' | `root.${string}`,
@@ -570,11 +611,13 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   ): void {
     const field: Field | undefined = safeGet(this.fields, name)
 
+    // Update errors.
     this.state.errors.update((errors) => {
       deepSet(errors, name, { ...error, ref: field?._f?.ref })
       return errors
     })
 
+    // Update isValid.
     this.state.isValid.set(false)
 
     if (options?.shouldFocus) {
@@ -583,6 +626,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
+   * @updates values, isDirty, dirtyFields if the field exists, and values, isValid if new field.
    */
   register<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
@@ -609,11 +653,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     this.unmountActions.push(unregisterElement)
 
     const props: RegisterResult = {
-      registerElement: (element) => this.registerElement(name, element, options),
+      registerElement: this.registerElement.bind(this, name),
       unregisterElement,
     }
 
     if (existingField) {
+      // Updates values, isDirty, dirtyFields.
       this.updateDisabledField({ field, disabled: options?.disabled, name })
       return props
     }
@@ -623,11 +668,13 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       options?.value ??
       safeGet(this.state.defaultValues.value, name)
 
+    // Updates values.
     this.state.values.update((values) => {
       deepSet(values, name, defaultValue)
       return values
     })
 
+    // Updates isValid.
     this.updateValid()
 
     return props
@@ -696,10 +743,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   registerElement<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
     element: InputElement,
-    options?: RegisterOptions<TValues, T>,
   ): void {
-    this.register(name, options)
-
     const field: Field | undefined = safeGet(this.fields, name)
 
     const newField = mergeElementWithField(name, field, element)
@@ -710,21 +754,14 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      // Update values.
       this.state.values.update((values) => {
         deepSet(values, name, getFieldValue(newField._f))
         return values
       })
     } else {
+      // update
       this.setFieldValue(name, defaultValue)
-    }
-
-    // TODO: what are the equivalent DOM events for React's "onChange" prop?
-    element.addEventListener('change', this.handleChange.bind(this))
-    element.addEventListener('blur', this.handleChange.bind(this))
-    element.addEventListener('focusout', this.handleChange.bind(this))
-
-    if (element.type !== 'radio' && element.type !== 'checkbox') {
-      element.addEventListener('input', this.handleChange.bind(this))
     }
 
     this.updateValid()
@@ -752,6 +789,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    * Sets one field value.
+   *
+   * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setValue<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
@@ -762,6 +801,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const clonedValue = structuredClone(value)
 
+    // Update values.
     this.state.values.update((values) => {
       deepSet(values, name, clonedValue)
       return values
@@ -779,10 +819,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       return
     }
 
-    const hasSubscribers =
-      this.state.isDirty.hasSubscribers || this.state.dirtyFields.hasSubscribers
-
-    if (hasSubscribers && options?.shouldDirty) {
+    if (options?.shouldDirty) {
       this.state.dirtyFields.set(
         getDirtyFields(this.state.defaultValues.value, this.state.values.value),
       )
@@ -800,6 +837,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    * const value = { b: 'c' }
    * const result = { a: { b: 'c' } }
    * ```
+   *
+   * @updates Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setValues(name: string, value: any, options?: SetValueOptions): void {
     for (const fieldKey in value) {
@@ -814,6 +853,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
         this.setValues(fieldName, fieldValue, options)
       } else {
+        // Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
         this.setFieldValue(fieldName, fieldValue, options)
       }
     }
@@ -821,6 +861,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    * Sets a field's value.
+   *
+   * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setFieldValue(name: string, value: unknown, options?: SetValueOptions): void {
     const field: Field | undefined = safeGet(this.fields, name)
@@ -828,6 +870,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     const fieldReference = field?._f
 
     if (fieldReference == null) {
+      // Update dirtyFields, isDirty, touchedFields.
       this.touch(name, value, options)
       return
     }
@@ -838,12 +881,14 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     // If the field exists and isn't disabled, then also update the form values.
     if (!fieldReference.disabled) {
+      // Update values.
       this.state.values.update((values) => {
         deepSet(values, name, getFieldValueAs(value, fieldReference))
         return values
       })
     }
 
+    // Update dirtyFields, isDirty, touchedFields.
     this.touch(name, fieldValue, options)
 
     if (options?.shouldValidate) {
@@ -866,6 +911,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const fieldValue = getCurrentFieldValue(event, field)
 
+    // Update values.
     this.state.values.update((values) => {
       deepSet(values, name, fieldValue)
       return values
@@ -880,8 +926,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     if (!isBlurEvent) {
+      // Updates dirtyFields, isDirty.
       this.updateDirtyField(name, fieldValue)
     } else {
+      // Updates touchedFields.
       this.updateTouchedField(name)
     }
 
@@ -901,15 +949,15 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       )
 
     if (shouldSkipValidation) {
+      // Update isValid.
       this.updateValid()
       return
     }
 
+    // Update isValidating.
     this.state.isValidating.set(true)
 
     const result = await this.validate(name)
-
-    this.state.isValid.set(result.isValid)
 
     if (result.resolverResult) {
       const previousError = lookupError(this.state.errors.value, this.fields, name)
@@ -920,6 +968,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         previousError.name,
       )
 
+      // Update errors.
       this.state.errors.update((errors) => {
         if (currentError.error) {
           deepSet(errors, currentError.name, currentError.error)
@@ -930,7 +979,11 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       })
 
       if (field._f.deps) {
+        // Update isValidating, errors, isValid.
         this.trigger(field._f.deps as any)
+      } else {
+        // Update isValidating.
+        this.state.isValid.set(result.isValid)
       }
     }
 
@@ -945,9 +998,11 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         const fullResult = await this.validate()
 
         if (fullResult.validationResult?.errors) {
+          // Update errors.
           this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
         }
       } else {
+        // Update errors.
         this.state.errors.update((errors) => {
           deepSet(errors, name, error)
           return errors
@@ -956,6 +1011,9 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
       if (isFieldValueUpdated && field._f.deps) {
         this.trigger(field._f.deps as any)
+      } else {
+        // Update isValidating.
+        this.state.isValid.set(result.isValid)
       }
     }
 
@@ -971,6 +1029,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     return async (event) => {
       event.preventDefault?.()
 
+      // Update isSubmitting.
       this.state.isSubmitting.set(true)
 
       const { isValid, resolverResult, validationResult } = await this.validate()
@@ -979,6 +1038,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
       deepUnset(this.state.errors.value, 'root')
 
+      // Update errors.
       this.mergeErrors(errors)
 
       if (isValid) {
@@ -1017,6 +1077,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
           if (safeGet(this.state.dirtyFields.value, fieldName)) {
             deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
           } else {
+            // FIXME: don't set state if not needed.
             this.setValue(fieldName as any, safeGet(values, fieldName))
           }
         }
@@ -1179,6 +1240,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    * Touches a field.
+   *
+   * @updates dirtyFields, isDirty, touchedFields.
    */
   touch(name: string, value?: unknown, options?: SetValueOptions): void {
     if (!options?.shouldTouch || options.shouldDirty) {
@@ -1193,7 +1256,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    * Updates the specified field name to be touched.
    *
-   * @remarks Will mutate the touchedFields.
+   * @updates touchedFields.
    *
    * @returns Whether the field's touched status changed.
    */
@@ -1212,6 +1275,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    * Updates a field's disabled status and the corresponding value in the form values.
+   *
+   * @updates values, dirtyFields, isDirty.
    */
   updateDisabledField(options: UpdateDisabledFieldOptions): void {
     if (typeof options.disabled !== 'boolean') {
@@ -1223,18 +1288,20 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       : safeGet(this.state.values.value, options.name) ??
         getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
+    // Update values.
     this.state.values.update((values) => {
       deepSet(values, options.name, value)
       return values
     })
 
+    // Update dirtyFields, isDirty.
     this.updateDirtyField(options.name, value)
   }
 
   /**
    * Updates a field's dirty status.
    *
-   * @remarks Will mutate dirtyFields and isDirty.
+   * @updates dirtyFields, isDirty.
    *
    * @returns Whether the field's dirty status changed.
    */

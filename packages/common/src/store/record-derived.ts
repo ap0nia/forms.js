@@ -1,9 +1,8 @@
 import { noop } from '../utils/noop.js'
 
+import type { StoresValues } from './derived.js'
 import type { Subscriber, Unsubscriber } from './types'
 import { Writable } from './writable.js'
-
-export type StoresValues<T> = { [K in keyof T]: T[K] extends Writable<infer U> ? U : never }
 
 export class RecordDerived<
   S extends Record<string, Writable<any>>,
@@ -23,7 +22,7 @@ export class RecordDerived<
 
   constructor(
     public stores: S,
-    public keys: Set<keyof S> | undefined = undefined,
+    public keys: Set<PropertyKey> | undefined = undefined,
   ) {
     this.value = Object.entries(stores).reduce((acc, [key, store]) => {
       acc[key as keyof typeof acc] = store.value
