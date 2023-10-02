@@ -24,6 +24,8 @@ export class RecordDerived<
 
   key: any
 
+  frozen = false
+
   constructor(
     public stores: S,
     public keys: Set<PropertyKey> | undefined = undefined,
@@ -87,7 +89,7 @@ export class RecordDerived<
   }
 
   sync() {
-    if (this.pending) {
+    if (this.pending || this.frozen) {
       return
     }
 

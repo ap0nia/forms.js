@@ -45,6 +45,9 @@ describe('FormControl', () => {
         defaultValues,
       })
 
+      // For test coverage, force isValid to be tracked.
+      formControl.derivedState.proxy.isValid
+
       // Since `shouldUnregister` is true, the initial values should be an empty object.
       expect(formControl.state.values.value).toEqual({})
 
