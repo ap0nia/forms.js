@@ -1503,7 +1503,7 @@ describe('useForm', () => {
     expect(result.current.formState.isLoading).toBe(false)
   })
 
-  test.skip('should update isValidating to true when using with resolver', async () => {
+  test('should update isValidating to true when using with resolver', async () => {
     vi.useFakeTimers()
 
     function App() {

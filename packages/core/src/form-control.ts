@@ -953,8 +953,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       return
     }
 
+    this.derivedState.frozen = false
+
     // Update isValidating.
     this.state.isValidating.set(true)
+
+    this.derivedState.frozen = true
 
     const result = await this.validate(name)
 
@@ -1017,7 +1021,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     this.state.isValidating.set(false)
-
     this.derivedState.frozen = false
     this.derivedState.sync()
   }
