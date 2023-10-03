@@ -51,12 +51,12 @@ export class RecordDerived<
 
   /**
    * Whether to forcefully stop updates from occurring.
+   * The store can be frozen multiple times, building up rime trauma.
+   * It can only notify subscribers once it is fully thawed.
    *
    * This is useful for batch updating.
-   *
-   * i.e. Update many of the stores, then notify subscribers once after all the changes.
    */
-  frozen = false
+  rimeTrauma = 0
 
   /**
    * While frozen, keep track of which keys were accessed.
@@ -100,7 +100,7 @@ export class RecordDerived<
       return
     }
 
-    if (this.frozen) {
+    if (this.rimeTrauma) {
       if (key) {
         this.keysChangedDuringFrozen.push(key)
       }
@@ -140,8 +140,6 @@ export class RecordDerived<
 
       this.unsubscribers.push(unsubscriber)
     })
-
-    this.frozen = false
   }
 
   /**
@@ -150,7 +148,7 @@ export class RecordDerived<
   stop() {
     this.unsubscribers.forEach((unsubscriber) => unsubscriber())
     this.unsubscribers = []
-    this.frozen = true
+    this.rimeTrauma += 1
   }
 
   /**
@@ -173,22 +171,34 @@ export class RecordDerived<
     this.pending |= 1 << i
   }
 
+  /**
+   * Freezing the store causes the rime trauma to increase,
+   * which prevents updates from occurring until the store is fully unfrozen.
+   */
   freeze() {
-    this.frozen = true
+    this.rimeTrauma += 1
   }
 
+  /**
+   * Unfreezing the store causes the rime trauma to decrease.
+   * But no updates will occur until the store is fully unfrozen and rime trauma is 0.
+   */
   unfreeze() {
-    this.frozen = false
-    this.notify()
+    this.rimeTrauma -= 1
+
+    if (!this.rimeTrauma) {
+      this.notify()
+    }
   }
 
   /**
    * Any operations that occur during a transaction will not trigger updates.
    * After the transaction is complete, the store will be forcefully updated once.
+   *
+   * Ignores rime trauma in order to force the update.
    */
   transaction(fn: () => void) {
-    this.frozen = true
-
+    this.rimeTrauma += 1
     this.keysChangedDuringFrozen = []
 
     fn()
@@ -199,5 +209,8 @@ export class RecordDerived<
     if (keys == null || this.keysChangedDuringFrozen.some((k) => keys.has(k))) {
       this.writable.set(this.value)
     }
+
+    this.rimeTrauma -= 1
+    this.keysChangedDuringFrozen = []
   }
 }

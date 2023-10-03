@@ -219,7 +219,7 @@ describe('store', () => {
 
         derived.subscribe(() => {})
 
-        derived.frozen = true
+        derived.rimeTrauma += 1
 
         derived.notify('a')
 

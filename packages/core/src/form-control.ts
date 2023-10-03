@@ -549,8 +549,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
   ): Promise<boolean> {
-    // Update isValidating.
-    this.state.isValidating.set(true)
+    this.derivedState.freeze()
+
+    // Update isValidating and force derivedState to update.
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(true)
+    })
 
     const result = await this.validate(name as any)
 
@@ -567,8 +571,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     // Update isValid.
     this.state.isValid.set(result.isValid)
 
-    // Update isValidating.
-    this.state.isValidating.set(false)
+    // Update isValidating and force derivedState to update.
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(false)
+    })
 
     if (options?.shouldFocus && !result.isValid) {
       const fieldNames = (name == null || Array.isArray(name) ? name : [name]) as
@@ -578,11 +584,13 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
     }
 
+    this.derivedState.unfreeze()
+
     return result.isValid
   }
 
   /**
-   * Update errors.
+   * Update errors, but without notifying listeners.
    */
   mockSetError<T extends keyof FlattenObject<TValues>>(
     name: T | 'root' | `root.${string}`,
@@ -627,6 +635,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
+   * @remarks MUST NOT NOTIFY ANY SIGNAL LISTENERS BECAUSE REACT SUCKS.
    */
   register<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
@@ -644,6 +653,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   /**
    * Register an HTML input element.
+   *
+   * @remarks MUST NOT NOTIFY ANY SIGNAL LISTENERS BECAUSE REACT SUCKS.
    */
   registerElement<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
@@ -669,6 +680,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
+   * @remarks MUST NOT NOTIFY ANY SIGNAL SUBSCRIBERS BECAUSE REACT SUCKS.
    */
   registerField<T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
@@ -706,11 +718,14 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
+   * Unregister a field.
    */
   unregister<T extends keyof FlattenObject<TValues>>(
     name?: T | T[] | readonly T[],
     options?: UnregisterOptions,
   ): void {
+    this.derivedState.freeze()
+
     const nameArray = (Array.isArray(name) ? name : name ? [name] : this.names.mount) as string[]
 
     for (const fieldName of nameArray) {
@@ -760,10 +775,13 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     if (!options?.keepIsValid) {
       this.updateValid()
     }
+
+    this.derivedState.unfreeze()
   }
 
   /**
-   * Unregister a field.
+   * Prepares an element to be unregistered.
+   * {@link cleanup} or {@link unmount} must be called to fully complete the unregistration.
    */
   unregisterElement<T extends keyof FlattenObject<TValues>>(
     name: LiteralUnion<Extract<T, string>, string>,
@@ -876,7 +894,10 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     // If the field exists and isn't disabled, then also update the form values.
     if (!fieldReference.disabled) {
-      deepSet(this.state.values.value, name, getFieldValueAs(value, fieldReference))
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValueAs(value, fieldReference))
+        return values
+      })
     }
 
     // Update dirtyFields, isDirty, touchedFields.
@@ -888,6 +909,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   }
 
   /**
+   * Handles a change event from an input element.
    */
   async handleChange(event: Event): Promise<void | boolean> {
     this.derivedState.freeze()
@@ -950,7 +972,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       return
     }
 
-    // Update isValidating. And force derivedState to update.
+    // Update isValidating and force derivedState to update.
     this.derivedState.transaction(() => {
       this.state.isValidating.set(true)
     })
@@ -1016,8 +1038,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     this.state.isValidating.set(false)
-    this.derivedState.frozen = false
-    this.derivedState.notify()
+    this.derivedState.unfreeze()
   }
 
   /**
