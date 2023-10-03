@@ -21,7 +21,7 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
 
   const register = <T extends keyof FlattenObject<TValues>>(
     name: Extract<T, string>,
-    options?: RegisterOptions,
+    options?: RegisterOptions<TValues, T>,
   ) => {
     const { registerElement, unregisterElement } = formControl.register(name, options)
 
@@ -76,16 +76,21 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   })
 
   useEffect(() => {
-    setMounted(true)
+    setMounted(() => {
+      formControl.mount()
+      return true
+    })
   }, [])
 
   return {
     formControl,
     register,
+    setError,
+    handleSubmit,
     formState: formControl.derivedState.proxy,
     getValues: formControl.getValues.bind(formControl),
-    handleSubmit,
     unregister: formControl.unregister.bind(formControl),
-    setError,
+    setValue: formControl.setValue.bind(formControl),
+    trigger: formControl.trigger.bind(formControl),
   }
 }

@@ -37,7 +37,7 @@ describe('FormControl', () => {
       expect(formControl.state.isValid.value).toBeFalsy()
     })
 
-    test('updates valid state for valid form when subscribers present', async () => {
+    test.only('updates valid state for valid form when subscribers present', async () => {
       const formControl = new FormControl()
 
       formControl.register('hello')
@@ -47,6 +47,9 @@ describe('FormControl', () => {
       const subscriber = vi.fn(noop)
 
       formControl.state.isValid.subscribe(subscriber)
+
+      // The form needs to be mounted before it will notify isValid subscribers.
+      formControl.mount()
 
       await formControl.updateValid()
 

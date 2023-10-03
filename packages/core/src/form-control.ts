@@ -24,7 +24,7 @@ import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
 import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
-import type { Field, FieldRecord } from './types/fields'
+import type { Field, FieldRecord, FieldReference } from './types/fields'
 import type { InputElement } from './types/html'
 import type { Plugin } from './types/plugin'
 import type { RegisterOptions } from './types/register'
@@ -534,8 +534,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const result = await this.validate()
 
-    // Update isValid.
-    this.state.isValid.set(result.isValid)
+    if (this.state.status.value.mount) {
+      // Update isValid.
+      this.state.isValid.set(result.isValid)
+    } else {
+      this.state.isValid.value = result.isValid
+    }
   }
 
   /**
@@ -546,7 +550,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   async trigger<T extends keyof FlattenObject<TValues>>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
-  ): Promise<void> {
+  ): Promise<boolean> {
     // Update isValidating.
     this.state.isValidating.set(true)
 
@@ -575,6 +579,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       const callback = (key?: string) => key && safeGet(this.state.errors.value, key)
       focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
     }
+
+    return result.isValid
   }
 
   /**
@@ -650,22 +656,18 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const newField = mergeElementWithField(name, field, element)
 
-    deepSet(this.fields, name, newField)
-
     const defaultValue =
       safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
       deepSet(this.state.values.value, name, getFieldValue(newField._f))
     } else {
-      updateFieldReference(field._f, defaultValue)
+      updateFieldReference(newField._f, defaultValue)
     }
 
-    if (this.derivedState.keys?.has('isValid')) {
-      this.validate().then(({ isValid }) => {
-        this.state.isValid.value = isValid
-      })
-    }
+    deepSet(this.fields, name, newField)
+
+    this.updateValid()
   }
 
   /**
@@ -701,12 +703,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       safeGet(this.state.defaultValues.value, name)
 
     deepSet(this.state.values.value, name, defaultValue)
-
-    if (this.derivedState.keys?.has('isValid')) {
-      this.validate().then(({ isValid }) => {
-        this.state.isValid.value = isValid
-      })
-    }
 
     return field
   }
@@ -1377,7 +1373,15 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     } else {
       const names = nameArray ?? Array.from(this.names.mount)
 
-      const fields = deepFilter(this.fields, names)
+      const fields: Record<string, FieldReference> = {}
+
+      for (const name of names) {
+        const field: Field | undefined = safeGet(this.fields, name)
+
+        if (field) {
+          deepSet(fields, name, field._f)
+        }
+      }
 
       const resolverResult = await this.options.resolver(
         this.state.values.value,
@@ -1432,5 +1436,9 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     this.names.unMount = new Set()
+  }
+
+  mount() {
+    this.state.status.update((status) => ({ ...status, mount: true }))
   }
 }
