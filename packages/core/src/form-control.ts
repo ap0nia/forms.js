@@ -618,6 +618,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     error?: ErrorOption,
     options?: TriggerOptions,
   ): void {
+    this.derivedState.freeze()
+
     const field: Field | undefined = safeGet(this.fields, name)
 
     // Update errors.
@@ -632,6 +634,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     if (options?.shouldFocus) {
       field?._f?.ref?.focus?.()
     }
+
+    this.derivedState.unfreeze()
   }
 
   /**
@@ -810,6 +814,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     value: FlattenObject<TValues>[T],
     options?: SetValueOptions,
   ): void {
+    this.derivedState.freeze()
+
     const field: Field | undefined = safeGet(this.fields, name)
 
     const clonedValue = structuredClone(value)
@@ -829,6 +835,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         this.setFieldValue(name, clonedValue, options)
       }
 
+      this.derivedState.unfreeze()
       return
     }
 
@@ -838,6 +845,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       )
       this.state.isDirty.set(this.getDirty())
     }
+
+    this.derivedState.unfreeze()
   }
 
   /**
@@ -854,6 +863,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    * @updates Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setValues(name: string, value: any, options?: SetValueOptions): void {
+    this.derivedState.freeze()
+
     for (const fieldKey in value) {
       const fieldValue = value[fieldKey]
       const fieldName = `${name}.${fieldKey}`
@@ -870,6 +881,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         this.setFieldValue(fieldName, fieldValue, options)
       }
     }
+
+    this.derivedState.unfreeze()
   }
 
   /**
@@ -878,6 +891,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setFieldValue(name: string, value: unknown, options?: SetValueOptions): void {
+    this.derivedState.freeze()
+
     const field: Field | undefined = safeGet(this.fields, name)
 
     const fieldReference = field?._f
@@ -906,6 +921,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     if (options?.shouldValidate) {
       this.trigger(name as any)
     }
+
+    this.derivedState.unfreeze()
   }
 
   /**
@@ -1048,6 +1065,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     onInvalid?: SubmitErrorHandler<TValues>,
   ): HandlerCallback {
     return async (event) => {
+      this.derivedState.freeze()
+
       event.preventDefault?.()
 
       // Update isSubmitting.
@@ -1075,12 +1094,16 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       this.state.isSubmitting.set(false)
       this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value))
       this.state.submitCount.update((count) => count + 1)
+
+      this.derivedState.unfreeze()
     }
   }
 
   /**
    */
   reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
+    this.derivedState.freeze()
+
     const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
 
     const cloneUpdatedValues = structuredClone(updatedValues)
@@ -1178,6 +1201,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     this.state.isSubmitting.set(false)
+
+    this.derivedState.unfreeze()
   }
 
   /**
@@ -1346,9 +1371,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     const changed = this.mockUpdateDisabledField(options)
 
     if (changed) {
-      this.state.values.update((values) => ({ ...values }))
+      this.derivedState.freeze()
 
+      this.state.values.update((values) => ({ ...values }))
       this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }))
+
+      this.derivedState.unfreeze()
     }
   }
 
