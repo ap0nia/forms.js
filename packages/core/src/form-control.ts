@@ -395,8 +395,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key]>
   }>
 
-  // formState: FormControlState<TValues>
-
   /**
    * Registered fields.
    *
@@ -892,7 +890,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    */
   async handleChange(event: Event): Promise<void | boolean> {
-    this.derivedState.frozen = true
+    this.derivedState.freeze()
 
     const target: any = event.target
 
@@ -947,18 +945,15 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       // Update isValid.
       await this.updateValid()
 
-      this.derivedState.frozen = false
-      this.derivedState.sync()
+      this.derivedState.unfreeze()
 
       return
     }
 
-    this.derivedState.frozen = false
-
-    // Update isValidating.
-    this.state.isValidating.set(true)
-
-    this.derivedState.frozen = true
+    // Update isValidating. And force derivedState to update.
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(true)
+    })
 
     const result = await this.validate(name)
 
@@ -1022,7 +1017,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     this.state.isValidating.set(false)
     this.derivedState.frozen = false
-    this.derivedState.sync()
+    this.derivedState.notify()
   }
 
   /**
