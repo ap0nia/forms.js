@@ -7,7 +7,7 @@ import {
   waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { describe, test, expect } from 'vitest'
 
 import { useForm } from '../src/use-form'
@@ -118,6 +118,7 @@ describe('useForm', () => {
 
     test('should update dirtyFields during unregister', () => {
       let formState: any
+
       const Component = () => {
         const { register, formState: tempFormState } = useForm<{
           test: string
@@ -249,5 +250,56 @@ describe('useForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
 
     await waitFor(() => expect(result).toEqual({}))
+  })
+
+  describe('when errors changes', () => {
+    test('should display the latest error message', async () => {
+      const Form = () => {
+        const {
+          register,
+          setError,
+          formState: { errors },
+        } = useForm<{
+          test: string
+        }>()
+
+        useEffect(() => {
+          setError('test', {
+            type: 'data',
+            message: 'data',
+          })
+        }, [setError])
+
+        return (
+          <div>
+            <input
+              {...register('test', {
+                maxLength: {
+                  message: 'max',
+                  value: 3,
+                },
+              })}
+              placeholder="test"
+              type="text"
+            />
+            <span role="alert">{errors.test && errors.test.message}</span>
+          </div>
+        )
+      }
+
+      render(<Form />)
+
+      const span = screen.getByRole('alert')
+
+      await waitFor(() => expect(span.textContent).toBe('data'))
+
+      fireEvent.input(screen.getByRole('textbox'), {
+        target: {
+          value: 'test',
+        },
+      })
+
+      await waitFor(() => expect(span.textContent).toBe('data'))
+    })
   })
 })

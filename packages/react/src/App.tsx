@@ -1,30 +1,37 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 
 import { useForm } from './use-form'
 
-const options = { shouldUnregister: true }
-
 export function App() {
-  const { register, handleSubmit } = useForm({ ...options })
-  const [radio1, setRadio1] = useState(true)
-  const [radio2, setRadio2] = useState(true)
+  const {
+    register,
+    setError,
+    formState: { errors },
+  } = useForm<{
+    test: string
+  }>()
+
+  useEffect(() => {
+    setError('test', {
+      type: 'data',
+      message: 'data',
+    })
+  }, [setError])
 
   return (
-    <form
-      onSubmit={handleSubmit((data) => {
-        console.log(data)
-      })}
-    >
-      {radio1 && <input {...register('test')} type={'radio'} value={'1'} />}
-      {radio2 && <input {...register('test')} type={'radio'} value={'2'} />}
-      <button type="button" onClick={() => setRadio1(!radio1)}>
-        setRadio1
-      </button>
-      <button type="button" onClick={() => setRadio2(!radio2)}>
-        setRadio2
-      </button>
-      <button>Submit</button>
-    </form>
+    <div>
+      <input
+        {...register('test', {
+          maxLength: {
+            message: 'max',
+            value: 3,
+          },
+        })}
+        placeholder="test"
+        type="text"
+      />
+      <span role="alert">{errors.test && errors.test.message}</span>
+    </div>
   )
 }
 

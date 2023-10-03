@@ -6,11 +6,13 @@ import {
   type SubmitHandler,
 } from '@forms.js/core'
 import type { FlattenObject } from 'packages/core/src/utils/types/flatten-object'
-import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
+import { useRef, useCallback, useSyncExternalStore, useEffect, useState } from 'react'
 
 export function useForm<TValues extends Record<string, any>, TContext = any>(
   options?: FormControlOptions<TValues, TContext>,
 ) {
+  const [mounted, setMounted] = useState(false)
+
   const formControlRef = useRef<FormControl<TValues, TContext>>()
 
   formControlRef.current ??= new FormControl(options)
@@ -54,6 +56,11 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     }
   }
 
+  const setError = useCallback(
+    mounted ? formControl.setError.bind(formControl) : formControl.mockSetError.bind(formControl),
+    [mounted],
+  )
+
   const subDerived = useCallback((callback: () => void) => {
     return formControl.derivedState.subscribe(callback)
   }, [])
@@ -68,6 +75,10 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     formControl.cleanup()
   })
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return {
     formControl,
     register,
@@ -75,5 +86,6 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     getValues: formControl.getValues.bind(formControl),
     handleSubmit,
     unregister: formControl.unregister.bind(formControl),
+    setError,
   }
 }
