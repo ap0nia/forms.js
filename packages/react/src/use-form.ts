@@ -11,7 +11,11 @@ import { useRef, useCallback, useSyncExternalStore, useEffect, useState } from '
 export function useForm<TValues extends Record<string, any>, TContext = any>(
   options?: FormControlOptions<TValues, TContext>,
 ) {
-  const [mounted, setMounted] = useState(false)
+  /**
+   * Ensure that the form control properly mounts with a state variable.
+   * Also used to force updates, i.e. after a reset.
+   */
+  const [mounted, setMounted] = useState(0)
 
   const formControlRef = useRef<FormControl<TValues, TContext>>()
 
@@ -72,15 +76,25 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   useSyncExternalStore(subDerived, valueDerived)
 
   useEffect(() => {
-    formControl.cleanup()
-  })
+    if (mounted) {
+      formControl.reset(options?.values, formControl.options.resetOptions)
+      setMounted((m) => m + 1)
+    }
+  }, [options?.values])
 
   useEffect(() => {
-    setMounted(() => {
-      formControl.mount()
-      return true
-    })
+    formControl.mount()
+
+    setMounted(1)
+
+    return () => {
+      formControl.unmount()
+    }
   }, [])
+
+  useEffect(() => {
+    formControl.cleanup()
+  })
 
   return {
     formControl,

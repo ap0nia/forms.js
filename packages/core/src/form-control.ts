@@ -1422,6 +1422,15 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     return validationResult
   }
 
+  mount() {
+    this.state.status.update((status) => ({ ...status, mount: true }))
+  }
+
+  unmount() {
+    this.cleanup()
+    this.state.status.update((status) => ({ ...status, mount: false }))
+  }
+
   cleanup() {
     this.removeUnmounted()
   }
@@ -1436,9 +1445,5 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     }
 
     this.names.unMount = new Set()
-  }
-
-  mount() {
-    this.state.status.update((status) => ({ ...status, mount: true }))
   }
 }

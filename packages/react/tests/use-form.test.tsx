@@ -1395,7 +1395,7 @@ describe('useForm', () => {
     })
   })
 
-  test.skip('should update async form values', async () => {
+  test('should update async form values', async () => {
     type FormValues = {
       test: string
     }
