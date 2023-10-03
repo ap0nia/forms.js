@@ -16,6 +16,7 @@ import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
+import { elementIsLive } from './logic/html/element-is-live'
 import { isHTMLElement } from './logic/html/is-html-element'
 import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getValidationModes } from './logic/validation/get-validation-modes'
@@ -1402,5 +1403,21 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     })
 
     return validationResult
+  }
+
+  cleanup() {
+    this.removeUnmounted()
+  }
+
+  removeUnmounted(): void {
+    for (const name of this.names.unMount) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field?._f.refs ? field._f.refs.every(elementIsLive) : elementIsLive(field?._f.ref)) {
+        this.unregister(name as any)
+      }
+    }
+
+    this.names.unMount = new Set()
   }
 }

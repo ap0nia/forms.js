@@ -1,48 +1,84 @@
-// function useForm() {
-//   const formControl = useMemo(() => {
-//     return new FormControl()
-//   }, [])
-//
-//   const register = useCallback(
-//     (name: string, options?: any) => {
-//       const { registerElement, unregisterElement } = formControl.register(name, options)
-//
-//       const onChange = formControl.handleChange.bind(formControl)
-//
-//       const props = {
-//         name,
-//         onBlur: onChange,
-//         onChange,
-//         ref: (instance: HTMLElement | null) => {
-//           if (instance) {
-//             registerElement(instance as HTMLInputElement)
-//           } else {
-//             unregisterElement()
-//           }
-//         },
-//       }
-//
-//       return props
-//     },
-//     [formControl],
-//   )
-//
-//   const [, forceUpdate] = useReducer((count) => count + 1, 0)
-//
-//   useEffect(() => {
-//     const unsubscribe = formControl.derivedState.subscribe((v) => {
-//       console.log({ v })
-//       // forceUpdate()
-//     })
-//
-//     return () => {
-//       unsubscribe()
-//     }
-//   }, [])
-//
-//   return {
-//     formControl,
-//     formState: formControl.derivedState.value,
-//     register,
-//   }
-// }
+import {
+  FormControl,
+  type FormControlOptions,
+  type RegisterOptions,
+  type SubmitErrorHandler,
+  type SubmitHandler,
+} from '@forms.js/core'
+import type { FlattenObject } from 'packages/core/src/utils/types/flatten-object'
+import { useMemo, useCallback, useSyncExternalStore, useEffect } from 'react'
+
+export function useForm<TValues extends Record<string, any>, TContext = any>(
+  options?: FormControlOptions<TValues, TContext>,
+) {
+  const formControl = useMemo(() => {
+    return new FormControl(options)
+  }, [options])
+
+  const register = useCallback(
+    <T extends keyof FlattenObject<TValues>>(
+      name: Extract<T, string>,
+      options?: RegisterOptions,
+    ) => {
+      const { registerElement, unregisterElement } = formControl.register(name, options)
+
+      const onChange = async (event: React.ChangeEvent) => {
+        return await formControl.handleChange(event.nativeEvent)
+      }
+
+      const props = {
+        name,
+        onBlur: onChange,
+        onChange,
+        ref: (instance: HTMLElement | null) => {
+          if (instance) {
+            registerElement(instance as HTMLInputElement)
+          } else {
+            unregisterElement()
+          }
+        },
+      }
+
+      return props
+    },
+    [formControl],
+  )
+
+  const handleSubmit = useCallback(
+    (onValid?: SubmitHandler<TValues>, onInvalid?: SubmitErrorHandler<TValues>) => {
+      const handler = formControl.handleSubmit(onValid, onInvalid)
+
+      return async (event: React.SyntheticEvent) => {
+        return await handler(event as any)
+      }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    return formControl.state.isValid.subscribe(() => {})
+  }, [])
+
+  const subDerived = useCallback((callback: () => void) => {
+    return formControl.derivedState.subscribe(() => {
+      callback()
+    })
+  }, [])
+
+  const valueDerived = useCallback(() => {
+    return formControl.derivedState.value
+  }, [])
+
+  useSyncExternalStore(subDerived, valueDerived)
+
+  formControl.cleanup()
+
+  return {
+    formControl,
+    register,
+    formState: formControl.derivedState.proxy,
+    getValues: formControl.getValues.bind(formControl),
+    handleSubmit,
+    unregister: formControl.unregister.bind(formControl),
+  }
+}

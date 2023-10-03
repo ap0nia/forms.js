@@ -1,62 +1,9 @@
-import { FormControl, type RegisterOptions } from '@forms.js/core'
-import { useMemo, useCallback, useSyncExternalStore, useState, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 
-function useProxyDerived() {
-  const formControl = useMemo(() => {
-    return new FormControl({ mode: 'all' })
-  }, [])
-
-  const register = useCallback(
-    (name: string, options?: RegisterOptions) => {
-      const { registerElement, unregisterElement } = formControl.register(name, options)
-
-      const onChange = async (event: React.ChangeEvent) => {
-        return await formControl.handleChange(event.nativeEvent)
-      }
-
-      const props = {
-        name,
-        onBlur: onChange,
-        onChange,
-        ref: (instance: HTMLElement | null) => {
-          if (instance) {
-            registerElement(instance as HTMLInputElement)
-          } else {
-            unregisterElement()
-          }
-        },
-      }
-
-      return props
-    },
-    [formControl],
-  )
-
-  useEffect(() => {
-    return formControl.state.isValid.subscribe(() => {})
-  }, [])
-
-  const subDerived = useCallback((callback: () => void) => {
-    return formControl.derivedState.subscribe(() => {
-      callback()
-    })
-  }, [])
-
-  const valueDerived = useCallback(() => {
-    return formControl.derivedState.value
-  }, [])
-
-  useSyncExternalStore(subDerived, valueDerived)
-
-  return {
-    formControl,
-    register,
-    formState: formControl.derivedState.proxy,
-  }
-}
+import { useForm } from './use-form'
 
 export function App() {
-  const { formControl, formState, register } = useProxyDerived()
+  const { formControl, formState, register } = useForm()
 
   const [show, setShow] = useState(true)
 
