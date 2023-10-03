@@ -5,6 +5,7 @@ import {
   type SubmitErrorHandler,
   type SubmitHandler,
 } from '@forms.js/core'
+import { getRuleValue } from '@forms.js/core/validation/get-rule-value'
 import type { FlattenObject } from 'packages/core/src/utils/types/flatten-object'
 import { useRef, useCallback, useSyncExternalStore, useEffect, useState } from 'react'
 
@@ -34,6 +35,15 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     }
 
     const props = {
+      ...(typeof options?.disabled === 'boolean' && { disabled: options.disabled }),
+      ...(formControl.options.progressive && {
+        required: !!options?.required,
+        min: getRuleValue(options?.min),
+        max: getRuleValue(options?.max),
+        minLength: getRuleValue<number>(options?.minLength) as number,
+        maxLength: getRuleValue(options?.maxLength) as number,
+        pattern: getRuleValue(options?.pattern) as string,
+      }),
       name,
       onBlur: onChange,
       onChange,
@@ -73,7 +83,7 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     return formControl.derivedState.value
   }, [])
 
-  useSyncExternalStore(subDerived, valueDerived)
+  useSyncExternalStore(subDerived, valueDerived, valueDerived)
 
   useEffect(() => {
     if (mounted) {
