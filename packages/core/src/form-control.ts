@@ -648,7 +648,8 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
         deepSet(this.state.values.value, name, getFieldValueAs(defaultValue, fieldReference))
       }
 
-      this.mockUpdateDirtyField(name, defaultValue)
+      const { currentIsDirty } = this.mockUpdateDirtyField(name, defaultValue)
+      this.state.isDirty.value = currentIsDirty
     }
 
     if (this.derivedState.keys?.has('isValid')) {
@@ -1294,8 +1295,6 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
     const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
 
-    this.state.isDirty.value = currentIsDirty
-
     // The field is turning dirty to clean.
     if (previousIsDirty && !currentIsDirty) {
       deepUnset(this.state.dirtyFields.value, name)
@@ -1413,7 +1412,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
     for (const name of this.names.unMount) {
       const field: Field | undefined = safeGet(this.fields, name)
 
-      if (field?._f.refs ? field._f.refs.every(elementIsLive) : elementIsLive(field?._f.ref)) {
+      if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
         this.unregister(name as any)
       }
     }

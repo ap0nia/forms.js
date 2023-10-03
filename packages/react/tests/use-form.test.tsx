@@ -1,4 +1,13 @@
-import { act, renderHook, fireEvent, render, screen } from '@testing-library/react'
+import {
+  act,
+  renderHook,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react'
+import { useState } from 'react'
 import { describe, test, expect } from 'vitest'
 
 import { useForm } from '../src/use-form'
@@ -40,7 +49,7 @@ describe('useForm', () => {
 
       await act(async () => {
         const event = new Event('')
-        await result.current.handleSubmit(() => {})(event)
+        await result.current.formControl.handleSubmit(() => {})(event)
       })
 
       expect(result.current.formState.errors.test).toBeDefined()
@@ -62,7 +71,7 @@ describe('useForm', () => {
 
       await act(async () => {
         const event = new Event('')
-        await result.current.handleSubmit(() => {})(event)
+        await result.current.formControl.handleSubmit(() => {})(event)
       })
 
       expect(result.current.formState.errors.test).toBeDefined()
@@ -107,7 +116,7 @@ describe('useForm', () => {
       expect(formState.isDirty).toBeFalsy()
     })
 
-    test.only('should update dirtyFields during unregister', () => {
+    test('should update dirtyFields during unregister', () => {
       let formState: any
       const Component = () => {
         const { register, formState: tempFormState } = useForm<{
@@ -138,39 +147,107 @@ describe('useForm', () => {
     })
 
     test('should only validate input which are mounted even with shouldUnregister: false', async () => {
-      // const Component = () => {
-      //   const [show, setShow] = useState(true);
-      //   const {
-      //     handleSubmit,
-      //     register,
-      //     formState: { errors },
-      //   } = useForm<{
-      //     firstName: string;
-      //     lastName: string;
-      //   }>();
-      //   return (
-      //     <form onSubmit={handleSubmit(() => { })}>
-      //       {show && <input {...register('firstName', { required: true })} />}
-      //       {errors.firstName && <p>First name is required.</p>}
-      //       <input {...register('lastName', { required: true })} />
-      //       {errors.lastName && <p>Last name is required.</p>}
-      //       <button type={'button'} onClick={() => setShow(!show)}>
-      //         toggle
-      //       </button>
-      //       <button type={'submit'}>submit</button>
-      //     </form>
-      //   );
-      // };
-      // render(<Component />);
-      // fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-      // expect(await screen.findByText('First name is required.')).toBeVisible();
-      // expect(screen.getByText('Last name is required.')).toBeVisible();
-      // fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-      // fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-      // expect(screen.getByText('Last name is required.')).toBeVisible();
-      // await waitForElementToBeRemoved(
-      //   screen.queryByText('First name is required.'),
-      // );
+      const Component = () => {
+        const [show, setShow] = useState(true)
+        const {
+          handleSubmit,
+          register,
+          formState: { errors },
+        } = useForm<{
+          firstName: string
+          lastName: string
+        }>()
+        return (
+          <form onSubmit={handleSubmit(() => {})}>
+            {show && <input {...register('firstName', { required: true })} />}
+            {errors.firstName && <p>First name is required.</p>}
+            <input {...register('lastName', { required: true })} />
+            {errors.lastName && <p>Last name is required.</p>}
+            <button type={'button'} onClick={() => setShow(!show)}>
+              toggle
+            </button>
+            <button type={'submit'}>submit</button>
+          </form>
+        )
+      }
+      render(<Component />)
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+      expect(await screen.findByText('First name is required.')).toBeTruthy()
+      expect(screen.getByText('Last name is required.')).toBeTruthy()
+      fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+      expect(screen.getByText('Last name is required.')).toBeTruthy()
+      await waitForElementToBeRemoved(screen.queryByText('First name is required.'))
     })
+  })
+
+  test('should not register or shallow defaultValues into submission data', () => {
+    let data = {}
+
+    const App = () => {
+      const { handleSubmit } = useForm({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+
+      return (
+        <button
+          onClick={handleSubmit((d) => {
+            data = d
+          })}
+        >
+          submit
+        </button>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(data).toEqual({})
+  })
+
+  test('should only unregister inputs when all checkboxes are unmounted', async () => {
+    let result: Record<string, string> | undefined = undefined
+
+    const Component = () => {
+      const { register, handleSubmit } = useForm({ shouldUnregister: true })
+      const [radio1, setRadio1] = useState(true)
+      const [radio2, setRadio2] = useState(true)
+
+      return (
+        <form
+          onSubmit={handleSubmit((data) => {
+            result = data
+          })}
+        >
+          {radio1 && <input {...register('test')} type={'radio'} value={'1'} />}
+          {radio2 && <input {...register('test')} type={'radio'} value={'2'} />}
+          <button type="button" onClick={() => setRadio1(!radio1)}>
+            setRadio1
+          </button>
+          <button type="button" onClick={() => setRadio2(!radio2)}>
+            setRadio2
+          </button>
+          <button>Submit</button>
+        </form>
+      )
+    }
+
+    render(<Component />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'setRadio1' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(result).toEqual({ test: null }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'setRadio2' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(result).toEqual({}))
   })
 })
