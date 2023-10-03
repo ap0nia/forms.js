@@ -8,10 +8,14 @@ import {
   waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react'
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import { describe, test, expect, vi } from 'vitest'
 
 import { useForm } from '../src/use-form'
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 /**
  * TODO?: write an actual type.
@@ -1348,6 +1352,283 @@ describe('useForm', () => {
       screen.getByText('stateValidation: false')
 
       vi.useRealTimers()
+    })
+  })
+
+  test('should update defaultValues async', async () => {
+    const App = () => {
+      const {
+        register,
+        formState: { isLoading },
+      } = useForm<{
+        test: string
+      }>({
+        defaultValues: async () => {
+          await sleep(100)
+
+          return {
+            test: 'test',
+          }
+        },
+      })
+
+      return (
+        <form>
+          <input {...register('test')} />
+          <p>{isLoading ? 'loading...' : 'done'}</p>
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      screen.getByText('loading...')
+    })
+
+    await waitFor(() => {
+      expect((screen.getByRole('textbox') as HTMLInputElement).value).toEqual('test')
+    })
+
+    await waitFor(() => {
+      screen.getByText('done')
+    })
+  })
+
+  test.skip('should update async form values', async () => {
+    type FormValues = {
+      test: string
+    }
+
+    function Loader() {
+      const [values, setValues] = useState<FormValues>({ test: '' })
+
+      const loadData = useCallback(async () => {
+        await sleep(100)
+        setValues({ test: 'test' })
+      }, [])
+
+      useEffect(() => {
+        loadData()
+      }, [loadData])
+
+      return <App values={values} />
+    }
+
+    const App = ({ values }: { values: FormValues }) => {
+      const { register } = useForm({ values })
+
+      return (
+        <form>
+          <input {...register('test')} />
+        </form>
+      )
+    }
+
+    render(<Loader />)
+
+    await waitFor(() => {
+      expect((screen.getByRole('textbox') as HTMLInputElement).value).toEqual('test')
+    })
+  })
+
+  test.skip('should only update async form values which are not interacted', async () => {
+    type FormValues = {
+      test: string
+      test1: string
+    }
+
+    function Loader() {
+      const [values, setValues] = useState<FormValues>({
+        test: '',
+        test1: '',
+      })
+
+      const loadData = useCallback(async () => {
+        await sleep(100)
+
+        setValues({
+          test: 'test',
+          test1: 'data',
+        })
+      }, [])
+
+      useEffect(() => {
+        loadData()
+      }, [loadData])
+
+      return <App values={values} />
+    }
+
+    const App = ({ values }: { values: FormValues }) => {
+      const { register } = useForm({
+        values,
+        resetOptions: {
+          keepDirtyValues: true,
+        },
+      })
+
+      return (
+        <form>
+          <input {...register('test')} />
+          <input {...register('test1')} />
+        </form>
+      )
+    }
+
+    render(<Loader />)
+
+    const textbox = screen.getAllByRole('textbox')[0]
+
+    if (textbox) {
+      fireEvent.change(textbox, {
+        target: {
+          value: 'test1',
+        },
+      })
+    }
+
+    await waitFor(() => {
+      expect((screen.getAllByRole('textbox')[0] as HTMLInputElement).value).toEqual('test1')
+    })
+
+    await waitFor(() => {
+      expect((screen.getAllByRole('textbox')[1] as HTMLInputElement).value).toEqual('data')
+    })
+  })
+
+  test('should not update isLoading when literal defaultValues are provided', async () => {
+    const { result } = renderHook(() => useForm({ defaultValues: { test: 'default' } }))
+
+    expect(result.current.formState.isLoading).toBe(false)
+  })
+
+  test.skip('should update isValidating to true when using with resolver', async () => {
+    vi.useFakeTimers()
+
+    function App() {
+      const {
+        register,
+        formState: { isValidating },
+      } = useForm<{
+        firstName: string
+        lastName: string
+      }>({
+        mode: 'all',
+        defaultValues: {
+          lastName: '',
+          firstName: '',
+        },
+        resolver: async () => {
+          await sleep(2000)
+
+          return {
+            errors: {},
+            values: {},
+          }
+        },
+      })
+
+      return (
+        <div>
+          <p>isValidating: {String(isValidating)}</p>
+          <input {...register('lastName')} placeholder="async" />
+          <input {...register('firstName')} placeholder="required" />
+        </div>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.change(screen.getByPlaceholderText('async'), {
+      target: { value: 'test' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('async'), {
+      target: { value: 'test1' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('required'), {
+      target: { value: 'test2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('required'), {
+      target: { value: 'test3' },
+    })
+
+    screen.getByText('isValidating: true')
+
+    await act(async () => {
+      await vi.runAllTimersAsync()
+    })
+
+    screen.getByText('isValidating: false')
+
+    vi.useRealTimers()
+  })
+
+  test.skip('should update form values when values updates even with the same values', async () => {
+    type FormValues = {
+      firstName: string
+    }
+
+    function App() {
+      const [firstName, setFirstName] = useState('C')
+      const values = useMemo(() => ({ firstName }), [firstName])
+
+      const {
+        register,
+        formState: { isDirty },
+        // watch,
+      } = useForm<FormValues>({
+        defaultValues: {
+          firstName: 'C',
+        },
+        values,
+        resetOptions: { keepDefaultValues: true },
+      })
+
+      // const formValues = watch()
+
+      return (
+        <form>
+          <button type="button" onClick={() => setFirstName('A')}>
+            1
+          </button>
+          <button type="button" onClick={() => setFirstName('B')}>
+            2
+          </button>
+          <button type="button" onClick={() => setFirstName('C')}>
+            3
+          </button>
+          <input {...register('firstName')} placeholder="First Name" />
+          <p>{isDirty ? 'dirty' : 'pristine'}</p>
+
+          {/* <p>{formValues.firstName}</p> */}
+
+          <input type="submit" />
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: '1' }))
+
+    await waitFor(() => {
+      screen.getByText('A')
+      screen.getByText('dirty')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '2' }))
+
+    await waitFor(() => {
+      screen.getByText('B')
+      screen.getByText('dirty')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '3' }))
+
+    await waitFor(() => {
+      screen.getByText('C')
+      screen.getByText('pristine')
     })
   })
 })
