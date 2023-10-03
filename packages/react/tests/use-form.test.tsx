@@ -1432,7 +1432,7 @@ describe('useForm', () => {
     })
   })
 
-  test.skip('should only update async form values which are not interacted', async () => {
+  test('should only update async form values which are not interacted', async () => {
     type FormValues = {
       test: string
       test1: string
