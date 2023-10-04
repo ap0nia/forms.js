@@ -37,6 +37,12 @@
       "import": "./src/logic/validation/*.ts",
       "require": "./src/logic/validation/*.ts",
       "default": "./src/logic/validation/*.ts"
+    },
+    "./utils/*": {
+      "types": "./src/utils/*.ts",
+      "import": "./src/utils/*.ts",
+      "require": "./src/utils/*.ts",
+      "default": "./src/utils/*.ts"
     }
   },
   "typesVersions": {
@@ -46,6 +52,9 @@
       ],
       "validation/*": [
         "./src/logic/validation/*.ts"
+      ],
+      "utils/*": [
+        "./src/utils/*.ts"
       ]
     }
   },

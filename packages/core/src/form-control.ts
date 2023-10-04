@@ -706,12 +706,12 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
    * Unregister a field.
    */
   unregister<T extends keyof FlattenObject<TValues>>(
-    name?: T | T[] | readonly T[],
+    name?: Extract<T, string> | Extract<T, string>[],
     options?: UnregisterOptions,
   ): void {
     this.derivedState.freeze()
 
-    const nameArray = (Array.isArray(name) ? name : name ? [name] : this.names.mount) as string[]
+    const nameArray = Array.isArray(name) ? name : name ? [name] : Array.from(this.names.mount)
 
     for (const fieldName of nameArray) {
       this.names.mount.delete(fieldName)
@@ -1158,6 +1158,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       unMount: new Set(),
       array: new Set(),
       watch: new Set(),
+      watchAll: false,
     }
 
     if (!options?.keepSubmitCount) {
