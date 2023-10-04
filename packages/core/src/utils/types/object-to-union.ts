@@ -54,7 +54,7 @@ import type { JoinArray } from './join-array'
  * `type MyType = ObjectToUnion<{ [K in MyStringUnion]: { ... } }>`
  *
  * However, if the union literally has one option, then it basically creates an interface with one property.
- * A union of these single property interfaces can build a new record.
+ * An intersection of these single property interfaces can build a new record.
  *
  * @example
  *

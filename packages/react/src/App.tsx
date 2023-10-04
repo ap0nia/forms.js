@@ -8,12 +8,9 @@ export function App() {
     register,
     setError,
     formState: { errors },
-    // watch,
   } = useForm<{
     test: string
   }>()
-
-  // console.log(watch())
 
   useEffect(() => {
     setError('test', {
@@ -21,6 +18,8 @@ export function App() {
       message: 'data',
     })
   }, [setError])
+
+  console.log('render')
 
   return (
     <div>

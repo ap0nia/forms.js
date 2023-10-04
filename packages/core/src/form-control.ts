@@ -1509,7 +1509,9 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
       this.names.watch.add(name)
     })
 
-    return safeGetMultiple(this.values.value, nameArray)
+    return nameArray.length === 1
+      ? safeGet(this.values.value, nameArray[0])
+      : safeGetMultiple(this.values.value, nameArray)
   }
 
   clearErrors(name?: string | string[]) {

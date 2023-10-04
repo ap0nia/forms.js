@@ -46,6 +46,7 @@
   "dependencies": {
     "@forms.js/common": "workspace:^",
     "@forms.js/core": "workspace:^",
+    "@tanstack/react-form": "^0.3.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.47.0",

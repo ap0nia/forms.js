@@ -111,7 +111,7 @@ export class RecordDerived<
    * Subscribe.
    */
   subscribe(run: Subscriber<T>, invalidate = noop) {
-    return this.writable.subscribe(run, invalidate, false)
+    return this.writable.subscribe(run, invalidate)
   }
 
   /**
@@ -146,7 +146,7 @@ export class RecordDerived<
   stop() {
     this.unsubscribers.forEach((unsubscriber) => unsubscriber())
     this.unsubscribers = []
-    this.rimeTrauma += 1
+    this.rimeTrauma = 0
   }
 
   /**
@@ -186,14 +186,21 @@ export class RecordDerived<
    * If shoulNotify is undefined, the default behavior is to notify if the store is fully unfrozen.
    */
   unfreeze(shouldNotify?: boolean) {
+    this.thaw()
+
+    if (shouldNotify === true || (!this.rimeTrauma && shouldNotify == null)) {
+      this.notify()
+    }
+  }
+
+  /**
+   * Decrements the rime trauma by 1 if possible.
+   */
+  thaw() {
     if (this.rimeTrauma <= 0) {
       this.rimeTrauma = 0
     } else {
       this.rimeTrauma -= 1
-    }
-
-    if (shouldNotify === true || (!this.rimeTrauma && shouldNotify == null)) {
-      this.notify()
     }
   }
 
@@ -203,20 +210,20 @@ export class RecordDerived<
    *
    * Ignores rime trauma in order to force the update.
    */
-  transaction(fn: () => void) {
+  transaction(fn: () => unknown) {
     this.rimeTrauma += 1
     this.keysChangedDuringFrozen = []
 
     fn()
 
-    // type-guarding doesn't work on the object property for some reason.
+    // type-guarding doesn't work on the instance variable for some reason.
     const keys = this.keys
 
     if (keys == null || this.keysChangedDuringFrozen.some((k) => keys.has(k))) {
       this.writable.set(this.value)
     }
 
-    this.rimeTrauma -= 1
+    this.thaw()
     this.keysChangedDuringFrozen = []
   }
 }
