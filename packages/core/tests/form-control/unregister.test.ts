@@ -99,13 +99,13 @@ describe('FormControl', () => {
         },
       }
 
-      formControl.state.values.set({ [name]: 'test' })
+      formControl.values.set({ [name]: 'test' })
 
       formControl.unregister(name)
 
       expect(formControl.fields).toEqual({})
 
-      expect(formControl.state.values.value).toEqual({})
+      expect(formControl.values.value).toEqual({})
     })
 
     test('removes field error', () => {

@@ -89,7 +89,6 @@ describe('store', () => {
         const derived = new RecordDerived({ a, b, c }, new Set())
 
         derived.subscribe(fn)
-        fn.mockReset()
 
         a.set(4)
 
@@ -114,7 +113,6 @@ describe('store', () => {
         const derived = new RecordDerived({ a, b, c }, new Set())
 
         derived.subscribe(fn)
-        fn.mockReset()
 
         a.set(4)
 
@@ -142,7 +140,6 @@ describe('store', () => {
         const derived = new RecordDerived({ a, b, c }, new Set())
 
         derived.subscribe(fn)
-        fn.mockReset()
 
         a.set(4)
 
@@ -170,8 +167,6 @@ describe('store', () => {
 
       const unsubscribe = derived.subscribe(fn)
 
-      fn.mockClear()
-
       unsubscribe()
 
       a.set(4)
@@ -198,8 +193,6 @@ describe('store', () => {
         const fn = vi.fn()
 
         derived.subscribe(fn)
-
-        fn.mockClear()
 
         derived.pending = 1
 
@@ -241,8 +234,6 @@ describe('store', () => {
 
         derived.subscribe(fn)
 
-        fn.mockClear()
-
         derived.transaction(() => {
           stores.a.set(4)
         })
@@ -265,8 +256,6 @@ describe('store', () => {
         const fn = vi.fn()
 
         derived.subscribe(fn)
-
-        fn.mockClear()
 
         derived.transaction(() => {
           stores.a.set(4)
@@ -292,8 +281,6 @@ describe('store', () => {
 
         derived.subscribe(fn)
 
-        fn.mockClear()
-
         stores.a.set(4)
         stores.b.set(5)
         stores.c.set(6)
@@ -316,8 +303,6 @@ describe('store', () => {
 
         derived.subscribe(fn)
 
-        fn.mockClear()
-
         stores.a.set(4)
         stores.b.set(5)
         stores.c.set(6)
@@ -327,6 +312,16 @@ describe('store', () => {
         derived.unfreeze()
 
         expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+      })
+
+      test('does not go below 0 rime trauma', () => {
+        const derived = new RecordDerived({})
+
+        derived.rimeTrauma = -1
+
+        derived.unfreeze()
+
+        expect(derived.rimeTrauma).toEqual(0)
       })
     })
   })

@@ -88,8 +88,6 @@ export class RecordDerived<
     }
 
     this.writable = new Writable(this.value, this.startStopNotifier.bind(this))
-
-    this.notify()
   }
 
   /**
@@ -113,7 +111,7 @@ export class RecordDerived<
    * Subscribe.
    */
   subscribe(run: Subscriber<T>, invalidate = noop) {
-    return this.writable.subscribe(run, invalidate)
+    return this.writable.subscribe(run, invalidate, false)
   }
 
   /**
@@ -136,8 +134,8 @@ export class RecordDerived<
       const unsubscriber = store.subscribe(
         this.subscriptionFunction.bind(this, i, key),
         this.invalidateFunction.bind(this, i),
+        false,
       )
-
       this.unsubscribers.push(unsubscriber)
     })
   }
@@ -182,11 +180,19 @@ export class RecordDerived<
   /**
    * Unfreezing the store causes the rime trauma to decrease.
    * But no updates will occur until the store is fully unfrozen and rime trauma is 0.
+   *
+   * @param shouldNotify Whether to notify subscribers if the store is fully unfrozen.
+   *
+   * If shoulNotify is undefined, the default behavior is to notify if the store is fully unfrozen.
    */
-  unfreeze() {
-    this.rimeTrauma -= 1
+  unfreeze(shouldNotify?: boolean) {
+    if (this.rimeTrauma <= 0) {
+      this.rimeTrauma = 0
+    } else {
+      this.rimeTrauma -= 1
+    }
 
-    if (!this.rimeTrauma) {
+    if (shouldNotify === true || (!this.rimeTrauma && shouldNotify == null)) {
       this.notify()
     }
   }

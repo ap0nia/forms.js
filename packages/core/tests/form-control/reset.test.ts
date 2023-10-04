@@ -105,7 +105,7 @@ describe('FormControl', () => {
 
         form.reset()
 
-        expect(form.state.values.value).toEqual({})
+        expect(form.values.value).toEqual({})
       })
 
       test('default values if shouldUnregister is true and keepDefaultValues is true', () => {
@@ -113,7 +113,7 @@ describe('FormControl', () => {
 
         form.reset({}, { keepDefaultValues: true })
 
-        expect(form.state.values.value).toEqual({ foo: 'bar' })
+        expect(form.values.value).toEqual({ foo: 'bar' })
       })
     })
 
@@ -226,11 +226,11 @@ describe('FormControl', () => {
         formControl.names.mount.add(name)
         formControl.state.defaultValues.set(defaultValues)
 
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.values.value).toEqual({})
 
         formControl.reset(undefined, { keepDirtyValues: true })
 
-        expect(formControl.state.values.value).toEqual(defaultValues)
+        expect(formControl.values.value).toEqual(defaultValues)
       })
 
       test('clean fields inherit default values works with root option to keepDirtyValues', () => {
@@ -241,11 +241,11 @@ describe('FormControl', () => {
         formControl.names.mount.add(name)
         formControl.state.defaultValues.set(defaultValues)
 
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.values.value).toEqual({})
 
         formControl.reset()
 
-        expect(formControl.state.values.value).toEqual(defaultValues)
+        expect(formControl.values.value).toEqual(defaultValues)
       })
 
       test('dirtyFields keep their current values', () => {
@@ -257,11 +257,11 @@ describe('FormControl', () => {
         formControl.state.defaultValues.set(defaultValues)
         formControl.state.dirtyFields.set({ [name]: true })
 
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.values.value).toEqual({})
 
         formControl.reset(undefined, { keepDirtyValues: true })
 
-        expect(formControl.state.values.value).toEqual({ [name]: undefined })
+        expect(formControl.values.value).toEqual({ [name]: undefined })
       })
     })
   })

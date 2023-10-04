@@ -29,7 +29,7 @@ describe('FormControl', () => {
 
       expect(ref.value).toEqual(value)
 
-      expect(formControl.state.values.value).toEqual({
+      expect(formControl.values.value).toEqual({
         [name0]: {
           [name1]: value,
         },
@@ -124,7 +124,7 @@ describe('FormControl', () => {
       expect(ref.value).toEqual('' + fileList)
 
       // ref.files can't be set directly, but the FileList value will be captured in the form.
-      expect(formControl.state.values.value).toEqual({ [name]: fileList })
+      expect(formControl.values.value).toEqual({ [name]: fileList })
     })
   })
 })

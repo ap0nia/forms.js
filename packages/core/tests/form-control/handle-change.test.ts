@@ -17,7 +17,7 @@ describe('FormControl', () => {
 
       fireEvent.change(input, { target: { value: '' } })
 
-      expect(formControl.state.values.value).toEqual({})
+      expect(formControl.values.value).toEqual({})
     })
 
     test('sets the new field value in the form control values', () => {
@@ -37,7 +37,7 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.values.value).toEqual({})
+      expect(formControl.values.value).toEqual({})
 
       ref.addEventListener('change', (event) => formControl.handleChange(event))
 
@@ -45,7 +45,7 @@ describe('FormControl', () => {
 
       fireEvent.change(ref)
 
-      expect(formControl.state.values.value).toEqual({ [name]: value })
+      expect(formControl.values.value).toEqual({ [name]: value })
     })
 
     test('invokes onChange for change events', () => {

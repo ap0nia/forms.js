@@ -37,7 +37,7 @@ export class Writable<T = any> implements Readable<T> {
     this.set(updater(this.value as T))
   }
 
-  public subscribe(run: Subscriber<T>, invalidate = noop) {
+  public subscribe(run: Subscriber<T>, invalidate = noop, runFirst = true) {
     const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
 
     this.subscribers.add(subscriber)
@@ -46,7 +46,9 @@ export class Writable<T = any> implements Readable<T> {
       this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
     }
 
-    run(this.value as T)
+    if (runFirst) {
+      run(this.value as T)
+    }
 
     return () => {
       this.subscribers.delete(subscriber)
