@@ -148,7 +148,11 @@ export type UpdateDisabledFieldOptions = {
  *
  * Some options are internal and set automatically based on other options.
  */
-export type FormControlOptions<TValues extends Record<string, any>, TContext = any> = {
+export type FormControlOptions<
+  TValues extends Record<string, any> = Record<string, any>,
+  TContext = any,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
+> = {
   /**
    * When to validate the form.
    */
@@ -219,7 +223,7 @@ export type FormControlOptions<TValues extends Record<string, any>, TContext = a
   /**
    * TODO: Allow both single plugin and array of plugins.
    */
-  plugins?: Plugin<TValues, TContext>[]
+  plugins?: Plugin<TValues, TContext, TTransformedValues>[]
 
   /**
    * Whether to continue validating after the first error is found.
@@ -353,11 +357,13 @@ export type SetValueOptions = {
 
 export type HandlerCallback = (event: Event) => Promise<void>
 
-export type SubmitHandler<T> = (data: T, event: Event) => unknown
+export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string, any>
+  ? (data: TTransformed, event: Event) => unknown
+  : (data: T, event: Event) => unknown
 
 export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event: Event) => unknown
 
-export const defaultFormControlOptions: FormControlOptions<any> = {
+export const defaultFormControlOptions: FormControlOptions<any, any, any> = {
   mode: VALIDATION_MODE.onSubmit,
   revalidateMode: VALIDATION_MODE.onChange,
   shouldFocusError: true,
@@ -366,13 +372,17 @@ export const defaultFormControlOptions: FormControlOptions<any> = {
 /**
  * The core functionality of the library is encompassed by a form control that controls field/form behavior.
  */
-export class FormControl<TValues extends Record<string, any>, TContext = any> {
+export class FormControl<
+  TValues extends Record<string, any>,
+  TContext = any,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
+> {
   /**
    * The resolved options for the form.
    *
    * @public
    */
-  options: FormControlOptions<TValues, TContext>
+  options: FormControlOptions<TValues, TContext, TTransformedValues>
 
   /**
    * The current state of the form. All top-level properties are observables.
@@ -413,7 +423,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
 
   unmountActions: Noop[] = []
 
-  constructor(options?: FormControlOptions<TValues, TContext>) {
+  constructor(options?: FormControlOptions<TValues, TContext, TTransformedValues>) {
     const resolvedOptions = { ...defaultFormControlOptions, ...options }
 
     resolvedOptions.shouldDisplayAllAssociatedErrors ??=
@@ -1053,7 +1063,7 @@ export class FormControl<TValues extends Record<string, any>, TContext = any> {
   /**
    */
   handleSubmit(
-    onValid?: SubmitHandler<TValues>,
+    onValid?: SubmitHandler<TValues, TTransformedValues>,
     onInvalid?: SubmitErrorHandler<TValues>,
   ): HandlerCallback {
     return async (event) => {

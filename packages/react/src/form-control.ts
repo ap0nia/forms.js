@@ -14,10 +14,11 @@ export type { FormControlOptions }
  * Form control with React-specific methods.
  */
 export class ReactFormControl<
-  TValues extends Record<string, any>,
+  TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
-> extends FormControl<TValues, TContext> {
-  constructor(options?: FormControlOptions<TValues, TContext>) {
+  TTransformedValues extends Record<string, any> | undefined = undefined,
+> extends FormControl<TValues, TContext, TTransformedValues> {
+  constructor(options?: FormControlOptions<TValues, TContext, TTransformedValues>) {
     super(options)
   }
 

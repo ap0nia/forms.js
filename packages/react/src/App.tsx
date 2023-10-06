@@ -33,6 +33,7 @@ export function App() {
         placeholder="test"
         type="text"
       />
+      <h1 dangerouslySetInnerHTML={{ __html: '&amp;' }}></h1>
       <span role="alert">{errors.test && errors.test.message}</span>
     </div>
   )
