@@ -1,13 +1,13 @@
 import { useContext } from 'react'
 
 import type { ReactFormControl } from './form-control'
-import { FormContext } from './form-provider'
+import { FormControlContext } from './form-provider'
 
-export function useFormContext<
+export function useFormControlContext<
   TFieldValues extends Record<string, any>,
   TContext = any,
   TransformedValues extends Record<string, any> | undefined = undefined,
 >() {
-  const context = useContext(FormContext)
+  const context = useContext(FormControlContext)
   return context as ReactFormControl<TFieldValues, TContext, TransformedValues>
 }

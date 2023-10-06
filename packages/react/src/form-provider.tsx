@@ -2,9 +2,9 @@ import { createContext } from 'react'
 
 import type { ReactFormControl } from './form-control'
 
-export const FormContext = createContext<ReactFormControl<any, any, any>>(undefined!)
+export const FormControlContext = createContext<ReactFormControl<any, any, any>>(undefined!)
 
-export type FormProviderProps<
+export type FormControlProviderProps<
   TValues extends Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
@@ -13,10 +13,14 @@ export type FormProviderProps<
   control: ReactFormControl<TValues, TContext, TTransformedValues>
 }
 
-export function FormProvider<
+export function FormControlProvider<
   TValues extends Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
->(props: FormProviderProps<TValues, TContext, TTransformedValues>) {
-  return <FormContext.Provider value={props.control}>{props.children}</FormContext.Provider>
+>(props: FormControlProviderProps<TValues, TContext, TTransformedValues>) {
+  return (
+    <FormControlContext.Provider value={props.control}>
+      {props.children}
+    </FormControlContext.Provider>
+  )
 }
