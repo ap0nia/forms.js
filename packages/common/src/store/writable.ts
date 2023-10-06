@@ -9,24 +9,37 @@ import { safeNotEqual } from '../utils/safe-not-equal.js'
 
 import type { Invalidator, Readable, StartStopNotifier, Subscriber, Updater } from './types'
 
-export class Writable<T = any> implements Readable<T> {
+/**
+ * A subscriber can selectively be notified based on the context.
+ */
+export type SubscriptionFilter<T, TContext = undefined> = (data: T, context?: TContext) => boolean
+
+export class Writable<T = any, TContext = undefined> implements Readable<T> {
   /**
    * Subscribe functions paired with a value to be passed to them.
    * Populated by {@link Writable.set} to update subscribers.
    */
-  public static readonly subscriberQueue: [Subscriber<any>, unknown][] = []
+  public static readonly subscriberQueue: [
+    Subscriber<any>,
+    unknown,
+    SubscriptionFilter<any, any>?,
+    unknown?,
+  ][] = []
 
   stop?: Noop
 
-  subscribers = new Set<SubscribeInvalidateTuple<T>>()
+  subscribers = new Set<SubscribeInvalidateTuple<T, TContext>>()
 
   value: T
 
   start: StartStopNotifier<T>
 
-  constructor(value?: T, start: StartStopNotifier<T> = noop) {
+  context?: TContext
+
+  constructor(value?: T, start: StartStopNotifier<T> = noop, context?: TContext) {
     this.value = value as T
     this.start = start
+    this.context = context
   }
 
   public get hasSubscribers(): boolean {
@@ -37,8 +50,13 @@ export class Writable<T = any> implements Readable<T> {
     this.set(updater(this.value as T))
   }
 
-  public subscribe(run: Subscriber<T>, invalidate = noop, runFirst = true) {
-    const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
+  public subscribe(
+    run: Subscriber<T>,
+    invalidate = noop,
+    runFirst = true,
+    filter?: SubscriptionFilter<T, TContext>,
+  ) {
+    const subscriber: SubscribeInvalidateTuple<T, TContext> = [run, invalidate, filter]
 
     this.subscribers.add(subscriber)
 
@@ -60,7 +78,7 @@ export class Writable<T = any> implements Readable<T> {
     }
   }
 
-  public set(value: T): void {
+  public set(value: T, context?: TContext): void {
     if (!safeNotEqual(this.value, value)) {
       return
     }
@@ -73,14 +91,16 @@ export class Writable<T = any> implements Readable<T> {
 
     const shouldRunQueue = !Writable.subscriberQueue.length
 
-    for (const [subscribe, invalidate] of this.subscribers) {
+    for (const [subscribe, invalidate, filter] of this.subscribers) {
       invalidate()
-      Writable.subscriberQueue.push([subscribe, value])
+      Writable.subscriberQueue.push([subscribe, value, filter, context])
     }
 
     if (shouldRunQueue) {
-      for (const [subscriber, subscriberValue] of Writable.subscriberQueue) {
-        subscriber(subscriberValue)
+      for (const [subscribe, value, filter, context] of Writable.subscriberQueue) {
+        if (filter == null || filter(value, context ?? this.context)) {
+          subscribe(value)
+        }
       }
 
       Writable.subscriberQueue.length = 0
@@ -91,4 +111,9 @@ export class Writable<T = any> implements Readable<T> {
 /**
  * Subscribers/invalidators come in pairs.
  */
-export type SubscribeInvalidateTuple<T> = [Subscriber<T>, Invalidator<T>]
+export type SubscribeInvalidateTuple<T, TContext = undefined> = [
+  Subscriber<T>,
+  Invalidator<T>,
+  SubscriptionFilter<T, TContext>?,
+  TContext?,
+]

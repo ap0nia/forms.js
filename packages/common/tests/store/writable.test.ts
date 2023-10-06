@@ -55,6 +55,92 @@ describe('store', () => {
 
       expect(mock).toHaveBeenCalledTimes(1)
     })
+
+    describe('selective subscriptions', () => {
+      test('global context with falsy filter does not notify', () => {
+        const writable = new Writable(0, undefined, false)
+
+        const fn = vi.fn()
+
+        writable.subscribe(fn, undefined, false, (_data, context) => {
+          return Boolean(context)
+        })
+
+        expect(fn).not.toHaveBeenCalled()
+
+        writable.set(1)
+        writable.set(2)
+        writable.set(3)
+
+        expect(fn).not.toHaveBeenCalled()
+      })
+
+      test('global context with truthy filter notifies', () => {
+        const writable = new Writable(0, undefined, true)
+
+        const fn = vi.fn()
+
+        writable.subscribe(fn, undefined, false, (_data, context) => {
+          return Boolean(context)
+        })
+
+        expect(fn).not.toHaveBeenCalled()
+
+        writable.set(1)
+
+        expect(fn).toHaveBeenLastCalledWith(1)
+
+        writable.set(2)
+
+        expect(fn).toHaveBeenLastCalledWith(2)
+
+        writable.set(3)
+
+        expect(fn).toHaveBeenLastCalledWith(3)
+      })
+
+      test('local context with falsy filter does not notify', () => {
+        const writable = new Writable(0, undefined, true)
+
+        const fn = vi.fn()
+
+        writable.subscribe(fn, undefined, false, (_data, context) => {
+          return Boolean(context)
+        })
+
+        expect(fn).not.toHaveBeenCalled()
+
+        writable.set(1, false)
+        writable.set(2, false)
+        writable.set(3, false)
+
+        expect(fn).not.toHaveBeenCalled()
+      })
+
+      test('local context with truthy filter notifies', () => {
+        const writable = new Writable(0, undefined, false)
+
+        const fn = vi.fn()
+
+        writable.subscribe(fn, undefined, false, (_data, context) => {
+          return Boolean(context)
+        })
+
+        expect(fn).not.toHaveBeenCalled()
+
+        writable.set(1, true)
+
+        expect(fn).toHaveBeenLastCalledWith(1)
+
+        writable.set(2, true)
+
+        expect(fn).toHaveBeenLastCalledWith(2)
+
+        writable.set(3, true)
+
+        expect(fn).toHaveBeenLastCalledWith(3)
+      })
+    })
   })
 
   describe('Writable - from Svelte', () => {
