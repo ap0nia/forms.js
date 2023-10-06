@@ -13,10 +13,10 @@ export function App() {
   }>()
 
   useEffect(() => {
-    setError('test', {
-      type: 'data',
-      message: 'data',
-    })
+    // setError('test', {
+    //   type: 'data',
+    //   message: 'data',
+    // })
   }, [setError])
 
   console.log('render')

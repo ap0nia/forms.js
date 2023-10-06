@@ -90,6 +90,8 @@ describe('store', () => {
 
         derived.subscribe(fn)
 
+        fn.mockReset()
+
         a.set(4)
 
         expect(fn).not.toHaveBeenCalled()
@@ -113,6 +115,8 @@ describe('store', () => {
         const derived = new RecordDerived({ a, b, c }, new Set())
 
         derived.subscribe(fn)
+
+        fn.mockReset()
 
         a.set(4)
 
@@ -141,6 +145,8 @@ describe('store', () => {
 
         derived.subscribe(fn)
 
+        fn.mockReset()
+
         a.set(4)
 
         expect(fn).not.toHaveBeenCalled()
@@ -166,6 +172,8 @@ describe('store', () => {
       const derived = new RecordDerived({ a, b, c })
 
       const unsubscribe = derived.subscribe(fn)
+
+      fn.mockReset()
 
       unsubscribe()
 
@@ -193,6 +201,8 @@ describe('store', () => {
         const fn = vi.fn()
 
         derived.subscribe(fn)
+
+        fn.mockReset()
 
         derived.pending = 1
 
@@ -233,6 +243,8 @@ describe('store', () => {
         const fn = vi.fn()
 
         derived.subscribe(fn)
+
+        fn.mockReset()
 
         derived.transaction(() => {
           stores.a.set(4)
@@ -281,6 +293,8 @@ describe('store', () => {
 
         derived.subscribe(fn)
 
+        fn.mockReset()
+
         stores.a.set(4)
         stores.b.set(5)
         stores.c.set(6)
@@ -302,6 +316,8 @@ describe('store', () => {
         const fn = vi.fn()
 
         derived.subscribe(fn)
+
+        fn.mockReset()
 
         stores.a.set(4)
         stores.b.set(5)
