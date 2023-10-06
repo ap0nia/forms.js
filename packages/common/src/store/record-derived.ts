@@ -1,9 +1,8 @@
-import { noop, type Noop } from '../utils/noop.js'
-import { safeNotEqual } from '../utils/safe-not-equal.js'
+import { noop } from '../utils/noop.js'
 
 import type { StoresValues } from './derived.js'
-import type { StartStopNotifier, Subscriber, Unsubscriber, Updater } from './types'
-import { Writable, type SubscribeInvalidateTuple } from './writable.js'
+import type { Subscriber, Unsubscriber } from './types'
+import { Writable } from './writable.js'
 
 /**
  * Given an object with keys mapped to stores, subscribe to all of them, but lazily
@@ -28,7 +27,7 @@ export class RecordDerived<
   /**
    * The core of this store relies on a regular writable to propagate updates to subscribers.
    */
-  writable: SpecialWritable<T>
+  writable: Writable<T>
 
   /**
    * This store maintains its current value as the single source of truth.
@@ -88,7 +87,7 @@ export class RecordDerived<
       })
     }
 
-    this.writable = new SpecialWritable(this.value, this.startStopNotifier.bind(this))
+    this.writable = new Writable(this.value, this.startStopNotifier.bind(this))
   }
 
   /**
@@ -104,7 +103,7 @@ export class RecordDerived<
         this.keysChangedDuringFrozen.push(key)
       }
     } else {
-      this.writable.set(this.value, this.keysChangedDuringFrozen)
+      this.writable.set(this.value)
       this.keysChangedDuringFrozen = []
     }
   }
@@ -227,86 +226,5 @@ export class RecordDerived<
 
     this.thaw()
     this.keysChangedDuringFrozen = []
-  }
-}
-
-export type SpecialSubscriber<T> = (value: T, keys?: string[]) => void
-
-export class SpecialWritable<T = any> {
-  /**
-   * Subscribe functions paired with a value to be passed to them.
-   * Populated by {@link Writable.set} to update subscribers.
-   */
-  public static readonly subscriberQueue: [Subscriber<any>, unknown, string[]?][] = []
-
-  stop?: Noop
-
-  subscribers = new Set<SubscribeInvalidateTuple<T>>()
-
-  value: T
-
-  start: StartStopNotifier<T>
-
-  constructor(value?: T, start: StartStopNotifier<T> = noop) {
-    this.value = value as T
-    this.start = start
-  }
-
-  public get hasSubscribers(): boolean {
-    return this.subscribers.size > 0
-  }
-
-  public update(updater: Updater<T>, keys?: string[]) {
-    this.set(updater(this.value as T), keys)
-  }
-
-  public subscribe(run: Subscriber<T>, invalidate = noop, runFirst = true) {
-    const subscriber: SubscribeInvalidateTuple<T> = [run, invalidate]
-
-    this.subscribers.add(subscriber)
-
-    if (this.subscribers.size === 1) {
-      this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
-    }
-
-    if (runFirst) {
-      run(this.value as T)
-    }
-
-    return () => {
-      this.subscribers.delete(subscriber)
-
-      if (this.subscribers.size === 0 && this.stop != null) {
-        this.stop()
-        this.stop = undefined
-      }
-    }
-  }
-
-  public set(value: T, keys?: string[]): void {
-    if (!safeNotEqual(this.value, value)) {
-      return
-    }
-
-    this.value = value
-
-    if (this.stop == null) {
-      return
-    }
-
-    const shouldRunQueue = !SpecialWritable.subscriberQueue.length
-
-    for (const [subscribe, invalidate] of this.subscribers) {
-      invalidate()
-      SpecialWritable.subscriberQueue.push([subscribe, value, keys])
-    }
-
-    if (shouldRunQueue) {
-      for (const [subscriber, subscriberValue, keys] of SpecialWritable.subscriberQueue) {
-        subscriber(subscriberValue, keys)
-      }
-
-      SpecialWritable.subscriberQueue.length = 0
-    }
   }
 }
