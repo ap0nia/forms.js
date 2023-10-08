@@ -537,7 +537,7 @@ export class FormControl<
    *
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
-  async updateValid(force?: boolean, name?: string): Promise<void> {
+  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
     if (!force && !this.derivedState.keys?.has('isValid')) {
       return
     }
@@ -615,14 +615,16 @@ export class FormControl<
 
     const field: Field | undefined = safeGet(this.fields, name)
 
+    const fieldNames = toStringArray(name)
+
     // Update errors.
     this.state.errors.update((errors) => {
       deepSet(errors, name, { ...error, ref: field?._f?.ref })
       return errors
-    })
+    }, fieldNames)
 
     // Update isValid.
-    this.state.isValid.set(false)
+    this.state.isValid.set(false, fieldNames)
 
     if (options?.shouldFocus) {
       field?._f?.ref?.focus?.()
@@ -660,6 +662,8 @@ export class FormControl<
   ): void {
     const field = this.registerField(name, options)
 
+    const fieldNames = toStringArray(name)
+
     const newField = mergeElementWithField(name, field, element)
 
     const defaultValue =
@@ -673,7 +677,7 @@ export class FormControl<
 
     deepSet(this.fields, name, newField)
 
-    this.updateValid()
+    this.updateValid(undefined, fieldNames)
   }
 
   /**
@@ -723,9 +727,9 @@ export class FormControl<
   ): void {
     this.derivedState.freeze()
 
-    const nameArray = Array.isArray(name) ? name : name ? [name] : Array.from(this.names.mount)
+    const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
 
-    for (const fieldName of nameArray) {
+    for (const fieldName of fieldNames) {
       this.names.mount.delete(fieldName)
       this.names.array.delete(fieldName)
 
@@ -735,42 +739,42 @@ export class FormControl<
         this.state.values.update((values) => {
           deepUnset(values, fieldName)
           return values
-        })
+        }, fieldNames)
       }
 
       if (!options?.keepError) {
         this.state.errors.update((errors) => {
           deepUnset(errors, fieldName)
           return errors
-        })
+        }, fieldNames)
       }
 
       if (!options?.keepDirty) {
         this.state.dirtyFields.update((dirtyFields) => {
           deepUnset(dirtyFields, fieldName)
           return dirtyFields
-        })
+        }, fieldNames)
 
-        this.state.isDirty.set(this.getDirty())
+        this.state.isDirty.set(this.getDirty(), fieldNames)
       }
 
       if (!options?.keepTouched) {
         this.state.touchedFields.update((touchedFields) => {
           deepUnset(touchedFields, fieldName)
           return touchedFields
-        })
+        }, fieldNames)
       }
 
       if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
         this.state.defaultValues.update((defaultValues) => {
           deepUnset(defaultValues, fieldName)
           return defaultValues
-        })
+        }, fieldNames)
       }
     }
 
     if (!options?.keepIsValid) {
-      this.updateValid()
+      this.updateValid(undefined, fieldNames)
     }
 
     this.derivedState.unfreeze()
