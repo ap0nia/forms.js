@@ -39,6 +39,7 @@ import { isPrimitive } from './utils/is-primitive'
 import type { Noop } from './utils/noop'
 import type { Nullish } from './utils/null'
 import { safeGet, safeGetMultiple } from './utils/safe-get'
+import { toStringArray } from './utils/to-string-array'
 import type { DeepMap } from './utils/types/deep-map'
 import type { DeepPartial } from './utils/types/deep-partial'
 import type { Defaults } from './utils/types/defaults'
@@ -475,10 +476,7 @@ export class FormControl<
       defaultValues: new Writable(defaultValues),
       errors: new Writable({}),
       values: new Writable(resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues)),
-      status: new Writable<FormControlStatus, string[]>({
-        init: true,
-        mount: false,
-      }),
+      status: new Writable<FormControlStatus, string[]>({ init: true, mount: false }),
     }
 
     this.derivedState = new RecordDerived(this.state, new Set())
@@ -546,8 +544,10 @@ export class FormControl<
 
     const result = await this.validate()
 
+    const fieldNames = toStringArray(name)
+
     // Update isValid.
-    this.state.isValid.set(result.isValid, name ? [name] : undefined)
+    this.state.isValid.set(result.isValid, fieldNames)
   }
 
   /**
@@ -559,11 +559,16 @@ export class FormControl<
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
   ): Promise<boolean> {
+    /**
+     * Freeze the derived state until the end of this method so it updates multiple values at once.
+     */
     this.derivedState.freeze()
+
+    const fieldNames = toStringArray(name)
 
     // Update isValidating and force derivedState to update.
     this.derivedState.transaction(() => {
-      this.state.isValidating.set(true)
+      this.state.isValidating.set(true, fieldNames)
     })
 
     const result = await this.validate(name as any)
@@ -579,17 +584,14 @@ export class FormControl<
     }
 
     // Update isValid.
-    this.state.isValid.set(result.isValid)
+    this.state.isValid.set(result.isValid, fieldNames)
 
     // Update isValidating and force derivedState to update.
     this.derivedState.transaction(() => {
-      this.state.isValidating.set(false)
+      this.state.isValidating.set(false, fieldNames)
     })
 
     if (options?.shouldFocus && !result.isValid) {
-      const fieldNames = (name == null || Array.isArray(name) ? name : [name]) as
-        | string[]
-        | undefined
       const callback = (key?: string) => key && safeGet(this.state.errors.value, key)
       focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
     }
@@ -1284,7 +1286,7 @@ export class FormControl<
       })
 
       return newErrors
-    })
+    }, namesToMerge)
   }
 
   /**
