@@ -46,8 +46,8 @@ export class Writable<T = any, TContext = undefined> implements Readable<T> {
     return this.subscribers.size > 0
   }
 
-  public update(updater: Updater<T>) {
-    this.set(updater(this.value as T))
+  public update(updater: Updater<T>, context?: TContext) {
+    this.set(updater(this.value as T), context)
   }
 
   public subscribe(
