@@ -12,7 +12,7 @@ describe('FormControl', () => {
     test('returns true if values are not equal to default values', () => {
       const formControl = new FormControl()
 
-      formControl.values.set({ foo: 'bar' })
+      formControl.state.values.set({ foo: 'bar' })
 
       expect(formControl.getDirty()).toBeTruthy()
     })

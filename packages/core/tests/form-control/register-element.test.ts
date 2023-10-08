@@ -49,14 +49,14 @@ describe('FormControl', () => {
       formControl.derivedState.proxy.isValid
 
       // Since `shouldUnregister` is true, the initial values should be an empty object.
-      expect(formControl.values.value).toEqual({})
+      expect(formControl.state.values.value).toEqual({})
 
       const element = document.createElement('input')
 
       formControl.registerElement(name, element)
 
       // After registering the element, the default value should be set in the form control's values.
-      expect(formControl.values.value).toEqual(defaultValues)
+      expect(formControl.state.values.value).toEqual(defaultValues)
     })
   })
 })

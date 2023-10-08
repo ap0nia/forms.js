@@ -9,7 +9,7 @@ describe('FormControl', () => {
 
       expect(form.state.defaultValues.value).toEqual({})
 
-      expect(form.values.value).toEqual({})
+      expect(form.state.values.value).toEqual({})
     })
 
     test('default values and no values sets both', () => {
@@ -19,7 +19,7 @@ describe('FormControl', () => {
 
       expect(form.state.defaultValues.value).toEqual(defaultValues)
 
-      expect(form.values.value).toEqual(defaultValues)
+      expect(form.state.values.value).toEqual(defaultValues)
     })
 
     test('values and no default values sets both', () => {
@@ -29,7 +29,7 @@ describe('FormControl', () => {
 
       expect(form.state.defaultValues.value).toEqual(values)
 
-      expect(form.values.value).toEqual(values)
+      expect(form.state.values.value).toEqual(values)
     })
 
     test('shouldUnregister and default values does not set values', () => {
@@ -39,7 +39,7 @@ describe('FormControl', () => {
 
       expect(form.state.defaultValues.value).toEqual(defaultValues)
 
-      expect(form.values.value).toEqual({})
+      expect(form.state.values.value).toEqual({})
     })
 
     test('shouldCaptureDirtyFields is true if specified by resetOptions', () => {

@@ -41,6 +41,8 @@ export function useController<
     touchedFields: formControl.state.touchedFields.value,
     defaultValues: formControl.state.defaultValues.value,
     errors: formControl.state.errors.value,
+    values: formControl.state.values.value,
+    status: formControl.state.status.value,
   })
 
   const value = formControl.getValues(props.name)

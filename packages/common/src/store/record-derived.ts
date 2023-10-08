@@ -11,7 +11,7 @@ import { Writable } from './writable.js'
  * It uses a {@link Writable} internally to notify subscribers.
  */
 export class RecordDerived<
-  S extends Record<string, Writable<any>>,
+  S extends Record<string, Writable<any, any>>,
   T extends StoresValues<S> = StoresValues<S>,
 > {
   /**

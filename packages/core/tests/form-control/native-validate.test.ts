@@ -55,7 +55,7 @@ describe('FormContol', () => {
       },
     }
 
-    formControl.values.set({ name: 'test' })
+    formControl.state.values.set({ name: 'test' })
 
     const result = await formControl.nativeValidate()
 

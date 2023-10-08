@@ -7,7 +7,7 @@ export function App() {
   const {
     register,
     setError,
-    formState: { errors },
+    formState: { errors, values },
   } = useForm<{
     test: string
   }>()
@@ -19,7 +19,7 @@ export function App() {
     // })
   }, [setError])
 
-  console.log('render')
+  console.log('render', values)
 
   return (
     <div>

@@ -110,6 +110,14 @@ export type FormControlState<T> = {
    * A record of field names mapped to their errors.
    */
   errors: FieldErrors<T>
+
+  /**
+   */
+  values: T
+
+  /**
+   */
+  status: FormControlStatus
 }
 
 /**
@@ -389,17 +397,13 @@ export class FormControl<
    *
    * @public
    */
-  state: { [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key]> }
+  state: {
+    [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key], string[]>
+  }
 
   derivedState: RecordDerived<{
-    [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key]>
+    [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key], string[]>
   }>
-
-  /**
-   */
-  values: Writable<TValues>
-
-  status: Writable<FormControlStatus>
 
   /**
    * Registered fields.
@@ -470,16 +474,12 @@ export class FormControl<
       dirtyFields: new Writable({}),
       defaultValues: new Writable(defaultValues),
       errors: new Writable({}),
+      values: new Writable(resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues)),
+      status: new Writable<FormControlStatus, string[]>({
+        init: true,
+        mount: false,
+      }),
     }
-
-    this.values = new Writable(
-      resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues),
-    )
-
-    this.status = new Writable<FormControlStatus>({
-      init: true,
-      mount: false,
-    })
 
     this.derivedState = new RecordDerived(this.state, new Set())
 
@@ -507,14 +507,14 @@ export class FormControl<
 
   getValues(...args: any[]): any {
     const names = args.length > 1 ? args : args[0]
-    return safeGetMultiple(this.values.value, names)
+    return safeGetMultiple(this.state.values.value, names)
   }
 
   /**
    * Determines whether the store is currently dirty. Does not update the state.
    */
   getDirty(): boolean {
-    return !deepEqual(this.state.defaultValues.value, this.values.value)
+    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
   }
 
   /**
@@ -539,7 +539,7 @@ export class FormControl<
    *
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
-  async updateValid(force?: boolean): Promise<void> {
+  async updateValid(force?: boolean, name?: string): Promise<void> {
     if (!force && !this.derivedState.keys?.has('isValid')) {
       return
     }
@@ -547,7 +547,7 @@ export class FormControl<
     const result = await this.validate()
 
     // Update isValid.
-    this.state.isValid.set(result.isValid)
+    this.state.isValid.set(result.isValid, name ? [name] : undefined)
   }
 
   /**
@@ -661,10 +661,10 @@ export class FormControl<
     const newField = mergeElementWithField(name, field, element)
 
     const defaultValue =
-      safeGet(this.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      deepSet(this.values.value, name, getFieldValue(newField._f))
+      deepSet(this.state.values.value, name, getFieldValue(newField._f))
     } else {
       updateFieldReference(newField._f, defaultValue)
     }
@@ -703,11 +703,11 @@ export class FormControl<
     }
 
     const defaultValue =
-      safeGet(this.values.value, name) ??
+      safeGet(this.state.values.value, name) ??
       options?.value ??
       safeGet(this.state.defaultValues.value, name)
 
-    deepSet(this.values.value, name, defaultValue)
+    deepSet(this.state.values.value, name, defaultValue)
 
     return field
   }
@@ -730,7 +730,7 @@ export class FormControl<
       if (!options?.keepValue) {
         deepUnset(this.fields, fieldName)
 
-        this.values.update((values) => {
+        this.state.values.update((values) => {
           deepUnset(values, fieldName)
           return values
         })
@@ -812,7 +812,7 @@ export class FormControl<
     const clonedValue = structuredClone(value)
 
     // Update values.
-    this.values.update((values) => {
+    this.state.values.update((values) => {
       deepSet(values, name, clonedValue)
       return values
     })
@@ -828,7 +828,7 @@ export class FormControl<
     } else {
       if (options?.shouldDirty) {
         this.state.dirtyFields.set(
-          getDirtyFields(this.state.defaultValues.value, this.values.value),
+          getDirtyFields(this.state.defaultValues.value, this.state.values.value),
         )
         this.state.isDirty.set(this.getDirty())
       }
@@ -912,7 +912,7 @@ export class FormControl<
 
     // If the field exists and isn't disabled, then also update the form values.
     if (!fieldReference.disabled) {
-      this.values.update((values) => {
+      this.state.values.update((values) => {
         deepSet(values, name, getFieldValueAs(value, fieldReference))
         return values
       })
@@ -947,7 +947,7 @@ export class FormControl<
     const fieldValue = getCurrentFieldValue(event, field)
 
     // Update values.
-    this.values.update((values) => {
+    this.state.values.update((values) => {
       deepSet(values, name, fieldValue)
       return values
     })
@@ -987,7 +987,8 @@ export class FormControl<
       // Update isValid.
       await this.updateValid()
 
-      this.derivedState.unfreeze(!isBlurEvent && this.isWatched(name))
+      // this.derivedState.unfreeze(!isBlurEvent && this.isWatched(name))
+      this.derivedState.unfreeze()
 
       return
     }
@@ -1029,7 +1030,8 @@ export class FormControl<
 
     if (result.validationResult) {
       const isFieldValueUpdated =
-        Number.isNaN(fieldValue) || (fieldValue === safeGet(this.values.value, name) ?? fieldValue)
+        Number.isNaN(fieldValue) ||
+        (fieldValue === safeGet(this.state.values.value, name) ?? fieldValue)
 
       const error = result.validationResult.errors[name]
 
@@ -1084,7 +1086,7 @@ export class FormControl<
       this.mergeErrors(errors)
 
       if (isValid) {
-        const data = structuredClone(resolverResult?.values ?? this.values.value) as any
+        const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
         await onValid?.(data, event)
       } else {
         await onInvalid?.(errors, event)
@@ -1121,7 +1123,7 @@ export class FormControl<
       if (options?.keepDirtyValues || this.options.shouldCaptureDirtyFields) {
         for (const fieldName of this.names.mount) {
           if (safeGet(this.state.dirtyFields.value, fieldName)) {
-            deepSet(values, fieldName, safeGet(this.values.value, fieldName))
+            deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
           } else {
             // FIXME: don't set state if not needed.
             this.setValue(fieldName as any, safeGet(values, fieldName))
@@ -1160,7 +1162,7 @@ export class FormControl<
           : {}
         : structuredClone(values)
 
-      this.values.set(newValues as TValues)
+      this.state.values.set(newValues as TValues)
     }
 
     this.names = {
@@ -1232,7 +1234,7 @@ export class FormControl<
 
     if (resetValues) {
       const newValues = structuredClone(resolvedDefaultValues)
-      this.values.set(newValues as TValues)
+      this.state.values.set(newValues as TValues)
     }
 
     // If the form was loading, it should be done now.
@@ -1327,10 +1329,10 @@ export class FormControl<
 
     const value = options.disabled
       ? undefined
-      : safeGet(this.values.value, options.name) ??
+      : safeGet(this.state.values.value, options.name) ??
         getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
-    deepSet(this.values.value, options.name, value)
+    deepSet(this.state.values.value, options.name, value)
 
     this.mockUpdateDirtyField(options.name, value)
 
@@ -1374,7 +1376,7 @@ export class FormControl<
     if (changed) {
       this.derivedState.freeze()
 
-      this.values.update((values) => ({ ...values }))
+      this.state.values.update((values) => ({ ...values }))
       this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }))
 
       this.derivedState.unfreeze()
@@ -1431,12 +1433,16 @@ export class FormControl<
         }
       }
 
-      const resolverResult = await this.options.resolver(this.values.value, this.options.context, {
-        names: names as any,
-        fields,
-        criteriaMode: this.options.criteriaMode,
-        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-      })
+      const resolverResult = await this.options.resolver(
+        this.state.values.value,
+        this.options.context,
+        {
+          names: names as any,
+          fields,
+          criteriaMode: this.options.criteriaMode,
+          shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+        },
+      )
 
       const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
 
@@ -1456,7 +1462,7 @@ export class FormControl<
   ): Promise<NativeValidationResult> {
     const fields = deepFilter(this.fields, names)
 
-    const validationResult = await nativeValidateFields(fields, this.values.value, {
+    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
       shouldOnlyCheckValid,
       shouldUseNativeValidation: this.options.shouldUseNativeValidation,
       shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
@@ -1467,7 +1473,7 @@ export class FormControl<
   }
 
   mount() {
-    this.status.set({ init: false, mount: true })
+    this.state.status.set({ init: false, mount: true })
   }
 
   unmount() {
@@ -1506,7 +1512,7 @@ export class FormControl<
 
   watch(...args: any[]): any {
     if (typeof args[0] === 'function') {
-      return this.values.subscribe((values) => {
+      return this.state.values.subscribe((values) => {
         // TODO: fill this out.
         const context = {}
         return args[0](values, context)
@@ -1520,8 +1526,8 @@ export class FormControl<
     })
 
     return nameArray.length === 1
-      ? safeGet(this.values.value, nameArray[0])
-      : safeGetMultiple(this.values.value, nameArray)
+      ? safeGet(this.state.values.value, nameArray[0])
+      : safeGetMultiple(this.state.values.value, nameArray)
   }
 
   clearErrors(name?: string | string[]) {

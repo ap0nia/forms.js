@@ -68,7 +68,10 @@ export class ReactFormControl<
   /**
    * React wrapper for the vanilla handleSubmit method.
    */
-  handleSubmitReact(onValid?: SubmitHandler<TValues>, onInvalid?: SubmitErrorHandler<TValues>) {
+  handleSubmitReact(
+    onValid?: SubmitHandler<TValues, TTransformedValues>,
+    onInvalid?: SubmitErrorHandler<TValues>,
+  ) {
     const handler = this.handleSubmit(onValid, onInvalid)
     return async (event: React.SyntheticEvent) => {
       return await handler(event.nativeEvent)

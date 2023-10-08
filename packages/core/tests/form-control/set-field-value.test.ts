@@ -20,7 +20,7 @@ describe('FormControl', () => {
 
       formControl.setFieldValue(name, 'Hello', { shouldValidate: true })
 
-      expect(formControl.values.value).toEqual({})
+      expect(formControl.state.values.value).toEqual({})
     })
 
     test('setting value for existing, enabled field mutates the form values', () => {
@@ -37,7 +37,7 @@ describe('FormControl', () => {
 
       formControl.setFieldValue(name, 'Hello')
 
-      expect(formControl.values.value).toEqual({ [name]: 'Hello' })
+      expect(formControl.state.values.value).toEqual({ [name]: 'Hello' })
     })
 
     test('setting a new field name does not change values', () => {
@@ -47,7 +47,7 @@ describe('FormControl', () => {
 
       formControl.setFieldValue(name, null)
 
-      expect(formControl.values.value).toEqual({})
+      expect(formControl.state.values.value).toEqual({})
     })
 
     test('setting a new field name updates touched and dirty', () => {

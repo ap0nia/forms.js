@@ -39,7 +39,7 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   useEffect(() => {
-    if (formControl.status.value.mount) {
+    if (formControl.state.status.value.mount) {
       formControl.reset(options?.values, formControl.options.resetOptions)
     }
   }, [options?.values])

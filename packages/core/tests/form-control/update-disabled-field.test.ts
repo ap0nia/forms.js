@@ -7,11 +7,11 @@ describe('FormControl', () => {
     test('exit early and no values change if disabled is not a boolean', () => {
       const formControl = new FormControl()
 
-      const originalValues = formControl.values.value
+      const originalValues = formControl.state.values.value
 
       formControl.updateDisabledField({ name: 'name' })
 
-      expect(formControl.values.value).toEqual(originalValues)
+      expect(formControl.state.values.value).toEqual(originalValues)
     })
 
     test('sets field value to undefined if disabled is true', () => {
@@ -19,11 +19,11 @@ describe('FormControl', () => {
 
       const name = 'name'
 
-      formControl.values.set({ [name]: 'value' })
+      formControl.state.values.set({ [name]: 'value' })
 
       formControl.updateDisabledField({ disabled: true, name })
 
-      expect(formControl.values.value).toEqual({
+      expect(formControl.state.values.value).toEqual({
         [name]: undefined,
       })
     })
@@ -35,11 +35,11 @@ describe('FormControl', () => {
 
       const values = { [name]: 'value' }
 
-      formControl.values.set(values)
+      formControl.state.values.set(values)
 
       formControl.updateDisabledField({ disabled: false, name })
 
-      expect(formControl.values.value).toEqual(values)
+      expect(formControl.state.values.value).toEqual(values)
     })
 
     test('falls back to using field value if disabled is false and no form values', () => {
@@ -61,7 +61,7 @@ describe('FormControl', () => {
         },
       })
 
-      expect(formControl.values.value).toEqual({ [name]: value })
+      expect(formControl.state.values.value).toEqual({ [name]: value })
     })
 
     test('falls back to using value from fields if disabled is false and no form values', () => {
@@ -85,7 +85,7 @@ describe('FormControl', () => {
         },
       })
 
-      expect(formControl.values.value).toEqual({ [name]: value })
+      expect(formControl.state.values.value).toEqual({ [name]: value })
     })
   })
 })
