@@ -1632,3 +1632,55 @@ describe('useForm', () => {
     })
   })
 })
+
+// describe.only('my tests', () => {
+//   test.only('should contain error if value is invalid with revalidateMode is onChange', async () => {
+//     const onSubmit = vi.fn()
+//
+//     const Component = ({
+//       resolver,
+//       mode,
+//       rules = { required: 'required' },
+//       onSubmit = () => {},
+//     }: {
+//       resolver?: any
+//       mode?: 'onBlur' | 'onSubmit' | 'onChange'
+//       rules?: RegisterOptions<{ test: string }, 'test'>
+//       onSubmit?: () => void
+//     }) => {
+//       const internationalMethods = useForm<{ test: string; t1: string }>({ resolver, mode })
+//
+//       const { register, formControl, formState } = internationalMethods
+//
+//       formControl.derivedState.addKeyName('errors', 't1')
+//
+//       useEffect(() => {
+//         formControl.setError('t1')
+//       }, [])
+//
+//       console.log('render')
+//
+//       return (
+//         <div>
+//           <input type="text" {...register('test', resolver ? {} : rules)} />
+//           {/*
+//           <span role="alert">{errors?.test?.message && errors.test.message}</span>
+//           <button onClick={handleSubmit(onSubmit)}>button</button>
+//           <p>{isValid ? 'valid' : 'invalid'}</p>
+//           <p>{isDirty ? 'dirty' : 'pristine'}</p>
+//           */}
+//         </div>
+//       )
+//     }
+//
+//     render(<Component onSubmit={onSubmit} />)
+//
+//     const input = screen.getByRole('textbox')
+//
+//     fireEvent.input(input, { target: { name: 'test', value: 'abcd' } })
+//
+//     // fireEvent.click(screen.getByRole('button'))
+//
+//     fireEvent.input(input, { target: { name: 'test', value: '' } })
+//   })
+// })
