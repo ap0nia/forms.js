@@ -815,13 +815,15 @@ export class FormControl<
 
     const field: Field | undefined = safeGet(this.fields, name)
 
+    const fieldNames = toStringArray(name)
+
     const clonedValue = structuredClone(value)
 
     // Update values.
     this.state.values.update((values) => {
       deepSet(values, name, clonedValue)
       return values
-    })
+    }, fieldNames)
 
     const isFieldArray = this.names.array.has(name)
 
@@ -835,14 +837,13 @@ export class FormControl<
       if (options?.shouldDirty) {
         this.state.dirtyFields.set(
           getDirtyFields(this.state.defaultValues.value, this.state.values.value),
+          fieldNames,
         )
-        this.state.isDirty.set(this.getDirty())
+        this.state.isDirty.set(this.getDirty(), fieldNames)
       }
     }
 
-    const shouldNotify = this.isWatched(name)
-
-    this.derivedState.unfreeze(shouldNotify)
+    this.derivedState.unfreeze()
   }
 
   /**
@@ -918,10 +919,13 @@ export class FormControl<
 
     // If the field exists and isn't disabled, then also update the form values.
     if (!fieldReference.disabled) {
-      this.state.values.update((values) => {
-        deepSet(values, name, getFieldValueAs(value, fieldReference))
-        return values
-      })
+      this.state.values.update(
+        (values) => {
+          deepSet(values, name, getFieldValueAs(value, fieldReference))
+          return values
+        },
+        [name],
+      )
     }
 
     // Update dirtyFields, isDirty, touchedFields.
@@ -953,10 +957,13 @@ export class FormControl<
     const fieldValue = getCurrentFieldValue(event, field)
 
     // Update values.
-    this.state.values.update((values) => {
-      deepSet(values, name, fieldValue)
-      return values
-    })
+    this.state.values.update(
+      (values) => {
+        deepSet(values, name, fieldValue)
+        return values
+      },
+      [name],
+    )
 
     const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
 
@@ -1016,21 +1023,24 @@ export class FormControl<
       )
 
       // Update errors.
-      this.state.errors.update((errors) => {
-        if (currentError.error) {
-          deepSet(errors, currentError.name, currentError.error)
-        } else {
-          deepUnset(errors, currentError.name)
-        }
-        return errors
-      })
+      this.state.errors.update(
+        (errors) => {
+          if (currentError.error) {
+            deepSet(errors, currentError.name, currentError.error)
+          } else {
+            deepUnset(errors, currentError.name)
+          }
+          return errors
+        },
+        [name],
+      )
 
       if (field._f.deps) {
         // Update isValidating, errors, isValid.
         this.trigger(field._f.deps as any)
       } else {
         // Update isValidating.
-        this.state.isValid.set(result.isValid)
+        this.state.isValid.set(result.isValid, [name])
       }
     }
 
@@ -1050,21 +1060,24 @@ export class FormControl<
         }
       } else {
         // Update errors.
-        this.state.errors.update((errors) => {
-          deepSet(errors, name, error)
-          return errors
-        })
+        this.state.errors.update(
+          (errors) => {
+            deepSet(errors, name, error)
+            return errors
+          },
+          [name],
+        )
       }
 
       if (isFieldValueUpdated && field._f.deps) {
         this.trigger(field._f.deps as any)
       } else {
         // Update isValidating.
-        this.state.isValid.set(result.isValid)
+        this.state.isValid.set(result.isValid, [name])
       }
     }
 
-    this.state.isValidating.set(false)
+    this.state.isValidating.set(false, [name])
     this.derivedState.unfreeze()
   }
 
@@ -1319,10 +1332,13 @@ export class FormControl<
     const previousIsTouched = safeGet(this.state.touchedFields.value, name)
 
     if (!previousIsTouched) {
-      this.state.touchedFields.update((touchedFields) => {
-        deepSet(touchedFields, name, true)
-        return touchedFields
-      })
+      this.state.touchedFields.update(
+        (touchedFields) => {
+          deepSet(touchedFields, name, true)
+          return touchedFields
+        },
+        [name],
+      )
     }
 
     return !previousIsTouched
@@ -1399,10 +1415,10 @@ export class FormControl<
   updateDirtyField(name: string, value?: unknown): boolean {
     const { previousIsDirty, currentIsDirty } = this.mockUpdateDirtyField(name, value)
 
-    this.state.isDirty.set(currentIsDirty)
+    this.state.isDirty.set(currentIsDirty, [name])
 
     if (currentIsDirty) {
-      this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }))
+      this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), [name])
     }
 
     return currentIsDirty !== previousIsDirty
@@ -1418,7 +1434,7 @@ export class FormControl<
    * @returns Whether the form is valid and the resolver or native validation result.
    */
   async validate(name?: string | string[] | Nullish) {
-    const nameArray = (name == null || Array.isArray(name) ? name : [name]) as string[] | undefined
+    const nameArray = toStringArray(name)
 
     if (this.options.resolver == null) {
       const validationResult = await this.nativeValidate(nameArray)
@@ -1542,12 +1558,12 @@ export class FormControl<
       return
     }
 
-    const nameArray = Array.isArray(name) ? name : [name]
+    const nameArray = toStringArray(name)
 
     this.state.errors.update((errors) => {
-      nameArray.forEach((name) => deepUnset(this.state.errors.value, name))
+      nameArray?.forEach((name) => deepUnset(this.state.errors.value, name))
       return errors
-    })
+    }, nameArray)
   }
 
   setFocus(name: string, options: { shouldSelect?: boolean } = {}) {
