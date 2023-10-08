@@ -1181,7 +1181,7 @@ export class FormControl<
           : {}
         : structuredClone(values)
 
-      this.state.values.set(newValues as TValues)
+      this.state.values.set(newValues as TValues, true)
     }
 
     this.names = {

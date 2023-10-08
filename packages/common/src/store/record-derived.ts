@@ -44,6 +44,8 @@ export class RecordDerived<
    */
   pending = 0
 
+  keyNames: Record<PropertyKey, string[]> = {}
+
   /**
    * Unsubscribe functions to run after no more subscribers are listening.
    */
@@ -62,7 +64,7 @@ export class RecordDerived<
    * While frozen, keep track of which keys were accessed.
    * After unfrozen, determine if any keys are being tracked and thus should trigger an update.
    */
-  keysChangedDuringFrozen: string[] = []
+  keysChangedDuringFrozen?: { key: string; name?: string[] }[] = undefined
 
   constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined) {
     this.stores = stores
@@ -93,18 +95,31 @@ export class RecordDerived<
   /**
    * If possible, notify subscribers of the writable store.
    */
-  notify(key?: string) {
+  notify(key?: string, context?: string[]) {
     if (this.pending) {
       return
     }
 
     if (this.rimeTrauma) {
       if (key) {
-        this.keysChangedDuringFrozen.push(key)
+        this.keysChangedDuringFrozen ??= []
+        this.keysChangedDuringFrozen.push({ key, name: context })
       }
     } else {
-      this.writable.set(this.value)
-      this.keysChangedDuringFrozen = []
+      if (
+        context === true ||
+        key == null ||
+        this.keys == null ||
+        this.keys.has(key) ||
+        context?.some((name) => {
+          return this.keyNames[key]?.some((keyName) => {
+            return name.includes(keyName) || keyName.includes(name)
+          })
+        })
+      ) {
+        this.writable.set(this.value)
+      }
+      this.keysChangedDuringFrozen = undefined
     }
   }
 
@@ -153,14 +168,10 @@ export class RecordDerived<
   /**
    * Every store will call a version of this function when it updates.
    */
-  subscriptionFunction(i: number, key: keyof S, value: any) {
+  subscriptionFunction(i: number, key: keyof S, value: any, context?: string[]) {
     this.value = { ...this.value, [key]: value }
-
     this.pending &= ~(1 << i)
-
-    if (this.keys == null || this.keys.has(key)) {
-      this.notify(key as string)
-    }
+    this.notify(key as string, context)
   }
 
   /**
@@ -176,6 +187,7 @@ export class RecordDerived<
    */
   freeze() {
     this.rimeTrauma += 1
+    this.keysChangedDuringFrozen = []
   }
 
   /**
@@ -190,7 +202,30 @@ export class RecordDerived<
     this.thaw()
 
     if (shouldNotify === true || (!this.rimeTrauma && shouldNotify == null)) {
-      this.notify()
+      if (this.pending) {
+        return
+      }
+
+      if (!this.rimeTrauma) {
+        if (
+          this.keys == null ||
+          this.keysChangedDuringFrozen == null ||
+          this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key)) ||
+          this.keysChangedDuringFrozen?.some((keyChanged) => {
+            return (
+              keyChanged.name === true ||
+              keyChanged.name?.some((name) => {
+                this.keyNames[keyChanged.key]?.some((keyName) => {
+                  return name.includes(keyName) || keyName.includes(name)
+                })
+              })
+            )
+          })
+        ) {
+          this.writable.set(this.value)
+        }
+        this.keysChangedDuringFrozen = undefined
+      }
     }
   }
 
@@ -220,11 +255,16 @@ export class RecordDerived<
     // type-guarding doesn't work on the instance variable for some reason.
     const keys = this.keys
 
-    if (keys == null || this.keysChangedDuringFrozen.some((k) => keys.has(k))) {
+    if (keys == null || this.keysChangedDuringFrozen.some((k) => keys.has(k.key))) {
       this.writable.set(this.value)
     }
 
     this.thaw()
     this.keysChangedDuringFrozen = []
+  }
+
+  addKeyName(key: string, name: string) {
+    this.keyNames[key] ??= []
+    this.keyNames[key]?.push(name)
   }
 }

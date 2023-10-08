@@ -99,7 +99,7 @@ export class Writable<T = any, TContext = undefined> implements Readable<T> {
     if (shouldRunQueue) {
       for (const [subscribe, value, filter, context] of Writable.subscriberQueue) {
         if (filter == null || filter(value, context ?? this.context)) {
-          subscribe(value)
+          subscribe(value, context)
         }
       }
 
