@@ -4,11 +4,7 @@ import { useForm } from './use-form'
 // import { useForm } from 'react-hook-form'
 
 export function App() {
-  const {
-    register,
-    setError,
-    formState: { errors, values },
-  } = useForm<{
+  const { register, setError, formState } = useForm<{
     test: string
   }>()
 
@@ -19,7 +15,8 @@ export function App() {
     // })
   }, [setError])
 
-  console.log('render', values)
+  formState
+  console.log('render')
 
   return (
     <div>
@@ -34,7 +31,6 @@ export function App() {
         type="text"
       />
       <h1 dangerouslySetInnerHTML={{ __html: '&amp;' }}></h1>
-      <span role="alert">{errors.test && errors.test.message}</span>
     </div>
   )
 }

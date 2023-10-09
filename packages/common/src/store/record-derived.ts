@@ -20,22 +20,31 @@ export class RecordDerived<
   stores: S
 
   /**
-   * The keys of the object indicating which stores to provides updates for.
+   * The keys associated with the corresponding stores that can trigger updates.
+   *
+   * If undefined, all stores will trigger updates.
+   * If defined, only stores associated with the keys in the set will trigger updates.
    */
   keys: Set<PropertyKey> | undefined
 
   /**
-   * The core of this store relies on a regular writable to propagate updates to subscribers.
+   * Internally, a writable is used to handle the subscription logic.
+   *
+   * The context provided when setting or updating a value can be an array of string names,
+   * which will be used in a lookup in {@link keyNames} for fine-tuned update logic,
+   * or a boolean to explicitly force or prevent an update.
+   *
+   * @internal
    */
   writable: Writable<T, string[] | boolean>
 
   /**
-   * This store maintains its current value as the single source of truth.
+   * The most recently calculated value.
    */
   value: T
 
   /**
-   * A proxy can be used instead of the actual value in order to lazily track keys to subscribe to.
+   * {@link keys} can be mutated by accessing certain properties on this proxy instead of directly.
    */
   proxy: T
 
@@ -44,7 +53,14 @@ export class RecordDerived<
    */
   pending = 0
 
-  keyNames: Record<PropertyKey, string[]> = {}
+  /**
+   * Instead of subscribing to all updates associated with a key,
+   * can subscribe to specific updates based on the context provided when setting or updating a value.
+   *
+   * For example, instead of updating whenever **any** errors change,
+   * only update when the errors for the "test" field change.
+   */
+  keyNames: { [K in keyof S]?: string[] } = {}
 
   /**
    * Unsubscribe functions to run after no more subscribers are listening.
@@ -112,17 +128,23 @@ export class RecordDerived<
       return
     }
 
-    if (
-      key == null ||
-      context === true ||
-      this.keys == null ||
-      this.keys.has(key) ||
+    // If no keys or context are provided to filter by, notify all subscribers.
+    const noKeys = key == null || context === true || this.keys == null
+
+    // Whether the key is being tracked and should trigger an update.
+    const isKeyTracked = key && this.keys?.has(key)
+
+    // Whether a specific contextual name is being tracked under the key.
+    const isNameTracked =
+      key &&
+      Array.isArray(context) &&
       context?.some((name) => {
         return this.keyNames[key]?.some((keyName) => {
           return name.includes(keyName) || keyName.includes(name)
         })
       })
-    ) {
+
+    if (noKeys || isKeyTracked || isNameTracked) {
       this.writable.set(this.value)
     }
   }
@@ -150,7 +172,7 @@ export class RecordDerived<
    * Setup this store by binding listeners to each of the object's stores.
    */
   start() {
-    Object.entries(this.stores).forEach(([key, store]: [keyof S, Writable<any>], i) => {
+    Object.entries(this.stores).forEach(([key, store]: [keyof S, Writable<any, any>], i) => {
       const unsubscriber = store.subscribe(
         this.subscriptionFunction.bind(this, i, key),
         this.invalidateFunction.bind(this, i),
@@ -200,7 +222,9 @@ export class RecordDerived<
    *
    * @param shouldNotify Whether to notify subscribers if the store is fully unfrozen.
    *
-   * If shoulNotify is undefined, the default behavior is to notify if the store is fully unfrozen.
+   * If shouldNotify is undefined, the default behavior is to notify if the store is fully unfrozen.
+   *
+   * @remarks Logic is slightly different from regular notifications.
    */
   unfreeze(shouldNotify?: boolean) {
     this.thaw()
@@ -209,21 +233,25 @@ export class RecordDerived<
       return
     }
 
-    if (
-      this.keys == null ||
-      this.keysChangedDuringFrozen == null ||
-      this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key)) ||
-      this.keysChangedDuringFrozen?.some((keyChanged) => {
-        if (typeof keyChanged.name === 'boolean') {
-          return keyChanged.name
-        }
-        return keyChanged.name?.some((name) => {
-          return this.keyNames[keyChanged.key]?.some((keyName) => {
-            return name.includes(keyName) || keyName.includes(name)
-          })
+    // No keys to filter by, so notify all subscribers.
+    const noKeys = this.keys == null || this.keysChangedDuringFrozen == null
+
+    // Whether tracked keys were changed.
+    const trackedKeysChanged = this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key))
+
+    // Whether specific contextual names were changed.
+    const trackedNamesChanged = this.keysChangedDuringFrozen?.some((keyChanged) => {
+      if (typeof keyChanged.name === 'boolean') {
+        return keyChanged.name
+      }
+      return keyChanged.name?.some((name) => {
+        return this.keyNames[keyChanged.key]?.some((keyName) => {
+          return name.includes(keyName) || keyName.includes(name)
         })
       })
-    ) {
+    })
+
+    if (noKeys || trackedKeysChanged || trackedNamesChanged) {
       this.writable.set(this.value)
     }
 
@@ -253,10 +281,7 @@ export class RecordDerived<
 
     fn()
 
-    // type-guarding doesn't work on the instance variable for some reason.
-    const keys = this.keys
-
-    if (keys == null || this.keysChangedDuringFrozen.some((k) => keys.has(k.key))) {
+    if (this.keys == null || this.keysChangedDuringFrozen.some((k) => this.keys?.has(k.key))) {
       this.writable.set(this.value)
     }
 
@@ -264,7 +289,10 @@ export class RecordDerived<
     this.keysChangedDuringFrozen = []
   }
 
-  addKeyName(key: string, name: string) {
+  /**
+   * Track a specific contextual name of a key, instead of all updates to that key's store.
+   */
+  track(key: keyof S, name: string) {
     this.keyNames[key] ??= []
     this.keyNames[key]?.push(name)
   }

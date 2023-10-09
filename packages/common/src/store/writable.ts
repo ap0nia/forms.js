@@ -20,7 +20,7 @@ export class Writable<T = any, TContext = undefined> implements Readable<T> {
    * Populated by {@link Writable.set} to update subscribers.
    */
   public static readonly subscriberQueue: [
-    Subscriber<any>,
+    Subscriber<any, any>,
     unknown,
     SubscriptionFilter<any, any>?,
     unknown?,
@@ -51,7 +51,7 @@ export class Writable<T = any, TContext = undefined> implements Readable<T> {
   }
 
   public subscribe(
-    run: Subscriber<T>,
+    run: Subscriber<T, TContext>,
     invalidate = noop,
     runFirst = true,
     filter?: SubscriptionFilter<T, TContext>,
@@ -116,7 +116,7 @@ export class Writable<T = any, TContext = undefined> implements Readable<T> {
  * Subscribers/invalidators come in pairs.
  */
 export type SubscribeInvalidateTuple<T, TContext = undefined> = [
-  Subscriber<T>,
+  Subscriber<T, TContext>,
   Invalidator<T>,
   SubscriptionFilter<T, TContext>?,
   TContext?,
