@@ -66,7 +66,7 @@ export class RecordDerived<
    * For example, instead of updating whenever **any** errors change,
    * only update when the errors for the "test" field change.
    */
-  keyNames: { [K in keyof S]?: string[] } = {}
+  keyNames: { [K in keyof S]?: { value: string; exact?: boolean }[] } = {}
 
   /**
    * Unsubscribe functions to run after no more subscribers are listening.
@@ -146,7 +146,9 @@ export class RecordDerived<
       Array.isArray(context) &&
       context?.some((name) => {
         return this.keyNames[key]?.some((keyName) => {
-          return name.includes(keyName) || keyName.includes(name)
+          return keyName.exact
+            ? name === keyName.value
+            : name.includes(keyName.value) || keyName.value.includes(name)
         })
       })
 
@@ -252,7 +254,9 @@ export class RecordDerived<
       }
       return keyChanged.name?.some((name) => {
         return this.keyNames[keyChanged.key]?.some((keyName) => {
-          return name.includes(keyName) || keyName.includes(name)
+          return keyName.exact
+            ? name === keyName.value
+            : name.includes(keyName.value) || keyName.value.includes(name)
         })
       })
     })
@@ -298,13 +302,13 @@ export class RecordDerived<
   /**
    * Track a specific contextual name of a key, instead of all updates to that key's store.
    */
-  track(key: keyof S, name: string | string[]) {
+  track(key: keyof S, name: string | string[], options?: { exact?: boolean }) {
     this.keyNames[key] ??= []
 
     if (Array.isArray(name)) {
-      this.keyNames[key]?.push(...name)
+      this.keyNames[key]?.push(...name.map((n) => ({ value: n, ...options })))
     } else {
-      this.keyNames[key]?.push(name)
+      this.keyNames[key]?.push({ value: name, ...options })
     }
   }
 }

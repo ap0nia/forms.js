@@ -307,7 +307,7 @@ describe('store', () => {
       test('notifies for exact specific tracked name', () => {
         const { derived } = createDerived(new Set())
 
-        derived.keyNames.a = ['Aponia', 'Elysia']
+        derived.keyNames.a = [{ value: 'Aponia' }, { value: 'Elysia' }]
 
         const fn = vi.fn()
 
@@ -327,7 +327,7 @@ describe('store', () => {
       test('notifies for loose specific tracked name', () => {
         const { derived } = createDerived(new Set())
 
-        derived.keyNames.a = ['Aponia', 'Elysia']
+        derived.keyNames.a = [{ value: 'Aponia' }, { value: 'Elysia' }]
 
         const fn = vi.fn()
 
@@ -467,7 +467,7 @@ describe('store', () => {
 
         derived.freeze()
 
-        derived.keyNames.a = ['abc']
+        derived.keyNames.a = [{ value: 'abc' }]
 
         stores.a.set(4, ['a'])
 
@@ -483,7 +483,7 @@ describe('store', () => {
 
         derived.track('a', ['a', 'b', 'c'])
 
-        expect(derived.keyNames.a).toEqual(['a', 'b', 'c'])
+        expect(derived.keyNames.a).toEqual([{ value: 'a' }, { value: 'b' }, { value: 'c' }])
       })
 
       test('tracks key names', () => {
@@ -491,7 +491,7 @@ describe('store', () => {
 
         derived.track('a', 'abc')
 
-        expect(derived.keyNames.a).toEqual(['abc'])
+        expect(derived.keyNames.a).toEqual([{ value: 'abc' }])
       })
     })
   })
