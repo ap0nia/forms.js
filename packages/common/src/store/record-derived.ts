@@ -321,6 +321,7 @@ export class RecordDerived<
   }
 
   /**
+   * Track a specific context of all stores.
    */
   createTrackingProxy(name: string | string[], options?: { exact?: boolean }) {
     const proxy = {} as T
