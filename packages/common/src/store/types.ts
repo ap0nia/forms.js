@@ -24,7 +24,7 @@ export type StartStopNotifier<T> = (set: Setter<T>, update: UpdateUpdater<T>) =>
 /**
  * A subscriber will receive the current value of a store whenever it changes.
  */
-export type Subscriber<T> = (value: T, keys?: string[]) => void
+export type Subscriber<T> = (value: T, context?: unknown) => void
 
 /**
  * Unsubscribes from value updates.

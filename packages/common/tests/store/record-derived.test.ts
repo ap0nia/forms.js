@@ -226,7 +226,7 @@ describe('store', () => {
 
         derived.notify('a')
 
-        expect(derived.keysChangedDuringFrozen).toEqual(['a'])
+        expect(derived.keysChangedDuringFrozen).toEqual([{ key: 'a' }])
       })
     })
 
@@ -309,7 +309,7 @@ describe('store', () => {
           c: new Writable(3),
         }
 
-        const derived = new RecordDerived(stores, new Set())
+        const derived = new RecordDerived(stores)
 
         derived.freeze()
 

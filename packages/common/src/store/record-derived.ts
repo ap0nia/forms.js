@@ -205,32 +205,29 @@ export class RecordDerived<
   unfreeze(shouldNotify?: boolean) {
     this.thaw()
 
-    if (shouldNotify === true || (!this.rimeTrauma && shouldNotify == null)) {
-      if (this.pending) {
-        return
-      }
-
-      if (!this.rimeTrauma) {
-        if (
-          this.keys == null ||
-          this.keysChangedDuringFrozen == null ||
-          this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key)) ||
-          this.keysChangedDuringFrozen?.some((keyChanged) => {
-            if (typeof keyChanged.name === 'boolean') {
-              return keyChanged.name
-            }
-            return keyChanged.name?.some((name) => {
-              return this.keyNames[keyChanged.key]?.some((keyName) => {
-                return name.includes(keyName) || keyName.includes(name)
-              })
-            })
-          })
-        ) {
-          this.writable.set(this.value)
-        }
-        this.keysChangedDuringFrozen = undefined
-      }
+    if (shouldNotify === false || ((this.rimeTrauma || this.pending) && shouldNotify == null)) {
+      return
     }
+
+    if (
+      this.keys == null ||
+      this.keysChangedDuringFrozen == null ||
+      this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key)) ||
+      this.keysChangedDuringFrozen?.some((keyChanged) => {
+        if (typeof keyChanged.name === 'boolean') {
+          return keyChanged.name
+        }
+        return keyChanged.name?.some((name) => {
+          return this.keyNames[keyChanged.key]?.some((keyName) => {
+            return name.includes(keyName) || keyName.includes(name)
+          })
+        })
+      })
+    ) {
+      this.writable.set(this.value)
+    }
+
+    this.keysChangedDuringFrozen = undefined
   }
 
   /**

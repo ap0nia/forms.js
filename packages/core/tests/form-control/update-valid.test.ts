@@ -55,7 +55,7 @@ describe('FormControl', () => {
 
       // The value changed from false to true, so it gets notified.
       expect(subscriber).toHaveBeenCalled()
-      expect(subscriber).toHaveBeenLastCalledWith(true, undefined)
+      expect(subscriber).toHaveBeenLastCalledWith(true)
 
       expect(formControl.state.isValid.value).toBeTruthy()
     })

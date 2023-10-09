@@ -130,15 +130,15 @@ describe('store', () => {
 
         writable.set(1, true)
 
-        expect(fn).toHaveBeenLastCalledWith(1)
+        expect(fn).toHaveBeenLastCalledWith(1, true)
 
         writable.set(2, true)
 
-        expect(fn).toHaveBeenLastCalledWith(2)
+        expect(fn).toHaveBeenLastCalledWith(2, true)
 
         writable.set(3, true)
 
-        expect(fn).toHaveBeenLastCalledWith(3)
+        expect(fn).toHaveBeenLastCalledWith(3, true)
       })
     })
   })
