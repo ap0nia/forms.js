@@ -1,3 +1,4 @@
+import { deepFilter } from '../utils/deep-filter.js'
 import { noop } from '../utils/noop.js'
 
 import type { StoresValues } from './derived.js'
@@ -317,5 +318,23 @@ export class RecordDerived<
     }
 
     this.keyNames[key]?.push(...names.map((n) => ({ value: n, ...options })))
+  }
+
+  /**
+   */
+  createTrackingProxy(name: string | string[], options?: { exact?: boolean }) {
+    const proxy = {} as T
+
+    for (const key in this.value) {
+      Object.defineProperty(proxy, key, {
+        get: () => {
+          this.track(key, name, options)
+          return deepFilter(this.value[key as keyof typeof this.value], name)
+        },
+        enumerable: true,
+      })
+    }
+
+    return proxy
   }
 }
