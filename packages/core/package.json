@@ -59,10 +59,12 @@
     }
   },
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build": "tsup"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
+    "tsup": "^7.2.0",
     "typescript": "^5.1.6"
   },
   "packageManager": "pnpm@8.6.12",

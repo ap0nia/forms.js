@@ -364,14 +364,26 @@ export type SetValueOptions = {
   shouldTouch?: boolean
 }
 
+/**
+ * A form submit event handler.
+ */
 export type HandlerCallback = (event: Event) => Promise<void>
 
+/**
+ * Handles the form submission event if it was successful.
+ */
 export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string, any>
   ? (data: TTransformed, event: Event) => unknown
   : (data: T, event: Event) => unknown
 
+/**
+ * Handles the form submission event if errors occurred.
+ */
 export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event: Event) => unknown
 
+/**
+ * Default form control options.
+ */
 export const defaultFormControlOptions: FormControlOptions<any, any, any> = {
   mode: VALIDATION_MODE.onSubmit,
   revalidateMode: VALIDATION_MODE.onChange,
@@ -399,12 +411,17 @@ export class FormControl<
    * @public
    */
   state: {
-    [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key], string[]>
+    [Key in keyof FormControlState<TValues>]: Writable<
+      FormControlState<TValues>[Key],
+      string[] | boolean
+    >
   }
 
-  derivedState: RecordDerived<{
-    [Key in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[Key], string[]>
-  }>
+  /**
+   * State that's derived from {@link state} and lazily updates subscribers depending on
+   * which keys have been accessed via its proxy.
+   */
+  derivedState: RecordDerived<this['state']>
 
   /**
    * Registered fields.
@@ -476,7 +493,7 @@ export class FormControl<
       defaultValues: new Writable(defaultValues),
       errors: new Writable({}),
       values: new Writable(resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues)),
-      status: new Writable<FormControlStatus, string[]>({ init: true, mount: false }),
+      status: new Writable<FormControlStatus, string[] | boolean>({ init: true, mount: false }),
     }
 
     this.derivedState = new RecordDerived(this.state, new Set())
