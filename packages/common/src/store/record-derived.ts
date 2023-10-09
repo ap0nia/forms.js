@@ -4,6 +4,12 @@ import type { StoresValues } from './derived.js'
 import type { Subscriber, Unsubscriber } from './types'
 import { Writable } from './writable.js'
 
+export type Context = {
+  key: string
+  name?: string[] | boolean
+  exact?: boolean
+}
+
 /**
  * Given an object with keys mapped to stores, subscribe to all of them, but lazily
  * notify subscribers only whenever certain stores change based on the keys accessed.
@@ -80,7 +86,7 @@ export class RecordDerived<
    * While frozen, keep track of which keys were accessed.
    * After unfrozen, determine if any keys are being tracked and thus should trigger an update.
    */
-  keysChangedDuringFrozen?: { key: string; name?: string[] | boolean }[] = undefined
+  keysChangedDuringFrozen?: Context[] = undefined
 
   constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined) {
     this.stores = stores
@@ -234,7 +240,7 @@ export class RecordDerived<
     }
 
     // No keys to filter by, so notify all subscribers.
-    const noKeys = this.keys == null || this.keysChangedDuringFrozen == null
+    const noKeys = this.keys == null
 
     // Whether tracked keys were changed.
     const trackedKeysChanged = this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key))
@@ -292,8 +298,13 @@ export class RecordDerived<
   /**
    * Track a specific contextual name of a key, instead of all updates to that key's store.
    */
-  track(key: keyof S, name: string) {
+  track(key: keyof S, name: string | string[]) {
     this.keyNames[key] ??= []
-    this.keyNames[key]?.push(name)
+
+    if (Array.isArray(name)) {
+      this.keyNames[key]?.push(...name)
+    } else {
+      this.keyNames[key]?.push(name)
+    }
   }
 }

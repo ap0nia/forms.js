@@ -14,7 +14,7 @@ import type { Invalidator, Readable, StartStopNotifier, Subscriber, Updater } fr
  */
 export type SubscriptionFilter<T, TContext = undefined> = (data: T, context?: TContext) => boolean
 
-export class Writable<T = any, TContext = undefined> implements Readable<T> {
+export class Writable<T = any, TContext = unknown> implements Readable<T> {
   /**
    * Subscribe functions paired with a value to be passed to them.
    * Populated by {@link Writable.set} to update subscribers.
