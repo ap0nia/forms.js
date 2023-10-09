@@ -382,6 +382,16 @@ export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string,
 export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event: Event) => unknown
 
 /**
+ * Options when watching an input.
+ */
+export type WatchOptions<T extends Record<string, any> = Record<string, any>> = {
+  name?: keyof FlattenObject<T> | (keyof FlattenObject<T>)[]
+  control?: FormControl<T>
+  disabled?: boolean
+  exact?: boolean
+}
+
+/**
  * Default form control options.
  */
 export const defaultFormControlOptions: FormControlOptions<any, any, any> = {
@@ -861,19 +871,6 @@ export class FormControl<
     }
 
     this.derivedState.unfreeze()
-  }
-
-  /**
-   * Whether a field name is being watched.
-   */
-  isWatched(name: string): boolean {
-    return (
-      this.names.watchAll ||
-      this.names.watch.has(name) ||
-      Array.from(this.names.watch).some(
-        (watchName) => name.startsWith(watchName) && /^\.\w+/.test(name.slice(watchName.length)),
-      )
-    )
   }
 
   /**
@@ -1542,31 +1539,34 @@ export class FormControl<
   watch<T extends keyof FlattenObject<TValues>>(
     name: T,
     defaultValues?: DeepPartial<TValues>,
+    options?: WatchOptions<TValues>,
   ): FlattenObject<TValues>[T]
 
   watch<T extends (keyof FlattenObject<TValues>)[]>(
     name: T,
     defaultValues?: DeepPartial<FlattenObject<TValues>>,
+    options?: WatchOptions<TValues>,
   ): KeysToProperties<FlattenObject<TValues>, T>
 
   watch(...args: any[]): any {
     if (typeof args[0] === 'function') {
-      return this.state.values.subscribe((values) => {
-        // TODO: fill this out.
-        const context = {}
-        return args[0](values, context)
+      return this.derivedState.subscribe((values, context) => {
+        return args[0](values, context ?? this.options.context)
       })
     }
 
-    const nameArray: string[] = Array.isArray(args[0]) ? args[0] : [args[0]]
+    const [name, defaultValues, options] = args
 
-    nameArray.forEach((name) => {
-      this.names.watch.add(name)
-    })
+    const nameArray: string[] = Array.isArray(name) ? name : [name[0]]
+
+    this.derivedState.track('values', nameArray, options)
 
     return nameArray.length === 1
-      ? safeGet(this.state.values.value, nameArray[0])
+      ? safeGet(this.state.values.value, nameArray[0]) ?? safeGet(defaultValues, nameArray[0])
       : safeGetMultiple(this.state.values.value, nameArray)
+
+    // TODO: handle multiple gets
+    // ?? safeGetMultiple(defaultValues, nameArray)
   }
 
   clearErrors(name?: string | string[]) {
