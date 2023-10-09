@@ -475,6 +475,34 @@ describe('store', () => {
 
         expect(fn).toHaveBeenCalled()
       })
+
+      test('does not notify when context strings are subset of tracked and exact', () => {
+        const { derived, stores } = createDerived(new Set(['b']))
+
+        const fn = vi.fn()
+
+        derived.subscribe(fn)
+
+        fn.mockReset()
+
+        derived.freeze()
+
+        derived.keyNames.a = [{ value: 'abc', exact: true }]
+
+        stores.a.set(4, ['a'])
+
+        derived.unfreeze()
+
+        expect(fn).not.toHaveBeenCalled()
+
+        derived.notify('a', ['a'])
+
+        expect(fn).not.toHaveBeenCalled()
+
+        derived.notify('a', ['abc'])
+
+        expect(fn).toHaveBeenCalled()
+      })
     })
 
     describe('track', () => {
@@ -492,6 +520,16 @@ describe('store', () => {
         derived.track('a', 'abc')
 
         expect(derived.keyNames.a).toEqual([{ value: 'abc' }])
+      })
+
+      test('does not re-add already tracked key names', () => {
+        const { derived } = createDerived()
+
+        derived.track('a', 'abc', { exact: true })
+        derived.track('a', 'abc')
+        derived.track('a', 'abc', { exact: true })
+
+        expect(derived.keyNames.a).toEqual([{ value: 'abc', exact: true }, { value: 'abc' }])
       })
     })
   })

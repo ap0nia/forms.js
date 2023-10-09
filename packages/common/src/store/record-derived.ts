@@ -305,10 +305,17 @@ export class RecordDerived<
   track(key: keyof S, name: string | string[], options?: { exact?: boolean }) {
     this.keyNames[key] ??= []
 
-    if (Array.isArray(name)) {
-      this.keyNames[key]?.push(...name.map((n) => ({ value: n, ...options })))
-    } else {
-      this.keyNames[key]?.push({ value: name, ...options })
+    const names = Array.isArray(name) ? name : [name]
+
+    // If all names have already been tracked, do nothing.
+    if (
+      names.every(
+        (n) => this.keyNames[key]?.some((k) => k.value === n && k.exact === options?.exact),
+      )
+    ) {
+      return
     }
+
+    this.keyNames[key]?.push(...names.map((n) => ({ value: n, ...options })))
   }
 }
