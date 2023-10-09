@@ -4,8 +4,9 @@ import { useForm } from './use-form'
 // import { useForm } from 'react-hook-form'
 
 export function App() {
-  const { register, setError, formState } = useForm<{
+  const { register, setError, watch } = useForm<{
     test: string
+    t1: string
   }>()
 
   useEffect(() => {
@@ -15,21 +16,13 @@ export function App() {
     // })
   }, [setError])
 
-  formState
+  console.log(watch('t1'))
   console.log('render')
 
   return (
     <div>
-      <input
-        {...register('test', {
-          maxLength: {
-            message: 'max',
-            value: 3,
-          },
-        })}
-        placeholder="test"
-        type="text"
-      />
+      <input {...register('test', { maxLength: { message: 'max', value: 3 } })} />
+      <input {...register('t1', { maxLength: { message: 'max', value: 3 } })} />
       <h1 dangerouslySetInnerHTML={{ __html: '&amp;' }}></h1>
     </div>
   )

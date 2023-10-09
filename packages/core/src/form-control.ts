@@ -1014,7 +1014,6 @@ export class FormControl<
       // Update isValid.
       await this.updateValid()
 
-      // this.derivedState.unfreeze(!isBlurEvent && this.isWatched(name))
       this.derivedState.unfreeze()
 
       return
@@ -1557,9 +1556,11 @@ export class FormControl<
 
     const [name, defaultValues, options] = args
 
-    const nameArray: string[] = Array.isArray(name) ? name : [name[0]]
+    const nameArray: string[] = Array.isArray(name) ? name : [name]
 
     this.derivedState.track('values', nameArray, options)
+
+    console.log(this.derivedState.keyNames)
 
     return nameArray.length === 1
       ? safeGet(this.state.values.value, nameArray[0]) ?? safeGet(defaultValues, nameArray[0])
