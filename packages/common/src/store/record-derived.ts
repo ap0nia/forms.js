@@ -27,7 +27,7 @@ export class RecordDerived<
   /**
    * The core of this store relies on a regular writable to propagate updates to subscribers.
    */
-  writable: Writable<T>
+  writable: Writable<T, string[] | boolean>
 
   /**
    * This store maintains its current value as the single source of truth.
@@ -64,7 +64,7 @@ export class RecordDerived<
    * While frozen, keep track of which keys were accessed.
    * After unfrozen, determine if any keys are being tracked and thus should trigger an update.
    */
-  keysChangedDuringFrozen?: { key: string; name?: string[] }[] = undefined
+  keysChangedDuringFrozen?: { key: string; name?: string[] | boolean }[] = undefined
 
   constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined) {
     this.stores = stores
@@ -95,7 +95,7 @@ export class RecordDerived<
   /**
    * If possible, notify subscribers of the writable store.
    */
-  notify(key?: string, context?: string[]) {
+  notify(key?: string, context?: string[] | boolean) {
     if (this.pending) {
       return
     }
@@ -105,21 +105,25 @@ export class RecordDerived<
         this.keysChangedDuringFrozen ??= []
         this.keysChangedDuringFrozen.push({ key, name: context })
       }
-    } else {
-      if (
-        context === true ||
-        key == null ||
-        this.keys == null ||
-        this.keys.has(key) ||
-        context?.some((name) => {
-          return this.keyNames[key]?.some((keyName) => {
-            return name.includes(keyName) || keyName.includes(name)
-          })
+      return
+    }
+
+    if (context === false) {
+      return
+    }
+
+    if (
+      key == null ||
+      context === true ||
+      this.keys == null ||
+      this.keys.has(key) ||
+      context?.some((name) => {
+        return this.keyNames[key]?.some((keyName) => {
+          return name.includes(keyName) || keyName.includes(name)
         })
-      ) {
-        this.writable.set(this.value)
-      }
-      this.keysChangedDuringFrozen = undefined
+      })
+    ) {
+      this.writable.set(this.value)
     }
   }
 
@@ -212,14 +216,14 @@ export class RecordDerived<
           this.keysChangedDuringFrozen == null ||
           this.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key)) ||
           this.keysChangedDuringFrozen?.some((keyChanged) => {
-            return (
-              keyChanged.name === true ||
-              keyChanged.name?.some((name) => {
-                this.keyNames[keyChanged.key]?.some((keyName) => {
-                  return name.includes(keyName) || keyName.includes(name)
-                })
+            if (typeof keyChanged.name === 'boolean') {
+              return keyChanged.name
+            }
+            return keyChanged.name?.some((name) => {
+              return this.keyNames[keyChanged.key]?.some((keyName) => {
+                return name.includes(keyName) || keyName.includes(name)
               })
-            )
+            })
           })
         ) {
           this.writable.set(this.value)
