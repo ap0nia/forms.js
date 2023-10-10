@@ -145,11 +145,13 @@ export function useController<
     ) as ControllerFieldState
   }, [formState, props.name])
 
+  const disabled = props.disabled || formControl.options.disabled
+
   return {
     field: {
       name: props.name,
       value,
-      ...(typeof props.disabled === 'boolean' && { disabled: props.disabled }),
+      ...(typeof disabled === 'boolean' && { disabled }),
       onChange,
       onBlur,
       ref: (instance: HTMLInputElement | HTMLTextAreaElement | null) => {

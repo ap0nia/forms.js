@@ -168,6 +168,11 @@ export type FormControlOptions<
   mode?: ValidationMode[keyof ValidationMode]
 
   /**
+   * Idk.
+   */
+  disabled?: boolean
+
+  /**
    * When to revalidate the form.
    */
   revalidateMode?: RevalidationMode[keyof RevalidationMode]
@@ -1566,7 +1571,9 @@ export class FormControl<
       this.derivedState.proxy.values
     }
 
-    return deepFilter({ ...this.state.values.value }, nameArray)
+    return nameArray.length > 1
+      ? deepFilter({ ...this.state.values.value }, nameArray)
+      : safeGet({ ...this.state.values.value }, name)
 
     // TODO: handle multiple gets
     // ?? safeGetMultiple(defaultValues, nameArray)

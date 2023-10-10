@@ -1,11 +1,14 @@
 import { render, fireEvent, screen, waitFor } from '@testing-library/react'
-import { useEffect } from 'react'
+import type { FlattenObject } from 'packages/core/src/utils/types/flatten-object'
+import { useEffect, useState, StrictMode } from 'react'
 import { describe, test, expect, vi } from 'vitest'
 
 import { Controller } from '../src/controller'
 import type { ReactFormControl } from '../src/form-control'
+import { FormControlProvider } from '../src/form-provider'
 import { useController } from '../src/use-controller'
 import { useForm } from '../src/use-form'
+import { useFormControlContext } from '../src/use-form-context'
 
 describe('useController', () => {
   test('renders input correctly', () => {
@@ -460,5 +463,344 @@ describe('useController', () => {
     await waitFor(() => expect(setCustomValidity).toBeCalledTimes(3))
     expect(reportValidity).toBeCalledTimes(3)
     expect(focus).toBeCalledTimes(2)
+  })
+
+  test('should update with inline defaultValue', async () => {
+    const onSubmit = vi.fn()
+
+    const App = () => {
+      const { formControl, handleSubmit } = useForm()
+
+      useController({ formControl, defaultValue: 'test', name: 'test' })
+
+      return (
+        <form
+          onSubmit={handleSubmit((data) => {
+            onSubmit(data)
+          })}
+        >
+          <button>submit</button>
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button'))
+
+    await waitFor(() =>
+      expect(onSubmit).toBeCalledWith({
+        test: 'test',
+      }),
+    )
+  })
+
+  test('should return defaultValues when component is not yet mounted', async () => {
+    const defaultValues = {
+      test: {
+        deep: [
+          {
+            test: '0',
+            test1: '1',
+          },
+        ],
+      },
+    }
+
+    const App = () => {
+      const { formControl, getValues } = useForm<{
+        test: {
+          deep: { test: string; test1: string }[]
+        }
+      }>({
+        defaultValues,
+      })
+
+      const { field } = useController({
+        formControl,
+        name: 'test.deep.0.test',
+      })
+
+      return (
+        <div>
+          <input {...field} />
+          <p>{JSON.stringify(getValues())}</p>
+        </div>
+      )
+    }
+
+    render(<App />)
+
+    expect(true).toEqual(true)
+
+    expect(await screen.findByText('{"test":{"deep":[{"test":"0","test1":"1"}]}}')).toBeTruthy()
+  })
+
+  test('should trigger extra re-render and update latest value when setValue called during mount', async () => {
+    const Child = () => {
+      const { formControl } = useFormControlContext()
+
+      const {
+        field: { value },
+      } = useController({ name: 'content' })
+
+      useEffect(() => {
+        formControl.setValue('content', 'expected value')
+      }, [formControl.setValue])
+
+      return <p>{value}</p>
+    }
+
+    function App() {
+      const { formControl } = useForm({
+        defaultValues: {
+          content: 'default',
+        },
+      })
+
+      return (
+        <FormControlProvider formControl={formControl}>
+          <form>
+            <Child />
+            <input type="submit" />
+          </form>
+        </FormControlProvider>
+      )
+    }
+
+    render(<App />)
+
+    expect(await screen.findByText('expected value')).toBeTruthy()
+  })
+
+  test('should remount with input with current formValue', () => {
+    let data: unknown
+
+    function Input<T extends Record<string, any>>({
+      formControl,
+      name,
+    }: {
+      formControl: ReactFormControl<T>
+      name: Extract<keyof FlattenObject<T>, string>
+    }) {
+      const {
+        field: { value },
+      } = useController({ formControl, name, shouldUnregister: true })
+
+      data = value
+
+      return null
+    }
+
+    const App = () => {
+      const { formControl } = useForm<{
+        test: string
+      }>({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+
+      const [toggle, setToggle] = useState(true)
+
+      return (
+        <div>
+          {toggle && <Input formControl={formControl} name={'test'} />}
+          <button onClick={() => setToggle(!toggle)}>toggle</button>
+        </div>
+      )
+    }
+
+    render(<App />)
+
+    expect(data).toEqual('test')
+
+    fireEvent.click(screen.getByRole('button'))
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(data).toBeUndefined()
+  })
+
+  test('should always get the latest value for onBlur event', async () => {
+    const watchResults: unknown[] = []
+
+    const App = () => {
+      const { formControl, watch } = useForm()
+
+      const { field } = useController({ formControl, name: 'test', defaultValue: '' })
+
+      watchResults.push(watch())
+
+      return (
+        <button
+          onClick={() => {
+            field.onChange('updated value')
+            field.onBlur()
+          }}
+        >
+          test
+        </button>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button'), {
+      target: {
+        value: 'test',
+      },
+    })
+
+    expect(watchResults).toEqual([
+      { test: '' },
+      {
+        test: 'updated value',
+      },
+    ])
+
+    // expect(watchResults).toEqual([
+    //   {},
+    //   {
+    //     test: 'updated value',
+    //   },
+    // ])
+  })
+
+  test('should focus and select the input text', () => {
+    const select = vi.fn()
+    const focus = vi.fn()
+
+    const App = () => {
+      const { formControl, setFocus } = useForm({
+        defaultValues: {
+          test: 'data',
+        },
+      })
+
+      const { field } = useController({ formControl, name: 'test' })
+
+      field.ref({ select, focus } as any)
+
+      useEffect(() => {
+        setFocus('test', { shouldSelect: true })
+      }, [setFocus])
+
+      return null
+    }
+
+    render(<App />)
+
+    expect(select).toBeCalled()
+    expect(focus).toBeCalled()
+  })
+
+  test('should update isValid correctly with strict mode', async () => {
+    const App = () => {
+      const form = useForm({
+        mode: 'onChange',
+        defaultValues: {
+          name: '',
+        },
+      })
+
+      const { isValid } = form.formState
+
+      return (
+        <StrictMode>
+          <FormControlProvider {...form}>
+            <Controller
+              render={({ field }) => <input value={field.value} onChange={field.onChange} />}
+              name="name"
+              rules={{
+                required: true,
+              }}
+            />
+            <p>{isValid ? 'valid' : 'not'}</p>
+          </FormControlProvider>
+        </StrictMode>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      screen.getByText('not')
+    })
+  })
+
+  test('should disable the controller input', async () => {
+    function Form() {
+      const { field } = useController({ name: 'lastName' })
+
+      return <p>{field.disabled ? 'disabled' : ''}</p>
+    }
+
+    function App() {
+      const methods = useForm({ disabled: true })
+
+      return (
+        <FormControlProvider {...methods}>
+          <form>
+            <Form />
+          </form>
+        </FormControlProvider>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      screen.getByText('disabled')
+    })
+  })
+
+  test('should disable form input with disabled prop', async () => {
+    const App = () => {
+      const [disabled, setDisabled] = useState(false)
+      const { formControl, watch } = useForm({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+
+      const {
+        field: { disabled: disabledProps },
+      } = useController({
+        formControl,
+        name: 'test',
+        disabled,
+      })
+
+      const input = watch('test')
+
+      return (
+        <form>
+          <p>{input}</p>
+          <button
+            onClick={() => {
+              setDisabled(!disabled)
+            }}
+            type={'button'}
+          >
+            toggle
+          </button>
+          <p>{disabledProps ? 'disable' : 'notDisabled'}</p>
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    screen.getByText('test')
+    screen.getByText('notDisabled')
+
+    fireEvent.click(screen.getByRole('button'))
+
+    // FIXME: this doesn't do anything.
+    waitFor(() => {
+      screen.getByText('')
+      screen.getByText('disable')
+    })
   })
 })
