@@ -25,7 +25,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "vitest"
+    "test": "vitest tests/use-form-context.test.tsx"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",

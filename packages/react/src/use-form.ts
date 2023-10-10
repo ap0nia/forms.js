@@ -28,15 +28,22 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     formControl,
   })
 
-  const subscribe = useCallback((callback: () => void) => {
-    return formControl.derivedState.subscribe(callback)
-  }, [])
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      return formControl.derivedState.subscribe(callback)
+    },
+    [formControl],
+  )
 
   const getSnapshot = useCallback(() => {
     return formControl.derivedState.value
-  }, [])
+  }, [formControl])
 
-  useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  const getServerSnapshot = useCallback(() => {
+    return formControl.derivedState.value
+  }, [formControl])
+
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
     if (formControl.state.status.value.mount) {

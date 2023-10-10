@@ -12,12 +12,12 @@ export type UseFormStateProps<T extends Record<string, any> = Record<string, any
 }
 
 export function useFormState<T extends Record<string, any>>(
-  props: UseFormStateProps<T>,
+  props?: UseFormStateProps<T>,
 ): FormControlState<T> {
-  const formControl = props.formControl ?? useFormControlContext()
+  const formControl = (props?.formControl ?? useFormControlContext().formControl) as FormControl<T>
 
   const proxy = useRef<FormControlState<T>>(
-    props.name
+    props?.name
       ? formControl.derivedState.createTrackingProxy(props.name)
       : formControl.derivedState.proxy,
   )
@@ -42,10 +42,10 @@ export function useFormState<T extends Record<string, any>>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    proxy.current = props.name
+    proxy.current = props?.name
       ? formControl.derivedState.createTrackingProxy(props.name)
       : formControl.derivedState.proxy
-  }, [formControl, props.name])
+  }, [formControl, props?.name])
 
   useEffect(() => {
     formControl.state.status.set({ mount: true, init: false })
