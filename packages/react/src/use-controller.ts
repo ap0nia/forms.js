@@ -1,11 +1,20 @@
 import { INPUT_EVENTS } from '@forms.js/core'
-import type { FormControl, RegisterOptions, FormControlState } from '@forms.js/core'
+import type { Field, FieldError, FormControl, RegisterOptions } from '@forms.js/core'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
+import { deepSet } from 'packages/common/src/utils/deep-set'
 import { getEventValue } from 'packages/core/src/logic/html/get-event-value'
 import { safeGet } from 'packages/core/src/utils/safe-get'
-import { useRef, useCallback, useState, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useMemo } from 'react'
 
 import { useFormControlContext } from './use-form-context'
+import { useFormState } from './use-form-state'
+
+export type ControllerFieldState = {
+  invalid: boolean
+  isTouched: boolean
+  isDirty: boolean
+  error?: FieldError
+}
 
 export type UseControllerProps<
   TValues extends Record<string, any> = Record<string, any>,
@@ -18,7 +27,7 @@ export type UseControllerProps<
   >
   shouldUnregister?: boolean
   defaultValue?: FlattenObject<TValues>[TName]
-  control?: FormControl<TValues>
+  formControl?: FormControl<TValues>
   disabled?: boolean
 }
 
@@ -28,26 +37,17 @@ export function useController<
 >(props: UseControllerProps<TValues, TName>) {
   const formControl = useFormControlContext<TValues>()
 
-  const [formState, setFormState] = useState<FormControlState<TValues>>({
-    isDirty: formControl.state.isDirty.value,
-    isLoading: formControl.state.isLoading.value,
-    isSubmitted: formControl.state.isSubmitted.value,
-    isSubmitSuccessful: formControl.state.isSubmitSuccessful.value,
-    isSubmitting: formControl.state.isSubmitting.value,
-    isValidating: formControl.state.isValidating.value,
-    isValid: formControl.state.isValid.value,
-    submitCount: formControl.state.submitCount.value,
-    dirtyFields: formControl.state.dirtyFields.value,
-    touchedFields: formControl.state.touchedFields.value,
-    defaultValues: formControl.state.defaultValues.value,
-    errors: formControl.state.errors.value,
-    values: formControl.state.values.value,
-    status: formControl.state.status.value,
-  })
+  const formState = useFormState({ formControl, name: props.name })
 
   const value = formControl.getValues(props.name)
 
   const registerProps = useRef(formControl.registerReact(props.name, { ...props.rules, value }))
+
+  registerProps.current = formControl.registerReact(props.name, props.rules)
+
+  const isArrayField = useMemo(() => {
+    return formControl.names.array.has(props.name)
+  }, [formControl, props.name])
 
   const handleChange = useCallback(
     (event: React.SyntheticEvent) =>
@@ -74,29 +74,46 @@ export function useController<
   )
 
   useEffect(() => {
-    setFormState
-  }, [])
+    const _shouldUnregisterField = formControl.options.shouldUnregister || props.shouldUnregister
 
-  return {
-    registerProps,
-    value,
-    ...(typeof props.disabled === 'boolean' && { disabled: props.disabled }),
-    handleChange,
-    onBlur,
-    ref: (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
-      const field = safeGet(formControl.fields, props.name)
+    const updateMounted = (name: string, value: boolean) => {
+      const field: Field | undefined = safeGet(formControl.fields, name)
 
-      if (field && instance) {
-        field._f.ref = {
-          focus: () => instance.focus(),
-          select: () => instance.select(),
-          setCustomValidity: (message: string) => instance.setCustomValidity(message),
-          reportValidity: () => instance.reportValidity(),
-        }
+      if (field) {
+        field._f.mount = value
       }
-    },
-    // formState,
-    fieldState: Object.defineProperties(
+    }
+
+    updateMounted(props.name, true)
+
+    if (_shouldUnregisterField) {
+      const value = structuredClone(safeGet(formControl.options.defaultValues, props.name))
+
+      deepSet(formControl.state.defaultValues.value, props.name, value)
+
+      if (safeGet(formControl.state.values.value, props.name)) {
+        deepSet(formControl.state.values.value, props.name, value)
+      }
+    }
+
+    return () => {
+      // if (isArrayField ? _shouldUnregisterField && !formControl.state.action : _shouldUnregisterField) {
+      if (isArrayField ? _shouldUnregisterField : _shouldUnregisterField) {
+        formControl.unregister(props.name)
+      } else {
+        updateMounted(props.name, false)
+      }
+    }
+  }, [props.name, formControl, isArrayField, props.shouldUnregister])
+
+  useEffect(() => {
+    if (safeGet(formControl.fields, props.name)) {
+      formControl.updateDisabledField({ fields: formControl.fields, ...props })
+    }
+  }, [props.disabled, props.name, formControl])
+
+  const fieldState = useMemo(() => {
+    return Object.defineProperties(
       {},
       {
         invalid: {
@@ -116,6 +133,28 @@ export function useController<
           get: () => safeGet(formState.errors, props.name),
         },
       },
-    ), // as ControllerFieldState,
+    ) as ControllerFieldState
+  }, [formState, props.name])
+
+  return {
+    registerProps,
+    value,
+    ...(typeof props.disabled === 'boolean' && { disabled: props.disabled }),
+    handleChange,
+    onBlur,
+    ref: (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
+      const field = safeGet(formControl.fields, props.name)
+
+      if (field && instance) {
+        field._f.ref = {
+          focus: () => instance.focus(),
+          select: () => instance.select(),
+          setCustomValidity: (message: string) => instance.setCustomValidity(message),
+          reportValidity: () => instance.reportValidity(),
+        }
+      }
+    },
+    formState,
+    fieldState,
   }
 }
