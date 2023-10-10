@@ -1,57 +1,40 @@
-import type { FormControl } from '@forms.js/core'
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
-
+import type { ReactFormControl } from './form-control'
 import { useForm } from './use-form'
-// import { useForm } from 'react-hook-form'
+import { useSubscribe } from './use-watch'
 
-export type UseFormStateProps = {
-  name: string | string[]
-  control: FormControl<any>
+function Test({ formControl }: { formControl: ReactFormControl<any> }) {
+  const state = useSubscribe({ name: 'test', formControl })
+
+  console.log('test render', state)
+
+  return null
 }
 
-export function useFormState(props: UseFormStateProps) {
-  const proxy = useRef(props.control.derivedState.createTrackingProxy(props.name))
+function Test1({ formControl }: { formControl: ReactFormControl<any> }) {
+  const state = useSubscribe({ name: 'test1', formControl })
 
-  const subscribe = useCallback(
-    (callback: () => void) => {
-      return props.control.derivedState.subscribe(() => {
-        callback()
-      })
-    },
-    [props.control],
-  )
+  console.log('test1 render', state.values)
 
-  const getSnapshot = useCallback(() => {
-    return proxy.current
-  }, [])
-
-  useSyncExternalStore(subscribe, getSnapshot)
-
-  return proxy.current
+  return null
 }
 
 export function App() {
-  const { register, setError, formControl } = useForm<{
-    test: string
-    t1: string
-  }>()
-
-  const formState = useFormState({ name: ['test', 't1'], control: formControl })
-
-  useEffect(() => {
-    // setError('test', {
-    //   type: 'data',
-    //   message: 'data',
-    // })
-  }, [setError])
-
-  console.log('render', formState.values)
+  const { register, formControl } = useForm()
 
   return (
     <div>
-      <input {...register('test', { maxLength: { message: 'max', value: 3 } })} />
-      <input {...register('t1', { maxLength: { message: 'max', value: 3 } })} />
-      <h1 dangerouslySetInnerHTML={{ __html: '&amp;' }}></h1>
+      <Test formControl={formControl} />
+      <Test1 formControl={formControl} />
+
+      <div>
+        test
+        <input {...register('test')} />
+      </div>
+
+      <div>
+        test1
+        <input {...register('test1')} />
+      </div>
     </div>
   )
 }

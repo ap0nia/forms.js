@@ -47,13 +47,5 @@ export function useFormState<T extends Record<string, any>>(
       : formControl.derivedState.proxy
   }, [formControl, props?.name])
 
-  useEffect(() => {
-    formControl.state.status.set({ mount: true, init: false })
-
-    return () => {
-      formControl.state.status.set({ mount: false, init: false })
-    }
-  }, [formControl])
-
   return proxy.current
 }

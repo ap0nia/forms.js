@@ -38,7 +38,7 @@ export function useController<
 >(props: UseControllerProps<TValues, TName>) {
   const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
 
-  const formState = useFormState({ formControl, name: props.name })
+  const formState = useFormState({ formControl, name: props.name, exact: true })
 
   const value = formControl.getValues(props.name)
 
@@ -51,25 +51,30 @@ export function useController<
   }, [formControl, props.name])
 
   const onChange = useCallback(
-    (event: React.SyntheticEvent) =>
-      registerProps.current.onChange({
-        type: INPUT_EVENTS.CHANGE,
-        target: {
-          value: getEventValue(event),
-          name: props.name,
+    async (event: React.SyntheticEvent) => {
+      await registerProps.current.onChange({
+        nativeEvent: {
+          type: INPUT_EVENTS.CHANGE,
+          target: {
+            value: getEventValue(event),
+            name: props.name,
+          },
         },
-      } as any),
+      } as any)
+    },
     [props.name],
   )
 
   const onBlur = useCallback(
     () =>
       registerProps.current.onBlur({
-        target: {
-          value: formControl.getValues(props.name),
-          name: props.name,
+        nativeEvent: {
+          type: INPUT_EVENTS.BLUR,
+          target: {
+            value: formControl.getValues(props.name),
+            name: props.name,
+          },
         },
-        type: INPUT_EVENTS.BLUR,
       } as any),
     [props.name, formControl],
   )
