@@ -11,7 +11,9 @@ export type UseFormStateProps<T extends Record<string, any> = Record<string, any
   exact?: boolean
 }
 
-export function useFormState<T extends Record<string, any>>(props: UseFormStateProps<T>) {
+export function useFormState<T extends Record<string, any>>(
+  props: UseFormStateProps<T>,
+): FormControlState<T> {
   const formControl = props.formControl ?? useFormControlContext()
 
   const proxy = useRef<FormControlState<T>>(

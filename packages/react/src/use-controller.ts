@@ -49,7 +49,7 @@ export function useController<
     return formControl.names.array.has(props.name)
   }, [formControl, props.name])
 
-  const handleChange = useCallback(
+  const onChange = useCallback(
     (event: React.SyntheticEvent) =>
       registerProps.current.onChange({
         type: INPUT_EVENTS.CHANGE,
@@ -137,22 +137,24 @@ export function useController<
   }, [formState, props.name])
 
   return {
-    registerProps,
-    value,
-    ...(typeof props.disabled === 'boolean' && { disabled: props.disabled }),
-    handleChange,
-    onBlur,
-    ref: (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
-      const field = safeGet(formControl.fields, props.name)
+    field: {
+      name: props.name,
+      value,
+      ...(typeof props.disabled === 'boolean' && { disabled: props.disabled }),
+      onChange,
+      onBlur,
+      ref: (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
+        const field = safeGet(formControl.fields, props.name)
 
-      if (field && instance) {
-        field._f.ref = {
-          focus: () => instance.focus(),
-          select: () => instance.select(),
-          setCustomValidity: (message: string) => instance.setCustomValidity(message),
-          reportValidity: () => instance.reportValidity(),
+        if (field && instance) {
+          field._f.ref = {
+            focus: () => instance.focus(),
+            select: () => instance.select(),
+            setCustomValidity: (message: string) => instance.setCustomValidity(message),
+            reportValidity: () => instance.reportValidity(),
+          }
         }
-      }
+      },
     },
     formState,
     fieldState,
