@@ -1062,24 +1062,26 @@ export class FormControl<
         Number.isNaN(fieldValue) ||
         (fieldValue === safeGet(this.state.values.value, name) ?? fieldValue)
 
-      const error = result.validationResult.errors[name]
+      if (!result.isValid) {
+        const error = result.validationResult.errors[name]
 
-      if (isFieldValueUpdated && !error && this.state.isValid.hasSubscribers) {
-        const fullResult = await this.validate()
+        if (isFieldValueUpdated && !error) {
+          const fullResult = await this.validate()
 
-        if (fullResult.validationResult?.errors) {
+          if (fullResult.validationResult?.errors) {
+            // Update errors.
+            this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
+          }
+        } else {
           // Update errors.
-          this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
+          this.state.errors.update(
+            (errors) => {
+              deepSet(errors, name, error)
+              return errors
+            },
+            [name],
+          )
         }
-      } else {
-        // Update errors.
-        this.state.errors.update(
-          (errors) => {
-            deepSet(errors, name, error)
-            return errors
-          },
-          [name],
-        )
       }
 
       if (isFieldValueUpdated && field._f.deps) {

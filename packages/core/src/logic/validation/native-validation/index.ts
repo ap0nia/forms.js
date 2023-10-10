@@ -158,7 +158,9 @@ export async function nativeValidateSingleField(
 
   await nativeValidatorSequencer(context, next)
 
-  if (shouldSetCustomValidity) {
+  const isValid = !errors[field._f.name]
+
+  if (shouldSetCustomValidity && isValid) {
     setCustomValidity(inputRef, true)
   }
 

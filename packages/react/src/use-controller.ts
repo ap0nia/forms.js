@@ -40,7 +40,10 @@ export function useController<
 
   const formState = useSubscribe({ formControl, name: props.name })
 
-  const value = formControl.getValues(props.name)
+  // Always subscribe to values.
+  formState.values
+
+  const value = formControl.getValues(props.name) ?? props.defaultValue
 
   const registerProps = useRef(formControl.registerReact(props.name, { ...props.rules, value }))
 
