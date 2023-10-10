@@ -110,7 +110,7 @@ describe('useController', () => {
   })
 
   describe('checkbox', () => {
-    test.only('should work for checkbox by spread the field object', async () => {
+    test('should work for checkbox by spread the field object', async () => {
       const watchResult: unknown[] = []
 
       const Component = () => {
@@ -125,7 +125,7 @@ describe('useController', () => {
 
       render(<Component />)
 
-      expect(watchResult).toEqual([{}])
+      await waitFor(() => expect(watchResult).toEqual([{}]))
 
       fireEvent.click(screen.getByRole('checkbox'))
 
@@ -134,6 +134,116 @@ describe('useController', () => {
       fireEvent.click(screen.getByRole('checkbox'))
 
       await waitFor(() => expect(watchResult).toEqual([{}, { test: true }, { test: false }]))
+    })
+
+    test('should work for checkbox by assign checked', async () => {
+      const watchResult: unknown[] = []
+      const Component = () => {
+        const { formControl, watch } = useForm<{
+          test: string
+        }>()
+
+        watchResult.push(watch())
+
+        const { field } = useController({
+          name: 'test',
+          formControl,
+          defaultValue: '',
+        })
+
+        return (
+          <input
+            type="checkbox"
+            checked={!!field.value}
+            onChange={(e) => field.onChange(e.target.checked)}
+          />
+        )
+      }
+
+      render(<Component />)
+
+      await waitFor(() => expect(watchResult).toEqual([{}]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: true }]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: true }, { test: false }]))
+    })
+
+    test('should work for checkbox by assign checked', async () => {
+      const watchResult: unknown[] = []
+      const Component = () => {
+        const { formControl, watch } = useForm<{
+          test: string
+        }>()
+
+        watchResult.push(watch())
+
+        const { field } = useController({
+          name: 'test',
+          formControl,
+          defaultValue: '',
+        })
+
+        return (
+          <input
+            type="checkbox"
+            checked={!!field.value}
+            onChange={(e) => field.onChange(e.target.checked)}
+          />
+        )
+      }
+
+      render(<Component />)
+
+      await waitFor(() => expect(watchResult).toEqual([{}]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: true }]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: true }, { test: false }]))
+    })
+
+    test('should work for checkbox by assign value manually', async () => {
+      const watchResult: unknown[] = []
+      const Component = () => {
+        const { formControl, watch } = useForm<{ test: string }>()
+
+        watchResult.push(watch())
+
+        const { field } = useController({
+          name: 'test',
+          formControl,
+          defaultValue: '',
+        })
+
+        return (
+          <input
+            value="on"
+            type="checkbox"
+            checked={!!field.value}
+            onChange={(e) => field.onChange(e.target.checked ? e.target.value : false)}
+          />
+        )
+      }
+
+      render(<Component />)
+
+      await waitFor(() => expect(watchResult).toEqual([{}]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: 'on' }]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: 'on' }, { test: false }]))
     })
   })
 })

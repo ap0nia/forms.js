@@ -51,7 +51,7 @@ export function useController<
   }, [formControl, props.name])
 
   const onChange = useCallback(
-    async (event: React.SyntheticEvent) => {
+    async (event: any) => {
       await registerProps.current.onChange({
         nativeEvent: {
           type: INPUT_EVENTS.CHANGE,
