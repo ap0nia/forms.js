@@ -8,7 +8,7 @@ import { useRef, useCallback, useEffect, useMemo } from 'react'
 
 import type { ReactFormControl } from './form-control'
 import { useFormControlContext } from './use-form-context'
-import { useFormState } from './use-form-state'
+import { useSubscribe } from './use-subscribe'
 
 export type ControllerFieldState = {
   invalid: boolean
@@ -38,7 +38,7 @@ export function useController<
 >(props: UseControllerProps<TValues, TName>) {
   const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
 
-  const formState = useFormState({ formControl, name: props.name, exact: true })
+  const formState = useSubscribe({ formControl, name: props.name })
 
   const value = formControl.getValues(props.name)
 

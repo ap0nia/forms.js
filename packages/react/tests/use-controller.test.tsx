@@ -21,7 +21,7 @@ describe('useController', () => {
     expect(() => render(<Component />)).not.toThrowError()
   })
 
-  test.only('should only subscribe to formState at each useContoller level', async () => {
+  test('should only subscribe to formState at each useContoller level', async () => {
     const renderCounter = [0, 0]
 
     type FormValues = {
@@ -62,8 +62,6 @@ describe('useController', () => {
         defaultValues: { test: '', test1: '' },
       })
 
-      console.log('here')
-
       return (
         <div>
           <Test formControl={formControl} />
@@ -99,14 +97,43 @@ describe('useController', () => {
 
     expect(renderCounter).toEqual([1, 3])
 
-    // fireEvent.change(screen.getAllByRole('textbox')[0], {
-    //   target: {
-    //     value: '1232',
-    //   },
-    // })
+    fireEvent.change(test, {
+      target: {
+        value: '1232',
+      },
+    })
 
-    // fireEvent.blur(screen.getAllByRole('textbox')[0])
+    fireEvent.blur(test)
 
     // expect(renderCounter).toEqual([2, 5])
+    expect(renderCounter).toEqual([1, 3])
+  })
+
+  describe('checkbox', () => {
+    test.only('should work for checkbox by spread the field object', async () => {
+      const watchResult: unknown[] = []
+
+      const Component = () => {
+        const { formControl, watch } = useForm<{ test: string }>()
+
+        watchResult.push(watch())
+
+        const { field } = useController({ name: 'test', formControl, defaultValue: '' })
+
+        return <input type="checkbox" {...field} />
+      }
+
+      render(<Component />)
+
+      expect(watchResult).toEqual([{}])
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: true }]))
+
+      fireEvent.click(screen.getByRole('checkbox'))
+
+      await waitFor(() => expect(watchResult).toEqual([{}, { test: true }, { test: false }]))
+    })
   })
 })

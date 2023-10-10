@@ -1554,17 +1554,17 @@ export class FormControl<
       })
     }
 
-    const [name, defaultValues, options] = args
+    const [name, _defaultValues, options] = args
 
-    const nameArray: string[] = Array.isArray(name) ? name : [name]
+    const nameArray = Array.isArray(name) ? name : name ? [name] : []
 
-    this.derivedState.track('values', nameArray, options)
+    if (nameArray.length > 0) {
+      this.derivedState.track('values', nameArray, options)
+    } else {
+      this.derivedState.proxy.values
+    }
 
-    console.log(this.derivedState.keyNames)
-
-    return nameArray.length === 1
-      ? safeGet(this.state.values.value, nameArray[0]) ?? safeGet(defaultValues, nameArray[0])
-      : safeGetMultiple(this.state.values.value, nameArray)
+    return deepFilter({ ...this.state.values.value }, nameArray)
 
     // TODO: handle multiple gets
     // ?? safeGetMultiple(defaultValues, nameArray)
