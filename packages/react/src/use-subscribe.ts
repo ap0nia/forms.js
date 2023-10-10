@@ -1,36 +1,37 @@
 import { RecordDerived } from '@forms.js/common/store'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
-import { useCallback, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 
 import type { ReactFormControl } from './form-control'
 import { useFormControlContext } from './use-form-context'
 
-export type UseWatchProps<
+export type UseSubscribeProps<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 > = {
   name: Extract<TName, string>
-  defaultValue?: FlattenObject<TValues>[TName]
   formControl?: ReactFormControl<TValues>
-  exact?: boolean
-  disabled?: boolean
 }
 
 export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
->(props: UseWatchProps<TValues, TName>) {
+>(props: UseSubscribeProps<TValues, TName>) {
   const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
 
-  const derivedState = useRef(new RecordDerived(formControl.state, new Set()))
+  const derivedState = useMemo(
+    () => new RecordDerived(formControl.state, new Set()),
+    [formControl.state],
+  )
 
-  const proxy = useRef(
-    derivedState.current.createTrackingProxy(props.name, { ...props, exact: true }),
+  const proxy = useMemo(
+    () => derivedState.createTrackingProxy(props.name, { exact: true }),
+    [props.name],
   )
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return derivedState.current.subscribe(() => {
+      return derivedState.subscribe(() => {
         callback()
       })
     },
@@ -38,14 +39,14 @@ export function useSubscribe<
   )
 
   const getSnapshot = useCallback(() => {
-    return derivedState.current.value
+    return derivedState.value
   }, [])
 
   const getServerSnapshot = useCallback(() => {
-    return derivedState.current.value
+    return derivedState.value
   }, [])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
-  return proxy.current
+  return proxy
 }

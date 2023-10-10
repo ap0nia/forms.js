@@ -1,6 +1,6 @@
 import type { ReactFormControl } from './form-control'
 import { useForm } from './use-form'
-import { useSubscribe } from './use-watch'
+import { useSubscribe } from './use-subscribe'
 
 function Test({ formControl }: { formControl: ReactFormControl<any> }) {
   const state = useSubscribe({ name: 'test', formControl })
