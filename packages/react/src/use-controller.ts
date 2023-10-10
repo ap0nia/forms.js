@@ -1,11 +1,12 @@
 import { INPUT_EVENTS } from '@forms.js/core'
-import type { Field, FieldError, FormControl, RegisterOptions } from '@forms.js/core'
+import type { Field, FieldError, RegisterOptions } from '@forms.js/core'
+import { getEventValue } from '@forms.js/core/html/get-event-value'
+import { deepSet } from '@forms.js/core/utils/deep-set'
+import { safeGet } from '@forms.js/core/utils/safe-get'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
-import { deepSet } from 'packages/common/src/utils/deep-set'
-import { getEventValue } from 'packages/core/src/logic/html/get-event-value'
-import { safeGet } from 'packages/core/src/utils/safe-get'
 import { useRef, useCallback, useEffect, useMemo } from 'react'
 
+import type { ReactFormControl } from './form-control'
 import { useFormControlContext } from './use-form-context'
 import { useFormState } from './use-form-state'
 
@@ -27,7 +28,7 @@ export type UseControllerProps<
   >
   shouldUnregister?: boolean
   defaultValue?: FlattenObject<TValues>[TName]
-  formControl?: FormControl<TValues>
+  formControl?: ReactFormControl<TValues>
   disabled?: boolean
 }
 
@@ -35,7 +36,7 @@ export function useController<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: UseControllerProps<TValues, TName>) {
-  const formControl = useFormControlContext<TValues>()
+  const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
 
   const formState = useFormState({ formControl, name: props.name })
 
