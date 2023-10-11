@@ -245,6 +245,37 @@ describe('FormControl', () => {
           }),
         )
       })
+
+      test('unsets errors with successful native validation', async () => {
+        const formControl = new FormControl({ mode: 'onBlur' })
+
+        const name0 = 'test'
+
+        const ref = document.createElement('input')
+        ref.name = name0
+
+        formControl.fields[name0] = {
+          _f: {
+            name: name0,
+            ref,
+            mount: true,
+          },
+        }
+
+        formControl.state.errors.set({
+          [name0]: {
+            message: '',
+            type: 'required',
+            ref,
+          },
+        })
+
+        ref.addEventListener('blur', (event) => formControl.handleChange(event))
+
+        fireEvent.blur(ref)
+
+        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+      })
     })
 
     describe('resolver', () => {

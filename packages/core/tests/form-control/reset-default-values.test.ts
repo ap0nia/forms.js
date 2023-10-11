@@ -47,5 +47,23 @@ describe('FormControl', () => {
       expect(fn).toHaveBeenCalledOnce()
       expect(fn).toHaveBeenLastCalledWith(false)
     })
+
+    test('async default values', async () => {
+      const formControl = new FormControl()
+
+      const values = {
+        a: {
+          b: {
+            c: true,
+          },
+        },
+      }
+
+      const defaultValues = new Promise((resolve) => setTimeout(() => resolve(values), 500))
+
+      await formControl.resetDefaultValues(defaultValues, true)
+
+      expect(formControl.state.values.value).toEqual(values)
+    })
   })
 })
