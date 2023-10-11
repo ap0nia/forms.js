@@ -93,10 +93,10 @@ describe('Controller', () => {
     render(<Component />)
 
     fireEvent.input(screen.getByRole('textbox'), { target: { value: 'test' } })
-    // expect(screen.getByRole('textbox')).toHaveValue('test')
+    expect(screen.getByRole('textbox')).toHaveValue('test')
 
     fireEvent.click(screen.getByRole('button', { name: /reset/i }))
-    // expect(screen.getByRole('textbox')).toHaveValue('default')
+    expect(screen.getByRole('textbox')).toHaveValue('default')
   })
 
   it('should set defaultValue to value props when input was reset', () => {

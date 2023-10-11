@@ -965,8 +965,6 @@ export class FormControl<
    * Handles a change event from an input element.
    */
   async handleChange(event: Event): Promise<void | boolean> {
-    console.log('changing')
-
     this.derivedState.freeze()
 
     const target: any = event.target
@@ -1023,7 +1021,7 @@ export class FormControl<
 
     if (shouldSkipValidation) {
       // Update isValid.
-      await this.updateValid()
+      this.updateValid()
 
       this.derivedState.unfreeze()
 
@@ -1153,7 +1151,6 @@ export class FormControl<
   /**
    */
   reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
-    console.log('reset')
     this.derivedState.freeze()
 
     const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
