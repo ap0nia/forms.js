@@ -1022,13 +1022,12 @@ export class FormControl<
     if (shouldSkipValidation) {
       // Update isValid.
       this.updateValid()
-
       this.derivedState.unfreeze()
-
       return
-    } else {
-      this.derivedState.unfreeze()
+    }
 
+    if (!isBlurEvent) {
+      this.derivedState.unfreeze()
       this.derivedState.freeze()
     }
 
