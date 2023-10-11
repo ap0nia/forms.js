@@ -1271,12 +1271,14 @@ export class FormControl<
       return
     }
 
+    const isPromise = resolvingDefaultValues instanceof Promise
+
     // If the form wasn't loading, it should be now since it's waiting for the default values to resolve.
-    if (!this.state.isLoading.value && resolvingDefaultValues instanceof Promise) {
+    if (!this.state.isLoading.value && isPromise) {
       this.state.isLoading.set(true)
     }
 
-    const resolvedDefaultValues = await resolvingDefaultValues
+    const resolvedDefaultValues = isPromise ? await resolvingDefaultValues : resolvingDefaultValues
 
     this.state.defaultValues.set((resolvedDefaultValues ?? {}) as any)
 
@@ -1577,15 +1579,12 @@ export class FormControl<
     if (nameArray.length > 0) {
       this.derivedState.track('values', nameArray, options)
     } else {
-      this.derivedState.proxy.values
+      this.derivedState.keys?.add('values')
     }
 
     return nameArray.length > 1
       ? deepFilter({ ...this.state.values.value }, nameArray)
       : safeGet({ ...this.state.values.value }, name)
-
-    // TODO: handle multiple gets
-    // ?? safeGetMultiple(defaultValues, nameArray)
   }
 
   clearErrors(name?: string | string[]) {

@@ -619,7 +619,7 @@ describe('Controller', () => {
     await waitFor(() => expect(currentErrors.test).toBeUndefined())
   })
 
-  it.only('should show invalid input when there is an error', async () => {
+  it('should show invalid input when there is an error', async () => {
     const Component = () => {
       const { control } = useForm({
         mode: 'onChange',
@@ -630,7 +630,6 @@ describe('Controller', () => {
           defaultValue=""
           name="test"
           render={({ field: props, fieldState }) => {
-            console.log({ props })
             return (
               <>
                 <input {...props} />
@@ -646,10 +645,8 @@ describe('Controller', () => {
       )
     }
 
-    console.log('initial')
     render(<Component />)
 
-    console.log('change1')
     fireEvent.change(screen.getByRole('textbox'), {
       target: {
         value: 'test',
@@ -658,7 +655,6 @@ describe('Controller', () => {
 
     expect(screen.queryByText('Input is invalid.')).not.toBeInTheDocument()
 
-    console.log('change2')
     fireEvent.change(screen.getByRole('textbox'), {
       target: {
         value: '',
@@ -666,5 +662,348 @@ describe('Controller', () => {
     })
 
     expect(await screen.findByText('Input is invalid.')).toBeVisible()
+  })
+
+  it('should show input has been touched.', async () => {
+    const Component = () => {
+      const { control } = useForm()
+
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field: props, fieldState }) => (
+            <>
+              <input {...props} />
+              {fieldState.isTouched && <p>Input is touched.</p>}
+            </>
+          )}
+          control={control}
+          rules={{
+            required: true,
+          }}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    expect(screen.queryByText('Input is touched.')).not.toBeInTheDocument()
+
+    fireEvent.blur(screen.getByRole('textbox'))
+
+    expect(await screen.findByText('Input is touched.')).toBeVisible()
+  })
+
+  it('should show input is dirty.', async () => {
+    const Component = () => {
+      const { control } = useForm()
+
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field: props, fieldState }) => (
+            <>
+              <input {...props} />
+              {fieldState.isDirty && <p>Input is dirty.</p>}
+            </>
+          )}
+          control={control}
+          rules={{
+            required: true,
+          }}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    expect(screen.queryByText('Input is dirty.')).not.toBeInTheDocument()
+
+    const input = screen.getByRole('textbox')
+
+    fireEvent.change(input, { target: { value: 'dirty' } })
+
+    expect(await screen.findByText('Input is dirty.')).toBeVisible()
+  })
+
+  it('should display input error.', async () => {
+    const Component = () => {
+      const { control } = useForm({
+        mode: 'onChange',
+      })
+
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field: props, fieldState }) => (
+            <>
+              <input {...props} />
+              {fieldState.error && <p>{fieldState.error.message}</p>}
+            </>
+          )}
+          control={control}
+          rules={{
+            required: 'This is required',
+          }}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    const input = screen.getByRole('textbox')
+
+    fireEvent.change(input, { target: { value: 'q' } })
+    fireEvent.change(input, { target: { value: '' } })
+
+    expect(await screen.findByText('This is required')).toBeVisible()
+  })
+
+  it('should not trigger extra-render while not subscribed to any input state', () => {
+    let count = 0
+
+    const Component = () => {
+      const { control } = useForm()
+      count++
+
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field: props, fieldState }) => (
+            <>
+              <input {...props} />
+              {fieldState.isTouched && <p>Input is dirty.</p>}
+            </>
+          )}
+          control={control}
+          rules={{
+            required: true,
+          }}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: {
+        value: 'test',
+      },
+    })
+
+    expect(count).toEqual(1)
+  })
+
+  it('should update Controller value with setValue', () => {
+    const Component = () => {
+      const { control, setValue } = useForm<{
+        test: string
+      }>()
+
+      React.useEffect(() => {
+        setValue('test', 'data')
+      }, [setValue])
+
+      return (
+        <Controller
+          name={'test'}
+          control={control}
+          render={({ field }) => <input {...field} />}
+          defaultValue=""
+        />
+      )
+    }
+
+    render(<Component />)
+
+    expect((screen.getByRole('textbox') as HTMLInputElement).value).toEqual('data')
+  })
+
+  it('should retain default value or defaultValues at Controller', () => {
+    let getValuesMethod = () => {}
+    const Component = () => {
+      const { control, getValues } = useForm<{
+        test: number
+        test1: number
+      }>({
+        defaultValues: {
+          test: 2,
+        },
+      })
+
+      getValuesMethod = getValues
+
+      return (
+        <>
+          <Controller
+            render={({ field }) => <input {...field} />}
+            name={'test'}
+            control={control}
+          />
+          <Controller
+            render={({ field }) => <input {...field} />}
+            name={'test1'}
+            defaultValue={1}
+            control={control}
+          />
+        </>
+      )
+    }
+
+    render(<Component />)
+
+    expect(getValuesMethod()).toEqual({
+      test: 2,
+      test1: 1,
+    })
+  })
+
+  it('should return correct isValid formState when input ref is not registered', async () => {
+    const Component = () => {
+      const {
+        control,
+        formState: { isValid },
+      } = useForm<{
+        test: string
+        test1: string
+      }>({
+        mode: 'onChange',
+        defaultValues: {
+          test: '2',
+          test1: '2',
+        },
+      })
+
+      return (
+        <>
+          <Controller
+            render={({ field }) => <input value={field.value} onChange={field.onChange} />}
+            rules={{ required: true }}
+            name={'test'}
+            control={control}
+          />
+          <Controller
+            render={({ field }) => <input value={field.value} onChange={field.onChange} />}
+            rules={{ required: true }}
+            name={'test1'}
+            control={control}
+          />
+          {isValid ? 'true' : 'false'}
+        </>
+      )
+    }
+
+    render(<Component />)
+
+    expect(screen.getByText('false')).toBeVisible()
+
+    fireEvent.change(screen.getAllByRole('textbox')[0]!, {
+      target: {
+        value: '',
+      },
+    })
+
+    expect(await screen.findByText('false')).toBeVisible()
+
+    fireEvent.input(screen.getAllByRole('textbox')[0]!, {
+      target: {
+        value: 'test',
+      },
+    })
+
+    expect(await screen.findByText('true')).toBeVisible()
+  })
+
+  it('should subscribe the correct dirty fields', () => {
+    type FormValues = {
+      test: string
+    }
+
+    const Component = () => {
+      const {
+        control,
+        formState: { dirtyFields, isDirty },
+      } = useForm<FormValues>({
+        defaultValues: {
+          test: '',
+        },
+      })
+
+      return (
+        <>
+          <Controller
+            control={control}
+            name={'test'}
+            render={({ field }) => <input {...field} />}
+          />
+          <p>{JSON.stringify(dirtyFields)}</p>
+          <p>{isDirty ? 'true' : 'false'}</p>
+        </>
+      )
+    }
+
+    render(<Component />)
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '1' } })
+
+    expect(screen.getByText('{"test":true}')).toBeVisible()
+    expect(screen.getByText('true')).toBeVisible()
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } })
+
+    expect(screen.getByText('{}')).toBeVisible()
+    expect(screen.getByText('false')).toBeVisible()
+  })
+
+  it.only('should remove input value and reference with Controller and set shouldUnregister: true', () => {
+    type FormValue = {
+      test: string
+    }
+
+    const watchedValue: FormValue[] = []
+
+    const Component = () => {
+      const { control, watch } = useForm<FormValue>({
+        defaultValues: {
+          test: 'bill',
+        },
+      })
+
+      const [show, setShow] = React.useState(true)
+
+      watchedValue.push(watch())
+
+      return (
+        <>
+          {show && (
+            <Controller
+              control={control}
+              name={'test'}
+              shouldUnregister
+              render={({ field }) => <input {...field} />}
+            />
+          )}
+          <button onClick={() => setShow(false)}>hide</button>
+        </>
+      )
+    }
+
+    render(<Component />)
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(watchedValue).toEqual([
+      {
+        test: 'bill',
+      },
+      {
+        test: 'bill',
+      },
+      {},
+    ])
   })
 })
