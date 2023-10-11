@@ -18,11 +18,35 @@ export function useSubscribe<
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: UseSubscribeProps<TValues, TName>) {
   const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
+  console.log('subin')
 
-  const derivedState = useMemo(
-    () => new RecordDerived(formControl.state, new Set()),
-    [formControl.state],
-  )
+  const derivedState = useMemo(() => {
+    const hi = new RecordDerived(formControl.state, new Set())
+
+    const n = hi.notify.bind(hi)
+
+    hi.notify = (key, context) => {
+      console.log('clone notify', { key, context })
+      n(key, context)
+    }
+
+    // const f = hi.freeze.bind(hi)
+    // const u = hi.unfreeze.bind(hi)
+
+    // hi.freeze = () => {
+    //   console.log('clone freeze')
+    //   f()
+    // }
+
+    // hi.unfreeze = () => {
+    //   console.log('clone unfreeze')
+    //   u()
+    // }
+
+    formControl.derivedState.clones.push(hi)
+
+    return hi
+  }, [formControl])
 
   const proxy = useMemo(
     () => derivedState.createTrackingProxy(props.name, { exact: true }),
@@ -31,9 +55,13 @@ export function useSubscribe<
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return derivedState.subscribe(() => {
-        callback()
-      })
+      return derivedState.subscribe(
+        () => {
+          callback()
+        },
+        undefined,
+        false,
+      )
     },
     [formControl],
   )

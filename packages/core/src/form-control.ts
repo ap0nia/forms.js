@@ -175,7 +175,7 @@ export type FormControlOptions<
   /**
    * When to revalidate the form.
    */
-  revalidateMode?: RevalidationMode[keyof RevalidationMode]
+  reValidateMode?: RevalidationMode[keyof RevalidationMode]
 
   /**
    * Shared data with all resolvers.
@@ -401,7 +401,7 @@ export type WatchOptions<T extends Record<string, any> = Record<string, any>> = 
  */
 export const defaultFormControlOptions: FormControlOptions<any, any, any> = {
   mode: VALIDATION_MODE.onSubmit,
-  revalidateMode: VALIDATION_MODE.onChange,
+  reValidateMode: VALIDATION_MODE.onChange,
   shouldFocusError: true,
 }
 
@@ -468,7 +468,7 @@ export class FormControl<
 
     resolvedOptions.submissionValidationMode ??= {
       beforeSubmission: getValidationModes(resolvedOptions.mode),
-      afterSubmission: getValidationModes(resolvedOptions.revalidateMode),
+      afterSubmission: getValidationModes(resolvedOptions.reValidateMode),
     }
 
     resolvedOptions.shouldCaptureDirtyFields ??= Boolean(
@@ -521,6 +521,10 @@ export class FormControl<
      * Ensure that default values are handled.
      */
     this.resetDefaultValues(resolvingDefaultValues, true)
+  }
+
+  get _fields() {
+    return this.fields
   }
 
   getValues(): TValues
@@ -961,6 +965,8 @@ export class FormControl<
    * Handles a change event from an input element.
    */
   async handleChange(event: Event): Promise<void | boolean> {
+    console.log('changing')
+
     this.derivedState.freeze()
 
     const target: any = event.target
@@ -1147,6 +1153,7 @@ export class FormControl<
   /**
    */
   reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
+    console.log('reset')
     this.derivedState.freeze()
 
     const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value

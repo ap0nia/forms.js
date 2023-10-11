@@ -89,6 +89,8 @@ export class RecordDerived<
    */
   keysChangedDuringFrozen?: Context[] = undefined
 
+  clones: RecordDerived<S, T>[] = []
+
   constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined) {
     this.stores = stores
 
@@ -161,8 +163,8 @@ export class RecordDerived<
   /**
    * Subscribe.
    */
-  subscribe(run: Subscriber<T>, invalidate = noop) {
-    return this.writable.subscribe(run, invalidate)
+  subscribe(run: Subscriber<T>, invalidate = noop, runFirst = true) {
+    return this.writable.subscribe(run, invalidate, runFirst)
   }
 
   /**
@@ -221,8 +223,16 @@ export class RecordDerived<
    * which prevents updates from occurring until the store is fully unfrozen.
    */
   freeze() {
+    console.log('freeze')
+
     this.rimeTrauma += 1
     this.keysChangedDuringFrozen = []
+
+    this.clones.forEach((clone) => {
+      console.log('clone freeze')
+      clone.rimeTrauma += 1
+      clone.keysChangedDuringFrozen = []
+    })
   }
 
   /**
@@ -236,7 +246,13 @@ export class RecordDerived<
    * @remarks Logic is slightly different from regular notifications.
    */
   unfreeze(shouldNotify?: boolean) {
+    console.log('thaw')
     this.thaw()
+
+    this.clones.forEach((clone) => {
+      console.log('clone thaw')
+      clone.thaw()
+    })
 
     if (shouldNotify === false || ((this.rimeTrauma || this.pending) && shouldNotify == null)) {
       return
@@ -251,7 +267,7 @@ export class RecordDerived<
     // Whether specific contextual names were changed.
     const trackedNamesChanged = this.keysChangedDuringFrozen?.some((keyChanged) => {
       if (typeof keyChanged.name === 'boolean') {
-        return keyChanged.name
+        return keyChanged.name && this.keyNames[keyChanged.key]?.length
       }
       return keyChanged.name?.some((name) => {
         return this.keyNames[keyChanged.key]?.some((keyName) => {
@@ -262,11 +278,40 @@ export class RecordDerived<
       })
     })
 
+    console.log('parent: ', { noKeys, trackedKeysChanged, trackedNamesChanged })
+
     if (noKeys || trackedKeysChanged || trackedNamesChanged) {
       this.writable.set(this.value)
     }
 
     this.keysChangedDuringFrozen = undefined
+
+    this.clones.forEach((clone) => {
+      // No keys to filter by, so notify all subscribers.
+      const noKeys = clone.keys == null
+
+      // Whether tracked keys were changed.
+      const trackedKeysChanged = clone.keysChangedDuringFrozen?.some((k) => this.keys?.has(k.key))
+
+      // Whether specific contextual names were changed.
+      const trackedNamesChanged = clone.keysChangedDuringFrozen?.some((keyChanged) => {
+        if (typeof keyChanged.name === 'boolean') {
+          return keyChanged.name && clone.keyNames[keyChanged.key]?.length
+        }
+        return keyChanged.name?.some((name) => {
+          return this.keyNames[keyChanged.key]?.some((keyName) => {
+            return keyName.exact
+              ? name === keyName.value
+              : name.includes(keyName.value) || keyName.value.includes(name)
+          })
+        })
+      })
+
+      console.log('clone: ', { noKeys, trackedKeysChanged, trackedNamesChanged })
+      if (noKeys || trackedKeysChanged || trackedNamesChanged) {
+        clone.writable.set(clone.value)
+      }
+    })
   }
 
   /**

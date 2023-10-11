@@ -37,5 +37,6 @@ export function Controller<
   TValues extends Record<string, any> = Record<string, any>,
   TKey extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: ControllerProps<TValues, TKey>) {
+  console.log('controller')
   return props.render(useController(props))
 }
