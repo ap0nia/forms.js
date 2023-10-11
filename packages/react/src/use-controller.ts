@@ -28,7 +28,7 @@ export type UseControllerProps<
   >
   shouldUnregister?: boolean
   defaultValue?: FlattenObject<TValues>[TName]
-  formControl?: ReactFormControl<TValues>
+  control?: ReactFormControl<TValues>
   disabled?: boolean
 }
 
@@ -36,14 +36,14 @@ export function useController<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: UseControllerProps<TValues, TName>) {
-  const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
+  const formControl = props.control ?? useFormControlContext<TValues>().formControl
 
   const formState = useSubscribe({ formControl, name: props.name })
 
   // Always subscribe to values.
   formState.values
 
-  const value = formControl.getValues(props.name) ?? props.defaultValue
+  const value: any = formControl.getValues(props.name) ?? props.defaultValue
 
   const registerProps = useRef(formControl.registerReact(props.name, { ...props.rules, value }))
 

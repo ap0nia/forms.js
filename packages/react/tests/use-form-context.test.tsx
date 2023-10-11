@@ -23,12 +23,12 @@ describe('FormControlProvider', () => {
     }
 
     const App = () => {
-      const { formControl } = useForm()
+      const { control: formControl } = useForm()
 
       formControl.register = mockRegister
 
       return (
-        <FormControlProvider formControl={formControl}>
+        <FormControlProvider control={formControl}>
           <form>
             <Test />
           </form>
@@ -95,10 +95,10 @@ describe('FormControlProvider', () => {
     }
 
     const Component = () => {
-      const { formControl } = useForm<FormValues>({ defaultValues })
+      const { control: formControl } = useForm<FormValues>({ defaultValues })
 
       return (
-        <FormControlProvider formControl={formControl}>
+        <FormControlProvider control={formControl}>
           <Test />
           <Test1 />
           <button

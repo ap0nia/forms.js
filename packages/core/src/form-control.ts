@@ -1087,6 +1087,8 @@ export class FormControl<
             [name],
           )
         }
+      } else {
+        this.mergeErrors(result.validationResult.errors, result.validationResult.names)
       }
 
       if (isFieldValueUpdated && field._f.deps) {

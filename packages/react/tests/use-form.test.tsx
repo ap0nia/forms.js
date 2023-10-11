@@ -61,7 +61,7 @@ describe('useForm', () => {
 
       await act(async () => {
         const event = new Event('')
-        await result.current.formControl.handleSubmit(() => {})(event)
+        await result.current.control.handleSubmit(() => {})(event)
       })
 
       expect(result.current.formState.errors.test).toBeDefined()
@@ -83,7 +83,7 @@ describe('useForm', () => {
 
       await act(async () => {
         const event = new Event('')
-        await result.current.formControl.handleSubmit(() => {})(event)
+        await result.current.control.handleSubmit(() => {})(event)
       })
 
       expect(result.current.formState.errors.test).toBeDefined()
@@ -969,7 +969,7 @@ describe('useForm', () => {
         },
       })
 
-      await waitFor(() => expect(screen.queryByText('This is required.')).not.toBeTruthy())
+      await waitFor(() => expect(screen.queryByText('This is required.')).toBeFalsy())
 
       fireEvent.input(input, {
         target: {
@@ -1236,7 +1236,7 @@ describe('useForm', () => {
           test: string
         }>()
 
-        control = form.formControl
+        control = form.control
 
         return (
           <>
@@ -1272,7 +1272,7 @@ describe('useForm', () => {
       let tempControl: FormControl<Record<string, any>> = undefined as any
 
       const App = () => {
-        const { formControl } = useForm()
+        const { control: formControl } = useForm()
 
         tempControl = formControl
 

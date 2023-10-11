@@ -20,7 +20,7 @@ export type FormControlProviderProps<
   TTransformedValues extends Record<string, any> | undefined = undefined,
 > = {
   children?: React.ReactNode
-  formControl: ReactFormControl<TValues, TContext, TTransformedValues>
+  control: ReactFormControl<TValues, TContext, TTransformedValues>
 }
 
 export function FormControlProvider<
@@ -30,26 +30,26 @@ export function FormControlProvider<
 >(props: FormControlProviderProps<TValues, TContext, TTransformedValues>) {
   const subscribe = useCallback(
     (callback: () => void) => {
-      return props.formControl.derivedState.subscribe(callback)
+      return props.control.derivedState.subscribe(callback)
     },
-    [props.formControl],
+    [props.control],
   )
 
   const getSnapshot = useCallback(() => {
-    return props.formControl.derivedState.value
-  }, [props.formControl])
+    return props.control.derivedState.value
+  }, [props.control])
 
   const getServerSnapshot = useCallback(() => {
-    return props.formControl.derivedState.value
-  }, [props.formControl])
+    return props.control.derivedState.value
+  }, [props.control])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   return (
     <FormControlContext.Provider
       value={{
-        formControl: props.formControl as any,
-        formState: props.formControl.derivedState.proxy as any,
+        formControl: props.control as any,
+        formState: props.control.derivedState.proxy as any,
       }}
     >
       {props.children}

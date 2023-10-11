@@ -13,12 +13,12 @@ import { useFormControlContext } from '../src/use-form-context'
 describe('useController', () => {
   test('renders input correctly', () => {
     const Component = () => {
-      const { formControl } = useForm<{
+      const { control: formControl } = useForm<{
         test: string
         test1: { test: string }[]
       }>()
 
-      useController({ name: 'test', formControl, defaultValue: '' })
+      useController({ name: 'test', control: formControl, defaultValue: '' })
 
       return null
     }
@@ -35,7 +35,7 @@ describe('useController', () => {
     }
 
     const Test = ({ formControl }: { formControl: ReactFormControl<FormValues> }) => {
-      const { field } = useController({ name: 'test', formControl })
+      const { field } = useController({ name: 'test', control: formControl })
 
       renderCounter[0]++
 
@@ -48,7 +48,7 @@ describe('useController', () => {
         fieldState: { isDirty, isTouched },
       } = useController({
         name: 'test1',
-        formControl,
+        control: formControl,
       })
 
       renderCounter[1]++
@@ -63,7 +63,7 @@ describe('useController', () => {
     }
 
     const Component = () => {
-      const { formControl } = useForm<FormValues>({
+      const { control: formControl } = useForm<FormValues>({
         defaultValues: { test: '', test1: '' },
       })
 
@@ -119,11 +119,11 @@ describe('useController', () => {
       const watchResult: unknown[] = []
 
       const Component = () => {
-        const { formControl, watch } = useForm<{ test: string }>()
+        const { control: formControl, watch } = useForm<{ test: string }>()
 
         watchResult.push(watch())
 
-        const { field } = useController({ name: 'test', formControl, defaultValue: '' })
+        const { field } = useController({ name: 'test', control: formControl, defaultValue: '' })
 
         return <input type="checkbox" {...field} />
       }
@@ -144,7 +144,7 @@ describe('useController', () => {
     test('should work for checkbox by assign checked', async () => {
       const watchResult: unknown[] = []
       const Component = () => {
-        const { formControl, watch } = useForm<{
+        const { control: formControl, watch } = useForm<{
           test: string
         }>()
 
@@ -152,7 +152,7 @@ describe('useController', () => {
 
         const { field } = useController({
           name: 'test',
-          formControl,
+          control: formControl,
           defaultValue: '',
         })
 
@@ -181,7 +181,7 @@ describe('useController', () => {
     test('should work for checkbox by assign checked', async () => {
       const watchResult: unknown[] = []
       const Component = () => {
-        const { formControl, watch } = useForm<{
+        const { control: formControl, watch } = useForm<{
           test: string
         }>()
 
@@ -189,7 +189,7 @@ describe('useController', () => {
 
         const { field } = useController({
           name: 'test',
-          formControl,
+          control: formControl,
           defaultValue: '',
         })
 
@@ -218,13 +218,13 @@ describe('useController', () => {
     test('should work for checkbox by assign value manually', async () => {
       const watchResult: unknown[] = []
       const Component = () => {
-        const { formControl, watch } = useForm<{ test: string }>()
+        const { control: formControl, watch } = useForm<{ test: string }>()
 
         watchResult.push(watch())
 
         const { field } = useController({
           name: 'test',
-          formControl,
+          control: formControl,
           defaultValue: '',
         })
 
@@ -260,7 +260,7 @@ describe('useController', () => {
     let counter = 0
 
     const Test = ({ formControl }: { formControl: ReactFormControl<FormValues> }) => {
-      const { field, formState } = useController({ formControl, name: 'test' })
+      const { field, formState } = useController({ control: formControl, name: 'test' })
 
       return (
         <>
@@ -272,7 +272,7 @@ describe('useController', () => {
     }
 
     const Component = () => {
-      const { formControl } = useForm<FormValues>({
+      const { control: formControl } = useForm<FormValues>({
         defaultValues: { test: '' },
       })
 
@@ -298,7 +298,7 @@ describe('useController', () => {
 
   test('should not overwrite defaultValues with defaultValue', () => {
     const App = () => {
-      const { formControl } = useForm({
+      const { control: formControl } = useForm({
         defaultValues: {
           test: 'bill',
         },
@@ -309,7 +309,7 @@ describe('useController', () => {
           render={({ field }) => {
             return <input {...field} />
           }}
-          formControl={formControl}
+          control={formControl}
           name={'test'}
           defaultValue={'luo'}
         />
@@ -323,11 +323,11 @@ describe('useController', () => {
 
   test('should be able to update input value without ref', async () => {
     const App = () => {
-      const { formControl, setValue } = useForm()
+      const { control: formControl, setValue } = useForm()
 
       const { field } = useController({
         name: 'test',
-        formControl,
+        control: formControl,
         defaultValue: '',
       })
 
@@ -366,7 +366,7 @@ describe('useController', () => {
 
       const { field } = useController({
         name: 'name',
-        formControl,
+        control: formControl,
         defaultValue: '',
       })
 
@@ -374,7 +374,7 @@ describe('useController', () => {
     }
 
     function App() {
-      const { reset, formControl, setValue } = useForm<FormValues>()
+      const { reset, control: formControl, setValue } = useForm<FormValues>()
 
       useEffect(() => {
         reset({ name: 'initial' })
@@ -410,7 +410,7 @@ describe('useController', () => {
 
     function Input({ formControl }: { formControl: ReactFormControl<FormValues> }) {
       const { field } = useController({
-        formControl,
+        control: formControl,
         rules: { required: message },
         name: 'test',
       })
@@ -428,7 +428,7 @@ describe('useController', () => {
     }
 
     function App() {
-      const { handleSubmit, formControl } = useForm<FormValues>({
+      const { handleSubmit, control: formControl } = useForm<FormValues>({
         defaultValues: {
           test: '',
         },
@@ -469,9 +469,9 @@ describe('useController', () => {
     const onSubmit = vi.fn()
 
     const App = () => {
-      const { formControl, handleSubmit } = useForm()
+      const { control: formControl, handleSubmit } = useForm()
 
-      useController({ formControl, defaultValue: 'test', name: 'test' })
+      useController({ control: formControl, defaultValue: 'test', name: 'test' })
 
       return (
         <form
@@ -508,7 +508,7 @@ describe('useController', () => {
     }
 
     const App = () => {
-      const { formControl, getValues } = useForm<{
+      const { control: formControl, getValues } = useForm<{
         test: {
           deep: { test: string; test1: string }[]
         }
@@ -517,7 +517,7 @@ describe('useController', () => {
       })
 
       const { field } = useController({
-        formControl,
+        control: formControl,
         name: 'test.deep.0.test',
       })
 
@@ -552,14 +552,14 @@ describe('useController', () => {
     }
 
     function App() {
-      const { formControl } = useForm({
+      const { control: formControl } = useForm({
         defaultValues: {
           content: 'default',
         },
       })
 
       return (
-        <FormControlProvider formControl={formControl}>
+        <FormControlProvider control={formControl}>
           <form>
             <Child />
             <input type="submit" />
@@ -585,7 +585,7 @@ describe('useController', () => {
     }) {
       const {
         field: { value },
-      } = useController({ formControl, name, shouldUnregister: true })
+      } = useController({ control: formControl, name, shouldUnregister: true })
 
       data = value
 
@@ -593,7 +593,7 @@ describe('useController', () => {
     }
 
     const App = () => {
-      const { formControl } = useForm<{
+      const { control: formControl } = useForm<{
         test: string
       }>({
         defaultValues: {
@@ -626,9 +626,9 @@ describe('useController', () => {
     const watchResults: unknown[] = []
 
     const App = () => {
-      const { formControl, watch } = useForm()
+      const { control: formControl, watch } = useForm()
 
-      const { field } = useController({ formControl, name: 'test', defaultValue: '' })
+      const { field } = useController({ control: formControl, name: 'test', defaultValue: '' })
 
       watchResults.push(watch())
 
@@ -672,13 +672,13 @@ describe('useController', () => {
     const focus = vi.fn()
 
     const App = () => {
-      const { formControl, setFocus } = useForm({
+      const { control: formControl, setFocus } = useForm({
         defaultValues: {
           test: 'data',
         },
       })
 
-      const { field } = useController({ formControl, name: 'test' })
+      const { field } = useController({ control: formControl, name: 'test' })
 
       field.ref({ select, focus } as any)
 
@@ -758,7 +758,7 @@ describe('useController', () => {
   test('should disable form input with disabled prop', async () => {
     const App = () => {
       const [disabled, setDisabled] = useState(false)
-      const { formControl, watch } = useForm({
+      const { control: formControl, watch } = useForm({
         defaultValues: {
           test: 'test',
         },
@@ -767,7 +767,7 @@ describe('useController', () => {
       const {
         field: { disabled: disabledProps },
       } = useController({
-        formControl,
+        control: formControl,
         name: 'test',
         disabled,
       })

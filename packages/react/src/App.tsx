@@ -19,7 +19,7 @@ function Test1({ formControl }: { formControl: ReactFormControl<any> }) {
 }
 
 export function App() {
-  const { register, formControl } = useForm()
+  const { register, control: formControl } = useForm()
 
   return (
     <div>
