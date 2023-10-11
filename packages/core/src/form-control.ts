@@ -1026,6 +1026,10 @@ export class FormControl<
       this.derivedState.unfreeze()
 
       return
+    } else {
+      this.derivedState.unfreeze()
+
+      this.derivedState.freeze()
     }
 
     // Update isValidating and force derivedState to update.

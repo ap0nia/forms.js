@@ -422,6 +422,7 @@ describe('store', () => {
 
       test('notifies when context force is true', () => {
         const { derived, stores } = createDerived(new Set(['b']))
+        derived.track('a')
 
         const fn = vi.fn()
 

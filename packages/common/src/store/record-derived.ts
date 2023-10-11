@@ -262,7 +262,7 @@ export class RecordDerived<
     // Whether specific contextual names were changed.
     const trackedNamesChanged = this.keysChangedDuringFrozen?.some((keyChanged) => {
       if (typeof keyChanged.name === 'boolean') {
-        return keyChanged.name && this.keyNames[keyChanged.key]?.length
+        return keyChanged.name && this.keyNames[keyChanged.key] != null
       }
       return keyChanged.name?.some((name) => {
         return this.keyNames[keyChanged.key]?.some((keyName) => {
@@ -314,10 +314,10 @@ export class RecordDerived<
   /**
    * Track a specific contextual name of a key, instead of all updates to that key's store.
    */
-  track(key: keyof S, name: string | string[], options?: { exact?: boolean }) {
+  track(key: keyof S, name?: string | string[], options?: { exact?: boolean }) {
     this.keyNames[key] ??= []
 
-    const names = Array.isArray(name) ? name : [name]
+    const names = Array.isArray(name) ? name : name ? [name] : []
 
     // If all names have already been tracked, do nothing.
     if (

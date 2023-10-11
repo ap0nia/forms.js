@@ -55,7 +55,7 @@ export function useController<
 
   const onChange = useCallback(
     async (event: any) => {
-      await registerProps.current.onChange({
+      return await registerProps.current.onChange({
         nativeEvent: {
           type: INPUT_EVENTS.CHANGE,
           target: {
@@ -68,19 +68,17 @@ export function useController<
     [props.name],
   )
 
-  const onBlur = useCallback(
-    () =>
-      registerProps.current.onBlur({
-        nativeEvent: {
-          type: INPUT_EVENTS.BLUR,
-          target: {
-            value: formControl.getValues(props.name),
-            name: props.name,
-          },
+  const onBlur = useCallback(async () => {
+    return await registerProps.current.onBlur({
+      nativeEvent: {
+        type: INPUT_EVENTS.BLUR,
+        target: {
+          value: formControl.getValues(props.name),
+          name: props.name,
         },
-      } as any),
-    [props.name, formControl],
-  )
+      },
+    } as any)
+  }, [props.name, formControl])
 
   useEffect(() => {
     const _shouldUnregisterField = formControl.options.shouldUnregister || props.shouldUnregister
@@ -127,7 +125,10 @@ export function useController<
       {
         invalid: {
           enumerable: true,
-          get: () => !!safeGet(formState.errors, props.name),
+          get: () => {
+            const invalid = !!safeGet(formState.errors, props.name)
+            return invalid
+          },
         },
         isDirty: {
           enumerable: true,

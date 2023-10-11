@@ -1,40 +1,25 @@
-import type { ReactFormControl } from './form-control'
+import { Controller } from './controller'
 import { useForm } from './use-form'
-import { useSubscribe } from './use-subscribe'
-
-function Test({ formControl }: { formControl: ReactFormControl<any> }) {
-  const state = useSubscribe({ name: 'test', formControl })
-
-  console.log('test render', state)
-
-  return null
-}
-
-function Test1({ formControl }: { formControl: ReactFormControl<any> }) {
-  const state = useSubscribe({ name: 'test1', formControl })
-
-  console.log('test1 render', state.values)
-
-  return null
-}
 
 export function App() {
-  const { register, control: formControl } = useForm()
+  const { control } = useForm({
+    mode: 'onChange',
+  })
 
   return (
-    <div>
-      <Test formControl={formControl} />
-      <Test1 formControl={formControl} />
-
-      <div>
-        test
-        <input {...register('test')} />
-      </div>
-
-      <div>
-        test1
-        <input {...register('test1')} />
-      </div>
-    </div>
+    <Controller
+      defaultValue=""
+      name="test"
+      render={({ field: props, fieldState }) => (
+        <>
+          <input {...props} />
+          {fieldState.invalid && <p>Input is invalid.</p>}
+        </>
+      )}
+      control={control}
+      rules={{
+        required: true,
+      }}
+    />
   )
 }
