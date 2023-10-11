@@ -1405,6 +1405,7 @@ describe('useForm', () => {
 
       const loadData = useCallback(async () => {
         await sleep(100)
+        console.log('setting values')
         setValues({ test: 'test' })
       }, [])
 

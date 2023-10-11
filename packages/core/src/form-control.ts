@@ -492,12 +492,14 @@ export class FormControl<
         ? resolvedOptions.defaultValues()
         : resolvedOptions.defaultValues
 
+    const isLoading = resolvingDefaultValues instanceof Promise
+
     this.options = resolvedOptions
 
     this.state = {
       submitCount: new Writable(0),
       isDirty: new Writable(false),
-      isLoading: new Writable(resolvingDefaultValues instanceof Promise),
+      isLoading: new Writable(isLoading),
       isValidating: new Writable(false),
       isSubmitted: new Writable(false),
       isSubmitting: new Writable(false),
@@ -517,10 +519,12 @@ export class FormControl<
       plugin.onInit?.(this)
     })
 
-    /**
-     * Ensure that default values are handled.
-     */
-    this.resetDefaultValues(resolvingDefaultValues, true)
+    if (isLoading) {
+      /**
+       * Ensure that default values are handled.
+       */
+      this.resetDefaultValues(resolvingDefaultValues, true)
+    }
   }
 
   get _fields() {
@@ -1262,7 +1266,7 @@ export class FormControl<
    * @param resetValues Whether to reset the form's values too.
    */
   async resetDefaultValues(
-    resolvingDefaultValues: Defaults<TValues>,
+    resolvingDefaultValues?: Defaults<TValues>,
     resetValues?: boolean,
   ): Promise<void> {
     if (resolvingDefaultValues == null) {

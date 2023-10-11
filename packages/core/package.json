@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
     "build": "tsup"
   },
   "devDependencies": {

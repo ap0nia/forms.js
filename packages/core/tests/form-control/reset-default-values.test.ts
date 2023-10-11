@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 
@@ -33,26 +33,19 @@ describe('FormControl', () => {
     })
 
     test('null default values ensures loading state is false', async () => {
-      let isLoading = true
+      const fn = vi.fn()
 
-      new FormControl({
-        plugins: [
-          {
-            onInit(formControl) {
-              // To hit test coverage, this artificially sets the loading value to true,
-              // but it should normally be calculated (correctly) as false for synchronous default values.
-              formControl.state.isLoading.value = isLoading
+      const formControl = new FormControl()
 
-              formControl.state.isLoading.subscribe((value) => {
-                isLoading = value
-              })
-            },
-          },
-        ],
-      })
+      formControl.state.isLoading.subscribe(fn)
+      formControl.state.isLoading.set(true)
 
-      // The default values are not asynchronous, so isLoading should be forced to false.
-      await waitFor(() => expect(isLoading).toBeFalsy())
+      fn.mockReset()
+
+      formControl.resetDefaultValues(undefined)
+
+      expect(fn).toHaveBeenCalledOnce()
+      expect(fn).toHaveBeenLastCalledWith(false)
     })
   })
 })

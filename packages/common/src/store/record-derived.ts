@@ -262,7 +262,7 @@ export class RecordDerived<
     // Whether specific contextual names were changed.
     const trackedNamesChanged = this.keysChangedDuringFrozen?.some((keyChanged) => {
       if (typeof keyChanged.name === 'boolean') {
-        return keyChanged.name && this.keyNames[keyChanged.key] != null
+        return keyChanged.name
       }
       return keyChanged.name?.some((name) => {
         return this.keyNames[keyChanged.key]?.some((keyName) => {
