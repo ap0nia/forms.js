@@ -110,6 +110,14 @@ describe('FormControl', () => {
 
         expect(fn).toHaveBeenCalledTimes(3)
       })
+
+      test('updates derived watched keys when no keys specified', () => {
+        const formControl = new FormControl()
+
+        formControl.watch()
+
+        expect(formControl.derivedState.keys).toContain('values')
+      })
     })
   })
 })

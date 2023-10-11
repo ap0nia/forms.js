@@ -59,7 +59,10 @@ describe('FormControl', () => {
         },
       }
 
-      const defaultValues = new Promise((resolve) => setTimeout(() => resolve(values), 500))
+      const defaultValues = async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        return values
+      }
 
       await formControl.resetDefaultValues(defaultValues, true)
 

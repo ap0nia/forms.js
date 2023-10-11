@@ -1265,10 +1265,9 @@ export class FormControl<
   /**
    * @param resetValues Whether to reset the form's values too.
    */
-  async resetDefaultValues(
-    resolvingDefaultValues?: Defaults<TValues>,
-    resetValues?: boolean,
-  ): Promise<void> {
+  async resetDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
+    const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
+
     if (resolvingDefaultValues == null) {
       // Ensure that the form is not loading.
       this.state.isLoading.set(false)
@@ -1282,7 +1281,11 @@ export class FormControl<
       this.state.isLoading.set(true)
     }
 
-    const resolvedDefaultValues = isPromise ? await resolvingDefaultValues : resolvingDefaultValues
+    let resolvedDefaultValues = resolvingDefaultValues
+
+    if (isPromise) {
+      resolvedDefaultValues = await resolvingDefaultValues
+    }
 
     this.state.defaultValues.set((resolvedDefaultValues ?? {}) as any)
 
