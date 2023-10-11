@@ -248,8 +248,7 @@ describe('Controller', () => {
 
     fireEvent.blur(screen.getByRole('textbox'))
 
-    // expect(touched).toEqual({ test: true })
-    await waitFor(() => expect(touched).toEqual({ test: true }))
+    expect(touched).toEqual({ test: true })
   })
 
   it('should call trigger method when re-validate mode is onBlur with blur event', async () => {
@@ -308,7 +307,6 @@ describe('Controller', () => {
 
   it('should invoke custom event named method', () => {
     let fieldValues: any
-
     const Component = () => {
       const { control, getValues } = useForm()
       return (
@@ -341,7 +339,6 @@ describe('Controller', () => {
 
   it('should invoke custom onChange method', () => {
     const onChange = vi.fn()
-
     const Component = () => {
       const { control } = useForm<{
         test: string
@@ -400,9 +397,7 @@ describe('Controller', () => {
     let fieldsRef: any
     const Component = ({ required = true }: { required?: boolean }) => {
       const { control } = useForm()
-
       fieldsRef = control._fields
-
       return (
         <Controller
           defaultValue=""
@@ -423,7 +418,6 @@ describe('Controller', () => {
   it('should set initial state from unmount state', () => {
     const Component = ({ isHide }: { isHide?: boolean }) => {
       const { control } = useForm()
-
       return isHide ? null : (
         <Controller
           defaultValue=""
@@ -453,7 +447,6 @@ describe('Controller', () => {
 
     const App = () => {
       const [show, setShow] = React.useState(true)
-
       const { control, handleSubmit } = useForm()
 
       return (
@@ -496,12 +489,12 @@ describe('Controller', () => {
     () => {
       // const Component = () => {
       //   const { control } = useForm<{
-      //     test: { value: string }[]
-      //   }>()
+      //     test: { value: string }[];
+      //   }>();
       //   const { fields, append, remove } = useFieldArray({
       //     name: 'test',
       //     control,
-      //   })
+      //   });
       //   return (
       //     <form>
       //       {fields.map((field, i) => (
@@ -520,24 +513,24 @@ describe('Controller', () => {
       //         remove
       //       </button>
       //     </form>
-      //   )
-      // }
-      // render(<Component />)
-      // fireEvent.click(screen.getByRole('button', { name: /append/i }))
-      // fireEvent.input(screen.getByRole('textbox'), { target: { value: 'test' } })
-      // fireEvent.click(screen.getByRole('button', { name: /remove/i }))
-      // fireEvent.click(screen.getByRole('button', { name: /append/i }))
-      // expect(screen.getByRole('textbox')).toHaveValue('test')
+      //   );
+      // };
+      // render(<Component />);
+      // fireEvent.click(screen.getByRole('button', { name: /append/i }));
+      // fireEvent.input(screen.getByRole('textbox'), { target: { value: 'test' } });
+      // fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+      // fireEvent.click(screen.getByRole('button', { name: /append/i }));
+      // expect(screen.getByRole('textbox')).toHaveValue('test');
     },
   )
 
   it.todo('should not assign default value when field is removed with useFieldArray', () => {
     // const Component = () => {
-    //   const { control } = useForm()
+    //   const { control } = useForm();
     //   const { fields, append, remove } = useFieldArray({
     //     control,
     //     name: 'test',
-    //   })
+    //   });
     //   return (
     //     <form>
     //       {fields.map((field, i) => (
@@ -557,30 +550,29 @@ describe('Controller', () => {
     //         append
     //       </button>
     //     </form>
-    //   )
-    // }
-    // render(<Component />)
-    // fireEvent.click(screen.getByRole('button', { name: /append/i }))
-    // fireEvent.click(screen.getByRole('button', { name: /append/i }))
-    // fireEvent.click(screen.getByRole('button', { name: /append/i }))
-    // const inputs = screen.getAllByRole('textbox')
+    //   );
+    // };
+    // render(<Component />);
+    // fireEvent.click(screen.getByRole('button', { name: /append/i }));
+    // fireEvent.click(screen.getByRole('button', { name: /append/i }));
+    // fireEvent.click(screen.getByRole('button', { name: /append/i }));
+    // const inputs = screen.getAllByRole('textbox');
     // fireEvent.input(inputs[0], {
     //   target: { value: '1' },
-    // })
+    // });
     // fireEvent.input(inputs[1], {
     //   target: { value: '2' },
-    // })
+    // });
     // fireEvent.input(inputs[2], {
     //   target: { value: '3' },
-    // })
-    // fireEvent.click(screen.getByRole('button', { name: /remove1/i }))
-    // expect(screen.getAllByRole('textbox')[0]).toHaveValue('1')
-    // expect(screen.getAllByRole('textbox')[1]).toHaveValue('3')
+    // });
+    // fireEvent.click(screen.getByRole('button', { name: /remove1/i }));
+    // expect(screen.getAllByRole('textbox')[0]).toHaveValue('1');
+    // expect(screen.getAllByRole('textbox')[1]).toHaveValue('3');
   })
 
   it('should validate input when input is touched and with onTouched mode', async () => {
     let currentErrors: any = {}
-
     const Component = () => {
       const {
         formState: { errors },
@@ -629,14 +621,12 @@ describe('Controller', () => {
         <Controller
           defaultValue=""
           name="test"
-          render={({ field: props, fieldState }) => {
-            return (
-              <>
-                <input {...props} />
-                {fieldState.invalid && <p>Input is invalid.</p>}
-              </>
-            )
-          }}
+          render={({ field: props, fieldState }) => (
+            <>
+              <input {...props} />
+              {fieldState.invalid && <p>Input is invalid.</p>}
+            </>
+          )}
           control={control}
           rules={{
             required: true,
@@ -963,18 +953,14 @@ describe('Controller', () => {
     type FormValue = {
       test: string
     }
-
     const watchedValue: FormValue[] = []
-
     const Component = () => {
       const { control, watch } = useForm<FormValue>({
         defaultValues: {
           test: 'bill',
         },
       })
-
       const [show, setShow] = React.useState(true)
-
       watchedValue.push(watch())
 
       return (
@@ -1093,11 +1079,11 @@ describe('Controller', () => {
     //     defaultValues: {
     //       test: [{ firstName: 'test' }],
     //     },
-    //   })
+    //   });
     //   const { fields, prepend } = useFieldArray({
     //     control,
     //     name: 'test',
-    //   })
+    //   });
     //   return (
     //     <form onSubmit={handleSubmit(() => {})}>
     //       {fields.map((field, index) => {
@@ -1111,7 +1097,7 @@ describe('Controller', () => {
     //             />
     //             {errors?.test?.[index]?.firstName && <p>error</p>}
     //           </div>
-    //         )
+    //         );
     //       })}
     //       <button
     //         type="button"
@@ -1125,13 +1111,13 @@ describe('Controller', () => {
     //       </button>
     //       <button>submit</button>
     //     </form>
-    //   )
-    // }
-    // render(<App />)
-    // fireEvent.click(screen.getByRole('button', { name: 'submit' }))
-    // fireEvent.click(screen.getByRole('button', { name: 'prepend' }))
-    // fireEvent.click(screen.getByRole('button', { name: 'submit' }))
-    // expect(await screen.findByText('error')).toBeVisible()
+    //   );
+    // };
+    // render(<App />);
+    // fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    // fireEvent.click(screen.getByRole('button', { name: 'prepend' }));
+    // fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+    // expect(await screen.findByText('error')).toBeVisible();
   })
 
   it('should not throw type error with field state', () => {
@@ -1327,19 +1313,24 @@ describe('Controller', () => {
     expect(screen.getAllByRole('textbox').length).toEqual(4)
   })
 
-  it('should unregister component within field array when field is unmounted', () => {
-    // const getValueFn = jest.fn()
+  it.todo('should unregister component within field array when field is unmounted', () => {
+    // const getValueFn = vi.fn();
     // const Child = () => {
     //   const { fields } = useFieldArray({
     //     name: 'names',
-    //   })
-    //   const show = useWatch({ name: 'show' })
+    //   });
+    //   const show = useWatch({ name: 'show' });
     //   return (
     //     <>
     //       <Controller
     //         name={'show'}
     //         render={({ field }) => (
-    //           <input {...field} checked={field.value} type="checkbox" data-testid="checkbox" />
+    //           <input
+    //             {...field}
+    //             checked={field.value}
+    //             type="checkbox"
+    //             data-testid="checkbox"
+    //           />
     //         )}
     //       />
     //       {fields.map((field, i) => (
@@ -1354,36 +1345,36 @@ describe('Controller', () => {
     //         </div>
     //       ))}
     //     </>
-    //   )
-    // }
+    //   );
+    // };
     // function App() {
     //   const methods = useForm({
     //     defaultValues: { show: true, names: [{ firstName: '' }] },
-    //   })
+    //   });
     //   return (
     //     <FormProvider {...methods}>
     //       <Child />
     //       <button
     //         onClick={() => {
-    //           getValueFn(methods.getValues())
+    //           getValueFn(methods.getValues());
     //         }}
     //       >
     //         getValues
     //       </button>
     //     </FormProvider>
-    //   )
+    //   );
     // }
-    // render(<App />)
-    // fireEvent.click(screen.getByRole('button'))
+    // render(<App />);
+    // fireEvent.click(screen.getByRole('button'));
     // expect(getValueFn).toBeCalledWith({
     //   names: [{ firstName: '' }],
     //   show: true,
-    // })
-    // fireEvent.click(screen.getByTestId('checkbox'))
-    // fireEvent.click(screen.getByRole('button'))
+    // });
+    // fireEvent.click(screen.getByTestId('checkbox'));
+    // fireEvent.click(screen.getByRole('button'));
     // expect(getValueFn).toBeCalledWith({
     //   show: false,
-    // })
+    // });
   })
 
   it('should set up defaultValues for controlled component with values prop', () => {
