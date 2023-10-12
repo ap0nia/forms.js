@@ -377,19 +377,19 @@ export type SetValueOptions = {
 /**
  * A form submit event handler.
  */
-export type HandlerCallback = (event: Event) => Promise<void>
+export type HandlerCallback = (event?: Event) => Promise<void>
 
 /**
  * Handles the form submission event if it was successful.
  */
 export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string, any>
-  ? (data: TTransformed, event: Event) => unknown
-  : (data: T, event: Event) => unknown
+  ? (data: TTransformed, event?: Event) => unknown
+  : (data: T, event?: Event) => unknown
 
 /**
  * Handles the form submission event if errors occurred.
  */
-export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event: Event) => unknown
+export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event?: Event) => unknown
 
 /**
  * Options when watching an input.
@@ -1133,7 +1133,7 @@ export class FormControl<
     return async (event) => {
       this.derivedState.freeze()
 
-      event.preventDefault?.()
+      event?.preventDefault?.()
 
       // Update isSubmitting.
       this.state.isSubmitting.set(true)
