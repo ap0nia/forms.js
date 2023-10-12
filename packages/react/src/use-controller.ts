@@ -36,7 +36,9 @@ export function useController<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: UseControllerProps<TValues, TName>) {
-  const formControl = props.control ?? useFormControlContext<TValues>().formControl
+  const context = useFormControlContext<TValues>()
+
+  const formControl = props.control ?? context.formControl
 
   const formState = useSubscribe({ formControl, name: props.name })
 

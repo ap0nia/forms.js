@@ -1455,7 +1455,7 @@ export class FormControl<
 
     this.state.isDirty.set(currentIsDirty, [name])
 
-    if (currentIsDirty) {
+    if (currentIsDirty || currentIsDirty != previousIsDirty) {
       this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), [name])
     }
 

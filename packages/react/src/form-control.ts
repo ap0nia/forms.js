@@ -78,3 +78,5 @@ export class ReactFormControl<
     }
   }
 }
+
+export { ReactFormControl as Control }

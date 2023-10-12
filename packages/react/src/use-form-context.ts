@@ -10,3 +10,5 @@ export function useFormControlContext<
   const context = useContext(FormControlContext)
   return context as FormControlContextValue<TValues, TContext, TransformedValues>
 }
+
+export { useFormControlContext as useFormContext }

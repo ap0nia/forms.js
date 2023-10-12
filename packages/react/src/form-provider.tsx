@@ -10,7 +10,7 @@ export type FormControlContextValue<
 > = {
   formControl: ReactFormControl<TValues, TContext, TTransformedValues>
   formState: FormControlState<TValues>
-}
+} & Pick<ReactFormControl<TValues, TContext, TTransformedValues>, 'setValue'>
 
 export const FormControlContext = createContext<FormControlContextValue>(undefined!)
 
@@ -50,9 +50,12 @@ export function FormControlProvider<
       value={{
         formControl: props.control as any,
         formState: props.control.derivedState.proxy as any,
+        setValue: props.control.setValue.bind(props.control),
       }}
     >
       {props.children}
     </FormControlContext.Provider>
   )
 }
+
+export { FormControlProvider as FormProvider }
