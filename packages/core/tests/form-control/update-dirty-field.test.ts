@@ -29,5 +29,26 @@ describe('FormContol', () => {
 
       expect(formControl.state.dirtyFields.value).toEqual({})
     })
+
+    test('only update isDirty when there are subscribers', () => {
+      const formControl = new FormControl()
+
+      formControl.state.values.set({
+        hello: 'world',
+      })
+
+      // This shouldn't update isDirty because it isn't being tracked.
+      formControl.updateDirtyField('hello', '')
+
+      expect(formControl.state.isDirty.value).toBeFalsy()
+
+      // Subscribe to isDirty and cause it to be tracked.
+      formControl.derivedState.proxy.isDirty
+
+      // This should update isDirty because it is being tracked.
+      formControl.updateDirtyField('hello', '')
+
+      expect(formControl.state.isDirty.value).toBeTruthy()
+    })
   })
 })
