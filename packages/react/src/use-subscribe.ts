@@ -1,6 +1,6 @@
 import { RecordDerived } from '@forms.js/common/store'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 
 import type { ReactFormControl } from './form-control'
 import { useFormControlContext } from './use-form-context'
@@ -20,10 +20,20 @@ export function useSubscribe<
   const control = props.control ?? useFormControlContext<TValues>().control
 
   const derivedState = useMemo(() => {
-    const hi = new RecordDerived(control.state, new Set())
-    control.derivedState.clones.push(hi)
-    return hi
+    const derived = new RecordDerived(control.state, new Set())
+
+    control.derivedState.clones.push(derived)
+
+    return derived
   }, [control])
+
+  useEffect(() => {
+    return () => {
+      control.derivedState.clones = control.derivedState.clones.filter(
+        (clone) => clone !== derivedState,
+      )
+    }
+  }, [control, props?.name])
 
   const proxy = useMemo(
     () => derivedState.createTrackingProxy(props.name, { exact: true }),
