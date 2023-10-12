@@ -1,5 +1,5 @@
 import { INPUT_EVENTS } from '@forms.js/core'
-import type { Field, FieldError, RegisterOptions } from '@forms.js/core'
+import type { Field, FieldError, FormControlState, RegisterOptions } from '@forms.js/core'
 import { getEventValue } from '@forms.js/core/html/get-event-value'
 import { deepSet } from '@forms.js/core/utils/deep-set'
 import { safeGet } from '@forms.js/core/utils/safe-get'
@@ -17,30 +17,56 @@ export type ControllerFieldState = {
   error?: FieldError
 }
 
+export type UseControllerRules<
+  TValues extends Record<string, any> = Record<string, any>,
+  TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
+> = Omit<
+  RegisterOptions<TValues, TName>,
+  'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
+>
+
 export type UseControllerProps<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 > = {
   name: Extract<TName, string>
-  rules?: Omit<
-    RegisterOptions<TValues, TName>,
-    'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
-  >
+  rules?: UseControllerRules<TValues, TName>
   shouldUnregister?: boolean
   defaultValue?: FlattenObject<TValues>[TName]
   control?: ReactFormControl<TValues>
   disabled?: boolean
 }
 
+export type ControllerRenderProps<
+  TFieldValues extends Record<string, any> = Record<string, any>,
+  TName extends keyof FlattenObject<TFieldValues> = keyof FlattenObject<TFieldValues>,
+> = {
+  onChange: (...event: any[]) => void
+  onBlur: () => void
+  value: FlattenObject<TFieldValues>[TName]
+  disabled?: boolean
+  name: TName
+  ref: (instance: HTMLInputElement | null) => void
+}
+
+export type UseControllerReturn<
+  TValues extends Record<string, any> = Record<string, any>,
+  TKey extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
+> = {
+  field: ControllerRenderProps<TValues, TKey>
+  fieldState: ControllerFieldState
+  formState: FormControlState<TValues>
+}
+
 export function useController<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
->(props: UseControllerProps<TValues, TName>) {
+>(props: UseControllerProps<TValues, TName>): UseControllerReturn<TValues, TName> {
   const context = useFormControlContext<TValues>()
 
   const formControl = props.control ?? context.control
 
-  const formState = useSubscribe({ formControl, name: props.name })
+  const formState = useSubscribe({ control: formControl, name: props.name })
 
   // Always subscribe to values.
   formState.values
@@ -67,7 +93,7 @@ export function useController<
         },
       } as any)
     },
-    [props.name],
+    [registerProps.current, props.name],
   )
 
   const onBlur = useCallback(async () => {
@@ -80,10 +106,10 @@ export function useController<
         },
       },
     } as any)
-  }, [props.name, formControl])
+  }, [formControl, registerProps.current, props.name])
 
   useEffect(() => {
-    const _shouldUnregisterField = formControl.options.shouldUnregister || props.shouldUnregister
+    const shouldUnregisterField = formControl.options.shouldUnregister || props.shouldUnregister
 
     const updateMounted = (name: string, value: boolean) => {
       const field: Field | undefined = safeGet(formControl.fields, name)
@@ -95,7 +121,7 @@ export function useController<
 
     updateMounted(props.name, true)
 
-    if (_shouldUnregisterField) {
+    if (shouldUnregisterField) {
       const value = structuredClone(safeGet(formControl.options.defaultValues, props.name))
 
       deepSet(formControl.state.defaultValues.value, props.name, value)
@@ -106,20 +132,19 @@ export function useController<
     }
 
     return () => {
-      // if (isArrayField ? _shouldUnregisterField && !formControl.state.action : _shouldUnregisterField) {
-      if (isArrayField ? _shouldUnregisterField : _shouldUnregisterField) {
+      if (isArrayField ? shouldUnregisterField : shouldUnregisterField) {
         formControl.unregister(props.name)
       } else {
         updateMounted(props.name, false)
       }
     }
-  }, [props.name, formControl, isArrayField, props.shouldUnregister])
+  }, [formControl, isArrayField, props.name, props.shouldUnregister])
 
   useEffect(() => {
     if (safeGet(formControl.fields, props.name)) {
       formControl.updateDisabledField({ fields: formControl.fields, ...props })
     }
-  }, [props.disabled, props.name, formControl])
+  }, [formControl, props.name, props.disabled])
 
   const fieldState = useMemo(() => {
     return Object.defineProperties(
@@ -148,7 +173,7 @@ export function useController<
     ) as ControllerFieldState
   }, [formState, props.name])
 
-  const disabled = props.disabled || formControl.options.disabled
+  const disabled = props.disabled || formControl.state.disabled.value
 
   return {
     field: {

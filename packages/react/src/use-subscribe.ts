@@ -10,20 +10,20 @@ export type UseSubscribeProps<
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 > = {
   name: Extract<TName, string>
-  formControl?: ReactFormControl<TValues>
+  control?: ReactFormControl<TValues>
 }
 
 export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: UseSubscribeProps<TValues, TName>) {
-  const formControl = props.formControl ?? useFormControlContext<TValues>().control
+  const control = props.control ?? useFormControlContext<TValues>().control
 
   const derivedState = useMemo(() => {
-    const hi = new RecordDerived(formControl.state, new Set())
-    formControl.derivedState.clones.push(hi)
+    const hi = new RecordDerived(control.state, new Set())
+    control.derivedState.clones.push(hi)
     return hi
-  }, [formControl])
+  }, [control])
 
   const proxy = useMemo(
     () => derivedState.createTrackingProxy(props.name, { exact: true }),
@@ -40,7 +40,7 @@ export function useSubscribe<
         false,
       )
     },
-    [formControl],
+    [control],
   )
 
   const getSnapshot = useCallback(() => {

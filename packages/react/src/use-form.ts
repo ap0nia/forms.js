@@ -1,18 +1,49 @@
 import { deepEqual } from '@forms.js/core/utils/deep-equal'
 import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
 
-import { ReactFormControl, type FormControlOptions } from './form-control'
+import { ReactFormControl as Control, type FormControlOptions } from './form-control'
 
-export function useForm<TValues extends Record<string, any>, TContext = any>(
-  props?: FormControlOptions<TValues, TContext>,
-) {
-  const formControlRef = useRef<ReactFormControl<TValues, TContext>>()
+export type UseFormReturn<
+  TValues extends Record<string, any>,
+  TContext = any,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
+  TControl extends Control<TValues, TContext, TTransformedValues> = Control<
+    TValues,
+    TContext,
+    TTransformedValues
+  >,
+> = {
+  control: TControl
+  register: TControl['registerReact']
+  handleSubmit: TControl['handleSubmitReact']
+  unregister: TControl['unregister']
+  formState: TControl['derivedState']['proxy']
+  watch: TControl['watch']
+  reset: TControl['reset']
+  setError: TControl['setError']
+  clearErrors: TControl['clearErrors']
+  setValue: TControl['setValue']
+  setFocus: TControl['setFocus']
+  getValues: TControl['getValues']
+  getFieldState: TControl['getFieldState']
+  trigger: TControl['trigger']
+}
 
-  formControlRef.current ??= new ReactFormControl(props)
+export function useForm<
+  TValues extends Record<string, any>,
+  TContext = any,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
+>(
+  props?: FormControlOptions<TValues, TContext, TTransformedValues>,
+): UseFormReturn<TValues, TContext, TTransformedValues> {
+  const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>()
+
+  formControlRef.current ??= new Control(props)
 
   const control = formControlRef.current
 
-  const form = useRef({
+  const form = useRef<UseFormReturn<TValues, TContext, TTransformedValues>>({
+    control: control,
     register: control.registerReact.bind(control),
     handleSubmit: control.handleSubmitReact.bind(control),
     unregister: control.unregister.bind(control),
@@ -26,7 +57,6 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     getValues: control.getValues.bind(control),
     getFieldState: control.getFieldState.bind(control),
     trigger: control.trigger.bind(control),
-    control: control,
   })
 
   const subscribe = useCallback(

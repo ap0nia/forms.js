@@ -778,4 +778,39 @@ describe('useFormState', () => {
       screen.getByText('disabled')
     })
   })
+
+  it('derived state removes clone after unmounting', async () => {
+    let formControl: Control = undefined as any
+
+    function Form({ control }: { control: Control }) {
+      const [name, setName] = React.useState('test')
+
+      useFormState({ control, name })
+
+      return <button onClick={() => setName('hello')}></button>
+    }
+
+    function App() {
+      const { control } = useForm({})
+
+      formControl = control
+
+      return (
+        <div>
+          <Form control={control} />
+          <span>{control.derivedState.clones.length}</span>
+        </div>
+      )
+    }
+
+    const { unmount } = render(<App />)
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(formControl.derivedState.clones.length).toEqual(1)
+
+    unmount()
+
+    expect(formControl.derivedState.clones.length).toEqual(0)
+  })
 })
