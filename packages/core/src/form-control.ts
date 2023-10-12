@@ -590,6 +590,8 @@ export class FormControl<
 
     const fieldNames = toStringArray(name)
 
+    console.log('here', result.isValid)
+
     // Update isValid.
     this.state.isValid.set(result.isValid, fieldNames)
   }

@@ -1,3 +1,4 @@
+import { cloneObject } from '../utils/clone-object.js'
 import { deepFilter } from '../utils/deep-filter.js'
 import { noop } from '../utils/noop.js'
 
@@ -97,7 +98,7 @@ export class RecordDerived<
     this.keys = keys
 
     this.value = Object.entries(stores).reduce((acc, [key, store]) => {
-      acc[key as keyof typeof acc] = structuredClone(store.value)
+      acc[key as keyof typeof acc] = cloneObject(store.value)
       return acc
     }, {} as T)
 
