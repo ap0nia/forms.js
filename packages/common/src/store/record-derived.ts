@@ -90,17 +90,19 @@ export class RecordDerived<
    */
   keysChangedDuringFrozen?: Context[] = undefined
 
-  clones: RecordDerived<S, T>[] = []
+  clones: RecordDerived<any, any>[] = []
 
-  constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined) {
+  constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined, defaultValue?: T) {
     this.stores = stores
 
     this.keys = keys
 
-    this.value = Object.entries(stores).reduce((acc, [key, store]) => {
-      acc[key as keyof typeof acc] = cloneObject(store.value)
-      return acc
-    }, {} as T)
+    this.value =
+      defaultValue ??
+      Object.entries(stores).reduce((acc, [key, store]) => {
+        acc[key as keyof typeof acc] = cloneObject(store.value)
+        return acc
+      }, {} as T)
 
     this.proxy = {} as T
 

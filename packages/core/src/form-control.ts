@@ -88,6 +88,11 @@ export type FormControlState<T> = {
   isValid: boolean
 
   /**
+   * Whether to disable the form.
+   */
+  disabled: boolean
+
+  /**
    * The number of times the form has been submitted.
    */
   submitCount: number
@@ -511,6 +516,7 @@ export class FormControl<
       errors: new Writable({}),
       values: new Writable(resolvedOptions.shouldUnregister ? {} : structuredClone(defaultValues)),
       status: new Writable<FormControlStatus, string[] | boolean>({ init: true, mount: false }),
+      disabled: new Writable(Boolean(resolvedOptions.disabled)),
     }
 
     this.derivedState = new RecordDerived(this.state, new Set())
@@ -589,8 +595,6 @@ export class FormControl<
     const result = await this.validate()
 
     const fieldNames = toStringArray(name)
-
-    console.log('here', result.isValid)
 
     // Update isValid.
     this.state.isValid.set(result.isValid, fieldNames)
@@ -1426,7 +1430,11 @@ export class FormControl<
     /**
      * Whether the form is dirty.
      */
-    const isDirty = this.getDirty()
+    const isDirty =
+      this.derivedState.keys?.has('isDirty') ||
+      this.derivedState.clones.some((clone) => clone.keys?.has('isDirty'))
+        ? this.getDirty()
+        : this.state.isDirty.value
 
     return { previousIsDirty, currentIsDirty, isDirty }
   }
@@ -1457,9 +1465,9 @@ export class FormControl<
    * @returns Whether the field's dirty status changed.
    */
   updateDirtyField(name: string, value?: unknown): boolean {
-    const { previousIsDirty, currentIsDirty } = this.mockUpdateDirtyField(name, value)
+    const { previousIsDirty, currentIsDirty, isDirty } = this.mockUpdateDirtyField(name, value)
 
-    if (this.state.isDirty.value !== currentIsDirty) {
+    if (this.state.isDirty.value !== isDirty) {
       this.state.isDirty.set(currentIsDirty, [name])
     }
 

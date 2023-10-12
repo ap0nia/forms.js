@@ -1,13 +1,14 @@
+import { deepEqual } from '@forms.js/core/utils/deep-equal'
 import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
 
 import { ReactFormControl, type FormControlOptions } from './form-control'
 
 export function useForm<TValues extends Record<string, any>, TContext = any>(
-  options?: FormControlOptions<TValues, TContext>,
+  props?: FormControlOptions<TValues, TContext>,
 ) {
   const formControlRef = useRef<ReactFormControl<TValues, TContext>>()
 
-  formControlRef.current ??= new ReactFormControl(options)
+  formControlRef.current ??= new ReactFormControl(props)
 
   const control = formControlRef.current
 
@@ -46,12 +47,17 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (control.state.status.value.mount) {
-      control.reset(options?.values, control.options.resetOptions)
+    if (props?.values && !deepEqual(props.values, control.state.values.value)) {
+      control.reset(props.values, control.options.resetOptions)
+    } else {
+      control.resetDefaultValues()
     }
-  }, [options?.values])
+  }, [props?.values, control])
 
   useEffect(() => {
+    if (!control.state.status.value.mount) {
+      // control.updateValid()
+    }
     control.cleanup()
   })
 

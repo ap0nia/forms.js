@@ -639,10 +639,9 @@ describe('useFormState', () => {
     // expect(screen.getByText('touched')).toBeVisible()
   })
 
-  it.only('should conditionally update formState after mount', async () => {
+  it('should conditionally update formState after mount', async () => {
     function DirtyState() {
       const { isDirty, isValid } = useFormState()
-      console.log({ isDirty, isValid })
       return (
         <div>
           <p>{isDirty ? 'dirty' : 'pristine'}</p>
@@ -715,7 +714,7 @@ describe('useFormState', () => {
     waitFor(() => expect(screen.queryByText('Required')).not.toBeInTheDocument())
   })
 
-  it.skip('should return the latest values with async values', async () => {
+  it('should return the latest values with async values', async () => {
     type FormValues = {
       firstName: string
     }
@@ -756,7 +755,7 @@ describe('useFormState', () => {
     })
   })
 
-  it.skip('should update form state with disabled state', async () => {
+  it('should update form state with disabled state', async () => {
     function Form({ control }: { control: Control }) {
       const { disabled } = useFormState({
         control,
