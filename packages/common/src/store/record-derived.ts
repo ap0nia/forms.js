@@ -340,7 +340,7 @@ export class RecordDerived<
   /**
    * Track a specific context of all stores.
    */
-  createTrackingProxy(name: string | string[], options?: { exact?: boolean }) {
+  createTrackingProxy(name?: string | string[], options?: { exact?: boolean }) {
     const proxy = {} as T
 
     for (const key in this.value) {

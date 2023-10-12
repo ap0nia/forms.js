@@ -1,51 +1,70 @@
-import { FormControl, type FormControlState } from '@forms.js/core'
-import type { FlattenObject } from 'packages/core/src/utils/types/flatten-object'
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
+import { RecordDerived } from '@forms.js/common/store'
+import type { FormControlState } from '@forms.js/core'
+import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
+import type { Control } from './form-control'
 import { useFormControlContext } from './use-form-context'
 
 export type UseFormStateProps<T extends Record<string, any> = Record<string, any>> = {
-  formControl?: FormControl<T>
-  disabled?: boolean
+  control?: Control<T>
   name?: Extract<keyof FlattenObject<T>, string> | Extract<keyof FlattenObject<T>, string>[]
+  disabled?: boolean
   exact?: boolean
 }
 
 export function useFormState<T extends Record<string, any>>(
   props?: UseFormStateProps<T>,
 ): FormControlState<T> {
-  const formControl = (props?.formControl ?? useFormControlContext().control) as FormControl<T>
+  const context = useFormControlContext<T>()
 
-  const proxy = useRef<FormControlState<T>>(
-    props?.name
-      ? formControl.derivedState.createTrackingProxy(props.name)
-      : formControl.derivedState.proxy,
-  )
+  const control = props?.control ?? context.control
+
+  const mounted = useRef(false)
+
+  const derivedState = useMemo(() => {
+    const d = new RecordDerived(control.state, new Set())
+    d.createTrackingProxy(props?.name, props)
+    control.derivedState.clones.push(d)
+    return d
+  }, [control, props?.name])
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return formControl.derivedState.subscribe(() => {
-        callback()
-      })
+      return derivedState.subscribe(
+        () => {
+          if (!props?.disabled) {
+            callback()
+          }
+        },
+        undefined,
+        false,
+      )
     },
-    [formControl],
+    [control, props?.disabled],
   )
 
   const getSnapshot = useCallback(() => {
-    return proxy.current
+    return derivedState.value
   }, [])
 
   const getServerSnapshot = useCallback(() => {
-    return proxy.current
+    return derivedState.value
   }, [])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    proxy.current = props?.name
-      ? formControl.derivedState.createTrackingProxy(props.name)
-      : formControl.derivedState.proxy
-  }, [formControl, props?.name])
+    mounted.current = true
 
-  return proxy.current
+    if (derivedState.proxy.isValid) {
+      control.updateValid(true)
+    }
+
+    return () => {
+      mounted.current = false
+    }
+  }, [control])
+
+  return derivedState.proxy
 }

@@ -25,7 +25,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "vitest run tests/use-watch.test.tsx"
+    "test": "vitest run tests/use-form-state.test.tsx"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",

@@ -578,7 +578,11 @@ export class FormControl<
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
-    if (!force && !this.derivedState.keys?.has('isValid')) {
+    if (
+      !force &&
+      !this.derivedState.keys?.has('isValid') &&
+      !this.derivedState.clones.some((clone) => clone.keys?.has('isValid'))
+    ) {
       return
     }
 
@@ -1453,9 +1457,11 @@ export class FormControl<
   updateDirtyField(name: string, value?: unknown): boolean {
     const { previousIsDirty, currentIsDirty } = this.mockUpdateDirtyField(name, value)
 
-    this.state.isDirty.set(currentIsDirty, [name])
+    if (this.state.isDirty.value !== currentIsDirty) {
+      this.state.isDirty.set(currentIsDirty, [name])
+    }
 
-    if (currentIsDirty || currentIsDirty != previousIsDirty) {
+    if (currentIsDirty != previousIsDirty) {
       this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), [name])
     }
 
