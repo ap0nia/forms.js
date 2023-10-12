@@ -8,7 +8,7 @@ export type FormControlContextValue<
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
 > = {
-  formControl: ReactFormControl<TValues, TContext, TTransformedValues>
+  control: ReactFormControl<TValues, TContext, TTransformedValues>
   formState: FormControlState<TValues>
 } & Pick<ReactFormControl<TValues, TContext, TTransformedValues>, 'setValue'>
 
@@ -48,7 +48,7 @@ export function FormControlProvider<
   return (
     <FormControlContext.Provider
       value={{
-        formControl: props.control as any,
+        control: props.control as any,
         formState: props.control.derivedState.proxy as any,
         setValue: props.control.setValue.bind(props.control),
       }}

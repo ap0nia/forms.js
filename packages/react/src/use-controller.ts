@@ -38,7 +38,7 @@ export function useController<
 >(props: UseControllerProps<TValues, TName>) {
   const context = useFormControlContext<TValues>()
 
-  const formControl = props.control ?? context.formControl
+  const formControl = props.control ?? context.control
 
   const formState = useSubscribe({ formControl, name: props.name })
 

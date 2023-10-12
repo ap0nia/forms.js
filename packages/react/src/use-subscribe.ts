@@ -17,7 +17,7 @@ export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 >(props: UseSubscribeProps<TValues, TName>) {
-  const formControl = props.formControl ?? useFormControlContext<TValues>().formControl
+  const formControl = props.formControl ?? useFormControlContext<TValues>().control
 
   const derivedState = useMemo(() => {
     const hi = new RecordDerived(formControl.state, new Set())
