@@ -317,7 +317,13 @@ export class RecordDerived<
   track(key: keyof S, name?: string | string[], options?: { exact?: boolean }) {
     this.keyNames[key] ??= []
 
-    const names = Array.isArray(name) ? name : name ? [name] : []
+    if (name == null) {
+      this.keys ??= new Set()
+      this.keys.add(key)
+      return
+    }
+
+    const names = Array.isArray(name) ? name : [name]
 
     // If all names have already been tracked, do nothing.
     if (

@@ -1,4 +1,5 @@
 import { RecordDerived } from '@forms.js/common/store'
+import { safeGet } from '@forms.js/core/utils/safe-get'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react'
 
@@ -23,23 +24,25 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
   _name.current = name
 
   const derivedState = useMemo(() => {
-    const hi = new RecordDerived(control.state, new Set())
-    hi.track('values', props?.name, options)
-    control.derivedState.clones.push(hi)
-    return hi
+    const d = new RecordDerived(control.state, new Set())
+    d.track('values', props?.name, options)
+    control.derivedState.clones.push(d)
+    return d
   }, [control, props?.name])
 
   const subscribe = useCallback(
     (callback: () => void) => {
       return derivedState.subscribe(
         () => {
-          callback()
+          if (!props?.disabled) {
+            callback()
+          }
         },
         undefined,
         false,
       )
     },
-    [control],
+    [control, props?.disabled],
   )
 
   const getSnapshot = useCallback(() => {
@@ -52,11 +55,17 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
+  const values = control.state.status.value.mount
+    ? derivedState.proxy.values
+    : props?.defaultValue == null
+    ? control.state.defaultValues.value
+    : typeof _name.current === 'string'
+    ? { [_name.current]: props?.defaultValue }
+    : props?.defaultValue
+
   return _name.current
     ? Array.isArray(_name.current)
-      ? _name.current.map((n) => derivedState.proxy.values?.[n] ?? props?.defaultValue?.[n])
-      : derivedState.proxy.values[_name.current] ??
-        props?.defaultValue ??
-        control.state.defaultValues.value[_name.current]
-    : derivedState.proxy.values
+      ? _name.current.map((n) => safeGet(values, n))
+      : safeGet(values, _name.current) ?? props?.defaultValue
+    : values
 }

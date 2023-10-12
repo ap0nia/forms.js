@@ -7,10 +7,18 @@ export type FormControlContextValue<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
+  TControl extends ReactFormControl<TValues, TContext, TTransformedValues> = ReactFormControl<
+    TValues,
+    TContext,
+    TTransformedValues
+  >,
 > = {
-  control: ReactFormControl<TValues, TContext, TTransformedValues>
+  control: TControl
   formState: FormControlState<TValues>
-} & Pick<ReactFormControl<TValues, TContext, TTransformedValues>, 'setValue'>
+} & {
+  setValue: TControl['setValue']
+  register: TControl['registerReact']
+}
 
 export const FormControlContext = createContext<FormControlContextValue>(undefined!)
 
@@ -51,6 +59,7 @@ export function FormControlProvider<
         control: props.control as any,
         formState: props.control.derivedState.proxy as any,
         setValue: props.control.setValue.bind(props.control),
+        register: props.control.registerReact.bind(props.control),
       }}
     >
       {props.children}
