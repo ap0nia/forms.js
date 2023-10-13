@@ -22,23 +22,29 @@ export function useFormState<T extends Record<string, any>>(
 
   const mounted = useRef(false)
 
+  const previousDerivedState = useRef<RecordDerived<Control<T>['state']>>()
+
   const derivedState = useMemo<RecordDerived<Control<T>['state']>>(() => {
+    if (previousDerivedState.current) {
+      control.derivedState.clones.delete(previousDerivedState.current)
+    }
+
     const derived = new RecordDerived(control.state, new Set())
 
     derived.createTrackingProxy(props?.name, props)
 
-    control.derivedState.clones.push(derived)
+    control.derivedState.clones.add(derived)
+
+    previousDerivedState.current = derived
 
     return derived
   }, [control, props?.name])
 
   useEffect(() => {
     return () => {
-      control.derivedState.clones = control.derivedState.clones.filter(
-        (clone) => clone !== derivedState,
-      )
+      control.derivedState.clones.delete(derivedState)
     }
-  }, [control, props?.name])
+  }, [derivedState])
 
   const subscribe = useCallback(
     (callback: () => void) => {

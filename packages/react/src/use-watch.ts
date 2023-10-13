@@ -1,7 +1,7 @@
 import { RecordDerived } from '@forms.js/common/store'
 import { safeGet } from '@forms.js/core/utils/safe-get'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
 import type { Control } from './form-control'
 import { useFormContext } from './use-form-context'
@@ -19,23 +19,27 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
 
   const control = props?.control ?? context.control
 
+  const previousDerivedState = useRef<RecordDerived<Control<T>['state']>>()
+
   const derivedState = useMemo(() => {
+    if (previousDerivedState.current) {
+      control.derivedState.clones.delete(previousDerivedState.current)
+    }
+
     const derived = new RecordDerived(control.state, new Set())
 
     derived.track('values', props?.name, props)
 
-    control.derivedState.clones.push(derived)
+    control.derivedState.clones.add(derived)
 
     return derived
   }, [control, props?.name])
 
   useEffect(() => {
     return () => {
-      control.derivedState.clones = control.derivedState.clones.filter(
-        (clone) => clone !== derivedState,
-      )
+      control.derivedState.clones.delete(derivedState)
     }
-  }, [control, props?.name])
+  }, [derivedState])
 
   const subscribe = useCallback(
     (callback: () => void) => {

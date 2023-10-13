@@ -90,7 +90,7 @@ export class RecordDerived<
    */
   keysChangedDuringFrozen?: Context[] = undefined
 
-  clones: RecordDerived<any, any>[] = []
+  clones = new Set<RecordDerived<any, any>>()
 
   constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined, defaultValue?: T) {
     this.stores = stores

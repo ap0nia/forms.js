@@ -798,7 +798,7 @@ describe('useFormState', () => {
       return (
         <div>
           <Form control={control} />
-          <span>{control.derivedState.clones.length}</span>
+          <span>{control.derivedState.clones.size}</span>
         </div>
       )
     }
@@ -807,10 +807,10 @@ describe('useFormState', () => {
 
     fireEvent.click(screen.getByRole('button'))
 
-    expect(formControl.derivedState.clones.length).toEqual(1)
+    expect(formControl.derivedState.clones.size).toEqual(1)
 
     unmount()
 
-    expect(formControl.derivedState.clones.length).toEqual(0)
+    expect(formControl.derivedState.clones.size).toEqual(0)
   })
 })

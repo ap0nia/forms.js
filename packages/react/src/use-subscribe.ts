@@ -1,8 +1,8 @@
 import { RecordDerived } from '@forms.js/common/store'
 import type { FlattenObject } from '@forms.js/core/utils/types/flatten-object'
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
-import type { ReactFormControl } from './form-control'
+import type { Control, ReactFormControl } from './form-control'
 import { useFormControlContext } from './use-form-context'
 
 export type UseSubscribeProps<
@@ -19,21 +19,25 @@ export function useSubscribe<
 >(props: UseSubscribeProps<TValues, TName>) {
   const control = props.control ?? useFormControlContext<TValues>().control
 
+  const previousDerivedState = useRef<RecordDerived<Control<TValues>['state']>>()
+
   const derivedState = useMemo(() => {
+    if (previousDerivedState.current) {
+      control.derivedState.clones.delete(previousDerivedState.current)
+    }
+
     const derived = new RecordDerived(control.state, new Set())
 
-    control.derivedState.clones.push(derived)
+    control.derivedState.clones.add(derived)
 
     return derived
   }, [control])
 
   useEffect(() => {
     return () => {
-      control.derivedState.clones = control.derivedState.clones.filter(
-        (clone) => clone !== derivedState,
-      )
+      control.derivedState.clones.delete(derivedState)
     }
-  }, [control, props?.name])
+  }, [derivedState])
 
   const proxy = useMemo(
     () => derivedState.createTrackingProxy(props.name, { exact: true }),

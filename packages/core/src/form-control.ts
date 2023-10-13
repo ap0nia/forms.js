@@ -587,7 +587,7 @@ export class FormControl<
     if (
       !force &&
       !this.derivedState.keys?.has('isValid') &&
-      !this.derivedState.clones.some((clone) => clone.keys?.has('isValid'))
+      !Array.from(this.derivedState.clones).some((clone) => clone.keys?.has('isValid'))
     ) {
       return
     }
@@ -1432,7 +1432,7 @@ export class FormControl<
      */
     const isDirty =
       this.derivedState.keys?.has('isDirty') ||
-      this.derivedState.clones.some((clone) => clone.keys?.has('isDirty'))
+      Array.from(this.derivedState.clones).some((clone) => clone.keys?.has('isDirty'))
         ? this.getDirty()
         : this.state.isDirty.value
 
