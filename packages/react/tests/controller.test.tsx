@@ -8,14 +8,15 @@ import {
 import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
 
-import { Controller, type ControllerRenderProps } from '../src/controller'
+import { Controller } from '../src/controller'
+import type { ControllerProps } from '../src/use-controller'
 import { useForm } from '../src/use-form'
 
 function Input<TFieldValues extends Record<string, any>>({
   onChange,
   onBlur,
   placeholder,
-}: Pick<ControllerRenderProps<TFieldValues>, 'onChange' | 'onBlur'> & {
+}: Pick<ControllerProps<TFieldValues>, 'onChange' | 'onBlur'> & {
   placeholder?: string
 }) {
   return <input placeholder={placeholder} onChange={() => onChange(1)} onBlur={() => onBlur()} />

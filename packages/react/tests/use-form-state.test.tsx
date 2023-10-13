@@ -603,7 +603,7 @@ describe('useFormState', () => {
       return (
         <div>
           <input {...register('testData')} />
-          <p>{touchedFields.testData && 'touched'}</p>
+          <p>{touchedFields['testData'] && 'touched'}</p>
 
           <button
             onClick={() => {

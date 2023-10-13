@@ -1167,7 +1167,10 @@ export class FormControl<
 
   /**
    */
-  reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
+  reset(
+    formValues?: Defaults<TValues> extends TValues ? TValues : Defaults<TValues>,
+    options?: ResetOptions,
+  ): void {
     this.derivedState.freeze()
 
     const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value

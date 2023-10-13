@@ -34,7 +34,7 @@ export function getCheckBoxValue(options?: HTMLInputElement[]): CheckboxFieldRes
     return invalidResult
   }
 
-  if (option.attributes.value == null) {
+  if (!('value' in option.attributes) || option.attributes.value == null) {
     return validResult
   }
 

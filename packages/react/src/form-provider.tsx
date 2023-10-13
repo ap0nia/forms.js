@@ -1,6 +1,7 @@
 import { createContext, useCallback, useSyncExternalStore } from 'react'
 
 import type { Control } from './form-control'
+import type { UseFormReturn } from './use-form'
 
 export type FormControlContextValue<
   TValues extends Record<string, any>,
@@ -8,7 +9,11 @@ export type FormControlContextValue<
   TTransformedValues extends Record<string, any> | undefined = undefined,
 > = {
   control: Control<TValues, TContext, TTransformedValues>
-} & Control<TValues, TContext, TTransformedValues>
+  formState: UseFormReturn<TValues, TContext, TTransformedValues>['formState']
+} & Omit<Control<TValues, TContext, TTransformedValues>, 'register' | 'handleSubmit'> & {
+    register: Control<TValues, TContext, TTransformedValues>['registerReact']
+    handleSubmit: Control<TValues, TContext, TTransformedValues>['handleSubmitReact']
+  }
 
 export type FormControlProviderProps<
   TValues extends Record<string, any>,
@@ -17,7 +22,7 @@ export type FormControlProviderProps<
 > = {
   children?: React.ReactNode
   control: Control<TValues, TContext, TTransformedValues>
-} & Partial<Control<TValues, TContext, TTransformedValues>>
+} & Partial<UseFormReturn<TValues, TContext, TTransformedValues>>
 
 export const FormControlContext = createContext<FormControlContextValue<any, any, any>>(undefined!)
 

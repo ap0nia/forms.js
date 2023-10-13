@@ -11,4 +11,4 @@ export type Defaults<T> =
 /**
  * The value or a deeply optional version of the value are allowed as defaults.
  */
-export type ValueOrDeepPartial<T> = T | DeepPartial<T>
+export type ValueOrDeepPartial<T> = DeepPartial<T> | T

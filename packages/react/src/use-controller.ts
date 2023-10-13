@@ -37,7 +37,7 @@ export type UseControllerProps<
   disabled?: boolean
 }
 
-export type ControllerRenderProps<
+export type ControllerProps<
   TFieldValues extends Record<string, any> = Record<string, any>,
   TName extends keyof FlattenObject<TFieldValues> = keyof FlattenObject<TFieldValues>,
 > = {
@@ -53,7 +53,7 @@ export type UseControllerReturn<
   TValues extends Record<string, any> = Record<string, any>,
   TKey extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
 > = {
-  field: ControllerRenderProps<TValues, TKey>
+  field: ControllerProps<TValues, TKey>
   fieldState: ControllerFieldState
   formState: FormControlState<TValues>
 }
