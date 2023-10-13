@@ -30,14 +30,19 @@ export function useSubscribe<
 
     control.derivedState.clones.add(derived)
 
+    previousDerivedState.current = derived
+
     return derived
   }, [control])
 
   useEffect(() => {
     return () => {
-      control.derivedState.clones.delete(derivedState)
+      if (previousDerivedState.current) {
+        control.derivedState.clones.delete(previousDerivedState.current)
+        previousDerivedState.current = undefined
+      }
     }
-  }, [derivedState])
+  }, [])
 
   const proxy = useMemo(
     () => derivedState.createTrackingProxy(props.name, { exact: true }),

@@ -32,14 +32,19 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
 
     control.derivedState.clones.add(derived)
 
+    previousDerivedState.current = derived
+
     return derived
   }, [control, props?.name])
 
   useEffect(() => {
     return () => {
-      control.derivedState.clones.delete(derivedState)
+      if (previousDerivedState.current) {
+        control.derivedState.clones.delete(previousDerivedState.current)
+        previousDerivedState.current = undefined
+      }
     }
-  }, [derivedState])
+  }, [])
 
   const subscribe = useCallback(
     (callback: () => void) => {

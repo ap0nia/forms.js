@@ -42,9 +42,12 @@ export function useFormState<T extends Record<string, any>>(
 
   useEffect(() => {
     return () => {
-      control.derivedState.clones.delete(derivedState)
+      if (previousDerivedState.current) {
+        control.derivedState.clones.delete(previousDerivedState.current)
+        previousDerivedState.current = undefined
+      }
     }
-  }, [derivedState])
+  }, [])
 
   const subscribe = useCallback(
     (callback: () => void) => {
