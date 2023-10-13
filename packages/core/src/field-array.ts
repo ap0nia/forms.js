@@ -1,6 +1,7 @@
 import { Writable } from '@forms.js/common/store'
 
 import { FormControl } from './form-control'
+import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import type { RegisterOptions } from './types/register'
 import type { Validate } from './types/validation'
 import { deepSet } from './utils/deep-set'
@@ -124,7 +125,7 @@ export class FieldArray<
     const touchedFields = safeGet(this.control.state.touchedFields.value, this.name)
 
     if (
-      _proxyFormState.touchedFields &&
+      this.control.derivedState.isTracking('touchedFields') &&
       shouldUpdateFieldsAndState &&
       Array.isArray(touchedFields)
     ) {
@@ -138,17 +139,12 @@ export class FieldArray<
       }
     }
 
-    if (_proxyFormState.dirtyFields) {
-      _formState.dirtyFields = getDirtyFields(_defaultValues, _formValues)
+    if (this.control.derivedState.isTracking('dirtyFields')) {
+      this.control.state.dirtyFields.update((currentDirtyFields) => {
+        getDirtyFields(this.control.state.defaultValues.value, this.control.state.values.value)
+        return currentDirtyFields
+      })
     }
-
-    // _subjects.state.next({
-    //   name,
-    //   isDirty: _getDirty(name, values),
-    //   dirtyFields: _formState.dirtyFields,
-    //   errors: _formState.errors,
-    //   isValid: _formState.isValid,
-    // })
   }
 
   append(

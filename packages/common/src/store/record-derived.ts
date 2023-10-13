@@ -358,4 +358,13 @@ export class RecordDerived<
 
     return proxy
   }
+
+  /**
+   * Whether a key and/or contextual name is tracked by this store or any clones.
+   */
+  isTracking(key?: string, name?: string[] | boolean): boolean {
+    key
+    name
+    return false
+  }
 }
