@@ -267,6 +267,7 @@ export class RecordDerived<
       if (typeof keyChanged.name === 'boolean') {
         return keyChanged.name
       }
+
       return keyChanged.name?.some((name) => {
         return this.keyNames[keyChanged.key]?.some((keyName) => {
           return keyName.exact
@@ -360,11 +361,29 @@ export class RecordDerived<
   }
 
   /**
-   * Whether a key and/or contextual name is tracked by this store or any clones.
+   * Whether a key and/or contextual name is tracked by this store.
    */
-  isTracking(key?: string, name?: string[] | boolean): boolean {
-    key
-    name
-    return false
+  isTracking(key: string, name?: string[] | boolean): boolean {
+    if (name == null) {
+      return this.keys == null || this.keys.has(key)
+    }
+
+    if (typeof name === 'boolean') {
+      return name
+    }
+
+    const nameArray = Array.isArray(name) ? name : [name]
+
+    if (
+      nameArray.some((n) => {
+        return this.keyNames[key]?.some((k) => {
+          return k.exact ? n === k.value : n.includes(k.value) || k.value.includes(n)
+        })
+      })
+    ) {
+      return true
+    }
+
+    return Array.from(this.clones).some((clone) => clone.isTracking(key, name))
   }
 }

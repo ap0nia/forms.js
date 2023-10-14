@@ -125,9 +125,9 @@ export class FieldArray<
     const touchedFields = safeGet(this.control.state.touchedFields.value, this.name)
 
     if (
-      this.control.derivedState.isTracking('touchedFields') &&
       shouldUpdateFieldsAndState &&
-      Array.isArray(touchedFields)
+      Array.isArray(touchedFields) &&
+      this.control.derivedState.isTracking('touchedFields')
     ) {
       const newTouchedFields = mutateArray(touchedFields)
 
