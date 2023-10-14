@@ -285,7 +285,28 @@ export class FieldArray<
     })
   }
 
-  move() {}
+  move(from: number, to: number) {
+    const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
+
+    const value = updatedFieldArrayValues[from]
+
+    updatedFieldArrayValues.splice(from, 1)
+    updatedFieldArrayValues.splice(to, 0, value)
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    })
+
+    this.fields.set(updatedFieldArrayValues as any)
+
+    this.updateFormControl((args) => {
+      args.splice(from, 1)
+      args.splice(to, 0, undefined)
+
+      return args
+    })
+  }
 
   update() {}
 
