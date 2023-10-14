@@ -364,8 +364,12 @@ export class RecordDerived<
    * Whether a key and/or contextual name is tracked by this store.
    */
   isTracking(key: string, name?: string[] | boolean): boolean {
+    if (this.keys == null) {
+      return true
+    }
+
     if (name == null) {
-      return this.keys == null || this.keys.has(key)
+      return this.keys.has(key) || this.clonesAreTracking(key, name)
     }
 
     if (typeof name === 'boolean') {
@@ -384,6 +388,10 @@ export class RecordDerived<
       return true
     }
 
+    return this.clonesAreTracking(key, name)
+  }
+
+  clonesAreTracking(key: string, name?: string[] | boolean): boolean {
     return Array.from(this.clones).some((clone) => clone.isTracking(key, name))
   }
 }

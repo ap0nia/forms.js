@@ -584,20 +584,14 @@ export class FormControl<
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
-    if (
-      !force &&
-      !this.derivedState.keys?.has('isValid') &&
-      !Array.from(this.derivedState.clones).some((clone) => clone.keys?.has('isValid'))
-    ) {
-      return
+    if (force || this.derivedState.isTracking('isValid')) {
+      const result = await this.validate()
+
+      const fieldNames = toStringArray(name)
+
+      // Update isValid.
+      this.state.isValid.set(result.isValid, fieldNames)
     }
-
-    const result = await this.validate()
-
-    const fieldNames = toStringArray(name)
-
-    // Update isValid.
-    this.state.isValid.set(result.isValid, fieldNames)
   }
 
   /**
