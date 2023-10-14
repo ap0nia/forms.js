@@ -20,9 +20,7 @@ beforeEach(() => {
 describe('FieldArray', () => {
   describe('append', () => {
     test('should not append dirtyFields fields if not being tracked', async () => {
-      const control = new FormControl<{
-        test: { value: string }[]
-      }>({
+      const control = new FormControl<{ test: { value: string }[] }>({
         defaultValues: {
           test: [{ value: 'plz change' }, { value: 'dont change' }, { value: 'dont change' }],
         },
@@ -42,9 +40,7 @@ describe('FieldArray', () => {
     })
 
     test('should append dirtyFields fields if being tracked', () => {
-      const control = new FormControl<{
-        test: { value: string }[]
-      }>({
+      const control = new FormControl<{ test: { value: string }[] }>({
         defaultValues: {
           test: [{ value: 'plz change' }, { value: 'dont change' }, { value: 'dont change' }],
         },
@@ -62,9 +58,7 @@ describe('FieldArray', () => {
     })
 
     test('should append data into the fields', () => {
-      const control = new FormControl<{
-        test: { test: string }[]
-      }>()
+      const control = new FormControl<{ test: { test: string }[] }>()
 
       const fieldArray = new FieldArray({ control, name: 'test' })
 
@@ -94,18 +88,16 @@ describe('FieldArray', () => {
       ])
     })
 
-    test.only('should trigger reRender when user is watching the all field array', () => {
+    test('should trigger re-render when user is watching the all field array', () => {
       const watched: unknown[] = []
 
-      const control = new FormControl<{
-        test: { value: string }[]
-      }>()
+      const control = new FormControl<{ test: { value: string }[] }>()
 
       control.derivedState.subscribe((state) => {
         watched.push(state.values)
       })
 
-      watched.push(control.watch())
+      control.watch()
 
       const fieldArray = new FieldArray({ control, name: 'test' })
 

@@ -1,11 +1,18 @@
 import { Writable } from '@forms.js/common/store'
 
+import { VALIDATION_MODE } from './constants'
 import { FormControl } from './form-control'
 import { getDirtyFields } from './logic/fields/get-dirty-fields'
+import { iterateFieldsByAction } from './logic/fields/iterate-fields-by-action'
+import { getValidationModes } from './logic/validation/get-validation-modes'
+import { nativeValidateSingleField } from './logic/validation/native-validation'
+import type { Field } from './types/fields'
 import type { RegisterOptions } from './types/register'
 import type { Validate } from './types/validation'
 import { deepSet } from './utils/deep-set'
+import { deepUnset } from './utils/deep-unset'
 import { generateId } from './utils/generate-id'
+import { isEmptyObject } from './utils/is-object'
 import { safeGet } from './utils/safe-get'
 import { safeUnset } from './utils/safe-unset'
 import type { NestedObjectArrays } from './utils/types/nested-object-arrays'
@@ -69,6 +76,11 @@ export class FieldArray<
 
   focus?: string
 
+  /**
+   * Whether an action is currently being performed.
+   */
+  action = new Writable(false)
+
   constructor(
     public options: FieldArrayOptions<
       TValues,
@@ -122,6 +134,8 @@ export class FieldArray<
     shouldSetValues = true,
     shouldUpdateFieldsAndState = true,
   ) {
+    this.action.set(true)
+
     const field = safeGet(this.control.fields, this.name)
 
     if (shouldUpdateFieldsAndState && Array.isArray(field)) {
@@ -176,6 +190,8 @@ export class FieldArray<
     value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
     options?: FieldArrayMethodProps,
   ) {
+    this.control.derivedState.freeze()
+
     const valueClone = structuredClone(value)
 
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
@@ -197,12 +213,16 @@ export class FieldArray<
       args.push(...valuesArray.map(() => undefined))
       return args
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   prepend(
     value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
     options?: FieldArrayMethodProps,
   ) {
+    this.control.derivedState.freeze()
+
     const valueClone = structuredClone(value)
 
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
@@ -224,9 +244,13 @@ export class FieldArray<
       valuesArray.map(() => undefined).concat(args)
       return args
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   remove(index?: number | number[]) {
+    this.control.derivedState.freeze()
+
     const indexArray = Array.isArray(index) ? index : index != null ? [index] : undefined
 
     const updatedFieldArrayValues =
@@ -246,6 +270,8 @@ export class FieldArray<
     this.updateFormControl((args) => {
       return args.filter((_, i) => !indexArray?.includes(i))
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   insert(
@@ -253,6 +279,8 @@ export class FieldArray<
     value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
     options?: FieldArrayMethodProps,
   ) {
+    this.control.derivedState.freeze()
+
     const valueClone = structuredClone(value)
 
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
@@ -280,9 +308,13 @@ export class FieldArray<
       args.splice(index, 0, ...valuesArray.map(() => undefined))
       return args
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   swap(left: number, right: number) {
+    this.control.derivedState.freeze()
+
     const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
 
     const leftValue = updatedFieldArrayValues[left]
@@ -307,9 +339,13 @@ export class FieldArray<
 
       return args
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   move(from: number, to: number) {
+    this.control.derivedState.freeze()
+
     const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
 
     const value = updatedFieldArrayValues[from]
@@ -330,9 +366,13 @@ export class FieldArray<
 
       return args
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   update(index: number, value: TFieldArrayValue[number]) {
+    this.control.derivedState.freeze()
+
     const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
 
     updatedFieldArrayValues[index] = value
@@ -348,9 +388,13 @@ export class FieldArray<
       args[index] = undefined
       return args
     })
+
+    this.control.derivedState.unfreeze()
   }
 
   replace(value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>) {
+    this.control.derivedState.freeze()
+
     const valueClone = structuredClone(value)
 
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
@@ -365,6 +409,121 @@ export class FieldArray<
     this.value.set(valuesArray as any)
 
     this.updateFormControl(() => [])
+
+    this.control.derivedState.unfreeze()
+  }
+
+  /**
+   * Whenever the field array's fields changes, update the form control.
+   */
+  createSubscription(): () => void {
+    const unsubscribe = this.fields.subscribe(
+      () => {
+        this.control.derivedState.freeze()
+
+        this.validate()
+
+        const focus = this.focus
+
+        if (focus) {
+          iterateFieldsByAction(this.control.fields, (ref, key: string) => {
+            if (key.startsWith(focus)) {
+              ref.focus?.()
+            }
+          })
+        }
+
+        this.focus = ''
+
+        this.control.updateValid()
+
+        this.action.set(false)
+
+        this.control.derivedState.unfreeze()
+      },
+      undefined,
+      false,
+    )
+
+    return unsubscribe
+  }
+
+  async validate(fields = this.control.fields) {
+    const submitted =
+      !getValidationModes(this.control.options.mode).submit || this.control.state.isSubmitted.value
+
+    if (!this.action.value || !submitted) {
+      return
+    }
+
+    const field: Field | undefined = safeGet(fields, this.name)
+
+    if (field?._f == null) {
+      return
+    }
+
+    if (this.control.options.resolver) {
+      const result = await this.control.options.resolver(
+        this.control.state.values.value,
+        this.control.options.context,
+        {
+          names: [this.name] as any,
+          fields: { [this.name]: field._f },
+          criteriaMode: this.control.options.criteriaMode,
+          shouldUseNativeValidation: this.control.options.shouldUseNativeValidation,
+        },
+      )
+
+      const error = safeGet(result.errors, this.name)
+
+      const existingError = safeGet(this.control.state.errors.value, this.name)
+
+      const errorChanged = existingError
+        ? (!error && existingError.type) ||
+          (error && (existingError.type !== error.type || existingError.message !== error.message))
+        : error && error.type
+
+      if (errorChanged) {
+        this.control.state.errors.update((currentErrors) => {
+          if (error) {
+            deepSet(currentErrors, this.name, error)
+          } else {
+            deepUnset(currentErrors, this.name)
+          }
+          return currentErrors
+        })
+      }
+
+      return
+    }
+
+    const result = await nativeValidateSingleField(
+      field,
+      this.control.state.values.value,
+      this.control.options.criteriaMode === VALIDATION_MODE.all,
+      this.control.options.shouldUseNativeValidation,
+      true,
+    )
+
+    if (!isEmptyObject(result)) {
+      this.control.state.errors.update((currentErrors) => {
+        const fieldArrayErrors = (safeGet(currentErrors, this.name) ?? []).filter(Boolean)
+
+        deepSet(fieldArrayErrors, 'root', result[this.name])
+
+        deepSet(currentErrors, this.name, fieldArrayErrors)
+
+        return currentErrors
+      })
+    }
+  }
+
+  mount() {
+    this.control.names.array.add(this.name)
+  }
+
+  unmount() {
+    this.control.names.array.delete(this.name)
   }
 }
 
