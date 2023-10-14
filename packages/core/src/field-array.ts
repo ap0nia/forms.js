@@ -326,7 +326,22 @@ export class FieldArray<
     })
   }
 
-  replace() {}
+  replace(value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>) {
+    const valueClone = structuredClone(value)
+
+    const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
+
+    this.ids = valuesArray.map(generateId)
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, valuesArray)
+      return currentValues
+    })
+
+    this.fields.set(valuesArray as any)
+
+    this.updateFormControl(() => [])
+  }
 }
 
 function unsetEmptyArray<T>(ref: T, name: string) {
