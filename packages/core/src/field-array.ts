@@ -57,7 +57,15 @@ export class FieldArray<
 > {
   ids: string[] = []
 
-  fields = new Writable<TFieldArrayValue>()
+  /**
+   * The value of this field array.
+   */
+  value: Writable<TFieldArrayValue>
+
+  /**
+   * Props for each field in the field array.
+   */
+  fields: Writable<TFieldArrayValue>
 
   focus?: string
 
@@ -71,7 +79,25 @@ export class FieldArray<
     >,
     public name = options.name,
     public control = options.control,
-  ) {}
+  ) {
+    this.value = new Writable<TFieldArrayValue>()
+
+    this.fields = new Writable<TFieldArrayValue>(undefined, (set) => {
+      const unsubscribe = this.value.subscribe((value) => {
+        if (value == null) {
+          return
+        }
+
+        const newFields: any = Array.from(value).map((v, i) => {
+          return { ...(v ?? undefined), id: this.ids[i] ?? generateId() }
+        })
+
+        set(newFields)
+      })
+
+      return unsubscribe
+    })
+  }
 
   getControlFieldArrayValues(): TFieldArrayValue {
     const controlFieldArrayValues =
@@ -79,10 +105,11 @@ export class FieldArray<
         this.control.state.status.value.mount
           ? this.control.state.values.value
           : this.control.state.defaultValues.value,
-        this.options.name,
-      ) ?? this.control.options.shouldUnregister
-        ? safeGet(this.control.state.defaultValues.value, this.options.name) ?? []
-        : []
+        this.name,
+      ) ??
+      (this.control.options.shouldUnregister
+        ? safeGet(this.control.state.defaultValues.value, this.name) ?? []
+        : [])
 
     return controlFieldArrayValues as TFieldArrayValue
   }
@@ -95,8 +122,6 @@ export class FieldArray<
     shouldSetValues = true,
     shouldUpdateFieldsAndState = true,
   ) {
-    // _state.action = true
-
     const field = safeGet(this.control.fields, this.name)
 
     if (shouldUpdateFieldsAndState && Array.isArray(field)) {
@@ -141,10 +166,9 @@ export class FieldArray<
     }
 
     if (this.control.derivedState.isTracking('dirtyFields')) {
-      this.control.state.dirtyFields.update((currentDirtyFields) => {
-        getDirtyFields(this.control.state.defaultValues.value, this.control.state.values.value)
-        return currentDirtyFields
-      })
+      this.control.state.dirtyFields.set(
+        getDirtyFields(this.control.state.defaultValues.value, this.control.state.values.value),
+      )
     }
   }
 
@@ -167,7 +191,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       args.push(...valuesArray.map(() => undefined))
@@ -194,7 +218,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       valuesArray.map(() => undefined).concat(args)
@@ -217,7 +241,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       return args.filter((_, i) => !indexArray?.includes(i))
@@ -250,7 +274,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       args.splice(index, 0, ...valuesArray.map(() => undefined))
@@ -272,7 +296,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       const leftArg = args[left]
@@ -298,7 +322,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       args.splice(from, 1)
@@ -318,7 +342,7 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(updatedFieldArrayValues as any)
+    this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
       args[index] = undefined
@@ -338,15 +362,9 @@ export class FieldArray<
       return currentValues
     })
 
-    this.fields.set(valuesArray as any)
+    this.value.set(valuesArray as any)
 
     this.updateFormControl(() => [])
-  }
-}
-
-function unsetEmptyArray<T>(ref: T, name: string) {
-  if (!safeGet<any[]>(ref, name).filter(Boolean).length) {
-    safeUnset(ref, name)
   }
 }
 
@@ -360,19 +378,8 @@ function getFocusFieldName(
     : ''
 }
 
-export type MyForm = {
-  a: string
-  b: {
-    c: number
+function unsetEmptyArray<T>(ref: T, name: string) {
+  if (!safeGet<any[]>(ref, name).filter(Boolean).length) {
+    safeUnset(ref, name)
   }
-  d: string[]
-  e: {
-    f: {
-      g: boolean
-    }[]
-  }[]
 }
-
-const control = new FormControl<MyForm>()
-
-export const fieldArray = new FieldArray({ name: 'e', control })
