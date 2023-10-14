@@ -308,7 +308,23 @@ export class FieldArray<
     })
   }
 
-  update() {}
+  update(index: number, value: TFieldArrayValue[number]) {
+    const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
+
+    updatedFieldArrayValues[index] = value
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    })
+
+    this.fields.set(updatedFieldArrayValues as any)
+
+    this.updateFormControl((args) => {
+      args[index] = undefined
+      return args
+    })
+  }
 
   replace() {}
 }
