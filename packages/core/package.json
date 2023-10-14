@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run ",
+    "test": "vitest run tests/field-array/append.test.ts",
     "build": "tsup"
   },
   "devDependencies": {

@@ -105,5 +105,27 @@ describe('FieldArray', () => {
 
       expect(watched).toEqual([{}, { test: [{ value: '' }] }])
     })
+
+    test('should return watched value with watch API', async () => {
+      const renderedItems: any = []
+
+      const control = new FormControl<{ test: { value: string }[] }>()
+
+      control.derivedState.subscribe((state) => {
+        renderedItems.push(state.values.test)
+      })
+
+      expect(renderedItems).toEqual([undefined])
+
+      control.watch('test')
+
+      const fieldArray = new FieldArray({ name: 'test', control })
+
+      fieldArray.mount()
+
+      fieldArray.append({ value: 'test' })
+
+      expect(renderedItems).toEqual([undefined, [{ value: 'test' }]])
+    })
   })
 })

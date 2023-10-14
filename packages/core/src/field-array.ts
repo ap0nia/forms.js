@@ -151,15 +151,18 @@ export class FieldArray<
     if (shouldUpdateFieldsAndState && Array.isArray(errors)) {
       const newErrors = mutateArray(errors)
 
-      this.control.state.errors.update((currentErrors) => {
-        if (shouldSetValues) {
-          deepSet(currentErrors, this.name, newErrors)
-        }
+      this.control.state.errors.update(
+        (currentErrors) => {
+          if (shouldSetValues) {
+            deepSet(currentErrors, this.name, newErrors)
+          }
 
-        unsetEmptyArray(currentErrors, this.name)
+          unsetEmptyArray(currentErrors, this.name)
 
-        return currentErrors
-      })
+          return currentErrors
+        },
+        [this.name],
+      )
     }
 
     const touchedFields = safeGet(this.control.state.touchedFields.value, this.name)
@@ -172,16 +175,20 @@ export class FieldArray<
       const newTouchedFields = mutateArray(touchedFields)
 
       if (shouldSetValues) {
-        this.control.state.touchedFields.update((currentTouchedFields) => {
-          deepSet(currentTouchedFields, this.name, newTouchedFields)
-          return currentTouchedFields
-        })
+        this.control.state.touchedFields.update(
+          (currentTouchedFields) => {
+            deepSet(currentTouchedFields, this.name, newTouchedFields)
+            return currentTouchedFields
+          },
+          [this.name],
+        )
       }
     }
 
     if (this.control.derivedState.isTracking('dirtyFields')) {
       this.control.state.dirtyFields.set(
         getDirtyFields(this.control.state.defaultValues.value, this.control.state.values.value),
+        [this.name],
       )
     }
   }
@@ -202,10 +209,13 @@ export class FieldArray<
 
     this.ids.push(...valuesArray.map(generateId))
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, updatedFieldArrayValues)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -233,10 +243,13 @@ export class FieldArray<
 
     this.ids = valuesArray.map(generateId).concat(this.ids)
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, updatedFieldArrayValues)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -260,10 +273,13 @@ export class FieldArray<
 
     this.ids = this.ids.filter((_, i) => !indexArray?.includes(i))
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, updatedFieldArrayValues)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -297,10 +313,13 @@ export class FieldArray<
 
     this.ids.splice(index, 0, ...valuesArray.map(generateId))
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, updatedFieldArrayValues)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -323,10 +342,13 @@ export class FieldArray<
     updatedFieldArrayValues[left] = rightValue
     updatedFieldArrayValues[right] = leftValue
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, updatedFieldArrayValues)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -353,10 +375,13 @@ export class FieldArray<
     updatedFieldArrayValues.splice(from, 1)
     updatedFieldArrayValues.splice(to, 0, value)
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, updatedFieldArrayValues)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -401,10 +426,13 @@ export class FieldArray<
 
     this.ids = valuesArray.map(generateId)
 
-    this.control.state.values.update((currentValues) => {
-      deepSet(currentValues, this.name, valuesArray)
-      return currentValues
-    })
+    this.control.state.values.update(
+      (currentValues) => {
+        deepSet(currentValues, this.name, valuesArray)
+        return currentValues
+      },
+      [this.name],
+    )
 
     this.value.set(valuesArray as any)
 
