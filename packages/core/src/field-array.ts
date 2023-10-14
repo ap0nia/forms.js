@@ -5,8 +5,9 @@ import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import type { RegisterOptions } from './types/register'
 import type { Validate } from './types/validation'
 import { deepSet } from './utils/deep-set'
-import { isObject } from './utils/is-object'
+import { generateId } from './utils/generate-id'
 import { safeGet } from './utils/safe-get'
+import { safeUnset } from './utils/safe-unset'
 import type { NestedObjectArrays } from './utils/types/nested-object-arrays'
 
 export type FieldArrayOptions<
@@ -236,25 +237,8 @@ export class FieldArray<
 
 function unsetEmptyArray<T>(ref: T, name: string) {
   if (!safeGet<any[]>(ref, name).filter(Boolean).length) {
-    unset(ref, name)
+    safeUnset(ref, name)
   }
-}
-
-function unset<T>(obj: T, path?: string, defaultValue?: unknown): any {
-  if (!path || !isObject(obj)) {
-    return defaultValue
-  }
-
-  const result = path
-    .split(/[,[\].]+?/)
-    .filter(Boolean)
-    .reduce((result, key) => (result == null ? result : result[key as keyof {}]), obj)
-
-  return result == null || result === obj
-    ? obj[path as keyof T] == null
-      ? defaultValue
-      : obj[path as keyof T]
-    : result
 }
 
 function getFocusFieldName(
@@ -265,16 +249,6 @@ function getFocusFieldName(
   return options.shouldFocus || options.shouldFocus == null
     ? options.focusName || `${name}.${options.focusIndex == null ? index : options.focusIndex}.`
     : ''
-}
-
-function generateId() {
-  const number = typeof performance === 'undefined' ? Date.now() : performance.now() * 1000
-
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16 + number) % 16 | 0
-
-    return (c == 'x' ? r : (r & 0x3) | 0x8).toString(16)
-  })
 }
 
 export type MyForm = {
