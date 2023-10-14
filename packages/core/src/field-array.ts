@@ -157,9 +157,9 @@ export class FieldArray<
 
     const updatedFieldArrayValues = [...this.getControlFieldArrayValues(), ...valuesArray]
 
-    this.ids.push(...valuesArray.map(generateId))
-
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
+
+    this.ids.push(...valuesArray.map(generateId))
 
     this.control.state.values.update((currentValues) => {
       deepSet(currentValues, this.name, updatedFieldArrayValues)
@@ -184,9 +184,9 @@ export class FieldArray<
 
     const updatedFieldArrayValues = [...valuesArray, ...this.getControlFieldArrayValues()]
 
-    this.ids = valuesArray.map(generateId).concat(this.ids)
-
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
+
+    this.ids = valuesArray.map(generateId).concat(this.ids)
 
     this.control.state.values.update((currentValues) => {
       deepSet(currentValues, this.name, updatedFieldArrayValues)
@@ -201,7 +201,27 @@ export class FieldArray<
     })
   }
 
-  remove() {}
+  remove(index?: number | number[]) {
+    const indexArray = Array.isArray(index) ? index : index != null ? [index] : undefined
+
+    const updatedFieldArrayValues =
+      indexArray == null
+        ? []
+        : Array.from(this.getControlFieldArrayValues()).filter((_, i) => !indexArray.includes(i))
+
+    this.ids = this.ids.filter((_, i) => !indexArray?.includes(i))
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    })
+
+    this.fields.set(updatedFieldArrayValues as any)
+
+    this.updateFormControl((args) => {
+      return args.filter((_, i) => !indexArray?.includes(i))
+    })
+  }
 
   insert() {}
 
