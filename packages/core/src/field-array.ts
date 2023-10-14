@@ -258,7 +258,32 @@ export class FieldArray<
     })
   }
 
-  swap() {}
+  swap(left: number, right: number) {
+    const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
+
+    const leftValue = updatedFieldArrayValues[left]
+    const rightValue = updatedFieldArrayValues[right]
+
+    updatedFieldArrayValues[left] = rightValue
+    updatedFieldArrayValues[right] = leftValue
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    })
+
+    this.fields.set(updatedFieldArrayValues as any)
+
+    this.updateFormControl((args) => {
+      const leftArg = args[left]
+      const rightArg = args[right]
+
+      args[left] = rightArg
+      args[right] = leftArg
+
+      return args
+    })
+  }
 
   move() {}
 
