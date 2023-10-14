@@ -174,7 +174,32 @@ export class FieldArray<
     })
   }
 
-  prepend() {}
+  prepend(
+    value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
+    options?: FieldArrayMethodProps,
+  ) {
+    const valueClone = structuredClone(value)
+
+    const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
+
+    const updatedFieldArrayValues = [...valuesArray, ...this.getControlFieldArrayValues()]
+
+    this.ids = valuesArray.map(generateId).concat(this.ids)
+
+    this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    })
+
+    this.fields.set(updatedFieldArrayValues as any)
+
+    this.updateFormControl((args) => {
+      valuesArray.map(() => undefined).concat(args)
+      return args
+    })
+  }
 
   remove() {}
 
