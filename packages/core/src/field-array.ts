@@ -224,7 +224,39 @@ export class FieldArray<
     })
   }
 
-  insert() {}
+  insert(
+    index: number,
+    value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
+    options?: FieldArrayMethodProps,
+  ) {
+    const valueClone = structuredClone(value)
+
+    const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
+
+    const currentFieldArrayValues = Array.from(this.getControlFieldArrayValues())
+
+    const updatedFieldArrayValues = [
+      ...currentFieldArrayValues.slice(0, index),
+      ...valuesArray,
+      ...currentFieldArrayValues.slice(index),
+    ]
+
+    this.focus = getFocusFieldName(this.name, index, options)
+
+    this.ids.splice(index, 0, ...valuesArray.map(generateId))
+
+    this.control.state.values.update((currentValues) => {
+      deepSet(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    })
+
+    this.fields.set(updatedFieldArrayValues as any)
+
+    this.updateFormControl((args) => {
+      args.splice(index, 0, ...valuesArray.map(() => undefined))
+      return args
+    })
+  }
 
   swap() {}
 
