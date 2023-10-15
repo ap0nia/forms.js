@@ -1493,34 +1493,34 @@ export class FormControl<
       const isValid = validationResult.valid
 
       return { validationResult, isValid }
-    } else {
-      const names = nameArray ?? Array.from(this.names.mount)
-
-      const fields: Record<string, FieldReference> = {}
-
-      for (const name of names) {
-        const field: Field | undefined = safeGet(this.fields, name)
-
-        if (field) {
-          deepSet(fields, name, field._f)
-        }
-      }
-
-      const resolverResult = await this.options.resolver(
-        this.state.values.value,
-        this.options.context,
-        {
-          names: names as any,
-          fields,
-          criteriaMode: this.options.criteriaMode,
-          shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-        },
-      )
-
-      const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
-
-      return { resolverResult, isValid }
     }
+
+    const names = nameArray ?? Array.from(this.names.mount)
+
+    const fields: Record<string, FieldReference> = {}
+
+    for (const name of names) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field) {
+        deepSet(fields, name, field._f)
+      }
+    }
+
+    const resolverResult = await this.options.resolver(
+      this.state.values.value,
+      this.options.context,
+      {
+        names: names as any,
+        fields,
+        criteriaMode: this.options.criteriaMode,
+        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      },
+    )
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    return { resolverResult, isValid }
   }
 
   /**

@@ -1,7 +1,10 @@
 import type { FlattenObject } from './utils/types/flatten-object'
 
 export * from './constants'
+
 export * from './form-control'
+export * from './field-array'
+
 export * from './types/errors'
 export * from './types/fields'
 export * from './types/plugin'

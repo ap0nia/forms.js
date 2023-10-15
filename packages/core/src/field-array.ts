@@ -22,7 +22,7 @@ export type FieldArrayOptions<
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
   TFieldArray extends NestedObjectArrays<TValues> = NestedObjectArrays<TValues>,
-  TFieldArrayName extends keyof TFieldArray = keyof TFieldArray,
+  TFieldArrayName extends Extract<keyof TFieldArray, string> = Extract<keyof TFieldArray, string>,
 > = {
   name: TFieldArrayName
   control: FormControl<TValues, TContext, TTransformedValues>
@@ -81,6 +81,9 @@ export class FieldArray<
    */
   action = new Writable(false)
 
+  name: TFieldArrayName
+  control: FormControl<TValues, TContext, TTransformedValues>
+
   constructor(
     public options: FieldArrayOptions<
       TValues,
@@ -89,9 +92,11 @@ export class FieldArray<
       TFieldArray,
       TFieldArrayName
     >,
-    public name = options.name,
-    public control = options.control,
   ) {
+    this.name = options.name
+
+    this.control = options.control
+
     this.value = new Writable<TFieldArrayValue>()
 
     this.fields = new Writable<TFieldArrayValue>(undefined, (set) => {
