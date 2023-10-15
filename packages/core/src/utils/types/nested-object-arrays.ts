@@ -1,4 +1,5 @@
 import type { FlattenObject } from './flatten-object'
+import type { IsAny } from './is-any'
 
 /**
  * Remove properties that are mapped to `never`.
@@ -12,7 +13,13 @@ export type RemoveNever<T> = {
  * Any invalid properties are marked as `never`.
  */
 export type RawNestedObjectArrays<T> = {
-  [K in keyof T]: T[K] extends (infer U)[] ? (U extends Record<string, any> ? T[K] : never) : never
+  [K in keyof T]: IsAny<T[K]> extends true
+    ? any
+    : T[K] extends (infer U)[]
+    ? U extends Record<string, any>
+      ? T[K]
+      : never
+    : never
 }
 
 /**
