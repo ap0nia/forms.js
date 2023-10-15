@@ -6,7 +6,7 @@ import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { iterateFieldsByAction } from './logic/fields/iterate-fields-by-action'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { nativeValidateSingleField } from './logic/validation/native-validation'
-import type { Field } from './types/fields'
+import type { Field, FieldReference } from './types/fields'
 import type { RegisterOptions } from './types/register'
 import type { Validate } from './types/validation'
 import { deepSet } from './utils/deep-set'
@@ -73,7 +73,7 @@ export class FieldArray<
   /**
    * Props for each field in the field array.
    */
-  fields: Writable<TFieldArrayValue>
+  fields: Writable<{ [K in keyof TFieldArrayValue]: TFieldArrayValue[K] & { id: string } }>
 
   focus?: string
 
@@ -107,18 +107,29 @@ export class FieldArray<
 
     this.idGenerator = options.idGenerator ?? generateId
 
-    this.fields = new Writable<TFieldArrayValue>(undefined, (set) => {
-      const unsubscribe = this.value.subscribe((value) => {
-        if (value == null) {
-          return
-        }
+    const initialFields: any = Array.from(this.value.value ?? []).map((v: any) => {
+      return {
+        ...v,
+        id: this.idGenerator(),
+      }
+    })
 
-        const newFields: any = Array.from(value).map((v, i) => {
-          return { ...(v ?? undefined), id: this.ids[i] ?? this.idGenerator() }
-        })
+    this.fields = new Writable<TFieldArrayValue>(initialFields, (set) => {
+      const unsubscribe = this.value.subscribe(
+        (value) => {
+          if (value == null) {
+            return
+          }
 
-        set(newFields)
-      })
+          const newFields: any = Array.from(value).map((v, i) => {
+            return { ...(v ?? undefined), id: this.ids[i] ?? this.idGenerator() }
+          })
+
+          set(newFields)
+        },
+        undefined,
+        false,
+      )
 
       return unsubscribe
     })
@@ -294,6 +305,7 @@ export class FieldArray<
       [this.name],
     )
 
+    this.action.set(true)
     this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
@@ -497,19 +509,23 @@ export class FieldArray<
       return
     }
 
-    const field: Field | undefined = safeGet(fields, this.name)
-
-    if (field?._f == null) {
-      return
-    }
-
     if (this.control.options.resolver) {
+      const fieldsToValidate: Record<string, FieldReference> = {}
+
+      for (const name in fields) {
+        const field: Field | undefined = safeGet(fields, name)
+
+        if (field?._f) {
+          fieldsToValidate[name] = field._f
+        }
+      }
+
       const result = await this.control.options.resolver(
         this.control.state.values.value,
         this.control.options.context,
         {
           names: [this.name] as any,
-          fields: { [this.name]: field._f },
+          fields: fieldsToValidate,
           criteriaMode: this.control.options.criteriaMode,
           shouldUseNativeValidation: this.control.options.shouldUseNativeValidation,
         },
@@ -535,6 +551,12 @@ export class FieldArray<
         })
       }
 
+      return
+    }
+
+    const field: Field | undefined = safeGet(fields, this.name)
+
+    if (field?._f == null) {
       return
     }
 

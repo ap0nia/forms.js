@@ -38,7 +38,7 @@ export function useFieldArray<
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return fieldArray.current.fields.subscribe(callback)
+      return fieldArray.current.fields.subscribe(callback, undefined, false)
     },
     [fieldArray.current],
   )
@@ -56,8 +56,11 @@ export function useFieldArray<
   fieldArray.current.mount()
 
   useEffect(() => {
+    const unsubscribe = fieldArray.current.createSubscription()
+
     return () => {
       fieldArray.current.unmount()
+      unsubscribe()
     }
   }, [fieldArray.current])
 
