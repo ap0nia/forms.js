@@ -247,7 +247,7 @@ export class RecordDerived<
    */
   unfreeze(shouldNotify?: boolean) {
     this.clones.forEach((clone) => {
-      clone.unfreeze()
+      clone.unfreeze(shouldNotify)
     })
 
     this.thaw()
@@ -277,7 +277,7 @@ export class RecordDerived<
       })
     })
 
-    if (noKeys || trackedKeysChanged || trackedNamesChanged) {
+    if (shouldNotify === true || noKeys || trackedKeysChanged || trackedNamesChanged) {
       this.writable.set(this.value)
     }
 

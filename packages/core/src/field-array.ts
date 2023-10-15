@@ -107,14 +107,7 @@ export class FieldArray<
 
     this.idGenerator = options.idGenerator ?? generateId
 
-    const initialFields: any = Array.from(this.value.value ?? []).map((v: any) => {
-      return {
-        ...v,
-        id: this.idGenerator(),
-      }
-    })
-
-    this.fields = new Writable<TFieldArrayValue>(initialFields, (set) => {
+    this.fields = new Writable<TFieldArrayValue>(this.getFieldArray(), (set) => {
       const unsubscribe = this.value.subscribe(
         (value) => {
           if (value == null) {
@@ -122,7 +115,8 @@ export class FieldArray<
           }
 
           const newFields: any = Array.from(value).map((v, i) => {
-            return { ...(v ?? undefined), id: this.ids[i] ?? this.idGenerator() }
+            this.ids[i] ??= this.idGenerator()
+            return { ...(v ?? undefined), id: this.ids[i] }
           })
 
           set(newFields)
@@ -130,6 +124,14 @@ export class FieldArray<
         undefined,
         false,
       )
+
+      this.control.resetListeners.push(() => {
+        const newFields: any = Array.from(this.getFieldArray()).map((v, i) => {
+          this.ids[i] = this.idGenerator()
+          return { ...(v ?? undefined), id: this.ids[i] }
+        })
+        set(newFields)
+      })
 
       return unsubscribe
     })
@@ -158,8 +160,6 @@ export class FieldArray<
     shouldSetValues = true,
     shouldUpdateFieldsAndState = true,
   ) {
-    this.action.set(true)
-
     const field = safeGet(this.control.fields, this.name)
 
     if (shouldUpdateFieldsAndState && Array.isArray(field)) {
@@ -232,6 +232,8 @@ export class FieldArray<
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
 
     this.ids.push(...valuesArray.map(this.idGenerator.bind(this)))
+
+    this.action.set(true)
 
     this.control.state.values.update(
       (currentValues) => {
@@ -306,6 +308,7 @@ export class FieldArray<
     )
 
     this.action.set(true)
+
     this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
@@ -587,6 +590,32 @@ export class FieldArray<
 
   unmount() {
     this.control.names.array.delete(this.name)
+  }
+
+  getFieldArray(): any {
+    const valueFromControl = safeGet(
+      this.control.state.status.value.mount
+        ? this.control.state.values.value
+        : this.control.state.defaultValues.value,
+      this.name,
+    )
+
+    const fallbackValue =
+      (this.control.options.shouldUnregister
+        ? safeGet(this.control.state.defaultValues.value, this.name)
+        : []) ?? []
+
+    const value: any[] = valueFromControl ?? fallbackValue
+
+    const fieldArray: any = value.map((v, i) => {
+      const id = this.ids[i] ?? v?.id ?? this.idGenerator()
+
+      this.ids[i] = id
+
+      return { ...v, id }
+    })
+
+    return fieldArray
   }
 }
 

@@ -1,4 +1,4 @@
-import { render, renderHook, fireEvent, screen } from '@testing-library/react'
+import { render, renderHook, fireEvent, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { describe, it, expect, beforeEach } from 'vitest'
 
@@ -257,155 +257,787 @@ describe('useFieldArray', () => {
         test: [{ value: '' }],
       })
     })
-  })
 
-  it('should provide correct form data with nested field array', async () => {
-    type FormValues = {
-      test: {
-        value: string
-        nestedArray: {
+    it('should provide correct form data with nested field array', async () => {
+      type FormValues = {
+        test: {
           value: string
+          nestedArray: {
+            value: string
+          }[]
         }[]
-      }[]
-    }
+      }
 
-    let formData: any = {}
-    const Nested = ({ index, control }: { control: Control<FormValues>; index: number }) => {
-      const { fields, append } = useFieldArray<FormValues>({
-        name: `test.${index}.nestedArray` as const,
-        control,
+      let formData: any = {}
+      const Nested = ({ index, control }: { control: Control<FormValues>; index: number }) => {
+        const { fields, append } = useFieldArray<FormValues>({
+          name: `test.${index}.nestedArray` as const,
+          control,
+        })
+
+        return (
+          <div>
+            {fields.map((item, i) => (
+              <input
+                key={item.id}
+                {...control.registerReact(`test.${index}.nestedArray.${i}.value` as const)}
+              />
+            ))}
+
+            <button type={'button'} onClick={() => append({ value: 'test' })}>
+              Append Nest
+            </button>
+          </div>
+        )
+      }
+
+      const Component = () => {
+        const {
+          register,
+          control,
+          formState: { isValid },
+        } = useForm<FormValues>({
+          resolver: (data) => {
+            formData = data
+            return {
+              values: data,
+              errors: {},
+            }
+          },
+          mode: 'onChange',
+          defaultValues: {
+            test: [{ value: '1', nestedArray: [{ value: '2' }] }],
+          },
+        })
+        const { fields, remove } = useFieldArray({
+          name: 'test',
+          control,
+        })
+
+        return (
+          <form>
+            {fields.map((item, i) => (
+              <fieldset key={item.id}>
+                <input {...register(`test.${i}.value` as const)} />
+
+                <Nested control={control} index={i} />
+                <button type={'button'} onClick={() => remove(i)}>
+                  delete
+                </button>
+              </fieldset>
+            ))}
+            <span>{isValid && 'valid'}</span>
+          </form>
+        )
+      }
+
+      render(<Component />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Append Nest' }))
+
+      expect(await screen.findByText('valid')).toBeVisible()
+
+      expect(formData).toEqual({
+        test: [
+          {
+            value: '1',
+            nestedArray: [{ value: '2' }, { value: 'test' }],
+          },
+        ],
       })
 
-      return (
-        <div>
-          {fields.map((item, i) => (
-            <input
-              key={item.id}
-              {...control.registerReact(`test.${index}.nestedArray.${i}.value` as const)}
-            />
-          ))}
+      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
 
-          <button type={'button'} onClick={() => append({ value: 'test' })}>
-            Append Nest
-          </button>
-        </div>
-      )
-    }
-
-    const Component = () => {
-      const {
-        register,
-        control,
-        formState: { isValid },
-      } = useForm<FormValues>({
-        resolver: (data) => {
-          formData = data
-          return {
-            values: data,
-            errors: {},
-          }
-        },
-        mode: 'onChange',
-        defaultValues: {
-          test: [{ value: '1', nestedArray: [{ value: '2' }] }],
-        },
+      expect(formData).toEqual({
+        test: [],
       })
-      const { fields, remove } = useFieldArray({
-        name: 'test',
-        control,
-      })
-
-      return (
-        <form>
-          {fields.map((item, i) => (
-            <fieldset key={item.id}>
-              <input {...register(`test.${i}.value` as const)} />
-
-              <Nested control={control} index={i} />
-              <button type={'button'} onClick={() => remove(i)}>
-                delete
-              </button>
-            </fieldset>
-          ))}
-          <span>{isValid && 'valid'}</span>
-        </form>
-      )
-    }
-
-    render(<Component />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Append Nest' }))
-
-    expect(await screen.findByText('valid')).toBeVisible()
-
-    expect(formData).toEqual({
-      test: [
-        {
-          value: '1',
-          nestedArray: [{ value: '2' }, { value: 'test' }],
-        },
-      ],
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+    it('should report field array error during user action', async () => {
+      const App = () => {
+        const {
+          register,
+          control,
+          formState: { errors },
+        } = useForm<{
+          test: { value: string }[]
+        }>({
+          mode: 'onChange',
+          resolver: (data) => {
+            return {
+              values: data,
+              errors: {
+                test: {
+                  type: 'test',
+                  message: 'minLength',
+                },
+              },
+            }
+          },
+          defaultValues: {
+            test: [{ value: '1' }],
+          },
+        })
+        const { fields, remove } = useFieldArray({
+          name: 'test',
+          control,
+        })
 
-    expect(formData).toEqual({
-      test: [],
+        return (
+          <form>
+            {errors.test && <p>minLength</p>}
+
+            {fields.map((item, i) => (
+              <fieldset key={item.id}>
+                <input {...register(`test.${i}.value` as const)} />
+                <button type={'button'} onClick={() => remove(i)}>
+                  delete
+                </button>
+              </fieldset>
+            ))}
+          </form>
+        )
+      }
+
+      render(<App />)
+
+      expect(screen.queryByText('minLength')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button'))
+
+      expect(await screen.findByText('minLength')).toBeVisible()
+    })
+
+    it('should not return schema error without user action', () => {
+      const App = () => {
+        const {
+          register,
+          control,
+          formState: { errors },
+        } = useForm<{
+          test: { value: string }[]
+        }>({
+          mode: 'onChange',
+          resolver: (data) => {
+            return {
+              values: data,
+              errors: {
+                test: {
+                  type: 'test',
+                  message: 'minLength',
+                },
+              },
+            }
+          },
+          defaultValues: {
+            test: [],
+          },
+        })
+        const { fields } = useFieldArray({
+          name: 'test',
+          control,
+        })
+
+        return (
+          <form>
+            {errors.test && <p>minLength</p>}
+
+            {fields.map((item, i) => (
+              <fieldset key={item.id}>
+                <input {...register(`test.${i}.value` as const)} />
+              </fieldset>
+            ))}
+          </form>
+        )
+      }
+
+      render(<App />)
+
+      expect(screen.queryByText('minLength')).not.toBeInTheDocument()
+    })
+
+    it('should update error when user action corrects it', async () => {
+      const App = () => {
+        const {
+          register,
+          control,
+          formState: { errors },
+        } = useForm<{
+          test: { value: string }[]
+        }>({
+          mode: 'onChange',
+          resolver: (data) => {
+            if (data.test.length > 1) {
+              return {
+                values: data,
+                errors: {},
+              }
+            } else {
+              return {
+                values: data,
+                errors: {
+                  test: {
+                    type: 'test',
+                    message: 'minLength',
+                  },
+                },
+              }
+            }
+          },
+          defaultValues: {
+            test: [],
+          },
+        })
+        const { fields, append } = useFieldArray({
+          name: 'test',
+          control,
+        })
+
+        return (
+          <form>
+            {errors.test && <p>minLength</p>}
+            {fields.map((item, i) => (
+              <input key={item.id} {...register(`test.${i}.value` as const)} />
+            ))}
+            <button
+              type={'button'}
+              onClick={() =>
+                append({
+                  value: '',
+                })
+              }
+            >
+              append
+            </button>
+          </form>
+        )
+      }
+
+      render(<App />)
+
+      fireEvent.click(screen.getByRole('button'))
+
+      await waitFor(() => expect(screen.queryByText('minLength')).toBeInTheDocument())
+
+      fireEvent.click(screen.getByRole('button'))
+
+      await waitFor(() => expect(screen.queryByText('minLength')).not.toBeInTheDocument())
+    })
+
+    it('should update error when array is changed', async () => {
+      const App = () => {
+        const {
+          register,
+          control,
+          formState: { errors },
+        } = useForm<{
+          test: { value: string }[]
+        }>({
+          mode: 'onChange',
+          resolver: (data) => {
+            const errors: { test?: any } = {}
+            if (data.test.length > 4) {
+              errors.test = { type: 'toobig', message: 'WAY too many items' }
+            } else if (data.test.length > 3) {
+              errors.test = { type: 'toobig', message: 'Too many items' }
+            }
+            for (const [index, item] of data.test.entries()) {
+              if (item.value === '') {
+                errors.test = errors.test || []
+                errors.test[index] = {
+                  value: { type: 'required', message: 'Required' },
+                }
+              }
+            }
+
+            return {
+              values: data,
+              errors,
+            }
+          },
+          defaultValues: {
+            test: [{ value: '0' }, { value: '1' }, { value: '2' }],
+          },
+        })
+        const { fields, append, remove } = useFieldArray({
+          name: 'test',
+          control,
+        })
+
+        return (
+          <form>
+            {errors.test?.type && <p>Array error: {errors.test.message}</p>}
+            {fields.map((item, i) => (
+              <div key={item.id}>
+                <input {...register(`test.${i}.value` as const)} />
+                <button type="button" onClick={() => remove(i)}>
+                  remove
+                </button>
+                {errors.test?.[i]?.value && (
+                  <span>
+                    Item {i} error: {errors.test?.[i]?.value?.message}
+                  </span>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                append({
+                  value: fields.length.toString(),
+                })
+              }
+            >
+              append
+            </button>
+          </form>
+        )
+      }
+
+      render(<App />)
+
+      await waitFor(() => expect(screen.queryByText('Array error:')).not.toBeInTheDocument())
+
+      fireEvent.click(screen.getByRole('button', { name: 'append' }))
+
+      await waitFor(() =>
+        expect(screen.queryByText('Array error: Too many items')).toBeInTheDocument(),
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'append' }))
+
+      await waitFor(() =>
+        expect(screen.queryByText('Array error: WAY too many items')).toBeInTheDocument(),
+      )
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'remove' })[0]!)
+
+      await waitFor(() =>
+        expect(screen.queryByText('Array error: Too many items')).toBeInTheDocument(),
+      )
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'remove' })[0]!)
+
+      await waitFor(() => expect(screen.queryByText('Array error:')).not.toBeInTheDocument())
+
+      fireEvent.change(screen.getAllByRole('textbox')[0]!, {
+        target: { value: '' },
+      })
+
+      await waitFor(() => expect(screen.queryByText('Item 0 error: Required')).toBeInTheDocument())
+
+      fireEvent.click(screen.getByRole('button', { name: 'append' }))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Array error: Too many items')).toBeInTheDocument()
+        expect(screen.queryByText('Item 0 error: Required')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: 'append' }))
+
+      await waitFor(() => {
+        expect(screen.queryByText('Array error: WAY too many items')).toBeInTheDocument()
+        expect(screen.queryByText('Item 0 error: Required')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'remove' })[4]!)
+
+      await waitFor(() => {
+        expect(screen.queryByText('Array error: Too many items')).toBeInTheDocument()
+        expect(screen.queryByText('Item 0 error: Required')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'remove' })[3]!)
+
+      await waitFor(() => {
+        expect(screen.queryByText('Array error: Too many items')).not.toBeInTheDocument()
+        expect(screen.queryByText('Item 0 error: Required')).toBeInTheDocument()
+      })
     })
   })
 
-  it('should report field array error during user action', async () => {
-    const App = () => {
-      const {
-        register,
-        control,
-        formState: { errors },
-      } = useForm<{
-        test: { value: string }[]
-      }>({
-        mode: 'onChange',
-        resolver: (data) => {
-          return {
-            values: data,
-            errors: {
-              test: {
-                type: 'test',
-                message: 'minLength',
-              },
-            },
+  describe('when component unMount', () => {
+    it('should keep field array values', async () => {
+      let getValues: any
+      const Component = () => {
+        const [show, setShow] = React.useState(true)
+        const { register, control, getValues: tempGetValues } = useForm()
+        const { fields, append } = useFieldArray({ name: 'test', control })
+        getValues = tempGetValues
+
+        return (
+          <>
+            {show && (
+              <div>
+                {fields.map((_, i) => (
+                  <input key={i.toString()} {...register(`test.${i}.value`)} />
+                ))}
+                <button onClick={() => append({ value: '' })}>append</button>
+              </div>
+            )}
+            <button type={'button'} onClick={() => setShow(!show)}>
+              setShow
+            </button>
+          </>
+        )
+      }
+
+      render(<Component />)
+
+      const button = screen.getByRole('button', { name: /append/i })
+
+      fireEvent.click(button)
+
+      fireEvent.click(button)
+
+      fireEvent.click(button)
+
+      fireEvent.click(screen.getByRole('button', { name: 'setShow' }))
+
+      expect(getValues()).toEqual({
+        test: [{ value: '' }, { value: '' }, { value: '' }],
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: 'setShow' }))
+      expect(screen.getAllByRole('textbox').length).toEqual(3)
+    })
+
+    it('should remove reset method when field array is removed', () => {
+      let controlTemp: Control = undefined!
+      let fieldsTemp: unknown[] = []
+
+      const App = () => {
+        const { register, control } = useForm({
+          defaultValues: {
+            test: [{ value: 'default' }],
+          },
+        })
+        const { fields, append } = useFieldArray({
+          name: 'test',
+          control,
+          idGenerator,
+        })
+        controlTemp = control
+        fieldsTemp = fields
+
+        return (
+          <form>
+            {fields.map((field) => {
+              return <input key={field.id} {...register('test.0.value')} />
+            })}
+            <button
+              type={'button'}
+              onClick={() => {
+                append({
+                  value: 'test',
+                })
+              }}
+            >
+              append
+            </button>
+          </form>
+        )
+      }
+
+      const { unmount } = render(<App />)
+
+      expect(fieldsTemp).toEqual([{ id: '0', value: 'default' }])
+
+      fireEvent.click(screen.getByRole('button'))
+
+      expect(fieldsTemp).toEqual([
+        { id: '0', value: 'default' },
+        {
+          id: '1',
+          value: 'test',
+        },
+      ])
+
+      unmount()
+
+      expect(controlTemp.names.array).toEqual(new Set(['test']))
+      expect(fieldsTemp).toEqual([
+        { id: '0', value: 'default' },
+        {
+          id: '1',
+          value: 'test',
+        },
+      ])
+    })
+
+    it('should unset field array values correctly on DOM removing', async () => {
+      interface NestedComponentProps
+        extends Pick<UseFormReturn<FormValues>, 'control' | 'register'> {
+        childIndex: number
+      }
+
+      type FormValues = {
+        test: {
+          title: string
+          nested: {
+            name: string
+          }[]
+        }[]
+        title: string
+      }
+
+      const NestedComponent = ({ childIndex, control, register }: NestedComponentProps) => {
+        const { fields } = useFieldArray({
+          control,
+          name: `test.${childIndex}.nested` as `test.0.nested`,
+        })
+
+        return (
+          <div>
+            {fields.map((field, index) => {
+              return (
+                <div key={field.id}>
+                  <input {...register(`test.${childIndex}.nested.${index}.name` as const)} />
+                </div>
+              )
+            })}
+          </div>
+        )
+      }
+
+      const Component = () => {
+        const { control, register } = useForm<FormValues>()
+        const { fields, append, remove } = useFieldArray({
+          control,
+          name: 'test',
+        })
+
+        return (
+          <form>
+            <input {...register('title')} />
+            {fields.map((field, index) => {
+              return (
+                <div key={field.id}>
+                  <input {...register(`test.${index}.title` as const)} />
+                  <button type="button" onClick={() => remove(index)}>
+                    Remove child
+                  </button>
+                  <NestedComponent childIndex={index} control={control} register={register} />
+                </div>
+              )
+            })}
+            <button type="button" onClick={() => append({ title: 'test', nested: [] })}>
+              Add child
+            </button>
+          </form>
+        )
+      }
+
+      render(<Component />)
+
+      const addChild = () => fireEvent.click(screen.getByText('Add child'))
+
+      addChild()
+
+      expect(screen.getByText('Remove child')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByText('Remove child'))
+
+      expect(screen.queryByText('Remove child')).not.toBeInTheDocument()
+
+      addChild()
+
+      expect(screen.getByText('Remove child')).toBeInTheDocument()
+    })
+  })
+
+  describe('with should unregister true', () => {
+    it('should not unregister field if unregister method is triggered', () => {
+      let getValues: any
+      const Component = () => {
+        const { register, unregister, control, getValues: tempGetValues } = useForm()
+        const { fields, append } = useFieldArray({ name: 'test', control })
+        getValues = tempGetValues
+
+        React.useEffect(() => {
+          if (fields.length >= 3) {
+            unregister('test')
           }
-        },
-        defaultValues: {
-          test: [{ value: '1' }],
-        },
+        }, [fields, unregister])
+
+        return (
+          <div>
+            {fields.map((field, i) => (
+              <input key={field.id} {...register(`test.${i}.value`)} />
+            ))}
+            <button type={'button'} onClick={() => append({ value: '' })}>
+              append
+            </button>
+          </div>
+        )
+      }
+
+      render(<Component />)
+
+      const button = screen.getByRole('button', { name: /append/i })
+
+      fireEvent.click(button)
+      fireEvent.click(button)
+      fireEvent.click(button)
+
+      expect(getValues()).toEqual({
+        test: [{ value: '' }, { value: '' }, { value: '' }],
       })
-      const { fields, remove } = useFieldArray({
-        name: 'test',
-        control,
-      })
+    })
 
-      return (
-        <form>
-          {errors.test && <p>minLength</p>}
+    it('should remove field array after useFieldArray is unmounted', () => {
+      type FormValues = {
+        test: { name: string }[]
+      }
 
-          {fields.map((item, i) => (
-            <fieldset key={item.id}>
-              <input {...register(`test.${i}.value` as const)} />
-              <button type={'button'} onClick={() => remove(i)}>
-                delete
-              </button>
-            </fieldset>
-          ))}
-        </form>
-      )
-    }
+      const FieldArray = ({ control }: { control: Control<FormValues> }) => {
+        const { fields } = useFieldArray({
+          control,
+          name: 'test',
+        })
 
-    render(<App />)
+        return (
+          <div>
+            {fields.map((item, index) => {
+              return <input key={item.id} name={`test.${index}.name` as const} />
+            })}
+          </div>
+        )
+      }
 
-    expect(screen.queryByText('minLength')).not.toBeInTheDocument()
+      const App = () => {
+        const [show, setShow] = React.useState(true)
+        const { control } = useForm<FormValues>({
+          shouldUnregister: true,
+          defaultValues: {
+            test: [{ name: 'test' }],
+          },
+        })
 
-    fireEvent.click(screen.getByRole('button'))
+        return (
+          <div>
+            {show && <FieldArray control={control} />}
+            <button type={'button'} onClick={() => setShow(!show)}>
+              toggle
+            </button>
+          </div>
+        )
+      }
 
-    expect(await screen.findByText('minLength')).toBeVisible()
+      render(<App />)
+
+      expect(screen.getByRole('textbox')).toBeVisible()
+
+      fireEvent.click(screen.getByRole('button'))
+
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('setError', () => {
+    it('should be able to set an field array error', async () => {
+      const Component = () => {
+        const {
+          register,
+          setError,
+          control,
+          formState: { errors },
+        } = useForm()
+        const { fields, append, remove } = useFieldArray({
+          name: 'test',
+          control,
+        })
+
+        React.useEffect(() => {
+          if (fields.length === 0) {
+            setError('test', {
+              type: 'min length',
+            })
+          }
+        }, [fields, setError])
+
+        return (
+          <div>
+            {fields.map((_, i) => (
+              <div key={i.toString()}>
+                <input {...register(`test.${i}.value`)} />
+                <button type={'button'} onClick={() => remove(i)}>
+                  delete
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={() => append({ value: '' })}>
+              append
+            </button>
+            <button>submit</button>
+            <p>{errors.test && 'Error'}</p>
+          </div>
+        )
+      }
+
+      render(<Component />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'append' }))
+
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+
+      expect(await screen.findByText('Error')).toBeVisible()
+    })
+  })
+
+  describe('with reset', () => {
+    it('should reset with field array', async () => {
+      let fieldsTemp: unknown[] = []
+
+      const App = () => {
+        const { register, reset, control } = useForm({
+          defaultValues: {
+            test: [{ value: 'default' }],
+          },
+        })
+        const { fields, append } = useFieldArray({
+          name: 'test',
+          control,
+          idGenerator,
+        })
+        fieldsTemp = fields
+
+        return (
+          <form>
+            {fields.map((field, index) => {
+              return <input key={field.id} {...register(`test.${index}.value`)} />
+            })}
+
+            <button
+              type={'button'}
+              onClick={() => {
+                append({ value: 'test' })
+              }}
+            >
+              append
+            </button>
+
+            <button
+              type={'button'}
+              onClick={() => {
+                reset()
+              }}
+            >
+              reset
+            </button>
+          </form>
+        )
+      }
+
+      render(<App />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'append' }))
+
+      fireEvent.click(screen.getByRole('button', { name: 'reset' }))
+
+      expect(fieldsTemp).toEqual([{ id: '4', value: 'default' }])
+    })
   })
 })

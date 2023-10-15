@@ -466,6 +466,8 @@ export class FormControl<
 
   unmountActions: Noop[] = []
 
+  resetListeners: Noop[] = []
+
   constructor(options?: FormControlOptions<TValues, TContext, TTransformedValues>) {
     const resolvedOptions = { ...defaultFormControlOptions, ...options }
 
@@ -822,7 +824,7 @@ export class FormControl<
       this.updateValid(undefined, fieldNames)
     }
 
-    this.derivedState.unfreeze()
+    this.derivedState.unfreeze(true)
   }
 
   /**
@@ -1266,6 +1268,8 @@ export class FormControl<
     }
 
     this.state.isSubmitting.set(false)
+
+    this.resetListeners.forEach((listener) => listener())
 
     this.derivedState.unfreeze()
   }

@@ -59,7 +59,7 @@ export function useFieldArray<
     const unsubscribe = fieldArray.current.createSubscription()
 
     return () => {
-      fieldArray.current.unmount()
+      // fieldArray.current.unmount()
       unsubscribe()
     }
   }, [fieldArray.current])
