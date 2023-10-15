@@ -166,6 +166,7 @@ export type FormControlOptions<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
+  TDefaultValues extends Defaults<TValues> = any,
 > = {
   /**
    * When to validate the form.
@@ -190,7 +191,7 @@ export type FormControlOptions<
   /**
    * Default field values.
    */
-  defaultValues?: Defaults<TValues>
+  defaultValues?: TDefaultValues
 
   /**
    * The actual form values.

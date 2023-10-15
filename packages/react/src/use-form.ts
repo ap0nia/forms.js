@@ -1,4 +1,5 @@
 import { deepEqual } from '@forms.js/core/utils/deep-equal'
+import type { Defaults } from 'packages/core/src/utils/types/defaults'
 import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
 
 import { ReactFormControl as Control, type FormControlOptions } from './form-control'
@@ -33,8 +34,9 @@ export function useForm<
   TValues extends Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
+  TDefaultValues extends Defaults<TValues> = any,
 >(
-  props?: FormControlOptions<TValues, TContext, TTransformedValues>,
+  props?: FormControlOptions<TValues, TContext, TTransformedValues, TDefaultValues>,
 ): UseFormReturn<TValues, TContext, TTransformedValues> {
   const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>()
 

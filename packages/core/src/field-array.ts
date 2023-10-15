@@ -32,6 +32,7 @@ export type FieldArrayOptions<
       | Validate<FieldArray<TValues, TFieldArrayName>[], TValues>
       | Record<string, Validate<FieldArray<TValues, TFieldArrayName>[], TValues>>
   } & Pick<RegisterOptions<TValues>, 'maxLength' | 'minLength' | 'required'>
+  idGenerator?: () => string
 }
 
 /**
@@ -82,7 +83,10 @@ export class FieldArray<
   action = new Writable(false)
 
   name: TFieldArrayName
+
   control: FormControl<TValues, TContext, TTransformedValues>
+
+  idGenerator: () => string
 
   constructor(
     public options: FieldArrayOptions<
@@ -97,7 +101,11 @@ export class FieldArray<
 
     this.control = options.control
 
-    this.value = new Writable<TFieldArrayValue>()
+    this.value = new Writable<TFieldArrayValue>(
+      Array.from(safeGet(this.control.state.values.value, this.name) ?? []) as any,
+    )
+
+    this.idGenerator = options.idGenerator ?? generateId
 
     this.fields = new Writable<TFieldArrayValue>(undefined, (set) => {
       const unsubscribe = this.value.subscribe((value) => {
@@ -106,7 +114,7 @@ export class FieldArray<
         }
 
         const newFields: any = Array.from(value).map((v, i) => {
-          return { ...(v ?? undefined), id: this.ids[i] ?? generateId() }
+          return { ...(v ?? undefined), id: this.ids[i] ?? this.idGenerator() }
         })
 
         set(newFields)
@@ -212,7 +220,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
 
-    this.ids.push(...valuesArray.map(generateId))
+    this.ids.push(...valuesArray.map(this.idGenerator.bind(this)))
 
     this.control.state.values.update(
       (currentValues) => {
@@ -246,7 +254,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
 
-    this.ids = valuesArray.map(generateId).concat(this.ids)
+    this.ids = valuesArray.map(this.idGenerator.bind(this)).concat(this.ids)
 
     this.control.state.values.update(
       (currentValues) => {
@@ -316,7 +324,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, index, options)
 
-    this.ids.splice(index, 0, ...valuesArray.map(generateId))
+    this.ids.splice(index, 0, ...valuesArray.map(this.idGenerator.bind(this)))
 
     this.control.state.values.update(
       (currentValues) => {
@@ -429,7 +437,7 @@ export class FieldArray<
 
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
 
-    this.ids = valuesArray.map(generateId)
+    this.ids = valuesArray.map(this.idGenerator.bind(this))
 
     this.control.state.values.update(
       (currentValues) => {
