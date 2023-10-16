@@ -1,28 +1,10 @@
 /**
- * Events that the form may listen to.
+ * Recognized input events.
  */
 export const INPUT_EVENTS = {
   BLUR: 'blur',
   FOCUS_OUT: 'focusout',
   CHANGE: 'change',
-} as const
-
-/**
- * When the form might re-validate its data.
- */
-export const REVALIDATION_MODE = {
-  onBlur: 'onBlur',
-  onChange: 'onChange',
-  onSubmit: 'onSubmit',
-} as const
-
-/**
- * When the form might initially validate its data.
- */
-export const VALIDATION_MODE = {
-  ...REVALIDATION_MODE,
-  onTouched: 'onTouched',
-  all: 'all',
 } as const
 
 /**
@@ -39,76 +21,59 @@ export const INPUT_VALIDATION_RULE = {
 } as const
 
 /**
+ * When the form will re-validate its data.
+ */
+export const REVALIDATION_EVENTS = {
+  onBlur: 'onBlur',
+  onChange: 'onChange',
+  onSubmit: 'onSubmit',
+} as const
+
+/**
+ * When the form will validate its data.
+ */
+export const VALIDATION_EVENTS = {
+  ...REVALIDATION_EVENTS,
+  onTouched: 'onTouched',
+  all: 'all',
+} as const
+
+/**
  * When to stop validating.
- *
- * i.e. Whether to stop validating after the first error is found.
  */
 export const CRITERIA_MODE = {
+  /**
+   * Stop validating after the first error is found.
+   */
   firstError: 'firstError',
+
+  /**
+   * Continue validating until all errors have been found.
+   */
   all: 'all',
 }
 
 /**
- * The current stage of the form. May behave accordingly.
+ * When to validate the form data.
  */
-export const STAGE = {
-  INIT: 'init',
-  MOUNT: 'mount',
-} as const
-
-export type InputEvent = typeof INPUT_EVENTS
-
-export type RevalidationMode = typeof REVALIDATION_MODE
-
-export type ValidationMode = typeof VALIDATION_MODE
-
-export type InputValidationRule = typeof INPUT_VALIDATION_RULE
-
-export type CriteriaMode = typeof CRITERIA_MODE
-
-export type Stage = typeof STAGE
-
-/**
- * How to validate before/after submission.
- */
-export type SubmissionValidationMode = {
+export type ValidationMode = {
   /**
    * When to validate prior to submitting a form.
    */
-  beforeSubmission: ValidateOnEvent
+  beforeSubmission: { [K in keyof ValidationEvent]: boolean }
 
   /**
    * When to validate after submitting a form.
    */
-  afterSubmission: ValidateOnEvent
+  afterSubmission: { [K in keyof ValidationEvent]: boolean }
 }
 
-/**
- * When to validate based on (mostly DOM-oriented) events.
- */
-export type ValidateOnEvent = {
-  /**
-   * Whether to validate on all events (i.e. indiscriminately).
-   */
-  all: boolean
+export type InputEvent = typeof INPUT_EVENTS
 
-  /**
-   * Whether to validate on a touch event.
-   */
-  touch: boolean
+export type InputValidationRule = typeof INPUT_VALIDATION_RULE
 
-  /**
-   * Whether to validate on a blur event.
-   */
-  blur: boolean
+export type RevalidationEvent = typeof REVALIDATION_EVENTS
 
-  /**
-   * Whether to validate on a change event.
-   */
-  change: boolean
+export type ValidationEvent = typeof VALIDATION_EVENTS
 
-  /**
-   * Whether to validate on a submission event.
-   */
-  submit: boolean
-}
+export type CriteriaMode = typeof CRITERIA_MODE
