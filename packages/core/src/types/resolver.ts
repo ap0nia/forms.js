@@ -1,8 +1,8 @@
 import type { CriteriaMode } from '../constants'
-import type { FlattenObject } from '../utils/types/flatten-object'
 
 import type { FieldErrors } from './errors'
 import type { FieldReference } from './fields'
+import type { ParseForm } from './form'
 
 /**
  * A resolver processes the form values and returns a result.
@@ -17,7 +17,7 @@ export type Resolver<TFieldValues = Record<string, any>, TContext = any> = (
 /**
  * Resolver options.
  */
-export interface ResolverOptions<T> {
+export interface ResolverOptions<T, TParsedForm extends ParseForm<T> = ParseForm<T>> {
   /**
    * How to handle encountered errors.
    */
@@ -29,9 +29,9 @@ export interface ResolverOptions<T> {
   fields: Record<string, FieldReference>
 
   /**
-   * Flatten the form values object.
+   * Names of the fields to parse.
    */
-  names?: Extract<keyof FlattenObject<T>, string>[]
+  names?: TParsedForm['keys'][]
 
   /**
    * Whether to use native validation by reading the field element.

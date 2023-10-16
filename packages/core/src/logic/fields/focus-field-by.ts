@@ -1,6 +1,7 @@
+import { isObject } from '@forms.js/common/utils/is-object'
+import { safeGet } from '@forms.js/common/utils/safe-get'
+
 import type { Field, FieldRecord } from '../../types/fields'
-import { isObject } from '../../utils/is-object'
-import { safeGet } from '../../utils/safe-get'
 
 export function focusFieldBy(
   fields: FieldRecord,

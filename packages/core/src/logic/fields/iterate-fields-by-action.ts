@@ -1,6 +1,7 @@
-import type { FieldRecord } from '../..'
-import { isObject } from '../../utils/is-object'
-import { safeGet } from '../../utils/safe-get'
+import { isObject } from '@forms.js/common/utils/is-object'
+import { safeGet } from '@forms.js/common/utils/safe-get'
+
+import type { FieldRecord } from '../../types/fields'
 
 export function iterateFieldsByAction(
   fields: FieldRecord,

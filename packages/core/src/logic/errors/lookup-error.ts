@@ -1,6 +1,7 @@
+import { safeGet } from '@forms.js/common/utils/safe-get'
+
 import type { FieldError, FieldErrors } from '../../types/errors'
 import type { FieldRecord } from '../../types/fields'
-import { safeGet } from '../../utils/safe-get'
 
 export type FoundError = {
   error?: FieldError

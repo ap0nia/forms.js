@@ -1,3 +1,4 @@
+import { noop } from '@forms.js/common/utils/noop'
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
@@ -8,7 +9,6 @@ import {
 import type { NativeValidationContext } from '../../../../src/logic/validation/native-validation/types'
 import type { FieldErrorRecord } from '../../../../src/types/errors'
 import type { Field } from '../../../../src/types/fields'
-import { noop } from '../../../../src/utils/noop'
 
 describe('nativeValidateRequired', () => {
   test('no errors if not missing', () => {

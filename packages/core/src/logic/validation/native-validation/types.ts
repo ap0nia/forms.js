@@ -1,6 +1,7 @@
+import type { Nullish } from '@forms.js/common/utils/null'
+
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field } from '../../../types/fields'
-import type { Nullish } from '../../../utils/null'
 
 /**
  * All native validators accept a context object to perform their validation.

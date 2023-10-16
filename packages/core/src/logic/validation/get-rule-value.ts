@@ -1,9 +1,10 @@
+import { isObject } from '@forms.js/common/utils/is-object'
+
 import type {
   ValidationRule,
   ValidationValue,
   ValidationValueMessage,
 } from '../../types/validation'
-import { isObject } from '../../utils/is-object'
 
 export function getRuleValue<T extends ValidationValue>(
   rule?: ValidationRule<T> | ValidationValueMessage<T>,

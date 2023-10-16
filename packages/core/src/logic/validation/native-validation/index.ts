@@ -1,9 +1,10 @@
+import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { noop } from '@forms.js/common/utils/noop'
+import { notNullish } from '@forms.js/common/utils/null'
+import { safeGet } from '@forms.js/common/utils/safe-get'
+
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field, FieldRecord } from '../../../types/fields'
-import { isEmptyObject } from '../../../utils/is-object'
-import { noop } from '../../../utils/noop'
-import { notNullish } from '../../../utils/null'
-import { safeGet } from '../../../utils/safe-get'
 import { setCustomValidity } from '../../html/set-custom-validity'
 
 import { nativeValidateMinMax } from './min-max'

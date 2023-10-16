@@ -1,19 +1,14 @@
-import type { FlattenObject } from '../utils/types/flatten-object'
-
+import type { ParseForm } from './form'
 import type { Validate, ValidationRule } from './validation'
 
 /**
  * Options when registering a new field component or element.
- *
- * @param TFieldName A key in the flattened form values object.
- * @param TFieldValue Represents the value at TFieldName in the flattened form values object.
- *
- * @remarks Please don't manually set TFieldValue :^)
  */
 export type RegisterOptions<
-  TValues = Record<string, any>,
-  TFieldName extends keyof FlattenObject<TValues> = keyof FlattenObject<TValues>,
-  TFieldValue = FlattenObject<TValues>[TFieldName],
+  TValues extends Record<string, any> = Record<string, any>,
+  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
+  TFieldName extends TParsedForm['keys'] = TParsedForm['keys'],
+  TFieldValue extends TParsedForm['values'][TFieldName] = TParsedForm['values'][TFieldName],
 > = {
   /**
    * Native validation, makes the field required.

@@ -16,8 +16,9 @@ export type ValidationValue = boolean | number | string | RegExp
 
 /**
  * A value and message can be provided for a validation type.
- * The value is used for the validation check,
- * and the message is used to customize the error message displayed when validation fails.
+ *
+ * The value is used for the validation check, and the message is used to
+ * customize the error message displayed when validation fails.
  */
 export type ValidationValueMessage<T = ValidationValue> = {
   /**

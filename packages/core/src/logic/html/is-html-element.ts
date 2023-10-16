@@ -1,4 +1,4 @@
-import { isBrowser } from '../../utils/is-browser'
+import { isBrowser } from '@forms.js/common/utils/is-browser'
 
 export function isHTMLElement(value: unknown): value is HTMLElement {
   if (!isBrowser()) {

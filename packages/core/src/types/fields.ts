@@ -1,7 +1,7 @@
-import type { Noop } from '../utils/noop'
-import type { Nullish } from '../utils/null'
-import type { FlattenObject } from '../utils/types/flatten-object'
+import type { Noop } from '@forms.js/common/utils/noop'
+import type { Nullish } from '@forms.js/common/utils/null'
 
+import type { ParseForm } from './form'
 import type { RegisterOptions } from './register'
 
 /**
@@ -82,11 +82,11 @@ export type FieldElement<T = Record<string, any>> =
 /**
  * A custom element is a component that simulates an HTML element.
  */
-export type CustomElement<T = Record<string, any>> = {
+export type CustomElement<T, TParsedForm extends ParseForm<T> = ParseForm<T>> = {
   /**
    * Name of the field.
    */
-  name: keyof FlattenObject<T>
+  name: TParsedForm['keys'][number]
 
   /**
    * Type of the field to be registered as.

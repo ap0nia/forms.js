@@ -1,6 +1,6 @@
-import type { DeepMerge } from '../utils/types/deep-merge'
-import type { DeepRequired } from '../utils/types/deep-required'
-import type { LiteralUnion } from '../utils/types/literal-union'
+import type { DeepMerge } from '../utils/deep-merge'
+import type { DeepRequired } from '../utils/deep-required'
+import type { LiteralUnion } from '../utils/literal-union'
 
 import type { FieldElement } from './fields'
 import type { RegisterOptions } from './register'

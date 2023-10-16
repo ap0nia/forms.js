@@ -1,18 +1,18 @@
 import { describe, test, expect } from 'vitest'
 
-import type { ValidateOnEvent } from '../../../src/constants'
-import { getValidationModes } from '../../../src/logic/validation/get-validation-modes'
+import type { ValidationMode } from '../../../src/constants'
+import { getValidationMode } from '../../../src/logic/validation/get-validation-mode'
 
-describe('getValidationModes', () => {
+describe('getValidationMode', () => {
   test('onSubmit', () => {
-    const expectedResult: ValidateOnEvent = {
-      submit: true,
-      blur: false,
-      change: false,
+    const expectedResult: ValidationMode = {
+      onSubmit: true,
+      onBlur: false,
+      onChange: false,
       all: false,
-      touch: false,
+      onTouched: false,
     }
 
-    expect(getValidationModes('onSubmit')).toEqual(expectedResult)
+    expect(getValidationMode('onSubmit')).toEqual(expectedResult)
   })
 })

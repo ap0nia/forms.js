@@ -1,9 +1,10 @@
+import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { isObject } from '@forms.js/common/utils/is-object'
+
 import { INPUT_VALIDATION_RULE } from '../../../constants'
 import type { FieldError } from '../../../types/errors'
 import type { FieldElement } from '../../../types/fields'
 import type { ValidateResult } from '../../../types/validation'
-import { isEmptyObject } from '../../../utils/is-object'
-import { isObject } from '../../../utils/is-object'
 import { setCustomValidity } from '../../html/set-custom-validity'
 
 import type { NativeValidationFunction } from './types'

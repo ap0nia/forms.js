@@ -1,10 +1,10 @@
+import { noop } from '@forms.js/common/utils/noop'
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import { nativeValidateMinMaxLength } from '../../../../src/logic/validation/native-validation/min-max-length'
 import type { NativeValidationContext } from '../../../../src/logic/validation/native-validation/types'
 import type { FieldErrorRecord } from '../../../../src/types/errors'
-import { noop } from '../../../../src/utils/noop'
 
 describe('nativeValidateMinMaxLength', () => {
   test('no errors if no constraints', () => {

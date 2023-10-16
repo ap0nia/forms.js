@@ -1,5 +1,6 @@
+import { safeGet } from '@forms.js/common/utils/safe-get'
+
 import type { Field } from '../../types/fields'
-import { safeGet } from '../../utils/safe-get'
 
 import { isCheckBoxInput } from './checkbox'
 import { elementIsLive } from './element-is-live'

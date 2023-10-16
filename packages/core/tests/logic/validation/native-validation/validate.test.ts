@@ -1,3 +1,4 @@
+import { noop } from '@forms.js/common/utils/noop'
 import { describe, test, expect, vi } from 'vitest'
 
 import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
@@ -7,7 +8,6 @@ import {
   parseValidationResult,
 } from '../../../../src/logic/validation/native-validation/validate'
 import type { FieldError, FieldErrorRecord } from '../../../../src/types/errors'
-import { noop } from '../../../../src/utils/noop'
 
 describe('nativeValidateValidate', () => {
   test('no errors if no constraints', async () => {

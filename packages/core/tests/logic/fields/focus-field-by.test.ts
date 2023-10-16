@@ -1,7 +1,7 @@
+import { safeGet } from '@forms.js/common/utils/safe-get'
 import { describe, test, expect, vi } from 'vitest'
 
 import { focusFieldBy } from '../../../src/logic/fields/focus-field-by'
-import { safeGet } from '../../../src/utils/safe-get'
 
 describe('focusFieldBy', () => {
   test('focus the first error encountered', () => {

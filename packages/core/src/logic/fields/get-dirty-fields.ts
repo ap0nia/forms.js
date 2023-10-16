@@ -1,8 +1,9 @@
-import { deepEqual } from '../../utils/deep-equal'
-import { isObject } from '../../utils/is-object'
-import { isPrimitive } from '../../utils/is-primitive'
-import { objectHasFunction } from '../../utils/object-has-function'
-import type { DeepPartial } from '../../utils/types/deep-partial'
+import { deepEqual } from '@forms.js/common/utils/deep-equal'
+import { isObject } from '@forms.js/common/utils/is-object'
+import { isPrimitive } from '@forms.js/common/utils/is-primitive'
+import { objectHasFunction } from '@forms.js/common/utils/object-has-function'
+
+import type { DeepPartial } from '../../utils/deep-partial'
 
 export function getDirtyFields<T>(defaultValues: DeepPartial<T>, values: T) {
   const dirtyFields = markFieldsDirty(values)

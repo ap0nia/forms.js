@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 
-import type { SubmissionValidationMode } from '../../..//src/constants'
+import type { FormValidationMode } from '../../..//src/constants'
 import { shouldSkipValidationAfter } from '../../../src/logic/validation/should-skip-validation-after'
 
 describe('shouldSkipValidationAfter', () => {
@@ -11,21 +11,21 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         // Validate on all events before submission.
         all: true,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
     }
 
@@ -43,23 +43,23 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
 
         // Validate on touch events.
-        touch: true,
+        onTouched: true,
 
-        blur: false,
-        change: false,
-        submit: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
     }
 
@@ -77,23 +77,23 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
 
         // Validate on touch events.
-        touch: true,
+        onTouched: true,
 
-        blur: false,
-        change: false,
-        submit: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
     }
 
@@ -120,23 +120,23 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
-        touch: false,
+        onTouched: false,
 
         // Validate on blur events.
-        blur: true,
+        onBlur: true,
 
-        change: false,
-        submit: false,
+        onChange: false,
+        onSubmit: false,
       },
     }
 
@@ -153,23 +153,23 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
-        touch: false,
+        onTouched: false,
 
         // Validate on blur events.
-        blur: true,
+        onBlur: true,
 
-        change: false,
-        submit: false,
+        onChange: false,
+        onSubmit: false,
       },
     }
 
@@ -186,23 +186,23 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
-        touch: false,
-        blur: false,
+        onTouched: false,
+        onBlur: false,
 
         // Validate on change events.
-        change: true,
+        onChange: true,
 
-        submit: false,
+        onSubmit: false,
       },
     }
 
@@ -219,26 +219,26 @@ describe('shouldSkipValidationAfter', () => {
 
     let isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
+        onTouched: false,
+        onBlur: false,
 
         // Validate on change events after submission.
-        change: true,
+        onChange: true,
 
-        submit: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
-        touch: false,
-        blur: false,
+        onTouched: false,
+        onBlur: false,
 
         // Validate on change events before submission.
-        change: true,
+        onChange: true,
 
-        submit: false,
+        onSubmit: false,
       },
     }
 
@@ -261,20 +261,20 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: SubmissionValidationMode = {
+    const submissionValidationMode: FormValidationMode = {
       afterSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
       beforeSubmission: {
         all: false,
-        touch: false,
-        blur: false,
-        change: false,
-        submit: false,
+        onTouched: false,
+        onBlur: false,
+        onChange: false,
+        onSubmit: false,
       },
     }
 

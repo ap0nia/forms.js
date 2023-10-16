@@ -1,6 +1,7 @@
+import { deepSet } from '@forms.js/common/utils/deep-set'
+import { safeGet } from '@forms.js/common/utils/safe-get'
+
 import type { Field, FieldRecord, FieldReference } from '../../types/fields'
-import { deepSet } from '../../utils/deep-set'
-import { safeGet } from '../../utils/safe-get'
 
 /**
  * Deeply filters fields and extracts their reference (`_f` property).
