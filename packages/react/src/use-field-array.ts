@@ -38,11 +38,26 @@ export function useFieldArray<
     }),
   )
 
+  useEffect(() => {
+    if (fieldArray.current.name !== props.name) {
+      fieldArray.current = new FieldArray<
+        TValues,
+        TContext,
+        TTransformedValues,
+        TFieldArray,
+        TFieldArrayName
+      >({
+        ...props,
+        control,
+      })
+    }
+  }, [props.name])
+
   const subscribe = useCallback(
     (callback: () => void) => {
       return fieldArray.current.fields.subscribe(callback, undefined, false)
     },
-    [fieldArray.current],
+    [fieldArray.current, props.name],
   )
 
   const getSnapshot = useCallback(() => {
@@ -69,7 +84,7 @@ export function useFieldArray<
         return values
       })
     }
-  }, [props.name, control, props.shouldUnregister])
+  }, [control, props.shouldUnregister])
 
   useEffect(() => {
     const unsubscribe = fieldArray.current.createSubscription()
@@ -93,5 +108,5 @@ export function useFieldArray<
     }
   }, [fieldArray.current])
 
-  return { fields, ...fieldArrayMethods }
+  return { fields, ...fieldArrayMethods, fieldArray: fieldArray.current }
 }

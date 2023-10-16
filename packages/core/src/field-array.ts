@@ -386,6 +386,12 @@ export class FieldArray<
       [this.name],
     )
 
+    const leftId = this.ids[left] ?? this.idGenerator()
+    const rightId = this.ids[right] ?? this.idGenerator()
+
+    this.ids[left] = rightId
+    this.ids[right] = leftId
+
     this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {

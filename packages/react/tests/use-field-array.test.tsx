@@ -2740,7 +2740,7 @@ describe('useFieldArray', () => {
       expect((screen.getAllByRole('textbox')[1] as HTMLInputElement).value).toEqual('luo')
     })
 
-    it.skip('should not populate defaultValue when field array is already mounted', async () => {
+    it('should not populate defaultValue when field array is already mounted', async () => {
       type FormValues = {
         root: {
           test: string
@@ -2835,7 +2835,7 @@ describe('useFieldArray', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'swap' }))
 
-      fireEvent.click(screen.getAllByRole('button', { name: 'append' })[0])
+      fireEvent.click(screen.getAllByRole('button', { name: 'append' })[0]!)
 
       expect((screen.getAllByRole('textbox')[0] as HTMLInputElement).value).toEqual('default1')
       expect((screen.getAllByRole('textbox')[1] as HTMLInputElement).value).toEqual('test')
@@ -3810,7 +3810,7 @@ describe('useFieldArray', () => {
       })
     })
 
-    it.skip('should unmount field array and remove its reference with shouldUnregister: true', () => {
+    it('should unmount field array and remove its reference with shouldUnregister: true', () => {
       type FormValues = {
         type: string
         array: {
@@ -3860,7 +3860,7 @@ describe('useFieldArray', () => {
       expect(array).toBeUndefined()
     })
 
-    it.skip('should not trigger reRender on components that do not subscribe to useFieldArray fieldState', async () => {
+    it('should not trigger reRender on components that do not subscribe to useFieldArray fieldState', async () => {
       type FormValues = { test: { value: string }[]; other: string }
       let rootRenderCount = 0
       let notObserverRenderCount = 0

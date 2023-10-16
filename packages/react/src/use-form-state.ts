@@ -31,14 +31,16 @@ export function useFormState<T extends Record<string, any>>(
 
     const derived = new RecordDerived(control.state, new Set())
 
-    derived.createTrackingProxy(props?.name, props)
-
     control.derivedState.clones.add(derived)
 
     previousDerivedState.current = derived
 
     return derived
   }, [control, props?.name])
+
+  const proxy = useMemo(() => {
+    return derivedState.createTrackingProxy(props?.name, props)
+  }, [derivedState])
 
   useEffect(() => {
     return () => {
@@ -86,5 +88,5 @@ export function useFormState<T extends Record<string, any>>(
     }
   }, [control])
 
-  return derivedState.proxy
+  return proxy
 }
