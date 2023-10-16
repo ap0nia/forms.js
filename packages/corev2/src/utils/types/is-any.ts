@@ -3,7 +3,7 @@
  *
  * 0 can only extend 1 if it is intersected with `any`.
  *
- * @example
+ * @example (Verbose)
  *
  * ```ts
  * type A = 0 extends (1 & number) ? true : false

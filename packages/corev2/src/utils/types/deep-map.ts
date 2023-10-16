@@ -5,6 +5,7 @@ import type { IsAny } from './is-any'
  *
  * At the top level, explicit `any` is preserved as `any`.
  * Below the top level, properties explicitly typed as `any` are mapped to the new type.
+ * A third generic param is used to represent whether the top level has been passed, lol.
  *
  * @example
  *
@@ -23,12 +24,12 @@ import type { IsAny } from './is-any'
  * //   ^? type A = { a: number; b: { c: number; d: { e: number;  } } }
  * ```
  *
- * [Typescript Playground](https://www.typescriptlang.org/play?#code/C4TwDgpgBAkgzgQQHYgDwBUB8UC8UAMUEAHsBEgCZxQCMUAZFOlAPxTABOArtAFxQAzAIYAbOBABQEosTAB7DsHbhoAEQgQwAWSFgMAGiboV2PPGRosMspWqcerKEJRR+6zTrAwkSCBwNGJlIk8orKkFDu2rrevv7ohujGkKawiCgY2CQ2VOzcklCOSSrSrkzW5LkAShAAxgoUqAAKHHKQiiAA0hAghs4gmKVsAN5QANqdUACWSFAA1j1yAkwAum4a0V4+fhgTK4nJENgAvqX8xZBSoBFaIIe4UMOlQvxwnDMA5vqlAEb8T4VCrV+EguABbH5+b6AqAUf6lGEQfg-ORyEQQZwIqCnQqnHESa7QBAPKKeVC3Q6GUEQvyDAD0dMBAD0WEA)
+ * [TypeScript Playground](https://www.typescriptlang.org/play?#code/C4TwDgpgBAkgzgQQHYgDwBUB8UC8UAMUEAHsBEgCZxQCMUAZFOlAPxTABOArtAFxQAzAIYAbOBABQEosTAB7DsHbhoAEQgQwAWSFgMAGiboVh+DCRIIHGWUrUARnLkiIQpLkGjx2PPGRosG3Iqdm5JKFZYOHNLaxJbEM4eaQjI9GNIFIj+NxAU-mZ44OoAJQgAYwUKVAAFDjlIRRAAaQgQQ1zMFLYAbygAbWaoAEt3AGs2uQEmAF1+dU0dPXRBmcN0k1CebABffKMVKVBIKC0QDOg8HpShfjhOUYBzfRT7fmvUqHL+JC4AW3sVhenwo7yyqQg-EczlcSHBewiewREmO0AQHgW2l0qDOF0MvwBVi6AHpiakAHosIA)
  */
-export type DeepMap<T, TType> = IsAny<T> extends true ? any : DeepMapInner<T, TType>
-
-export type DeepMapInner<T, TType> = IsAny<T> extends true
-  ? TType
+export type DeepMap<T, TType, IsInner extends boolean = false> = IsAny<T> extends true
+  ? IsInner extends true
+    ? TType
+    : any
   : T extends Record<PropertyKey, any>
-  ? { [K in keyof T]: DeepMapInner<T[K], TType> }
+  ? { [K in keyof T]: DeepMap<T[K], TType, true> }
   : TType
