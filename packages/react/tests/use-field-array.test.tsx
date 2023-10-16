@@ -1499,7 +1499,7 @@ describe('useFieldArray', () => {
             {fields.map((item, i) => (
               <input
                 key={item.id}
-                {...control.register(`nest.test.${index}.nestedArray.${i}.value` as const)}
+                {...control.registerReact(`nest.test.${index}.nestedArray.${i}.value` as const)}
               />
             ))}
           </>
@@ -1577,7 +1577,7 @@ describe('useFieldArray', () => {
             {fields.map((item, i) => (
               <input
                 key={item.id}
-                {...control.register(`nest.test.${index}.nestedArray.${i}.value` as const)}
+                {...control.registerReact(`nest.test.${index}.nestedArray.${i}.value` as const)}
               />
             ))}
           </div>
@@ -1976,7 +1976,7 @@ describe('useFieldArray', () => {
       expect(deepNestInput3).toHaveValue('test')
     })
 
-    it.skip('should allow append with deeply nested field array even with flat structure', async () => {
+    it('should allow append with deeply nested field array even with flat structure', async () => {
       const watchValue: unknown[] = []
 
       const App = () => {
@@ -2097,7 +2097,7 @@ describe('useFieldArray', () => {
       )
     })
 
-    it.skip('should custom register append, prepend and insert inputs with values', () => {
+    it('should custom register append, prepend and insert inputs with values', () => {
       type FormValues = {
         test: {
           test: string
@@ -2421,7 +2421,10 @@ describe('useFieldArray', () => {
       expect(watchedValue).toMatchSnapshot()
     })
 
-    it.skip('should update field array defaultValues when invoke setValue', async () => {
+    /**
+     * @remarks Changed rendering number.
+     */
+    it('should update field array defaultValues when invoke setValue', async () => {
       type FormValues = {
         names: {
           name: string
@@ -2529,13 +2532,13 @@ describe('useFieldArray', () => {
         {
           names: [],
         },
-        {
-          names: [],
-        },
+        // {
+        //   names: [],
+        // },
       ])
     })
 
-    it.skip('should unregister field array when shouldUnregister set to true', () => {
+    it('should unregister field array when shouldUnregister set to true', () => {
       type FormValues = {
         test: {
           value: string
