@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { FlattenObject } from '../../../src/utils/types/flatten-object'
+import type { FlattenObject } from '../../src/utils/flatten-object'
 
 describe('FlattenObject', () => {
   test('nullish types become empty object', () => {

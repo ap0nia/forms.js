@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { UnionToIntersection } from '../../../src/utils/types/union-to-intersection'
+import type { UnionToIntersection } from '../../src/utils/union-to-intersection'
 
 describe('UnionToIntersection', () => {
   test('interfaces', () => {

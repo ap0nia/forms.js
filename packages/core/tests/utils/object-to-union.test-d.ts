@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { ObjectToUnion } from '../../../src/utils/types/object-to-union'
+import type { ObjectToUnion } from '../../src/utils/object-to-union'
 
 describe('ObjectToUnion', () => {
   describe('any', () => {

@@ -1,6 +1,9 @@
 import { isBrowser } from './is-browser'
 import { isObject, isPlainObject } from './is-object'
 
+/**
+ * Similar to {@link structuredClone}, but compatible with stuff like React nodes.
+ */
 export function cloneObject<T>(data: T): T {
   if (data instanceof Date) {
     return new Date(data) as T

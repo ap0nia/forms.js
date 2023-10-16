@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { LiteralUnion } from '../../../src/utils/types/literal-union'
+import type { LiteralUnion } from '../../src/utils/literal-union'
 
 describe('LiteralUnion', () => {
   type Animal = 'dog' | 'cat' | 'bird'

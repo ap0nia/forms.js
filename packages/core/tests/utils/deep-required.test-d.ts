@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { DeepRequired } from '../../../src/utils/types/deep-required'
+import type { DeepRequired } from '../../src/utils/deep-required'
 
 describe('DeepPartial', () => {
   describe('any', () => {

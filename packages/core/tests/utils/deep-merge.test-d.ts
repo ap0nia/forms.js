@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { DeepMerge } from '../../../src/utils/types/deep-merge'
+import type { DeepMerge } from '../../src/utils/deep-merge'
 
 describe('DeepMerge', () => {
   describe('correctly handles any', () => {

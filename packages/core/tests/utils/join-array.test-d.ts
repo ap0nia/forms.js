@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { JoinArray } from '../../../src/utils/types/join-array'
+import type { JoinArray } from '../../src/utils/join-array'
 
 describe('JoinArray', () => {
   test('returns empty string for empty array', () => {

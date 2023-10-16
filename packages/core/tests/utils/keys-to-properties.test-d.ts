@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { KeysToProperties } from '../../../src/utils/types/keys-to-properties'
+import type { KeysToProperties } from '../../src/utils/keys-to-properties'
 
 describe('KeysToProperties', () => {
   describe('returns tuple of values for valid keys', () => {

@@ -1,6 +1,6 @@
 import { describe, test, expectTypeOf } from 'vitest'
 
-import type { DeepMap } from '../../../src/utils/types/deep-map'
+import type { DeepMap } from '../../src/utils/deep-map'
 
 describe('DeepPartial', () => {
   describe('processes any correctly', () => {

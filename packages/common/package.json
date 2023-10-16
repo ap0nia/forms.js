@@ -29,12 +29,21 @@
       "import": "./src/store/index.ts",
       "require": "./src/store/index.ts",
       "default": "./src/store/index.ts"
+    },
+    "./utils/*": {
+      "types": "./src/utils/*.ts",
+      "import": "./src/utils/*.ts",
+      "require": "./src/utils/*.ts",
+      "default": "./src/utils/*.ts"
     }
   },
   "typesVersions": {
     "*": {
       "store": [
         "./src/index/store.ts"
+      ],
+      "utils/*": [
+        "./src/utils/*.ts"
       ]
     }
   },
@@ -42,7 +51,6 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "svelte": "^4.2.1",
     "typescript": "^5.1.6"
   },
   "packageManager": "pnpm@8.6.12",
