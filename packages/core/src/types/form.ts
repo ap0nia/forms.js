@@ -1,6 +1,9 @@
 import type { FlattenObject } from '../utils/flatten-object'
 import type { NestedObjectArrays } from '../utils/nested-object-arrays'
 
+/**
+ * Parses a form's values into relevant components.
+ */
 export type ParseForm<
   T,
   TFlattened extends FlattenObject<T> = FlattenObject<T>,
