@@ -1,0 +1,87 @@
+{
+  "name": "@forms.js/corev2",
+  "version": "0.0.0",
+  "description": "form.js core",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://ap0nia.github.io/forms.js",
+  "funding": "https://github.com/ap0nia/forms.js",
+  "contributors": [
+    {
+      "name": "ap0nia",
+      "email": "",
+      "url": "https://github.com/ap0nia"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ap0nia/forms.js",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/ap0nia/forms.js/issues"
+  },
+  "keywords": [],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./html/*": {
+      "types": "./src/logic/html/*.ts",
+      "import": "./src/logic/html/*.ts",
+      "require": "./src/logic/html/*.ts",
+      "default": "./src/logic/html/*.ts"
+    },
+    "./validation/*": {
+      "types": "./src/logic/validation/*.ts",
+      "import": "./src/logic/validation/*.ts",
+      "require": "./src/logic/validation/*.ts",
+      "default": "./src/logic/validation/*.ts"
+    },
+    "./utils/*": {
+      "types": "./src/utils/*.ts",
+      "import": "./src/utils/*.ts",
+      "require": "./src/utils/*.ts",
+      "default": "./src/utils/*.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "": [
+        "./src/index.ts"
+      ],
+      "html/*": [
+        "./src/logic/html/*.ts"
+      ],
+      "validation/*": [
+        "./src/logic/validation/*.ts"
+      ],
+      "utils/*": [
+        "./src/utils/*.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "vitest run tests/field-array/append.test.ts",
+    "build": "tsup"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^9.3.3",
+    "tsup": "^7.2.0",
+    "typescript": "^5.1.6"
+  },
+  "packageManager": "pnpm@8.6.12",
+  "engines": {
+    "pnpm": "^8.0.0",
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@forms.js/common": "workspace:^"
+  }
+}

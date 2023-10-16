@@ -114,6 +114,22 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
 
+  packages/corev2:
+    dependencies:
+      '@forms.js/common':
+        specifier: workspace:^
+        version: link:../common
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^9.3.3
+        version: 9.3.3
+      tsup:
+        specifier: ^7.2.0
+        version: 7.2.0(ts-node@10.9.1)(typescript@5.1.6)
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
+
   packages/react:
     dependencies:
       '@forms.js/common':
