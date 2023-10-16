@@ -269,6 +269,8 @@ export class FieldArray<
 
     this.ids = valuesArray.map(this.idGenerator.bind(this)).concat(this.ids)
 
+    this.action.set(true)
+
     this.control.state.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
@@ -298,6 +300,8 @@ export class FieldArray<
         : Array.from(this.getControlFieldArrayValues()).filter((_, i) => !indexArray.includes(i))
 
     this.ids = this.ids.filter((_, i) => !indexArray?.includes(i))
+
+    this.action.set(true)
 
     this.control.state.values.update(
       (currentValues) => {
@@ -341,6 +345,8 @@ export class FieldArray<
 
     this.ids.splice(index, 0, ...valuesArray.map(this.idGenerator.bind(this)))
 
+    this.action.set(true)
+
     this.control.state.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
@@ -370,6 +376,8 @@ export class FieldArray<
     updatedFieldArrayValues[left] = rightValue
     updatedFieldArrayValues[right] = leftValue
 
+    this.action.set(true)
+
     this.control.state.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
@@ -377,6 +385,12 @@ export class FieldArray<
       },
       [this.name],
     )
+
+    const leftId = this.ids[left] ?? this.idGenerator()
+    const rightId = this.ids[right] ?? this.idGenerator()
+
+    this.ids[left] = rightId
+    this.ids[right] = leftId
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -402,6 +416,8 @@ export class FieldArray<
 
     updatedFieldArrayValues.splice(from, 1)
     updatedFieldArrayValues.splice(to, 0, value)
+
+    this.action.set(true)
 
     this.control.state.values.update(
       (currentValues) => {
@@ -430,6 +446,8 @@ export class FieldArray<
 
     updatedFieldArrayValues[index] = value
 
+    this.action.set(true)
+
     this.control.state.values.update((currentValues) => {
       deepSet(currentValues, this.name, updatedFieldArrayValues)
       return currentValues
@@ -453,6 +471,8 @@ export class FieldArray<
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
 
     this.ids = valuesArray.map(this.idGenerator.bind(this))
+
+    this.action.set(true)
 
     this.control.state.values.update(
       (currentValues) => {
@@ -589,7 +609,9 @@ export class FieldArray<
   }
 
   unmount() {
-    this.control.names.array.delete(this.name)
+    if (this.control.options.shouldUnregister || this.options.shouldUnregister) {
+      this.control.unregister(this.name as any)
+    }
   }
 
   getFieldArray(): any {

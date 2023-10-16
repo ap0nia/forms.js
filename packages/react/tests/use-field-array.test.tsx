@@ -1499,7 +1499,7 @@ describe('useFieldArray', () => {
             {fields.map((item, i) => (
               <input
                 key={item.id}
-                {...control.register(`nest.test.${index}.nestedArray.${i}.value` as const)}
+                {...control.registerReact(`nest.test.${index}.nestedArray.${i}.value` as const)}
               />
             ))}
           </>
@@ -1577,7 +1577,7 @@ describe('useFieldArray', () => {
             {fields.map((item, i) => (
               <input
                 key={item.id}
-                {...control.register(`nest.test.${index}.nestedArray.${i}.value` as const)}
+                {...control.registerReact(`nest.test.${index}.nestedArray.${i}.value` as const)}
               />
             ))}
           </div>
@@ -1976,7 +1976,7 @@ describe('useFieldArray', () => {
       expect(deepNestInput3).toHaveValue('test')
     })
 
-    it.skip('should allow append with deeply nested field array even with flat structure', async () => {
+    it('should allow append with deeply nested field array even with flat structure', async () => {
       const watchValue: unknown[] = []
 
       const App = () => {
@@ -2097,7 +2097,7 @@ describe('useFieldArray', () => {
       )
     })
 
-    it.skip('should custom register append, prepend and insert inputs with values', () => {
+    it('should custom register append, prepend and insert inputs with values', () => {
       type FormValues = {
         test: {
           test: string
@@ -2421,7 +2421,10 @@ describe('useFieldArray', () => {
       expect(watchedValue).toMatchSnapshot()
     })
 
-    it.skip('should update field array defaultValues when invoke setValue', async () => {
+    /**
+     * @remarks Changed rendering number.
+     */
+    it('should update field array defaultValues when invoke setValue', async () => {
       type FormValues = {
         names: {
           name: string
@@ -2529,13 +2532,13 @@ describe('useFieldArray', () => {
         {
           names: [],
         },
-        {
-          names: [],
-        },
+        // {
+        //   names: [],
+        // },
       ])
     })
 
-    it.skip('should unregister field array when shouldUnregister set to true', () => {
+    it('should unregister field array when shouldUnregister set to true', () => {
       type FormValues = {
         test: {
           value: string
@@ -2737,7 +2740,7 @@ describe('useFieldArray', () => {
       expect((screen.getAllByRole('textbox')[1] as HTMLInputElement).value).toEqual('luo')
     })
 
-    it.skip('should not populate defaultValue when field array is already mounted', async () => {
+    it('should not populate defaultValue when field array is already mounted', async () => {
       type FormValues = {
         root: {
           test: string
@@ -2832,7 +2835,7 @@ describe('useFieldArray', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'swap' }))
 
-      fireEvent.click(screen.getAllByRole('button', { name: 'append' })[0])
+      fireEvent.click(screen.getAllByRole('button', { name: 'append' })[0]!)
 
       expect((screen.getAllByRole('textbox')[0] as HTMLInputElement).value).toEqual('default1')
       expect((screen.getAllByRole('textbox')[1] as HTMLInputElement).value).toEqual('test')
@@ -3807,7 +3810,7 @@ describe('useFieldArray', () => {
       })
     })
 
-    it.skip('should unmount field array and remove its reference with shouldUnregister: true', () => {
+    it('should unmount field array and remove its reference with shouldUnregister: true', () => {
       type FormValues = {
         type: string
         array: {
@@ -3857,7 +3860,7 @@ describe('useFieldArray', () => {
       expect(array).toBeUndefined()
     })
 
-    it.skip('should not trigger reRender on components that do not subscribe to useFieldArray fieldState', async () => {
+    it('should not trigger reRender on components that do not subscribe to useFieldArray fieldState', async () => {
       type FormValues = { test: { value: string }[]; other: string }
       let rootRenderCount = 0
       let notObserverRenderCount = 0

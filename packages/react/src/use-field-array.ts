@@ -1,6 +1,8 @@
 import { FieldArray, type FieldArrayOptions } from '@forms.js/core'
+import { deepSet } from '@forms.js/core/utils/deep-set'
+import { safeGet } from '@forms.js/core/utils/safe-get'
 import type { NestedObjectArrays } from '@forms.js/core/utils/types/nested-object-arrays'
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
 import type { Control } from './form-control'
 import { useFormContext } from './use-form-context'
@@ -36,11 +38,26 @@ export function useFieldArray<
     }),
   )
 
+  useEffect(() => {
+    if (fieldArray.current.name !== props.name) {
+      fieldArray.current = new FieldArray<
+        TValues,
+        TContext,
+        TTransformedValues,
+        TFieldArray,
+        TFieldArrayName
+      >({
+        ...props,
+        control,
+      })
+    }
+  }, [props.name])
+
   const subscribe = useCallback(
     (callback: () => void) => {
       return fieldArray.current.fields.subscribe(callback, undefined, false)
     },
-    [fieldArray.current],
+    [fieldArray.current, props.name],
   )
 
   const getSnapshot = useCallback(() => {
@@ -61,23 +78,35 @@ export function useFieldArray<
   })
 
   useEffect(() => {
+    if (!safeGet(control.state.values.value, props.name)) {
+      control.state.values.update((values) => {
+        deepSet(values, props.name, [])
+        return values
+      })
+    }
+  }, [control, props.shouldUnregister])
+
+  useEffect(() => {
     const unsubscribe = fieldArray.current.createSubscription()
 
     return () => {
-      // fieldArray.current.unmount()
+      fieldArray.current.unmount()
       unsubscribe()
     }
   }, [fieldArray.current])
 
-  return {
-    fields,
-    swap: fieldArray.current.swap.bind(fieldArray.current),
-    move: fieldArray.current.move.bind(fieldArray.current),
-    prepend: fieldArray.current.prepend.bind(fieldArray.current),
-    append: fieldArray.current.append.bind(fieldArray.current),
-    remove: fieldArray.current.remove.bind(fieldArray.current),
-    insert: fieldArray.current.insert.bind(fieldArray.current),
-    update: fieldArray.current.update.bind(fieldArray.current),
-    replace: fieldArray.current.replace.bind(fieldArray.current),
-  }
+  const fieldArrayMethods = useMemo(() => {
+    return {
+      swap: fieldArray.current.swap.bind(fieldArray.current),
+      move: fieldArray.current.move.bind(fieldArray.current),
+      prepend: fieldArray.current.prepend.bind(fieldArray.current),
+      append: fieldArray.current.append.bind(fieldArray.current),
+      remove: fieldArray.current.remove.bind(fieldArray.current),
+      insert: fieldArray.current.insert.bind(fieldArray.current),
+      update: fieldArray.current.update.bind(fieldArray.current),
+      replace: fieldArray.current.replace.bind(fieldArray.current),
+    }
+  }, [fieldArray.current])
+
+  return { fields, ...fieldArrayMethods, fieldArray: fieldArray.current }
 }
