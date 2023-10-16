@@ -5,7 +5,7 @@ import type { Validate, ValidationRule } from './validation'
  * Options when registering a new field component or element.
  */
 export type RegisterOptions<
-  TValues,
+  TValues extends Record<string, any> = Record<string, any>,
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
   TFieldName extends TParsedForm['keys'] = TParsedForm['keys'],
   TFieldValue extends TParsedForm['values'][TFieldName] = TParsedForm['values'][TFieldName],
