@@ -890,6 +890,8 @@ export class FormControl<
       }
     }
 
+    this.resetListeners.forEach((listener) => listener())
+
     this.derivedState.unfreeze()
   }
 

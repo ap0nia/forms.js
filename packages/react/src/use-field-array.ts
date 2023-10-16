@@ -53,7 +53,12 @@ export function useFieldArray<
 
   const fields = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
-  fieldArray.current.mount()
+  useEffect(() => {
+    fieldArray.current.mount()
+    if (props.rules) {
+      control.register(props.name as any, props.rules)
+    }
+  })
 
   useEffect(() => {
     const unsubscribe = fieldArray.current.createSubscription()
