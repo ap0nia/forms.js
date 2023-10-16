@@ -69,7 +69,8 @@
   },
   "scripts": {
     "test": "vitest run tests/field-array/append.test.ts",
-    "build": "tsup"
+    "build": "tsup",
+    "perf": "tsc --generateTrace ./trace"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
@@ -82,6 +83,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@forms.js/common": "workspace:^"
+    "@forms.js/common": "workspace:^",
+    "react-hook-form": "^7.47.0"
   }
 }
