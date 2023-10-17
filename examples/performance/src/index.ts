@@ -44,27 +44,6 @@ type MaximumDepthJson = {
                                           ao: boolean
                                           ap: {
                                             aq: string
-                                            ar: {
-                                              as: number
-                                              at: {
-                                                au: boolean
-                                                av: {
-                                                  aw: string
-                                                  ax: {
-                                                    ay: number
-                                                    az: {
-                                                      ba: boolean
-                                                      bb: {
-                                                        bc: string
-                                                        bd: {
-                                                          be: number
-                                                        }
-                                                      }
-                                                    }
-                                                  }[]
-                                                }
-                                              }[]
-                                            }
                                           }[]
                                         }
                                       }[]
@@ -117,12 +96,12 @@ type MyForm = {
   // z: MaximumDepthJson
 }
 
-// // Best Form!
+// Best Form!
 import { FormControl } from '@forms.js/core'
 
 export const form = new FormControl<MyForm>()
 
-form.register('a.b.d.f.h.j.l.n.p.r.t.v.x.z.ab.ad.af.ah.aj.al.an.ap.ar.at.av.ax.az.bb.bd.be')
+form.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11')
 
 // // Hook Form
 //
@@ -130,7 +109,7 @@ form.register('a.b.d.f.h.j.l.n.p.r.t.v.x.z.ab.ad.af.ah.aj.al.an.ap.ar.at.av.ax.a
 //
 // export const hookForm = useForm<MyForm>()
 //
-// hookForm.register('a.b.d.f.h.j.l.n.p.r.t.v.x.z.ab.ad.af.ah.aj.al.an.ap.ar.at.av.ax.az.bb.bd.be')
+// hookForm.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11')
 //
 //
 // // Modular Form
@@ -141,7 +120,7 @@ form.register('a.b.d.f.h.j.l.n.p.r.t.v.x.z.ab.ad.af.ah.aj.al.an.ap.ar.at.av.ax.a
 //
 // Field({
 //   of: modularForm,
-//   name: 'a.b.d.f.h.j.l.n.p.r.t.v.x.z.ab.ad.af.ah.aj.al.an.ap.ar.at.av.ax.az.bb.bd.be',
+//   name: 'a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11',
 //   children: undefined as any,
 // })
 //
