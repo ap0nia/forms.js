@@ -72,14 +72,10 @@ import type { IsAny } from './is-any'
  */
 export type ObjectToUnion<
   T,
-  Limit extends number = -1,
-  Depth extends any[] = [],
   Key extends string = '',
   KeyWithExtension extends string = Key extends '' ? '' : `${Key}.`,
 > = IsAny<T> extends true
   ? any
-  : Depth['length'] extends Limit
-  ? never
   :
       | {
           [K in keyof T]: IsAny<T[K]> extends true
@@ -87,12 +83,12 @@ export type ObjectToUnion<
             : T[K] extends (infer U)[]
             ?
                 | { [SubKey in `${KeyWithExtension}${K & string}`]: T[K] }
-                | { [SubKey in `${KeyWithExtension}${K & string}`]: U }
-                | U extends Record<string, any>
-              ? ObjectToUnion<U, Limit, [...Depth, ''], `${KeyWithExtension}${K & string}`>
-              : never
+                | { [SubKey in `${KeyWithExtension}${K & string}.${number}`]: U }
+                | (U extends Record<string, any>
+                    ? ObjectToUnion<U, `${KeyWithExtension}${K & string}.${number}`>
+                    : never)
             : T[K] extends Record<string, any>
-            ? ObjectToUnion<T[K], Limit, [...Depth, ''], `${KeyWithExtension}${K & string}`>
+            ? ObjectToUnion<T[K], `${KeyWithExtension}${K & string}`>
             : { [SubKey in `${KeyWithExtension}${K & string}`]: T[K] }
         }[keyof T]
       | (Key extends '' ? never : { [SubKey in Key]: T })

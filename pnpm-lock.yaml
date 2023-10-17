@@ -131,7 +131,7 @@ importers:
         version: 9.3.3
       tsup:
         specifier: ^7.2.0
-        version: 7.2.0(ts-node@10.9.1)(typescript@5.1.6)
+        version: 7.2.0(typescript@5.1.6)
       typescript:
         specifier: ^5.1.6
         version: 5.1.6
@@ -6638,7 +6638,7 @@ packages:
       pathe: 1.1.1
     dev: true
 
-  /postcss-load-config@4.0.1(ts-node@10.9.1):
+  /postcss-load-config@4.0.1:
     resolution:
       {
         integrity: sha512-vEJIc8RdiBRu3oRAI0ymerOn+7rPuMvRXslTvZUKZonDHFIczxztIyJ1urxM1x9JXEikvpWWTUUqal5j/8QgvA==,
@@ -6654,7 +6654,6 @@ packages:
         optional: true
     dependencies:
       lilconfig: 2.1.0
-      ts-node: 10.9.1(@types/node@20.4.5)(typescript@5.1.6)
       yaml: 2.3.1
     dev: true
 
@@ -7915,7 +7914,7 @@ packages:
       }
     dev: true
 
-  /tsup@7.2.0(ts-node@10.9.1)(typescript@5.1.6):
+  /tsup@7.2.0(typescript@5.1.6):
     resolution:
       {
         integrity: sha512-vDHlczXbgUvY3rWvqFEbSqmC1L7woozbzngMqTtL2PGBODTtWlRwGDDawhvWzr5c1QjKe4OAKqJGfE1xeXUvtQ==,
@@ -7942,7 +7941,7 @@ packages:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 4.0.1(ts-node@10.9.1)
+      postcss-load-config: 4.0.1
       resolve-from: 5.0.0
       rollup: 3.27.2
       source-map: 0.8.0-beta.0

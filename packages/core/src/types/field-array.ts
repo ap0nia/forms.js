@@ -1,11 +1,11 @@
-import type { FlattenObject as FlattenFormValues } from '../utils/flatten-object'
+import type { NestedObjectArrays as FlattenFormValues } from '../utils/nested-object-arrays'
 
 /**
- * Helper type to get all the field names of a form.
+ * Helper type to filter the field names of a form for only ones that are.
  *
  * Field names are dot-concatenated properties and are valid HTML field names.
  */
-export type FormFieldNames<T> = Extract<keyof FlattenFormValues<T>, string>
+export type FieldArrayFieldNames<T> = Extract<keyof FlattenFormValues<T>, string>
 
 /**
  * Helper type to flatten all of a form's nested properties into a single layer fieldname -> value object.

@@ -58,6 +58,6 @@ import type { UnionToIntersection } from './union-to-intersection'
  *
  * TODO: document why including any non-object values (like null or undefined) breaks the type lol.
  */
-export type FlattenObject<T, Limit extends number = -1> = Prettify<
-  UnionToIntersection<Extract<ObjectToUnion<T, Limit>, Record<string, any>>>
+export type FlattenObject<T> = Prettify<
+  UnionToIntersection<Extract<ObjectToUnion<T>, Record<string, any>>>
 >
