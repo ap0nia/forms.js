@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 
-import type { FormValidationMode } from '../../..//src/constants'
+import type { SubmissionValidationMode } from '../../..//src/constants'
 import { shouldSkipValidationAfter } from '../../../src/logic/validation/should-skip-validation-after'
 
 describe('shouldSkipValidationAfter', () => {
@@ -11,7 +11,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -43,7 +43,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -77,7 +77,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -120,7 +120,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -153,7 +153,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -186,7 +186,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -219,7 +219,7 @@ describe('shouldSkipValidationAfter', () => {
 
     let isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,
@@ -261,7 +261,7 @@ describe('shouldSkipValidationAfter', () => {
 
     const isSubmitted = false
 
-    const submissionValidationMode: FormValidationMode = {
+    const submissionValidationMode: SubmissionValidationMode = {
       afterSubmission: {
         all: false,
         onTouched: false,

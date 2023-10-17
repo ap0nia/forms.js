@@ -54,9 +54,9 @@ export const CRITERIA_MODE = {
 }
 
 /**
- * When to validate the form data.
+ * When to validate the form data based on the submission status.
  */
-export type FormValidationMode = {
+export type SubmissionValidationMode = {
   /**
    * When to validate prior to submitting a form.
    */
@@ -79,3 +79,5 @@ export type ValidationEvent = typeof VALIDATION_EVENTS
 export type CriteriaMode = typeof CRITERIA_MODE
 
 export type ValidationMode = { [K in keyof ValidationEvent]: boolean }
+
+export type RevalidationMode = { [K in keyof RevalidationEvent]: boolean }

@@ -1,4 +1,4 @@
-import type { FormValidationMode } from '../../constants'
+import type { SubmissionValidationMode } from '../../constants'
 
 /**
  * Whether to skip validation after some event.
@@ -7,7 +7,7 @@ export function shouldSkipValidationAfter(
   eventType: 'blur' | 'change',
   isTouched?: boolean,
   isSubmitted?: boolean,
-  submissionValidationMode?: FormValidationMode,
+  submissionValidationMode?: SubmissionValidationMode,
 ): boolean {
   const { beforeSubmission, afterSubmission } = submissionValidationMode ?? {}
 
