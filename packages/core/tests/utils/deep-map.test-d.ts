@@ -2,18 +2,18 @@ import { describe, test, expectTypeOf } from 'vitest'
 
 import type { DeepMap } from '../../src/utils/deep-map'
 
-describe('DeepPartial', () => {
-  describe('processes any correctly', () => {
-    test('top-level explicit any', () => {
+describe('DeepMap', () => {
+  describe('correctly processes explicit any', () => {
+    test('returns any for top-level explicit any', () => {
       expectTypeOf<DeepMap<any, boolean>>().toEqualTypeOf<any>()
     })
 
-    test('nested any', () => {
+    test('returns the property mapped to the new type for nested any', () => {
       expectTypeOf<DeepMap<{ a: any }, boolean>>().toEqualTypeOf<{ a: boolean }>()
     })
   })
 
-  describe('array-like', () => {
+  describe('converts all elements in array-like types to the new type', () => {
     test('array', () => {
       expectTypeOf<DeepMap<string[], boolean>>().toEqualTypeOf<boolean[]>()
       expectTypeOf<DeepMap<number[], string>>().toEqualTypeOf<string[]>()
@@ -27,8 +27,8 @@ describe('DeepPartial', () => {
     })
   })
 
-  describe('objects', () => {
-    test('simple object is synonymous with interface mapping', () => {
+  describe('converts object properties to the new type if not a nested object', () => {
+    test('mapping an object of depth 1 is synonymous with interface mapping', () => {
       type MyType = {
         a: string
         b: number
@@ -38,7 +38,7 @@ describe('DeepPartial', () => {
       expectTypeOf<DeepMap<MyType, null>>().toEqualTypeOf<{ [K in keyof MyType]: null }>()
     })
 
-    test('nested object properties are mapped', () => {
+    test('maps nested object properties to the new type', () => {
       type MyType = {
         a: string
         b: {
@@ -49,7 +49,7 @@ describe('DeepPartial', () => {
         }
       }
 
-      expectTypeOf<DeepMap<MyType, boolean>>().toEqualTypeOf<{
+      type ExpectedType = {
         a: boolean
         b: {
           c: boolean
@@ -57,7 +57,23 @@ describe('DeepPartial', () => {
             e: boolean
           }
         }
-      }>()
+      }
+
+      expectTypeOf<DeepMap<MyType, boolean>>().toEqualTypeOf<ExpectedType>()
+    })
+  })
+
+  describe('correctly processes unexpected types', () => {
+    test('converts nullish types to the indicated type', () => {
+      type Nullish = null | undefined | never | unknown
+
+      expectTypeOf<DeepMap<Nullish, boolean>>().toEqualTypeOf<boolean>()
+    })
+
+    test('converts primitive types to the indicated type', () => {
+      type Primitive = string | number | boolean | bigint | symbol
+
+      expectTypeOf<DeepMap<Primitive, boolean>>().toEqualTypeOf<boolean>()
     })
   })
 })

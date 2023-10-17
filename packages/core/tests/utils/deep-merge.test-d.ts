@@ -3,7 +3,7 @@ import { describe, test, expectTypeOf } from 'vitest'
 import type { DeepMerge } from '../../src/utils/deep-merge'
 
 describe('DeepMerge', () => {
-  describe('correctly handles any', () => {
+  describe('correctly process explicit any', () => {
     test('returns any if both input types are any', () => {
       expectTypeOf<DeepMerge<any, any>>().toEqualTypeOf<any>()
     })
@@ -14,6 +14,7 @@ describe('DeepMerge', () => {
         b: number
         c: boolean
       }
+
       expectTypeOf<DeepMerge<Left, any>>().toEqualTypeOf<Left>()
     })
 
@@ -23,26 +24,29 @@ describe('DeepMerge', () => {
         b: number
         c: boolean
       }
+
       expectTypeOf<DeepMerge<any, Right>>().toEqualTypeOf<Right>()
     })
   })
 
-  describe('tuples', () => {
-    test('naively merges tuples', () => {
+  describe('merges tuples', () => {
+    test('naively merges tuples (i.e. not truly a deep merge)', () => {
       type Left = [string, number, boolean]
+
       type Right = [string, number, boolean]
 
       expectTypeOf<DeepMerge<Left, Right>>().toEqualTypeOf<[...Left, ...Right]>()
     })
   })
 
-  test('objects', () => {
-    test('simple', () => {
+  test('deeply merges objects', () => {
+    test('merging single depth objects is the same as intersecting them', () => {
       type Left = {
         a: string
         b: number
         c: boolean
       }
+
       type Right = {
         a: string
         b: number
@@ -52,7 +56,7 @@ describe('DeepMerge', () => {
       expectTypeOf<DeepMerge<Left, Right>>().toMatchTypeOf<Left & Right>()
     })
 
-    test('nested', () => {
+    test('recursively merges properties of nested objects at all depths', () => {
       type Left = {
         a: {
           b: string
@@ -83,10 +87,7 @@ describe('DeepMerge', () => {
       expectTypeOf<DeepMerge<Left, Right>>().toMatchTypeOf<Expected>()
     })
 
-    /**
-     * FIXME: doesn't preserve question mark optional properties.
-     */
-    test('preserves optional properties ... sort of', () => {
+    test('merging objects preserves the optional attribute', () => {
       type Left = {
         a: string
         b?: number
@@ -108,6 +109,22 @@ describe('DeepMerge', () => {
       }
 
       expectTypeOf<DeepMerge<Left, Right>>().toMatchTypeOf<Expected>()
+    })
+  })
+
+  describe('correctly processes unexpected types', () => {
+    test('converts nullish values to empty objects', () => {
+      expectTypeOf<DeepMerge<null, void>>().toMatchTypeOf<{}>()
+    })
+
+    test('merging an object with a nullish value returns the defined object', () => {
+      type MyObject = {
+        a: string
+        b: number
+      }
+
+      expectTypeOf<DeepMerge<MyObject, null>>().toMatchTypeOf<MyObject>()
+      expectTypeOf<DeepMerge<null, MyObject>>().toMatchTypeOf<MyObject>()
     })
   })
 })

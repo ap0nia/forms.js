@@ -3,13 +3,17 @@ import { describe, test, expectTypeOf } from 'vitest'
 import type { DeepRequired } from '../../src/utils/deep-required'
 
 describe('DeepPartial', () => {
-  describe('any', () => {
-    test('top-level any', () => {
+  describe('correctly processes explicit any', () => {
+    test('returns any for top-level any', () => {
       expectTypeOf<DeepRequired<any>>().toEqualTypeOf<any>()
+    })
+
+    test('makes nested any properties required', () => {
+      expectTypeOf<DeepRequired<{ a?: any }>>().toEqualTypeOf<{ a: any }>()
     })
   })
 
-  describe('makes properties in array-like types required', () => {
+  describe('makes all properties in array-like types required', () => {
     test('array', () => {
       expectTypeOf<DeepRequired<(string | undefined)[]>>().toEqualTypeOf<string[]>()
       expectTypeOf<DeepRequired<(number | undefined)[]>>().toEqualTypeOf<number[]>()
@@ -29,21 +33,23 @@ describe('DeepPartial', () => {
   })
 
   describe('makes properties in objects required', () => {
-    test('simple', () => {
+    test('makes all properties in a single depth object required', () => {
       type MyType = {
         a?: string
         b?: number
         c?: boolean
       }
 
-      expectTypeOf<DeepRequired<MyType>>().toEqualTypeOf<{
+      type ExpectedType = {
         a: string
         b: number
         c: boolean
-      }>()
+      }
+
+      expectTypeOf<DeepRequired<MyType>>().toEqualTypeOf<ExpectedType>()
     })
 
-    test('nested', () => {
+    test('makes all nested properties required', () => {
       type MyType = {
         a?: string
         b?: {
@@ -54,7 +60,7 @@ describe('DeepPartial', () => {
         }
       }
 
-      expectTypeOf<DeepRequired<MyType>>().toEqualTypeOf<{
+      type ExpectedType = {
         a: string
         b: {
           c: number
@@ -62,7 +68,9 @@ describe('DeepPartial', () => {
             e: boolean
           }
         }
-      }>()
+      }
+
+      expectTypeOf<DeepRequired<MyType>>().toEqualTypeOf<ExpectedType>()
     })
   })
 })

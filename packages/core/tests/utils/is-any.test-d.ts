@@ -3,27 +3,29 @@ import { describe, test, expectTypeOf } from 'vitest'
 import type { IsAny } from '../../src/utils/is-any'
 
 describe('isAny', () => {
-  test('returns true for explicit any', () => {
-    expectTypeOf<IsAny<any>>().toMatchTypeOf<true>()
-  })
+  describe('correctly processes explicit any', () => {
+    test('returns true for explicit any', () => {
+      expectTypeOf<IsAny<any>>().toMatchTypeOf<true>()
+    })
 
-  test('returns true for union with any', () => {
-    expectTypeOf<IsAny<any | 1>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | 'a'>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | object>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | []>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | (() => void)>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | symbol>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | null>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | undefined>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | unknown>>().toMatchTypeOf<true>()
-    expectTypeOf<IsAny<any | never>>().toMatchTypeOf<true>()
-  })
+    test('returns true for union with any', () => {
+      expectTypeOf<IsAny<any | 1>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | 'a'>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | object>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | []>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | (() => void)>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | symbol>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | null>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | undefined>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | unknown>>().toMatchTypeOf<true>()
+      expectTypeOf<IsAny<any | never>>().toMatchTypeOf<true>()
+    })
 
-  test('returns true for indexed type is any', () => {
-    expectTypeOf<Record<string, any>[string]>().toMatchTypeOf<true>()
-    expectTypeOf<any[][number]>().toMatchTypeOf<true>()
-    expectTypeOf<[any][0]>().toMatchTypeOf<true>()
+    test('returns true for indexed type is any', () => {
+      expectTypeOf<Record<string, any>[string]>().toMatchTypeOf<true>()
+      expectTypeOf<any[][number]>().toMatchTypeOf<true>()
+      expectTypeOf<[any][0]>().toMatchTypeOf<true>()
+    })
   })
 
   describe('returns false for primitive type', () => {
