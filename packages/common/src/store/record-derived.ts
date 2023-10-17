@@ -385,8 +385,4 @@ export class RecordDerived<
 
     return false
   }
-
-  // clonesAreTracking(key: string, name?: string[] | boolean): boolean {
-  //   return Array.from(this.clones).some((clone) => clone.isTracking(key, name))
-  // }
 }
