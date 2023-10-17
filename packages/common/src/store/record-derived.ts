@@ -385,4 +385,11 @@ export class RecordDerived<
 
     return false
   }
+
+  /**
+   * Whether any clones are tracking a key and/or contextual name.
+   */
+  clonesAreTracking(key: string, name?: string[] | boolean): boolean {
+    return Array.from(this.clones).some((clone) => clone.isTracking(key, name))
+  }
 }

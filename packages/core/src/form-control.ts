@@ -2,7 +2,9 @@ import { RecordDerived, Writable } from '@forms.js/common/store'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
+import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Noop } from '@forms.js/common/utils/noop'
 import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
@@ -14,19 +16,34 @@ import {
   VALIDATION_EVENTS,
   type ValidationEvent,
   type RevalidationEvent,
+  INPUT_EVENTS,
 } from './constants'
+import { lookupError } from './logic/errors/lookup-error'
+import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
+import { getDirtyFields } from './logic/fields/get-dirty-fields'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
+import { updateFieldReference } from './logic/fields/update-field-reference'
+import { elementIsLive } from './logic/html/element-is-live'
+import { isHTMLElement } from './logic/html/is-html-element'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
-import type { FieldErrors } from './types/errors'
-import type { Field, FieldRecord, FieldReference } from './types/fields'
+import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
+import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
+import type { Field, FieldRecord } from './types/fields'
 import type { ParseForm } from './types/form'
+import type { InputElement } from './types/html'
+import type { RegisterOptions } from './types/register'
 import type { Resolver } from './types/resolver'
 import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
+import type { LiteralUnion } from './utils/literal-union'
 
 /**
  * The form control's state.
@@ -142,12 +159,12 @@ export type FormControlOptions<
   /**
    * When to validate the form.
    */
-  validationEvent?: ValidationEvent[keyof ValidationEvent]
+  mode?: ValidationEvent[keyof ValidationEvent]
 
   /**
    * When to revalidate the form.
    */
-  revalidationEvent?: RevalidationEvent[keyof RevalidationEvent]
+  reValidateMode?: RevalidationEvent[keyof RevalidationEvent]
 
   /**
    * Whether the entire form is disabled.
@@ -402,12 +419,12 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
   /**
    * By default, validate the form for the first time when it's submitted.
    */
-  validationEvent: VALIDATION_EVENTS.onSubmit,
+  mode: VALIDATION_EVENTS.onSubmit,
 
   /**
    * After the form's been validated for the first time, revalidate it when any field changes.
    */
-  revalidationEvent: VALIDATION_EVENTS.onChange,
+  reValidateMode: VALIDATION_EVENTS.onChange,
 
   /**
    * The input that caused errors will be focused.
@@ -452,6 +469,11 @@ export class FormControl<
   derivedState: RecordDerived<this['state']>
 
   /**
+   * Whether the form control has been mounted.
+   */
+  mounted = false
+
+  /**
    * Registered fields.
    *
    * @internal
@@ -494,13 +516,13 @@ export class FormControl<
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
     this.options = {
-      validationEvent: defaultFormControlOptions.validationEvent,
-      revalidationEvent: defaultFormControlOptions.revalidationEvent,
+      mode: defaultFormControlOptions.mode,
+      reValidateMode: defaultFormControlOptions.reValidateMode,
       shouldFocusError: defaultFormControlOptions.shouldFocusError,
       shouldDisplayAllAssociatedErrors: options?.criteriaMode === VALIDATION_EVENTS.all,
       submissionValidationMode: {
-        beforeSubmission: getValidationMode(options?.validationEvent),
-        afterSubmission: getValidationMode(options?.revalidationEvent),
+        beforeSubmission: getValidationMode(options?.mode),
+        afterSubmission: getValidationMode(options?.reValidateMode),
       },
       shouldCaptureDirtyFields: Boolean(options?.resetOptions?.keepDirtyValues),
       ...options,
@@ -571,6 +593,22 @@ export class FormControl<
     }
   }
 
+  setFocus(name: string, options: { shouldSelect?: boolean } = {}) {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f == null) {
+      return
+    }
+
+    const fieldRef = field?._f.refs ? field?._f.refs[0] : field?._f.ref
+
+    fieldRef?.focus?.()
+
+    if (options.shouldSelect && fieldRef && 'select' in fieldRef) {
+      fieldRef?.select?.()
+    }
+  }
+
   //--------------------------------------------------------------------------------------
   // Getters and observers.
   //--------------------------------------------------------------------------------------
@@ -612,13 +650,474 @@ export class FormControl<
     return safeGetMultiple(this.state.values.value, names)
   }
 
+  watch(): TValues
+
+  watch(callback: (data: any, context: { name?: string; type?: string }) => void): () => void
+
+  watch<T extends TParsedForm['keys']>(
+    name: T,
+    defaultValues?: DeepPartial<TValues>,
+    options?: WatchOptions<TValues>,
+  ): TParsedForm['values'][T]
+
+  watch<T extends TParsedForm['keys'][]>(
+    name: T,
+    defaultValues?: DeepPartial<TParsedForm['values']>,
+    options?: WatchOptions<TValues>,
+  ): KeysToProperties<TParsedForm['values'], T>
+
+  watch(...args: any[]): any {
+    if (typeof args[0] === 'function') {
+      return this.derivedState.subscribe((values, context) => {
+        return args[0](values, context ?? this.options.context)
+      })
+    }
+
+    const [name, _defaultValues, options] = args
+
+    const nameArray = Array.isArray(name) ? name : name ? [name] : []
+
+    if (nameArray.length > 0) {
+      this.derivedState.track('values', nameArray, options)
+    } else {
+      this.derivedState.keys?.add('values')
+    }
+
+    return nameArray.length > 1
+      ? deepFilter({ ...this.state.values.value }, nameArray)
+      : safeGet({ ...this.state.values.value }, name)
+  }
+
+  /**
+   * Get the state of a field.
+   */
+  getFieldState(name: string, formState?: FormControlState<TValues>) {
+    const errors = formState?.errors ?? this.state.errors.value
+    const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
+    const touchedFields = formState?.touchedFields ?? this.state.touchedFields.value
+
+    return {
+      invalid: Boolean(safeGet(errors, name)),
+      isDirty: Boolean(safeGet(dirtyFields, name)),
+      isTouched: Boolean(safeGet(touchedFields, name)),
+      error: safeGet(errors, name),
+    }
+  }
+
   //--------------------------------------------------------------------------------------
   // DOM API
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Handles a change event from an input element.
+   */
+  async handleChange(event: Event): Promise<void | boolean> {
+    this.derivedState.freeze()
+
+    const target: any = event.target
+
+    const name = target.name
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field == null) {
+      return
+    }
+
+    const fieldValue = getCurrentFieldValue(event, field)
+
+    // Update values.
+    this.state.values.update(
+      (values) => {
+        deepSet(values, name, fieldValue)
+        return values
+      },
+      [name],
+    )
+
+    const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
+
+    if (isBlurEvent) {
+      field._f.onBlur?.(event)
+    } else {
+      field._f.onChange?.(event)
+    }
+
+    if (isBlurEvent) {
+      // Updates touchedFields.
+      this.updateTouchedField(name)
+    } else {
+      // Updates dirtyFields, isDirty.
+      this.updateDirtyField(name, fieldValue)
+    }
+
+    const nothingToValidate =
+      !hasValidation(field._f) &&
+      !this.options.resolver &&
+      !safeGet(this.state.errors.value, name) &&
+      !field._f.deps
+
+    const shouldSkipValidation =
+      nothingToValidate ||
+      shouldSkipValidationAfter(
+        isBlurEvent ? 'blur' : 'change',
+        safeGet(this.state.touchedFields.value, name),
+        this.state.isSubmitted.value,
+        this.options.submissionValidationMode,
+      )
+
+    if (shouldSkipValidation) {
+      // Update isValid.
+      this.updateValid()
+      this.derivedState.unfreeze()
+      return
+    }
+
+    if (!isBlurEvent) {
+      this.derivedState.unfreeze()
+      this.derivedState.freeze()
+    }
+
+    // Update isValidating and force derivedState to update.
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(true)
+    })
+
+    const result = await this.validate(name)
+
+    if (result.resolverResult) {
+      const previousError = lookupError(this.state.errors.value, this.fields, name)
+
+      const currentError = lookupError(
+        result.resolverResult.errors ?? {},
+        this.fields,
+        previousError.name,
+      )
+
+      // Update errors.
+      this.state.errors.update(
+        (errors) => {
+          if (currentError.error) {
+            deepSet(errors, currentError.name, currentError.error)
+          } else {
+            deepUnset(errors, currentError.name)
+          }
+          return errors
+        },
+        [name],
+      )
+
+      if (field._f.deps) {
+        // Update isValidating, errors, isValid.
+        this.trigger(field._f.deps as any)
+      } else {
+        // Update isValidating.
+        this.state.isValid.set(result.isValid, [name])
+      }
+    }
+
+    if (result.validationResult) {
+      const isFieldValueUpdated =
+        Number.isNaN(fieldValue) ||
+        (fieldValue === safeGet(this.state.values.value, name) ?? fieldValue)
+
+      if (!result.isValid) {
+        const error = result.validationResult.errors[name]
+
+        if (isFieldValueUpdated && !error) {
+          const fullResult = await this.validate()
+
+          if (fullResult.validationResult?.errors) {
+            // Update errors.
+            this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
+          }
+        } else {
+          // Update errors.
+          this.state.errors.update(
+            (errors) => {
+              deepSet(errors, name, error)
+              return errors
+            },
+            [name],
+          )
+        }
+      } else {
+        this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+      }
+
+      if (isFieldValueUpdated && field._f.deps) {
+        this.trigger(field._f.deps as any)
+      } else {
+        // Update isValidating.
+        this.state.isValid.set(result.isValid, [name])
+      }
+    }
+
+    this.state.isValidating.set(false, [name])
+    this.derivedState.unfreeze()
+  }
+
+  /**
+   */
+  handleSubmit(
+    onValid?: SubmitHandler<TValues, TTransformedValues>,
+    onInvalid?: SubmitErrorHandler<TValues>,
+  ): HandlerCallback {
+    return async (event) => {
+      this.derivedState.freeze()
+
+      event?.preventDefault?.()
+
+      // Update isSubmitting.
+      this.state.isSubmitting.set(true)
+
+      const { isValid, resolverResult, validationResult } = await this.validate()
+
+      const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
+
+      deepUnset(this.state.errors.value, 'root')
+
+      // Update errors.
+      this.mergeErrors(errors)
+
+      if (isValid) {
+        const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
+        await onValid?.(data, event)
+      } else {
+        await onInvalid?.(errors, event)
+        this.focusError()
+        setTimeout(this.focusError.bind(this))
+      }
+
+      this.state.isSubmitted.set(true)
+      this.state.isSubmitting.set(false)
+      this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value))
+      this.state.submitCount.update((count) => count + 1)
+
+      this.derivedState.unfreeze()
+    }
+  }
+
+  /**
+   * @remarks MUST NOT NOTIFY ANY SIGNAL LISTENERS BECAUSE REACT SUCKS.
+   */
+  register<T extends TParsedForm['keys']>(
+    name: Extract<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ) {
+    this.registerField(name, options)
+
+    const props = {
+      registerElement: (element: InputElement) => this.registerElement(name, element, options),
+      unregisterElement: () => this.unregisterElement(name, options),
+    }
+
+    return props
+  }
+
+  /**
+   * Register an HTML input element.
+   *
+   * @remarks MUST NOT NOTIFY ANY SIGNAL LISTENERS BECAUSE REACT SUCKS.
+   */
+  registerElement<T extends TParsedForm['keys']>(
+    name: Extract<T, string>,
+    element: InputElement,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field = this.registerField(name, options)
+
+    const fieldNames = toStringArray(name)
+
+    const newField = mergeElementWithField(name, field, element)
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      deepSet(this.state.values.value, name, getFieldValue(newField._f))
+    } else {
+      updateFieldReference(newField._f, defaultValue)
+    }
+
+    deepSet(this.fields, name, newField)
+
+    this.updateValid(undefined, fieldNames)
+  }
+
+  /**
+   * @remarks MUST NOT NOTIFY ANY SIGNAL SUBSCRIBERS BECAUSE REACT SUCKS.
+   */
+  registerField<T extends TParsedForm['keys']>(
+    name: Extract<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ) {
+    const existingField: Field | undefined = safeGet(this.fields, name)
+
+    const field: Field = {
+      ...existingField,
+      _f: {
+        ...(existingField?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
+    }
+
+    deepSet(this.fields, name, field)
+
+    this.names.mount.add(name)
+
+    if (existingField) {
+      this.mockUpdateDisabledField({ field, disabled: options?.disabled, name })
+      return field
+    }
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ??
+      options?.value ??
+      safeGet(this.state.defaultValues.value, name)
+
+    deepSet(this.state.values.value, name, defaultValue)
+
+    return field
+  }
+
+  /**
+   * Unregister a field.
+   */
+  unregister<T extends TParsedForm['keys']>(
+    name?: Extract<T, string> | Extract<T, string>[],
+    options?: UnregisterOptions,
+  ): void {
+    this.derivedState.freeze()
+
+    const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
+
+    for (const fieldName of fieldNames) {
+      this.names.mount.delete(fieldName)
+      this.names.array.delete(fieldName)
+
+      if (!options?.keepValue) {
+        deepUnset(this.fields, fieldName)
+
+        this.state.values.update((values) => {
+          deepUnset(values, fieldName)
+          return values
+        }, fieldNames)
+      }
+
+      if (!options?.keepError) {
+        this.state.errors.update((errors) => {
+          deepUnset(errors, fieldName)
+          return errors
+        }, fieldNames)
+      }
+
+      if (!options?.keepDirty) {
+        this.state.dirtyFields.update((dirtyFields) => {
+          deepUnset(dirtyFields, fieldName)
+          return dirtyFields
+        }, fieldNames)
+
+        this.state.isDirty.set(this.getDirty(), fieldNames)
+      }
+
+      if (!options?.keepTouched) {
+        this.state.touchedFields.update((touchedFields) => {
+          deepUnset(touchedFields, fieldName)
+          return touchedFields
+        }, fieldNames)
+      }
+
+      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
+        this.state.defaultValues.update((defaultValues) => {
+          deepUnset(defaultValues, fieldName)
+          return defaultValues
+        }, fieldNames)
+      }
+    }
+
+    if (!options?.keepIsValid) {
+      this.updateValid(undefined, fieldNames)
+    }
+
+    this.derivedState.unfreeze(true)
+  }
+
+  /**
+   * Prepares an element to be unregistered.
+   * {@link cleanup} or {@link unmount} must be called to fully complete the unregistration.
+   */
+  unregisterElement<T extends TParsedForm['keys']>(
+    name: LiteralUnion<Extract<T, string>, string>,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f) {
+      field._f.mount = false
+    }
+
+    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+
+    if (shouldUnregister && !this.names.array.has(name)) {
+      this.names.unMount.add(name)
+    }
+  }
+
+  mount() {
+    this.mounted = true
+  }
+
+  unmount() {
+    this.mounted = false
+    this.cleanup()
+  }
+
+  cleanup() {
+    this.removeUnmounted()
+  }
+
+  removeUnmounted(): void {
+    for (const name of this.names.unMount) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
+        this.unregister(name as any)
+      }
+    }
+
+    this.names.unMount = new Set()
+  }
+
   //--------------------------------------------------------------------------------------
   // Validation.
   //--------------------------------------------------------------------------------------
+
+  /**
+   * Updates whether the form is valid.
+   *
+   * Saves on computation by only updating if the store has subscribers.
+   *
+   * @updates isValid.
+   *
+   * @param force Whether to force the validation and the store to update and notify subscribers.
+   */
+  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
+    if (
+      force ||
+      this.derivedState.isTracking('isValid') ||
+      this.derivedState.clonesAreTracking('isValid')
+    ) {
+      const result = await this.validate()
+
+      const fieldNames = toStringArray(name)
+
+      // Update isValid.
+      this.state.isValid.set(result.isValid, fieldNames)
+    }
+  }
 
   /**
    * Validate the form using either a provided resolver or native validation.
@@ -642,15 +1141,7 @@ export class FormControl<
 
     const names = nameArray ?? Array.from(this.names.mount)
 
-    const fields: Record<string, FieldReference> = {}
-
-    for (const name of names) {
-      const field: Field | undefined = safeGet(this.fields, name)
-
-      if (field) {
-        deepSet(fields, name, field._f)
-      }
-    }
+    const fields = filterFields(names, this.fields)
 
     const resolverResult = await this.options.resolver(
       this.state.values.value,
@@ -688,6 +1179,411 @@ export class FormControl<
     })
 
     return validationResult
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Setters and updaters.
+  //--------------------------------------------------------------------------------------
+
+  /**
+   * Sets one field value.
+   *
+   * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
+   */
+  setValue<T extends TParsedForm['keys']>(
+    name: Extract<T, string>,
+    value: TParsedForm['values'][T],
+    options?: SetValueOptions,
+  ): void {
+    this.derivedState.freeze()
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const fieldNames = toStringArray(name)
+
+    const clonedValue = structuredClone(value)
+
+    // Update values.
+    this.state.values.update((values) => {
+      deepSet(values, name, clonedValue)
+      return values
+    }, fieldNames)
+
+    const isFieldArray = this.names.array.has(name)
+
+    if (!isFieldArray) {
+      if (field && !field._f && clonedValue != null) {
+        this.setValues(name, clonedValue, options)
+      } else {
+        this.setFieldValue(name, clonedValue, options)
+      }
+    } else {
+      if (options?.shouldDirty) {
+        this.state.dirtyFields.set(
+          getDirtyFields(this.state.defaultValues.value, this.state.values.value),
+          fieldNames,
+        )
+        this.state.isDirty.set(this.getDirty(), fieldNames)
+      }
+    }
+
+    this.valueListeners.forEach((listener) => listener())
+
+    this.derivedState.unfreeze()
+  }
+
+  /**
+   * Appends the values from the value object to the given field name.
+   *
+   * @example
+   *
+   * ```ts
+   * const name = 'a'
+   * const value = { b: 'c' }
+   * const result = { a: { b: 'c' } }
+   * ```
+   *
+   * @updates Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
+   */
+  setValues(name: string, value: any, options?: SetValueOptions): void {
+    this.derivedState.freeze()
+
+    for (const fieldKey in value) {
+      const fieldValue = value[fieldKey]
+      const fieldName = `${name}.${fieldKey}`
+      const field: Field | undefined = safeGet(this.fields, fieldName)
+
+      const isFieldArray = this.names.array.has(fieldName)
+      const missingReference = field && !field._f
+      const isDate = fieldValue instanceof Date
+
+      if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
+        this.setValues(fieldName, fieldValue, options)
+      } else {
+        // Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
+        this.setFieldValue(fieldName, fieldValue, options)
+      }
+    }
+
+    this.derivedState.unfreeze()
+  }
+
+  /**
+   * Sets a field's value.
+   *
+   * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
+   */
+  setFieldValue(name: string, value: unknown, options?: SetValueOptions): void {
+    this.derivedState.freeze()
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const fieldReference = field?._f
+
+    if (fieldReference == null) {
+      // Update dirtyFields, isDirty, touchedFields.
+      this.touch(name, value, options)
+      return
+    }
+
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    updateFieldReference(fieldReference, fieldValue)
+
+    // If the field exists and isn't disabled, then also update the form values.
+    if (!fieldReference.disabled) {
+      this.state.values.update(
+        (values) => {
+          deepSet(values, name, getFieldValueAs(value, fieldReference))
+          return values
+        },
+        [name],
+      )
+    }
+
+    // Update dirtyFields, isDirty, touchedFields.
+    this.touch(name, fieldValue, options)
+
+    if (options?.shouldValidate) {
+      this.trigger(name as any)
+    }
+
+    this.derivedState.unfreeze()
+  }
+
+  /**
+   * Trigger a field.
+   *
+   * @updates isValidating, errors, isValid.
+   */
+  async trigger<T extends TParsedForm['keys']>(
+    name?: T | T[] | readonly T[],
+    options?: TriggerOptions,
+  ): Promise<boolean> {
+    /**
+     * Freeze the derived state until the end of this method so it updates multiple values at once.
+     */
+    this.derivedState.freeze()
+
+    const fieldNames = toStringArray(name)
+
+    // Update isValidating and force derivedState to update.
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(true, fieldNames)
+    })
+
+    const result = await this.validate(name as any)
+
+    if (result.validationResult) {
+      // Update errors.
+      this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+    }
+
+    if (result.resolverResult?.errors) {
+      // Update errors.
+      this.mergeErrors(result.resolverResult.errors)
+    }
+
+    // Update isValid.
+    this.state.isValid.set(result.isValid, fieldNames)
+
+    // Update isValidating and force derivedState to update.
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(false, fieldNames)
+    })
+
+    if (options?.shouldFocus && !result.isValid) {
+      const callback = (key?: string) => key && safeGet(this.state.errors.value, key)
+      focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
+    }
+
+    this.derivedState.unfreeze()
+
+    return result.isValid
+  }
+
+  /**
+   * Set an error.
+   *
+   * @updates errors, isValid.
+   */
+  setError<T extends TParsedForm['keys']>(
+    name: T | 'root' | `root.${string}`,
+    error?: ErrorOption,
+    options?: TriggerOptions,
+  ): void {
+    this.derivedState.freeze()
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const fieldNames = toStringArray(name)
+
+    // Update errors.
+    this.state.errors.update((errors) => {
+      deepSet(errors, name, { ...error, ref: field?._f?.ref })
+      return errors
+    }, fieldNames)
+
+    // Update isValid.
+    this.state.isValid.set(false, fieldNames)
+
+    if (options?.shouldFocus) {
+      field?._f?.ref?.focus?.()
+    }
+
+    this.derivedState.unfreeze()
+  }
+
+  /**
+   * Merges errors into the form state's errors.
+   *
+   * Errors from a resolver or native validator can be generated without updating the form state.
+   * This method merges those errors into form state's errors store and notifies subscribers.
+   *
+   * The names array is helpful for capturing names of fields with removed errors.
+   *
+   * @param errors The errors into the form state's errors.
+   * @param names The names of the affected fields.
+   */
+  mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
+    const namesToMerge = names ?? Object.keys(errors)
+
+    this.state.errors.update((currentErrors) => {
+      const newErrors = names?.length ? currentErrors : {}
+
+      namesToMerge.forEach((name) => {
+        const fieldError = safeGet(errors, name)
+
+        // Removed error.
+        if (fieldError == null) {
+          deepUnset(newErrors, name)
+          return
+        }
+
+        // Added regular error.
+        if (!this.names.array.has(name)) {
+          deepSet(newErrors, name, fieldError)
+          return
+        }
+
+        // Added field array error.
+        const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
+
+        deepSet(fieldArrayErrors, 'root', errors[name])
+
+        deepSet(newErrors, name, fieldArrayErrors)
+      })
+
+      return newErrors
+    }, namesToMerge)
+  }
+
+  /**
+   * Clear the form's errors.
+   */
+  clearErrors(name?: string | string[]) {
+    if (name == null) {
+      this.state.errors.set({})
+      return
+    }
+
+    const nameArray = toStringArray(name)
+
+    this.state.errors.update((errors) => {
+      nameArray?.forEach((name) => deepUnset(this.state.errors.value, name))
+      return errors
+    }, nameArray)
+  }
+
+  /**
+   * Touches a field.
+   *
+   * @updates dirtyFields, isDirty, touchedFields.
+   */
+  touch(name: string, value?: unknown, options?: SetValueOptions): void {
+    if (!options?.shouldTouch || options.shouldDirty) {
+      this.updateDirtyField(name, value)
+    }
+
+    if (options?.shouldTouch) {
+      this.updateTouchedField(name)
+    }
+  }
+
+  /**
+   * Updates the specified field name to be touched.
+   *
+   * @updates touchedFields.
+   *
+   * @returns Whether the field's touched status changed.
+   */
+  updateTouchedField(name: string): boolean {
+    const previousIsTouched = safeGet(this.state.touchedFields.value, name)
+
+    if (!previousIsTouched) {
+      this.state.touchedFields.update(
+        (touchedFields) => {
+          deepSet(touchedFields, name, true)
+          return touchedFields
+        },
+        [name],
+      )
+    }
+
+    return !previousIsTouched
+  }
+
+  /**
+   * Updates a field's dirty status.
+   *
+   * @returns Whether the field's dirty status changed.
+   */
+  updateDirtyField(name: string, value?: unknown): boolean {
+    const { previousIsDirty, currentIsDirty, isDirty } = this.mockUpdateDirtyField(name, value)
+
+    if (this.state.isDirty.value !== isDirty) {
+      this.state.isDirty.set(currentIsDirty, [name])
+    }
+
+    if (currentIsDirty != previousIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), [name])
+    }
+
+    return currentIsDirty !== previousIsDirty
+  }
+
+  /**
+   * Updates a field's disabled status and the corresponding value in the form values.
+   */
+  updateDisabledField(options: UpdateDisabledFieldOptions): void {
+    const changed = this.mockUpdateDisabledField(options)
+
+    if (changed) {
+      this.derivedState.freeze()
+
+      this.state.values.update((values) => ({ ...values }))
+
+      this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }))
+
+      this.derivedState.unfreeze()
+    }
+  }
+
+  /**
+   * Updates the form control's values and dirty states **WITHOUT** notifying subscribers.
+   *
+   * @remarks This is used during registration to prevent infinite setState loops in React.
+   */
+  mockUpdateDisabledField(options: UpdateDisabledFieldOptions): boolean {
+    if (typeof options.disabled !== 'boolean') {
+      return false
+    }
+
+    const value = options.disabled
+      ? undefined
+      : safeGet(this.state.values.value, options.name) ??
+        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+
+    deepSet(this.state.values.value, options.name, value)
+
+    this.mockUpdateDirtyField(options.name, value)
+
+    return true
+  }
+
+  /**
+   * Updates the form control's values and dirty states **WITHOUT** notifying subscribers.
+   *
+   * @remarks This is used during registration to prevent infinite setState loops in React.
+   */
+  mockUpdateDirtyField(name: string, value?: unknown) {
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
+
+    // The field will be dirty if its value is different from its default value.
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    // The field is turning dirty to clean.
+    if (previousIsDirty && !currentIsDirty) {
+      deepUnset(this.state.dirtyFields.value, name)
+    }
+
+    // The field is turning clean to dirty.
+    if (!previousIsDirty && currentIsDirty) {
+      deepSet(this.state.dirtyFields.value, name, true)
+    }
+
+    /**
+     * Whether the form is dirty.
+     */
+    const isDirty =
+      this.derivedState.keys?.has('isDirty') ||
+      Array.from(this.derivedState.clones).some((clone) => clone.keys?.has('isDirty'))
+        ? this.getDirty()
+        : this.state.isDirty.value
+
+    return { previousIsDirty, currentIsDirty, isDirty }
   }
 
   //--------------------------------------------------------------------------------------

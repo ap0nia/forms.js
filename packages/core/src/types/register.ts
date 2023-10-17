@@ -6,9 +6,9 @@ import type { Validate, ValidationRule } from './validation'
  */
 export type RegisterOptions<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TFieldName extends TParsedForm['keys'] = TParsedForm['keys'],
-  TFieldValue extends TParsedForm['values'][TFieldName] = TParsedForm['values'][TFieldName],
+  TFieldName extends ParseForm<TValues>['keys'] = ParseForm<TValues>['keys'],
+  TFieldValue extends
+    ParseForm<TValues>['values'][TFieldName] = ParseForm<TValues>['values'][TFieldName],
 > = {
   /**
    * Native validation, makes the field required.

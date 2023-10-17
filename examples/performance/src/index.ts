@@ -102,6 +102,7 @@ import { FormControl } from '@forms.js/core'
 export const form = new FormControl<MyForm>()
 
 form.getValues('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
+form.registerField('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
 
 // Hook Form
 
