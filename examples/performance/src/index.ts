@@ -101,15 +101,15 @@ import { FormControl } from '@forms.js/core'
 
 export const form = new FormControl<MyForm>()
 
-form.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11')
+form.getValues('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
 
-// // Hook Form
-//
+// Hook Form
+
 // import { useForm } from 'react-hook-form'
 //
 // export const hookForm = useForm<MyForm>()
 //
-// hookForm.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11')
+// hookForm.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
 //
 //
 // // Modular Form
