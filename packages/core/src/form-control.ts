@@ -1,6 +1,12 @@
 import { RecordDerived, Writable } from '@forms.js/common/store'
+import { deepEqual } from '@forms.js/common/utils/deep-equal'
+import { deepFilter } from '@forms.js/common/utils/deep-filter'
+import { deepSet } from '@forms.js/common/utils/deep-set'
+import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import type { Noop } from '@forms.js/common/utils/noop'
+import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
-import type { Noop } from 'packages/common/src/utils/noop'
+import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
 import {
   type CriteriaMode,
@@ -11,8 +17,10 @@ import {
 } from './constants'
 import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
+import { nativeValidateFields } from './logic/validation/native-validation'
+import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import type { FieldErrors } from './types/errors'
-import type { Field, FieldRecord } from './types/fields'
+import type { Field, FieldRecord, FieldReference } from './types/fields'
 import type { ParseForm } from './types/form'
 import type { Resolver } from './types/resolver'
 import type { DeepMap } from './utils/deep-map'
@@ -544,6 +552,13 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
 
   /**
+   * Determines whether the store is currently dirty. Does not update the state.
+   */
+  getDirty(): boolean {
+    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+  }
+
+  /**
    * Focus on a field that has an error.
    */
   focusError(options?: TriggerOptions) {
@@ -595,6 +610,84 @@ export class FormControl<
   getValues(...args: any[]): any {
     const names = args.length > 1 ? args : args[0]
     return safeGetMultiple(this.state.values.value, names)
+  }
+
+  //--------------------------------------------------------------------------------------
+  // DOM API
+  //--------------------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------------------
+  // Validation.
+  //--------------------------------------------------------------------------------------
+
+  /**
+   * Validate the form using either a provided resolver or native validation.
+   *
+   * @param name The name or names of the fields to validate. If not provided, all fields will be validated.
+   *
+   * TODO: return type.
+   *
+   * @returns Whether the form is valid and the resolver or native validation result.
+   */
+  async validate(name?: string | string[] | Nullish) {
+    const nameArray = toStringArray(name)
+
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate(nameArray)
+
+      const isValid = validationResult.valid
+
+      return { validationResult, isValid }
+    }
+
+    const names = nameArray ?? Array.from(this.names.mount)
+
+    const fields: Record<string, FieldReference> = {}
+
+    for (const name of names) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field) {
+        deepSet(fields, name, field._f)
+      }
+    }
+
+    const resolverResult = await this.options.resolver(
+      this.state.values.value,
+      this.options.context,
+      {
+        names: names as any,
+        fields,
+        criteriaMode: this.options.criteriaMode,
+        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      },
+    )
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    return { resolverResult, isValid }
+  }
+
+  /**
+   * Natively validate all of the form's registered fields.
+   *
+   * @param names The name or names of the fields to validate. If not provided, all fields will be validated.
+   * @param shouldOnlyCheckValid Whether to stop validating after the first error is found.
+   */
+  async nativeValidate(
+    names?: string | string[],
+    shouldOnlyCheckValid?: boolean,
+  ): Promise<NativeValidationResult> {
+    const fields = deepFilter(this.fields, names)
+
+    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
+      shouldOnlyCheckValid,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+    })
+
+    return validationResult
   }
 
   //--------------------------------------------------------------------------------------
