@@ -1,5 +1,5 @@
 import { RecordDerived, Writable } from '@forms.js/common/store'
-import { safeGetMultiple } from '@forms.js/common/utils/safe-get'
+import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import type { Noop } from 'packages/common/src/utils/noop'
 
 import {
@@ -9,6 +9,7 @@ import {
   type ValidationEvent,
   type RevalidationEvent,
 } from './constants'
+import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import type { FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
@@ -539,8 +540,32 @@ export class FormControl<
   }
 
   //--------------------------------------------------------------------------------------
+  // Actions.
+  //--------------------------------------------------------------------------------------
+
+  /**
+   * Focus on a field that has an error.
+   */
+  focusError(options?: TriggerOptions) {
+    if (this.options.shouldFocusError || options?.shouldFocus) {
+      focusFieldBy(
+        this.fields,
+        (key) => key && safeGet(this.state.errors.value, key),
+        this.names.mount,
+      )
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
   // Getters and observers.
   //--------------------------------------------------------------------------------------
+
+  /**
+   * Alias for react-hook-form's "control._fields" property.
+   */
+  get _fields() {
+    return this.fields
+  }
 
   /**
    * Get all the form's values.
