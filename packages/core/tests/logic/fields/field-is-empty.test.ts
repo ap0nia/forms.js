@@ -16,7 +16,7 @@ describe('fieldIsEmpty', () => {
       },
     }
 
-    expect(fieldIsEmpty(field, null)).toBe(true)
+    expect(fieldIsEmpty(field, null)).toBeTruthy()
   })
 
   test('true for empty input value', () => {

@@ -18,7 +18,7 @@ export function getDirtyFieldsFromDefaultValues<T>(data: T, values: T, dirtyFiel
   for (const key in data) {
     const isArray = Array.isArray(data[key])
 
-    if (!(isArray || (isObject(data[key]) && !objectHasFunction(data[key])))) {
+    if (!isArray && (!isObject(data[key]) || objectHasFunction(data[key]))) {
       dirtyFields[key] = !deepEqual(data[key], values[key])
       continue
     }
@@ -39,8 +39,10 @@ export function markFieldsDirty<T>(data: T, fields: Record<string, any> = {}) {
   }
 
   for (const key in data) {
-    if (Array.isArray(data[key]) || (isObject(data[key]) && !objectHasFunction(data[key]))) {
-      fields[key] = Array.isArray(data[key]) ? [] : {}
+    const isArray = Array.isArray(data[key])
+
+    if (isArray || (isObject(data[key]) && !objectHasFunction(data[key]))) {
+      fields[key] = isArray ? [] : {}
       markFieldsDirty(data[key], fields[key])
     } else if (data[key] != null) {
       fields[key] = true
