@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "test": "vitest"
+    "test": "vitest run"
   },
   "devDependencies": {
     "typescript": "^5.1.6"

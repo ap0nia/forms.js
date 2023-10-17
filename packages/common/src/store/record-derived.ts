@@ -1,10 +1,10 @@
-import { cloneObject } from '../utils/clone-object.js'
-import { deepFilter } from '../utils/deep-filter.js'
-import { noop } from '../utils/noop.js'
+import { cloneObject } from '../utils/clone-object'
+import { deepFilter } from '../utils/deep-filter'
+import { noop } from '../utils/noop'
 
-import type { StoresValues } from './derived.js'
+import type { StoresValues } from './derived'
 import type { Subscriber, Unsubscriber } from './types'
-import { Writable } from './writable.js'
+import { Writable } from './writable'
 
 export type Context = {
   key: string
@@ -19,13 +19,13 @@ export type Context = {
  * It uses a {@link Writable} internally to notify subscribers.
  */
 export class RecordDerived<
-  S extends Record<string, Writable<any, any>>,
-  T extends StoresValues<S> = StoresValues<S>,
+  TStores extends Record<string, Writable<any, any>>,
+  TValues extends StoresValues<TStores> = StoresValues<TStores>,
 > {
   /**
    * An object mapping keys to stores.
    */
-  stores: S
+  stores: TStores
 
   /**
    * The keys associated with the corresponding stores that can trigger updates.
@@ -33,7 +33,7 @@ export class RecordDerived<
    * If undefined, all stores will trigger updates.
    * If defined, only stores associated with the keys in the set will trigger updates.
    */
-  keys: Set<PropertyKey> | undefined
+  keys?: Set<PropertyKey>
 
   /**
    * Internally, a writable is used to handle the subscription logic.
@@ -44,17 +44,17 @@ export class RecordDerived<
    *
    * @internal
    */
-  writable: Writable<T, string[] | boolean>
+  writable: Writable<TValues, string[] | boolean>
 
   /**
    * The most recently calculated value.
    */
-  value: T
+  value: TValues
 
   /**
    * {@link keys} can be mutated by accessing certain properties on this proxy instead of directly.
    */
-  proxy: T
+  proxy: TValues
 
   /**
    * Whether a invalidation is in progress.
@@ -68,7 +68,7 @@ export class RecordDerived<
    * For example, instead of updating whenever **any** errors change,
    * only update when the errors for the "test" field change.
    */
-  keyNames: { [K in keyof S]?: { value: string; exact?: boolean }[] } = {}
+  keyNames: { [K in keyof TStores]?: { value: string; exact?: boolean }[] } = {}
 
   /**
    * Unsubscribe functions to run after no more subscribers are listening.
@@ -90,9 +90,15 @@ export class RecordDerived<
    */
   keysChangedDuringFrozen?: Context[] = undefined
 
+  /**
+   */
   clones = new Set<RecordDerived<any, any>>()
 
-  constructor(stores: S, keys: Set<PropertyKey> | undefined = undefined, defaultValue?: T) {
+  constructor(
+    stores: TStores,
+    keys: Set<PropertyKey> | undefined = undefined,
+    defaultValue?: TValues,
+  ) {
     this.stores = stores
 
     this.keys = keys
@@ -102,9 +108,9 @@ export class RecordDerived<
       Object.entries(stores).reduce((acc, [key, store]) => {
         acc[key as keyof typeof acc] = cloneObject(store.value)
         return acc
-      }, {} as T)
+      }, {} as TValues)
 
-    this.proxy = {} as T
+    this.proxy = {} as TValues
 
     for (const key in this.value) {
       Object.defineProperty(this.proxy, key, {
@@ -143,22 +149,7 @@ export class RecordDerived<
     // If no keys or context are provided to filter by, notify all subscribers.
     const noKeys = key == null || context === true || this.keys == null
 
-    // Whether the key is being tracked and should trigger an update.
-    const isKeyTracked = key && this.keys?.has(key)
-
-    // Whether a specific contextual name is being tracked under the key.
-    const isNameTracked =
-      key &&
-      Array.isArray(context) &&
-      context?.some((name) => {
-        return this.keyNames[key]?.some((keyName) => {
-          return keyName.exact
-            ? name === keyName.value
-            : name.includes(keyName.value) || keyName.value.includes(name)
-        })
-      })
-
-    if (noKeys || isKeyTracked || isNameTracked) {
+    if (noKeys || (key && this.keys?.has(key)) || this.isTracking(key, context)) {
       this.writable.set(this.value)
     }
   }
@@ -166,7 +157,7 @@ export class RecordDerived<
   /**
    * Subscribe.
    */
-  subscribe(run: Subscriber<T>, invalidate = noop, runFirst = true) {
+  subscribe(run: Subscriber<TValues>, invalidate = noop, runFirst = true) {
     return this.writable.subscribe(run, invalidate, runFirst)
   }
 
@@ -186,7 +177,7 @@ export class RecordDerived<
    * Setup this store by binding listeners to each of the object's stores.
    */
   start() {
-    Object.entries(this.stores).forEach(([key, store]: [keyof S, Writable<any, any>], i) => {
+    Object.entries(this.stores).forEach(([key, store]: [keyof TStores, Writable<any, any>], i) => {
       const unsubscriber = store.subscribe(
         this.subscriptionFunction.bind(this, i, key),
         this.invalidateFunction.bind(this, i),
@@ -208,7 +199,7 @@ export class RecordDerived<
   /**
    * Every store will call a version of this function when it updates.
    */
-  subscriptionFunction(i: number, key: keyof S, value: any, context?: string[]) {
+  subscriptionFunction(i: number, key: keyof TStores, value: any, context?: string[]) {
     this.value = { ...this.value, [key]: value }
     this.pending &= ~(1 << i)
     this.notify(key as string, context)
@@ -264,18 +255,11 @@ export class RecordDerived<
 
     // Whether specific contextual names were changed.
     const trackedNamesChanged = this.keysChangedDuringFrozen?.some((keyChanged) => {
-      if (typeof keyChanged.name === 'boolean') {
-        return keyChanged.name
-      }
-
-      return keyChanged.name?.some((name) => {
-        return this.keyNames[keyChanged.key]?.some((keyName) => {
-          return keyName.exact
-            ? name === keyName.value
-            : name.includes(keyName.value) || keyName.value.includes(name)
-        })
-      })
+      return this.isTracking(keyChanged.key, keyChanged.name)
     })
+
+    // console.log(this.keysChangedDuringFrozen, this.keys)
+    // console.log({ trackedNamesChanged })
 
     if (shouldNotify === true || noKeys || trackedKeysChanged || trackedNamesChanged) {
       this.writable.set(this.value)
@@ -318,7 +302,7 @@ export class RecordDerived<
   /**
    * Track a specific contextual name of a key, instead of all updates to that key's store.
    */
-  track(key: keyof S, name?: string | string[], options?: { exact?: boolean }) {
+  track(key: keyof TStores, name?: string | string[], options?: { exact?: boolean }) {
     this.keyNames[key] ??= []
 
     if (name == null) {
@@ -342,10 +326,21 @@ export class RecordDerived<
   }
 
   /**
+   * Create and link another {@link RecordDerived} with this one so they share frozen/unfrozen state.
+   */
+  clone(keys: Set<PropertyKey> | undefined = undefined) {
+    const newDerived = new RecordDerived(this.stores, keys, this.value)
+
+    this.clones.add(newDerived)
+
+    return newDerived
+  }
+
+  /**
    * Track a specific context of all stores.
    */
   createTrackingProxy(name?: string | string[], options?: { exact?: boolean }) {
-    const proxy = {} as T
+    const proxy = {} as TValues
 
     for (const key in this.value) {
       Object.defineProperty(proxy, key, {
@@ -369,7 +364,7 @@ export class RecordDerived<
     }
 
     if (name == null) {
-      return this.keys.has(key) || this.clonesAreTracking(key, name)
+      return this.keys.has(key)
     }
 
     if (typeof name === 'boolean') {
@@ -388,10 +383,10 @@ export class RecordDerived<
       return true
     }
 
-    return this.clonesAreTracking(key, name)
+    return false
   }
 
-  clonesAreTracking(key: string, name?: string[] | boolean): boolean {
-    return Array.from(this.clones).some((clone) => clone.isTracking(key, name))
-  }
+  // clonesAreTracking(key: string, name?: string[] | boolean): boolean {
+  //   return Array.from(this.clones).some((clone) => clone.isTracking(key, name))
+  // }
 }

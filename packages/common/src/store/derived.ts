@@ -1,7 +1,7 @@
 import { noop } from '../utils/noop.js'
 
 import type { Readable, Subscriber, Unsubscriber, Updater } from './types'
-import { Writable } from './writable.js'
+import { Writable } from './writable'
 
 export type StoresValues<T> = T extends Readable<infer U>
   ? U

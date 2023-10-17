@@ -4,8 +4,8 @@
  * @see https://github.com/sveltejs/svelte/blob/master/packages/svelte/src/runtime/store/index.js
  */
 
-import { noop, type Noop } from '../utils/noop.js'
-import { safeNotEqual } from '../utils/safe-not-equal.js'
+import { noop, type Noop } from '../utils/noop'
+import { safeNotEqual } from '../utils/safe-not-equal'
 
 import type { Invalidator, Readable, StartStopNotifier, Subscriber, Updater } from './types'
 

@@ -533,5 +533,127 @@ describe('store', () => {
         expect(derived.keyNames.a).toEqual([{ value: 'abc', exact: true }, { value: 'abc' }])
       })
     })
+
+    describe('createTrackingProxy', () => {
+      test('creates a proxy that tracks the specified key', () => {
+        const { derived, stores } = createDerived(new Set())
+
+        const name = 'Hello'
+
+        const proxy = derived.createTrackingProxy(name)
+
+        proxy.a
+
+        const fn = vi.fn()
+
+        derived.subscribe(fn)
+
+        fn.mockReset()
+
+        // Wrong store, wrong context, no notification.
+        stores.b.set(4)
+
+        expect(fn).not.toHaveBeenCalledOnce()
+
+        // Wrong store, correct context, notification.
+        stores.b.set(4, name)
+
+        expect(fn).not.toHaveBeenCalledOnce()
+
+        // Correct store, correct context, notification.
+        stores.a.set(4, name)
+
+        expect(fn).toHaveBeenCalledOnce()
+      })
+
+      test('unfreezing correctly notifies', () => {
+        const { derived, stores } = createDerived(new Set())
+
+        const name = 'Hello'
+
+        const proxy = derived.createTrackingProxy(name)
+
+        proxy.a
+
+        const fn = vi.fn()
+
+        derived.subscribe(fn)
+
+        fn.mockReset()
+
+        derived.freeze()
+
+        // Wrong store, wrong context, no notification.
+        stores.b.set(4)
+
+        // Wrong store, correct context, no notification.
+        stores.b.set(4, name)
+
+        // Wrong store, wrong context, no notification.
+        stores.c.set(4)
+
+        // Wrong store, correct context, no notification.
+        stores.c.set(4, name)
+
+        derived.unfreeze()
+
+        expect(fn).not.toHaveBeenCalledOnce()
+
+        derived.freeze()
+
+        // Correct store, correct context, notification.
+        stores.a.set(4, name)
+
+        derived.unfreeze()
+
+        expect(fn).toHaveBeenCalledOnce()
+      })
+    })
+
+    describe('cloning', () => {
+      test('each clone only tracks its respective fields', () => {
+        const { derived, stores } = createDerived()
+
+        const clone = derived.clone()
+
+        // Original derived tracks 'a'
+        derived.proxy.a
+
+        // Clone tracks 'b'
+        clone.proxy.b
+
+        const fnA = vi.fn()
+        const fnB = vi.fn()
+
+        derived.subscribe(fnA)
+        clone.subscribe(fnB)
+
+        fnA.mockReset()
+        fnB.mockReset()
+
+        expect(fnA).not.toHaveBeenCalled()
+        expect(fnB).not.toHaveBeenCalled()
+
+        derived.freeze()
+
+        stores.a.set(4)
+        stores.c.set(5)
+
+        derived.unfreeze()
+
+        expect(fnA).toHaveBeenCalledTimes(1)
+        expect(fnB).toHaveBeenCalledTimes(0)
+
+        derived.freeze()
+
+        stores.b.set(6)
+        stores.c.set(7)
+
+        derived.unfreeze()
+
+        expect(fnA).toHaveBeenCalledTimes(1)
+        expect(fnB).toHaveBeenCalledTimes(1)
+      })
+    })
   })
 })
