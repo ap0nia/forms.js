@@ -369,12 +369,31 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
 export class FormControl<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
-  // TTransformedValues extends Record<string, any> | undefined = undefined,
-  // TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
+  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
 > {
-  options: FormControlOptions<TValues, TContext>
+  ttransformedValues?: TTransformedValues
+
+  context?: TContext
+
+  options?: FormControlOptions<TValues, TContext>
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
-    this.options = { ...defaultFormControlOptions, ...options }
+    this.options = {
+      validationEvent: defaultFormControlOptions.validationEvent,
+      revalidationEvent: defaultFormControlOptions.revalidationEvent,
+      shouldFocusError: defaultFormControlOptions.shouldFocusError,
+      ...options,
+    }
+  }
+
+  register(): any
+
+  register<T extends TParsedForm['keys']>(key: T): any
+
+  register<T extends TParsedForm['keys'][]>(keys: T): any
+
+  register(...args: any[]): any {
+    return args
   }
 }

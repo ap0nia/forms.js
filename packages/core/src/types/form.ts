@@ -1,5 +1,5 @@
 import type { FlattenObject } from '../utils/flatten-object'
-import type { NestedObjectArrays } from '../utils/nested-object-arrays'
+// import type { NestedObjectArrays } from '../utils/nested-object-arrays'
 
 /**
  * Parses a form's values into relevant components.
@@ -7,7 +7,7 @@ import type { NestedObjectArrays } from '../utils/nested-object-arrays'
 export type ParseForm<
   T,
   TFlattened extends FlattenObject<T> = FlattenObject<T>,
-  TFlattenedFieldArrays extends NestedObjectArrays<TFlattened> = NestedObjectArrays<TFlattened>,
+  // TFlattenedFieldArrays extends NestedObjectArrays<TFlattened> = NestedObjectArrays<TFlattened>,
 > = {
   /**
    * A flattened representation of the form values.
@@ -24,10 +24,10 @@ export type ParseForm<
   /**
    * The flattened form where the value is an array of objects.
    */
-  fieldArrays: TFlattenedFieldArrays
+  // fieldArrays: TFlattenedFieldArrays
 
-  /**
-   * Keys of the flattened form values that are mapped to an array of objects.
-   */
-  fieldArrayKeys: Extract<keyof TFlattenedFieldArrays, string>
+  // /**
+  //  * Keys of the flattened form values that are mapped to an array of objects.
+  //  */
+  // fieldArrayKeys: Extract<keyof TFlattenedFieldArrays, string>
 }
