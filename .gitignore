@@ -16,6 +16,9 @@ coverage/
 ### Specified by tsconfig.json
 dist/
 
+### TypeScript traced performance
+trace/
+
 # Logs.
 *.log
 .pnpm-debug.log*
