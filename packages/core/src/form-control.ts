@@ -302,7 +302,15 @@ export type KeepStateOptions = {
  * Options when triggering a field.
  */
 export type TriggerOptions = {
+  /**
+   * Whether to focus on the field.
+   */
   shouldFocus?: boolean
+
+  /**
+   * Whether to also update the form control's errors and notify subscribers.
+   */
+  shouldSetErrors?: boolean
 }
 
 export interface ResetOptions extends KeepStateOptions {
@@ -828,18 +836,10 @@ export class FormControl<
           const fullResult = await this.validate()
 
           if (fullResult.validationResult?.errors) {
-            // Update errors.
             this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
           }
         } else {
-          // Update errors.
-          this.state.errors.update(
-            (errors) => {
-              deepSet(errors, name, error)
-              return errors
-            },
-            [name],
-          )
+          deepSet(this.state.errors.value, name, error)
         }
       } else {
         this.mergeErrors(result.validationResult.errors, result.validationResult.names)
@@ -851,6 +851,10 @@ export class FormControl<
         // Update isValidating.
         this.state.isValid.set(result.isValid, [name])
       }
+
+      // Previously, errors were mutated without notifying subscribers.
+      // After everything is done, notify subscribers once.
+      this.state.errors.update((errors) => ({ ...errors }), [name])
     }
 
     this.state.isValidating.set(false, [name])
@@ -879,6 +883,7 @@ export class FormControl<
 
       // Update errors.
       this.mergeErrors(errors)
+      this.state.errors.update((errors) => ({ ...errors }))
 
       if (isValid) {
         const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
@@ -1105,11 +1110,7 @@ export class FormControl<
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
-    if (
-      force ||
-      this.derivedState.isTracking('isValid') ||
-      this.derivedState.clonesAreTracking('isValid')
-    ) {
+    if (force || this.isTracking('isValid')) {
       const result = await this.validate()
 
       const fieldNames = toStringArray(name)
@@ -1357,6 +1358,10 @@ export class FormControl<
       focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
     }
 
+    if (options?.shouldSetErrors) {
+      this.state.errors.update((errors) => ({ ...errors }), fieldNames)
+    }
+
     this.derivedState.unfreeze()
 
     return result.isValid
@@ -1398,7 +1403,7 @@ export class FormControl<
    * Merges errors into the form state's errors.
    *
    * Errors from a resolver or native validator can be generated without updating the form state.
-   * This method merges those errors into form state's errors store and notifies subscribers.
+   * This method merges those errors into form state's errors store **WITHOUT** notifying subscribers.
    *
    * The names array is helpful for capturing names of fields with removed errors.
    *
@@ -1408,34 +1413,32 @@ export class FormControl<
   mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
     const namesToMerge = names ?? Object.keys(errors)
 
-    this.state.errors.update((currentErrors) => {
-      const newErrors = names?.length ? currentErrors : {}
+    const currentErrors = this.state.errors.value
 
-      namesToMerge.forEach((name) => {
-        const fieldError = safeGet(errors, name)
+    const newErrors = names?.length ? currentErrors : {}
 
-        // Removed error.
-        if (fieldError == null) {
-          deepUnset(newErrors, name)
-          return
-        }
+    namesToMerge.forEach((name) => {
+      const fieldError = safeGet(errors, name)
 
-        // Added regular error.
-        if (!this.names.array.has(name)) {
-          deepSet(newErrors, name, fieldError)
-          return
-        }
+      // Removed error.
+      if (fieldError == null) {
+        deepUnset(newErrors, name)
+        return
+      }
 
-        // Added field array error.
-        const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
+      // Added regular error.
+      if (!this.names.array.has(name)) {
+        deepSet(newErrors, name, fieldError)
+        return
+      }
 
-        deepSet(fieldArrayErrors, 'root', errors[name])
+      // Added field array error.
+      const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
 
-        deepSet(newErrors, name, fieldArrayErrors)
-      })
+      deepSet(fieldArrayErrors, 'root', errors[name])
 
-      return newErrors
-    }, namesToMerge)
+      deepSet(newErrors, name, fieldArrayErrors)
+    })
   }
 
   /**
@@ -1577,11 +1580,7 @@ export class FormControl<
     /**
      * Whether the form is dirty.
      */
-    const isDirty =
-      this.derivedState.keys?.has('isDirty') ||
-      Array.from(this.derivedState.clones).some((clone) => clone.keys?.has('isDirty'))
-        ? this.getDirty()
-        : this.state.isDirty.value
+    const isDirty = this.isTracking('isDirty') ? this.getDirty() : this.state.isDirty.value
 
     return { previousIsDirty, currentIsDirty, isDirty }
   }
@@ -1623,5 +1622,21 @@ export class FormControl<
     this.state.isLoading.set(false)
 
     this.derivedState.unfreeze()
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Utilities
+  //--------------------------------------------------------------------------------------
+
+  /**
+   * Before doing some operations, the form control checks if there are actually any subscribers
+   * for that state, and skips the operation if there aren't.
+   */
+  isTracking(key: keyof typeof this.state) {
+    return (
+      this.derivedState.isTracking(key) ||
+      this.derivedState.clonesAreTracking(key) ||
+      this.state[key].subscribers.size
+    )
   }
 }

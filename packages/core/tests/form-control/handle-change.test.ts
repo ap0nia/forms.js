@@ -123,7 +123,15 @@ describe('FormControl', () => {
 
         fireEvent.change(ref)
 
-        waitFor(() => expect(formControl.state.errors.value).toBe({ [name]: { required: true } }))
+        waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            [name]: {
+              type: 'required',
+              message: '',
+              ref,
+            },
+          }),
+        )
       })
 
       test('field reference name is different from the ref name', () => {
@@ -156,7 +164,9 @@ describe('FormControl', () => {
         fireEvent.change(ref)
 
         waitFor(() =>
-          expect(formControl.state.errors.value).toBe({ [differentName]: { required: true } }),
+          expect(formControl.state.errors.value).toEqual({
+            [differentName]: { type: 'required', message: '', ref },
+          }),
         )
       })
 
@@ -405,6 +415,102 @@ describe('FormControl', () => {
           }),
         )
       })
+    })
+
+    describe('properly notifies subscribers to state changes', () => {
+      test('notifies subscribers at most once for change event with no validation', () => {
+        const valuesFn = vi.fn()
+        const isDirtyFn = vi.fn()
+        const dirtyFieldsFn = vi.fn()
+
+        const formControl = new FormControl()
+
+        formControl.derivedState.proxy.isDirty
+
+        formControl.state.values.subscribe(valuesFn)
+        formControl.state.isDirty.subscribe(isDirtyFn)
+        formControl.state.dirtyFields.subscribe(dirtyFieldsFn)
+
+        valuesFn.mockReset()
+        isDirtyFn.mockReset()
+        dirtyFieldsFn.mockReset()
+
+        const name = 'test'
+
+        const ref = document.createElement('input')
+        ref.name = name
+
+        formControl.fields[name] = {
+          _f: {
+            name,
+            ref,
+            mount: true,
+          },
+        }
+
+        ref.addEventListener('change', (event) => formControl.handleChange(event))
+
+        fireEvent.change(ref)
+
+        expect(valuesFn).toHaveBeenCalledOnce()
+        expect(isDirtyFn).toHaveBeenCalledOnce()
+        expect(dirtyFieldsFn).toHaveBeenCalledOnce()
+      })
+
+      test('notifies subscribers at most once for change event with validation', async () => {
+        const valuesFn = vi.fn()
+        const isDirtyFn = vi.fn()
+        const dirtyFieldsFn = vi.fn()
+        const errorsFn = vi.fn()
+
+        const formControl = new FormControl({ mode: 'onChange' })
+
+        formControl.state.values.subscribe(valuesFn)
+        formControl.state.isDirty.subscribe(isDirtyFn)
+        formControl.state.dirtyFields.subscribe(dirtyFieldsFn)
+        formControl.state.errors.subscribe(errorsFn)
+
+        valuesFn.mockReset()
+        isDirtyFn.mockReset()
+        dirtyFieldsFn.mockReset()
+        errorsFn.mockReset()
+
+        const name = 'test'
+        const name2 = 'test2'
+
+        const ref = document.createElement('input')
+        ref.name = name
+
+        formControl.fields[name] = {
+          _f: {
+            name,
+            ref,
+            required: true,
+            mount: true,
+            deps: [name2],
+          },
+        }
+
+        formControl.fields[name2] = {
+          _f: {
+            name: name2,
+            ref,
+            required: true,
+            mount: true,
+          },
+        }
+
+        ref.addEventListener('change', (event) => formControl.handleChange(event))
+
+        fireEvent.change(ref)
+
+        await waitFor(() => expect(valuesFn).toHaveBeenCalledOnce())
+        await waitFor(() => expect(isDirtyFn).toHaveBeenCalledOnce())
+        await waitFor(() => expect(dirtyFieldsFn).toHaveBeenCalledOnce())
+        await waitFor(() => expect(errorsFn).toHaveBeenCalledOnce())
+      })
+
+      test('notifies subscribers of derived state at most once for change event with validation', async () => {})
     })
   })
 })
