@@ -740,7 +740,6 @@ export class FormControl<
 
     const fieldValue = getCurrentFieldValue(event, field)
 
-    // Update values.
     this.state.values.update(
       (values) => {
         deepSet(values, name, fieldValue)
@@ -758,10 +757,8 @@ export class FormControl<
     }
 
     if (isBlurEvent) {
-      // Updates touchedFields.
       this.updateTouchedField(name)
     } else {
-      // Updates dirtyFields, isDirty.
       this.updateDirtyField(name, fieldValue)
     }
 
@@ -781,7 +778,6 @@ export class FormControl<
       )
 
     if (shouldSkipValidation) {
-      // Update isValid.
       this.updateValid()
       this.derivedState.unfreeze()
       return
@@ -792,7 +788,6 @@ export class FormControl<
       this.derivedState.freeze()
     }
 
-    // Update isValidating and force derivedState to update.
     this.derivedState.transaction(() => {
       this.state.isValidating.set(true)
     })
@@ -815,10 +810,8 @@ export class FormControl<
       }
 
       if (field._f.deps) {
-        // Update isValidating, errors, isValid.
         this.trigger(field._f.deps as any)
       } else {
-        // Update isValidating.
         this.state.isValid.set(result.isValid, [name])
       }
 
@@ -851,7 +844,6 @@ export class FormControl<
       if (isFieldValueUpdated && field._f.deps) {
         this.trigger(field._f.deps as any)
       } else {
-        // Update isValidating.
         this.state.isValid.set(result.isValid, [name])
       }
 
@@ -875,7 +867,6 @@ export class FormControl<
 
       event?.preventDefault?.()
 
-      // Update isSubmitting.
       this.state.isSubmitting.set(true)
 
       const { isValid, resolverResult, validationResult } = await this.validate()
@@ -884,7 +875,6 @@ export class FormControl<
 
       deepUnset(this.state.errors.value, 'root')
 
-      // Update errors.
       this.mergeErrors(errors)
       this.state.errors.update((errors) => ({ ...errors }))
 
@@ -1108,8 +1098,6 @@ export class FormControl<
    *
    * Saves on computation by only updating if the store has subscribers.
    *
-   * @updates isValid.
-   *
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
@@ -1118,7 +1106,6 @@ export class FormControl<
 
       const fieldNames = toStringArray(name)
 
-      // Update isValid.
       this.state.isValid.set(result.isValid, fieldNames)
     }
   }
@@ -1191,8 +1178,6 @@ export class FormControl<
 
   /**
    * Sets one field value.
-   *
-   * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setValue<T extends TParsedForm['keys']>(
     name: Extract<T, string>,
@@ -1210,7 +1195,6 @@ export class FormControl<
     if (options?.quiet) {
       deepSet(this.state.values.value, name, clonedValue)
     } else {
-      // Update values.
       this.state.values.update((values) => {
         deepSet(values, name, clonedValue)
         return values
@@ -1250,8 +1234,6 @@ export class FormControl<
    * const value = { b: 'c' }
    * const result = { a: { b: 'c' } }
    * ```
-   *
-   * @updates Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setValues(name: string, value: any, options?: SetValueOptions): void {
     this.derivedState.freeze()
@@ -1268,7 +1250,6 @@ export class FormControl<
       if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
         this.setValues(fieldName, fieldValue, options)
       } else {
-        // Updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
         this.setFieldValue(fieldName, fieldValue, options)
       }
     }
@@ -1278,8 +1259,6 @@ export class FormControl<
 
   /**
    * Sets a field's value.
-   *
-   * @updates dirtyFields, isDirty, touchedFields. Maybe errors, isValidating, isValid.
    */
   setFieldValue(name: string, value: unknown, options?: SetValueOptions): void {
     this.derivedState.freeze()
@@ -1289,7 +1268,6 @@ export class FormControl<
     const fieldReference = field?._f
 
     if (fieldReference == null) {
-      // Update dirtyFields, isDirty, touchedFields.
       this.touch(name, value, options)
       return
     }
@@ -1309,7 +1287,6 @@ export class FormControl<
       )
     }
 
-    // Update dirtyFields, isDirty, touchedFields.
     this.touch(name, fieldValue, options)
 
     if (options?.shouldValidate) {
@@ -1321,8 +1298,6 @@ export class FormControl<
 
   /**
    * Trigger a field.
-   *
-   * @updates isValidating, errors, isValid.
    */
   async trigger<T extends TParsedForm['keys']>(
     name?: T | T[] | readonly T[],
@@ -1335,7 +1310,6 @@ export class FormControl<
 
     const fieldNames = toStringArray(name)
 
-    // Update isValidating and force derivedState to update.
     this.derivedState.transaction(() => {
       this.state.isValidating.set(true, fieldNames)
     })
@@ -1343,19 +1317,15 @@ export class FormControl<
     const result = await this.validate(name as any)
 
     if (result.validationResult) {
-      // Update errors.
       this.mergeErrors(result.validationResult.errors, result.validationResult.names)
     }
 
     if (result.resolverResult?.errors) {
-      // Update errors.
       this.mergeErrors(result.resolverResult.errors)
     }
 
-    // Update isValid.
     this.state.isValid.set(result.isValid, fieldNames)
 
-    // Update isValidating and force derivedState to update.
     this.derivedState.transaction(() => {
       this.state.isValidating.set(false, fieldNames)
     })
@@ -1376,8 +1346,6 @@ export class FormControl<
 
   /**
    * Set an error.
-   *
-   * @updates errors, isValid.
    */
   setError<T extends TParsedForm['keys']>(
     name: T | 'root' | `root.${string}`,
@@ -1390,13 +1358,11 @@ export class FormControl<
 
     const fieldNames = toStringArray(name)
 
-    // Update errors.
     this.state.errors.update((errors) => {
       deepSet(errors, name, { ...error, ref: field?._f?.ref })
       return errors
     }, fieldNames)
 
-    // Update isValid.
     this.state.isValid.set(false, fieldNames)
 
     if (options?.shouldFocus) {
@@ -1469,8 +1435,6 @@ export class FormControl<
 
   /**
    * Touches a field.
-   *
-   * @updates dirtyFields, isDirty, touchedFields.
    */
   touch(name: string, value?: unknown, options?: SetValueOptions): void {
     if (!options?.shouldTouch || options.shouldDirty) {
@@ -1484,8 +1448,6 @@ export class FormControl<
 
   /**
    * Updates the specified field name to be touched.
-   *
-   * @updates touchedFields.
    *
    * @returns Whether the field's touched status changed.
    */
@@ -1586,9 +1548,6 @@ export class FormControl<
       deepSet(this.state.dirtyFields.value, name, true)
     }
 
-    /**
-     * Whether the form is dirty.
-     */
     const isDirty = this.isTracking('isDirty', toStringArray(name))
       ? this.getDirty()
       : this.state.isDirty.value
@@ -1718,7 +1677,6 @@ export class FormControl<
     const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
 
     if (resolvingDefaultValues == null) {
-      // Ensure that the form is not loading.
       this.state.isLoading.set(false)
       return
     }
