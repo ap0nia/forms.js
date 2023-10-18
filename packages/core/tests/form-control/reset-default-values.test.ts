@@ -14,7 +14,7 @@ describe('FormControl', () => {
 
       formControl.state.isLoading.subscribe(fn)
 
-      fn.mockClear()
+      fn.mockReset()
 
       formControl.resetDefaultValues()
 
@@ -31,7 +31,7 @@ describe('FormControl', () => {
 
       formControl.state.isLoading.subscribe(fn)
 
-      fn.mockClear()
+      fn.mockReset()
 
       await formControl.resetDefaultValues(() => {})
 
@@ -46,7 +46,7 @@ describe('FormControl', () => {
 
       formControl.state.isLoading.subscribe(fn)
 
-      fn.mockClear()
+      fn.mockReset()
 
       formControl.resetDefaultValues(new Promise((resolve) => setTimeout(resolve, 100)))
 
@@ -90,5 +90,85 @@ describe('FormControl', () => {
     })
   })
 
-  test('notifies subscribers via derivedState at most twice', async () => {})
+  describe('properly notifies subscribers to state changes', async () => {
+    test('notifies subscribers of derivedState at most twice', async () => {
+      const formControl = new FormControl()
+
+      formControl.derivedState.proxy.isLoading
+      formControl.derivedState.proxy.values
+      formControl.derivedState.proxy.defaultValues
+
+      const derivedFn = vi.fn()
+
+      formControl.derivedState.subscribe(derivedFn)
+
+      derivedFn.mockReset()
+
+      formControl.resetDefaultValues(new Promise((resolve) => setTimeout(resolve)), true)
+
+      await waitFor(() => expect(derivedFn).toHaveBeenCalledTimes(2))
+    })
+
+    test('notifies subscribers to isLoading twice and all other state once', async () => {
+      const formControl = new FormControl()
+
+      const isLoadingFn = vi.fn()
+      const valuesFn = vi.fn()
+      const defaultValuesFn = vi.fn()
+
+      formControl.state.isLoading.subscribe(isLoadingFn)
+      formControl.state.values.subscribe(valuesFn)
+      formControl.state.defaultValues.subscribe(defaultValuesFn)
+
+      isLoadingFn.mockReset()
+      valuesFn.mockReset()
+      defaultValuesFn.mockReset()
+
+      formControl.resetDefaultValues(new Promise((resolve) => setTimeout(resolve)), true)
+
+      await waitFor(() => expect(isLoadingFn).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(valuesFn).toHaveBeenCalledOnce())
+      await waitFor(() => expect(defaultValuesFn).toHaveBeenCalledOnce())
+    })
+
+    test('does not notify subscribers of derivedState if no values to reset', async () => {
+      const formControl = new FormControl()
+
+      formControl.derivedState.proxy.isLoading
+      formControl.derivedState.proxy.values
+      formControl.derivedState.proxy.defaultValues
+
+      const derivedFn = vi.fn()
+
+      formControl.derivedState.subscribe(derivedFn)
+
+      derivedFn.mockReset()
+
+      formControl.resetDefaultValues()
+
+      await waitFor(() => expect(derivedFn).not.toHaveBeenCalled())
+    })
+
+    test('does not notify at all if no values to reset', async () => {
+      const formControl = new FormControl()
+
+      const isLoadingFn = vi.fn()
+      const valuesFn = vi.fn()
+      const defaultValuesFn = vi.fn()
+
+      formControl.state.isLoading.subscribe(isLoadingFn)
+      formControl.state.values.subscribe(valuesFn)
+      formControl.state.defaultValues.subscribe(defaultValuesFn)
+
+      isLoadingFn.mockReset()
+      valuesFn.mockReset()
+      defaultValuesFn.mockReset()
+
+      formControl.resetDefaultValues()
+
+      await waitFor(() => expect(isLoadingFn).not.toHaveBeenCalled())
+      await waitFor(() => expect(valuesFn).not.toHaveBeenCalled())
+      await waitFor(() => expect(defaultValuesFn).not.toHaveBeenCalled())
+    })
+  })
 })

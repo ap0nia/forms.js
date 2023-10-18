@@ -1604,16 +1604,14 @@ export class FormControl<
 
     const isPromise = resolvingDefaultValues instanceof Promise
 
-    // The form should be now since it's waiting for the default values to resolve.
-    if (isPromise) {
-      this.state.isLoading.set(true)
-    }
-
     let resolvedDefaultValues = resolvingDefaultValues
 
     if (isPromise) {
+      this.state.isLoading.set(true)
       resolvedDefaultValues = await resolvingDefaultValues
     }
+
+    this.derivedState.freeze()
 
     this.state.defaultValues.set((resolvedDefaultValues ?? {}) as any)
 
@@ -1622,9 +1620,8 @@ export class FormControl<
       this.state.values.set(newValues as TValues)
     }
 
-    // If the form was loading, it should be done now.
-    if (this.state.isLoading.value) {
-      this.state.isLoading.set(false)
-    }
+    this.state.isLoading.set(false)
+
+    this.derivedState.unfreeze()
   }
 }
