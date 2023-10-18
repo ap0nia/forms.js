@@ -1604,8 +1604,8 @@ export class FormControl<
 
     const isPromise = resolvingDefaultValues instanceof Promise
 
-    // If the form wasn't loading, it should be now since it's waiting for the default values to resolve.
-    if (!this.state.isLoading.value && isPromise) {
+    // The form should be now since it's waiting for the default values to resolve.
+    if (isPromise) {
       this.state.isLoading.set(true)
     }
 

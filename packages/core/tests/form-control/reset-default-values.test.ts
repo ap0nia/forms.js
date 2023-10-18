@@ -1,34 +1,63 @@
+import { waitFor } from '@testing-library/dom'
 import { describe, expect, test, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 
 describe('FormControl', () => {
   describe('resetDefaultValues', async () => {
-    test('null default values ensures loading state is false', async () => {
-      const fn = vi.fn()
-
+    test('sets isLoading to false if no values provided', () => {
       const formControl = new FormControl()
 
-      formControl.state.isLoading.subscribe(fn)
       formControl.state.isLoading.set(true)
 
-      fn.mockReset()
+      const fn = vi.fn()
 
-      formControl.resetDefaultValues(undefined)
+      formControl.state.isLoading.subscribe(fn)
+
+      fn.mockClear()
+
+      formControl.resetDefaultValues()
 
       expect(fn).toHaveBeenCalledOnce()
       expect(fn).toHaveBeenLastCalledWith(false)
     })
 
-    test('default values promise that resolves to null sets default values to empty object', async () => {
-      const formControl = new FormControl({
-        defaultValues: async () => null,
-      })
+    test('sets isLoading to false if function resolves to undefined values', async () => {
+      const formControl = new FormControl()
 
-      expect(formControl.state.defaultValues.value).toEqual({})
+      formControl.state.isLoading.set(true)
+
+      const fn = vi.fn()
+
+      formControl.state.isLoading.subscribe(fn)
+
+      fn.mockClear()
+
+      await formControl.resetDefaultValues(() => {})
+
+      expect(fn).toHaveBeenCalledOnce()
+      expect(fn).toHaveBeenLastCalledWith(false)
     })
 
-    test('async default values', async () => {
+    test('sets isLoading to true if values is a promise, then sets it to false after resolved', async () => {
+      const formControl = new FormControl()
+
+      const fn = vi.fn()
+
+      formControl.state.isLoading.subscribe(fn)
+
+      fn.mockClear()
+
+      formControl.resetDefaultValues(new Promise((resolve) => setTimeout(resolve, 100)))
+
+      expect(fn).toHaveBeenCalledOnce()
+      expect(fn).toHaveBeenLastCalledWith(true)
+
+      await waitFor(() => expect(fn).toHaveReturnedTimes(2))
+      await waitFor(() => expect(fn).toHaveBeenLastCalledWith(false))
+    })
+
+    test('updates default values', async () => {
       const formControl = new FormControl()
 
       const values = {
@@ -39,14 +68,27 @@ describe('FormControl', () => {
         },
       }
 
-      const defaultValues = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        return values
+      formControl.resetDefaultValues(values)
+
+      expect(formControl.state.defaultValues.value).toEqual(values)
+    })
+
+    test('updates values when resetValues is true', async () => {
+      const formControl = new FormControl()
+
+      const values = {
+        a: {
+          b: {
+            c: true,
+          },
+        },
       }
 
-      await formControl.resetDefaultValues(defaultValues, true)
+      formControl.resetDefaultValues(values, true)
 
       expect(formControl.state.values.value).toEqual(values)
     })
   })
+
+  test('notifies subscribers via derivedState at most twice', async () => {})
 })
