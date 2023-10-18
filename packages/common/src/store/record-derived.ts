@@ -363,8 +363,10 @@ export class RecordDerived<
       return true
     }
 
-    if (name == null) {
-      return this.keys.has(key)
+    const rootIsTracking = this.keys.has(key)
+
+    if (rootIsTracking || name == null) {
+      return rootIsTracking
     }
 
     if (typeof name === 'boolean') {

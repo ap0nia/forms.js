@@ -226,7 +226,7 @@ describe('FormContol', () => {
      */
     formControl.names.mount.add('name')
 
-    await formControl.trigger('name', { shouldFocus: true })
+    await formControl.trigger('name', { shouldFocus: true, shouldSetErrors: true })
 
     expect(formControl.fields['name']._f.ref.focus).toHaveBeenCalled()
   })

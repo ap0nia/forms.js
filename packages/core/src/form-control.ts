@@ -3,6 +3,7 @@ import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
+import { isBrowser } from '@forms.js/common/utils/is-browser'
 import { isEmptyObject } from '@forms.js/common/utils/is-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Noop } from '@forms.js/common/utils/noop'
@@ -373,6 +374,11 @@ export type SetValueOptions = {
    * Whether the changed field should be marked as touched.
    */
   shouldTouch?: boolean
+
+  /**
+   * Whether to not notify subscribers.
+   */
+  quiet?: boolean
 }
 
 /**
@@ -1107,7 +1113,7 @@ export class FormControl<
    * @param force Whether to force the validation and the store to update and notify subscribers.
    */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
-    if (force || this.isTracking('isValid')) {
+    if (force || this.isTracking('isValid', toStringArray(name))) {
       const result = await this.validate()
 
       const fieldNames = toStringArray(name)
@@ -1201,11 +1207,15 @@ export class FormControl<
 
     const clonedValue = structuredClone(value)
 
-    // Update values.
-    this.state.values.update((values) => {
-      deepSet(values, name, clonedValue)
-      return values
-    }, fieldNames)
+    if (options?.quiet) {
+      deepSet(this.state.values.value, name, clonedValue)
+    } else {
+      // Update values.
+      this.state.values.update((values) => {
+        deepSet(values, name, clonedValue)
+        return values
+      }, fieldNames)
+    }
 
     const isFieldArray = this.names.array.has(name)
 
@@ -1579,7 +1589,9 @@ export class FormControl<
     /**
      * Whether the form is dirty.
      */
-    const isDirty = this.isTracking('isDirty') ? this.getDirty() : this.state.isDirty.value
+    const isDirty = this.isTracking('isDirty', toStringArray(name))
+      ? this.getDirty()
+      : this.state.isDirty.value
 
     return { previousIsDirty, currentIsDirty, isDirty }
   }
@@ -1587,6 +1599,117 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Resetters.
   //--------------------------------------------------------------------------------------
+
+  /**
+   */
+  reset(
+    formValues?: Defaults<TValues> extends TValues ? TValues : Defaults<TValues>,
+    options?: ResetOptions,
+  ): void {
+    this.derivedState.freeze()
+
+    const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
+
+    const cloneUpdatedValues = structuredClone(updatedValues)
+
+    const values =
+      formValues && isEmptyObject(formValues) ? this.state.defaultValues.value : cloneUpdatedValues
+
+    if (!options?.keepDefaultValues) {
+      this.state.defaultValues.set(updatedValues as DeepPartial<TValues>)
+    }
+
+    if (!options?.keepValues) {
+      if (options?.keepDirtyValues || this.options.shouldCaptureDirtyFields) {
+        for (const fieldName of this.names.mount) {
+          if (safeGet(this.state.dirtyFields.value, fieldName)) {
+            deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
+          } else {
+            this.setValue(fieldName as any, safeGet(values, fieldName), { quiet: true })
+          }
+        }
+      } else {
+        if (isBrowser() && formValues == null) {
+          for (const name of this.names.mount) {
+            const field: Field | undefined = safeGet(this.fields, name)
+
+            if (field?._f == null) {
+              continue
+            }
+
+            const fieldReference = Array.isArray(field._f.refs) ? field._f.refs[0] : field._f.ref
+
+            if (!isHTMLElement(fieldReference)) {
+              continue
+            }
+
+            const form = fieldReference.closest('form')
+
+            if (form) {
+              form.reset()
+              break
+            }
+          }
+        }
+
+        this.fields = {}
+      }
+
+      const newValues = this.options.shouldUnregister
+        ? options?.keepDefaultValues
+          ? structuredClone(this.state.defaultValues.value)
+          : {}
+        : structuredClone(values)
+
+      this.derivedState.transaction(() => {
+        this.state.values.set(newValues as TValues)
+      })
+    }
+
+    this.names = {
+      mount: new Set(),
+      unMount: new Set(),
+      array: new Set(),
+    }
+
+    if (!options?.keepSubmitCount) {
+      this.state.submitCount.set(0)
+    }
+
+    if (!options?.keepDirty) {
+      this.state.isDirty.set(
+        Boolean(
+          options?.keepDefaultValues && !deepEqual(formValues, this.state.defaultValues.value),
+        ),
+      )
+    }
+
+    if (!options?.keepDirtyValues) {
+      if (options?.keepDefaultValues && formValues) {
+        this.state.dirtyFields.set(getDirtyFields(this.state.defaultValues.value, formValues))
+      } else {
+        this.state.dirtyFields.set({})
+      }
+    }
+
+    if (!options?.keepTouched) {
+      this.state.touchedFields.set({})
+    }
+
+    if (!options?.keepErrors) {
+      this.state.errors.set({})
+    }
+
+    if (!options?.keepIsSubmitSuccessful) {
+      this.state.isSubmitSuccessful.set(false)
+    }
+
+    this.state.isSubmitting.set(false)
+
+    this.valueListeners.forEach((listener) => listener())
+
+    this.derivedState.unfreeze()
+  }
 
   /**
    * @param resetValues Whether to reset the form's values too.
@@ -1631,10 +1754,10 @@ export class FormControl<
    * Before doing some operations, the form control checks if there are actually any subscribers
    * for that state, and skips the operation if there aren't.
    */
-  isTracking(key: keyof typeof this.state) {
+  isTracking(key: keyof typeof this.state, name?: string[]) {
     return (
-      this.derivedState.isTracking(key) ||
-      this.derivedState.clonesAreTracking(key) ||
+      this.derivedState.isTracking(key, name) ||
+      this.derivedState.clonesAreTracking(key, name) ||
       this.state[key].subscribers.size
     )
   }

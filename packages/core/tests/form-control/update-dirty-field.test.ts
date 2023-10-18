@@ -33,9 +33,7 @@ describe('FormContol', () => {
     test('only update isDirty when there are subscribers', () => {
       const formControl = new FormControl()
 
-      formControl.state.values.set({
-        hello: 'world',
-      })
+      formControl.state.values.set({ hello: 'world' })
 
       // This shouldn't update isDirty because it isn't being tracked.
       formControl.updateDirtyField('hello', '')
