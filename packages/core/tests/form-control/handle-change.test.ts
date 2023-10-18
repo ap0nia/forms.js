@@ -419,21 +419,7 @@ describe('FormControl', () => {
 
     describe('properly notifies subscribers to state changes', () => {
       test('notifies subscribers at most once for change event with no validation', () => {
-        const valuesFn = vi.fn()
-        const isDirtyFn = vi.fn()
-        const dirtyFieldsFn = vi.fn()
-
         const formControl = new FormControl()
-
-        formControl.derivedState.proxy.isDirty
-
-        formControl.state.values.subscribe(valuesFn)
-        formControl.state.isDirty.subscribe(isDirtyFn)
-        formControl.state.dirtyFields.subscribe(dirtyFieldsFn)
-
-        valuesFn.mockReset()
-        isDirtyFn.mockReset()
-        dirtyFieldsFn.mockReset()
 
         const name = 'test'
 
@@ -448,6 +434,18 @@ describe('FormControl', () => {
           },
         }
 
+        const valuesFn = vi.fn()
+        const isDirtyFn = vi.fn()
+        const dirtyFieldsFn = vi.fn()
+
+        formControl.state.values.subscribe(valuesFn)
+        formControl.state.isDirty.subscribe(isDirtyFn)
+        formControl.state.dirtyFields.subscribe(dirtyFieldsFn)
+
+        valuesFn.mockReset()
+        isDirtyFn.mockReset()
+        dirtyFieldsFn.mockReset()
+
         ref.addEventListener('change', (event) => formControl.handleChange(event))
 
         fireEvent.change(ref)
@@ -458,24 +456,10 @@ describe('FormControl', () => {
       })
 
       test('notifies subscribers at most once for change event with validation', async () => {
-        const valuesFn = vi.fn()
-        const isDirtyFn = vi.fn()
-        const dirtyFieldsFn = vi.fn()
-        const errorsFn = vi.fn()
-
         const formControl = new FormControl({ mode: 'onChange' })
 
-        formControl.state.values.subscribe(valuesFn)
-        formControl.state.isDirty.subscribe(isDirtyFn)
-        formControl.state.dirtyFields.subscribe(dirtyFieldsFn)
-        formControl.state.errors.subscribe(errorsFn)
-
-        valuesFn.mockReset()
-        isDirtyFn.mockReset()
-        dirtyFieldsFn.mockReset()
-        errorsFn.mockReset()
-
         const name = 'test'
+
         const name2 = 'test2'
 
         const ref = document.createElement('input')
@@ -500,6 +484,21 @@ describe('FormControl', () => {
           },
         }
 
+        const valuesFn = vi.fn()
+        const isDirtyFn = vi.fn()
+        const dirtyFieldsFn = vi.fn()
+        const errorsFn = vi.fn()
+
+        formControl.state.values.subscribe(valuesFn)
+        formControl.state.isDirty.subscribe(isDirtyFn)
+        formControl.state.dirtyFields.subscribe(dirtyFieldsFn)
+        formControl.state.errors.subscribe(errorsFn)
+
+        valuesFn.mockReset()
+        isDirtyFn.mockReset()
+        dirtyFieldsFn.mockReset()
+        errorsFn.mockReset()
+
         ref.addEventListener('change', (event) => formControl.handleChange(event))
 
         fireEvent.change(ref)
@@ -510,7 +509,52 @@ describe('FormControl', () => {
         await waitFor(() => expect(errorsFn).toHaveBeenCalledOnce())
       })
 
-      test('notifies subscribers of derived state at most once for change event with validation', async () => {})
+      test('notifies subscribers of derived state at most once for change event with validation', async () => {
+        const fn = vi.fn()
+
+        const formControl = new FormControl({ mode: 'onChange' })
+
+        const name = 'test'
+
+        const name2 = 'test2'
+
+        const ref = document.createElement('input')
+        ref.name = name
+
+        formControl.fields[name] = {
+          _f: {
+            name,
+            ref,
+            required: true,
+            mount: true,
+            deps: [name2],
+          },
+        }
+
+        formControl.fields[name2] = {
+          _f: {
+            name: name2,
+            ref,
+            required: true,
+            mount: true,
+          },
+        }
+
+        formControl.derivedState.proxy.values
+        formControl.derivedState.proxy.isDirty
+        formControl.derivedState.proxy.dirtyFields
+        formControl.derivedState.proxy.errors
+
+        formControl.derivedState.subscribe(fn)
+
+        fn.mockReset()
+
+        ref.addEventListener('change', (event) => formControl.handleChange(event))
+
+        fireEvent.change(ref)
+
+        await waitFor(() => expect(fn).toHaveBeenCalledOnce())
+      })
     })
   })
 })

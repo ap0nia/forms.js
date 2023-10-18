@@ -802,18 +802,11 @@ export class FormControl<
         previousError.name,
       )
 
-      // Update errors.
-      this.state.errors.update(
-        (errors) => {
-          if (currentError.error) {
-            deepSet(errors, currentError.name, currentError.error)
-          } else {
-            deepUnset(errors, currentError.name)
-          }
-          return errors
-        },
-        [name],
-      )
+      if (currentError.error) {
+        deepSet(this.state.errors.value, currentError.name, currentError.error)
+      } else {
+        deepUnset(this.state.errors.value, currentError.name)
+      }
 
       if (field._f.deps) {
         // Update isValidating, errors, isValid.
@@ -822,6 +815,10 @@ export class FormControl<
         // Update isValidating.
         this.state.isValid.set(result.isValid, [name])
       }
+
+      // Previously, errors were mutated without notifying subscribers.
+      // After everything is done, notify subscribers once.
+      this.state.errors.update((errors) => ({ ...errors }), [name])
     }
 
     if (result.validationResult) {
@@ -1439,6 +1436,8 @@ export class FormControl<
 
       deepSet(newErrors, name, fieldArrayErrors)
     })
+
+    this.state.errors.value = newErrors
   }
 
   /**
