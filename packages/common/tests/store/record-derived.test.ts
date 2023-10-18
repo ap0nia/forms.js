@@ -654,6 +654,16 @@ describe('store', () => {
         expect(fnA).toHaveBeenCalledTimes(1)
         expect(fnB).toHaveBeenCalledTimes(1)
       })
+
+      test('keys tracked by clones are detected', () => {
+        const { derived } = createDerived()
+
+        const clone = derived.clone()
+
+        clone.proxy.a
+
+        expect(derived.clonesAreTracking('a')).toBeTruthy()
+      })
     })
   })
 })
