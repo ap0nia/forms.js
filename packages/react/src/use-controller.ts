@@ -93,8 +93,8 @@ export function useController<
         nativeEvent: {
           type: INPUT_EVENTS.CHANGE,
           target: {
-            value: getEventValue(event),
             name: props.name,
+            value: getEventValue(event),
           },
         },
       } as any)
@@ -107,8 +107,8 @@ export function useController<
       nativeEvent: {
         type: INPUT_EVENTS.BLUR,
         target: {
-          value: formControl.getValues(props.name),
           name: props.name,
+          value: formControl.getValues(props.name),
         },
       },
     } as any)
