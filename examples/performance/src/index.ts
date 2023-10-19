@@ -113,8 +113,7 @@ type MyForm = {
 // export const hookForm = useForm<MyForm>()
 //
 // hookForm.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
-//
-//
+
 // Modular Form
 
 import { Field, useFormStore } from '@modular-forms/react'

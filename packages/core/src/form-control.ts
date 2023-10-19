@@ -314,6 +314,8 @@ export type TriggerOptions = {
   shouldSetErrors?: boolean
 }
 
+/**
+ */
 export interface ResetOptions extends KeepStateOptions {
   /**
    * Whether to keep the form's current values.
@@ -635,6 +637,18 @@ export class FormControl<
   }
 
   /**
+   * Before doing some operations, the form control checks if there are actually any subscribers
+   * for that state, and skips the operation if there aren't.
+   */
+  isTracking(key: keyof typeof this.state, name?: string[]) {
+    return (
+      this.derivedState.isTracking(key, name) ||
+      this.derivedState.clonesAreTracking(key, name) ||
+      this.state[key].subscribers.size
+    )
+  }
+
+  /**
    * Get all the form's values.
    */
   getValues(): TValues
@@ -682,9 +696,11 @@ export class FormControl<
 
   watch(...args: any[]): any {
     if (typeof args[0] === 'function') {
-      return this.derivedState.subscribe((values, context) => {
-        return args[0](values, context ?? this.options.context)
-      })
+      return () => {
+        this.derivedState.subscribe((state, context) => {
+          return args[0](state, context ?? this.options.context)
+        })
+      }
     }
 
     const [name, _defaultValues, options] = args
@@ -1685,21 +1701,5 @@ export class FormControl<
     this.state.isLoading.set(false)
 
     this.derivedState.unfreeze()
-  }
-
-  //--------------------------------------------------------------------------------------
-  // Utilities
-  //--------------------------------------------------------------------------------------
-
-  /**
-   * Before doing some operations, the form control checks if there are actually any subscribers
-   * for that state, and skips the operation if there aren't.
-   */
-  isTracking(key: keyof typeof this.state, name?: string[]) {
-    return (
-      this.derivedState.isTracking(key, name) ||
-      this.derivedState.clonesAreTracking(key, name) ||
-      this.state[key].subscribers.size
-    )
   }
 }
