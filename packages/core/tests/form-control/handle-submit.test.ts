@@ -60,7 +60,14 @@ describe('FormControl', () => {
 
       const name = 'a'
 
-      formControl.register(name, { required: true })
+      formControl.fields[name] = {
+        _f: {
+          name,
+          mount: true,
+          ref: { name },
+          required: true,
+        },
+      }
 
       const onInvalid = vi.fn()
 

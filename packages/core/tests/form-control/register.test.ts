@@ -5,10 +5,22 @@ import type { FieldRecord } from '../../src/types/fields'
 
 describe('FormContol', () => {
   describe('register', () => {
+    test('registering field with value', () => {
+      const formControl = new FormControl()
+
+      const name = 'name'
+
+      const value = 'value'
+
+      formControl.registerField(name, { value })
+
+      expect(formControl.state.values.value[name]).toBe(value)
+    })
+
     test('field name is added to the mounted names set', () => {
       const formControl = new FormControl()
 
-      formControl.register('name')
+      formControl.registerField('name')
 
       expect(formControl.names.mount.has('name')).toBe(true)
     })
@@ -16,7 +28,7 @@ describe('FormContol', () => {
     test('new field is registered on the form control and updated when re-registered', () => {
       const formControl = new FormControl()
 
-      formControl.register('name')
+      formControl.registerField('name')
 
       const expectedFields1: FieldRecord = {
         name: {
@@ -30,7 +42,7 @@ describe('FormContol', () => {
 
       expect(formControl.fields).toEqual(expectedFields1)
 
-      formControl.register('name', { required: true })
+      formControl.registerField('name', { required: true })
 
       const expectedFields2: FieldRecord = {
         name: {
@@ -52,7 +64,7 @@ describe('FormContol', () => {
       const formControl = new FormControl()
 
       const name = 'abc'
-      const { registerElement } = formControl.register(name)
+      formControl.registerField(name)
 
       const initialFields: FieldRecord = {
         [name]: {
@@ -68,7 +80,7 @@ describe('FormContol', () => {
 
       const ref = document.createElement('input')
 
-      registerElement(ref)
+      formControl.registerElement(name, ref)
 
       const expectedFields: FieldRecord = {
         [name]: {
@@ -88,7 +100,7 @@ describe('FormContol', () => {
 
       const name = 'abc'
 
-      const { unregisterElement } = formControl.register(name)
+      formControl.registerField(name)
 
       const initialFields: FieldRecord = {
         [name]: {
@@ -103,7 +115,7 @@ describe('FormContol', () => {
       expect(formControl.fields).toEqual(initialFields)
       expect(formControl.names.unMount).not.toContain(name)
 
-      unregisterElement()
+      formControl.unregisterElement(name)
 
       const expectedFields: FieldRecord = {
         [name]: {

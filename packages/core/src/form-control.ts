@@ -897,23 +897,6 @@ export class FormControl<
   }
 
   /**
-   * @remarks MUST NOT NOTIFY ANY SIGNAL LISTENERS BECAUSE REACT SUCKS.
-   */
-  register<T extends TParsedForm['keys']>(
-    name: Extract<T, string>,
-    options?: RegisterOptions<TValues, T>,
-  ) {
-    this.registerField(name, options)
-
-    const props = {
-      registerElement: (element: InputElement) => this.registerElement(name, element, options),
-      unregisterElement: () => this.unregisterElement(name, options),
-    }
-
-    return props
-  }
-
-  /**
    * Register an HTML input element.
    *
    * @remarks MUST NOT NOTIFY ANY SIGNAL LISTENERS BECAUSE REACT SUCKS.
