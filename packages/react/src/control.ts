@@ -1,5 +1,5 @@
 import {
-  FormControl as CoreFormControl,
+  FormControl,
   type ParseForm,
   type FormControlOptions,
   type RegisterOptions,
@@ -16,12 +16,14 @@ export type ReactRegisterProps = {
   ref: (instance: HTMLElement | null) => void
 }
 
-export class FormControl<
+export type { FormControlOptions as ControlOptions }
+
+export class Control<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-> extends CoreFormControl<TValues, TContext, TTransformedValues, TParsedForm> {
+> extends FormControl<TValues, TContext, TTransformedValues, TParsedForm> {
   constructor(options?: FormControlOptions<TValues, TContext>) {
     super(options)
   }

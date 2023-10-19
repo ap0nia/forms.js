@@ -725,7 +725,7 @@ export class FormControl<
   /**
    * Handles a change event from an input element.
    */
-  async handleChange(event: Event): Promise<void | boolean> {
+  async handleChange(event: Event): Promise<void> {
     this.derivedState.freeze()
 
     const target: any = event.target
