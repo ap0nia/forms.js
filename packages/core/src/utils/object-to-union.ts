@@ -76,6 +76,8 @@ export type ObjectToUnion<
   KeyWithExtension extends string = Key extends '' ? '' : `${Key}.`,
 > = IsAny<T> extends true
   ? any
+  : IsIgnoredType<T> extends true
+  ? { [SubKey in Key]: T }
   :
       | {
           [K in keyof T]: IsAny<T[K]> extends true
@@ -92,3 +94,8 @@ export type ObjectToUnion<
             : { [SubKey in `${KeyWithExtension}${K & string}`]: T[K] }
         }[keyof T]
       | (Key extends '' ? never : { [SubKey in Key]: T })
+
+/**
+ * Don't recur on certain types.
+ */
+export type IsIgnoredType<T> = T extends Blob ? true : false
