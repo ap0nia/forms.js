@@ -258,14 +258,6 @@ export class FormControl<
     }
   }
 
-  isTracking(key: keyof typeof this.state, name?: string[]) {
-    return (
-      this.derivedState.isTracking(key, name) ||
-      this.derivedState.clonesAreTracking(key, name) ||
-      this.state[key].subscribers.size
-    )
-  }
-
   get _fields() {
     return this.fields
   }
@@ -384,13 +376,7 @@ export class FormControl<
       !field._f.deps
 
     const shouldSkipValidation =
-      nothingToValidate ||
-      shouldSkipValidationAfter(
-        isBlurEvent ? 'blur' : 'change',
-        safeGet(this.state.touchedFields.value, name),
-        this.state.isSubmitted.value,
-        this.options.submissionValidationMode,
-      )
+      nothingToValidate || this.shouldSkipValidationAfter(name, isBlurEvent)
 
     if (shouldSkipValidation) {
       this.updateValid()
@@ -638,31 +624,6 @@ export class FormControl<
     }
   }
 
-  mount() {
-    this.mounted = true
-  }
-
-  unmount() {
-    this.mounted = false
-    this.cleanup()
-  }
-
-  cleanup() {
-    this.removeUnmounted()
-  }
-
-  removeUnmounted(): void {
-    for (const name of this.names.unMount) {
-      const field: Field | undefined = safeGet(this.fields, name)
-
-      if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
-        this.unregister(name as any)
-      }
-    }
-
-    this.names.unMount = new Set()
-  }
-
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
     if (force || this.isTracking('isValid', toStringArray(name))) {
       const result = await this.validate()
@@ -820,6 +781,16 @@ export class FormControl<
     this.derivedState.unfreeze()
   }
 
+  setDirtyValues(values: unknown): void {
+    for (const fieldName of this.names.mount) {
+      if (safeGet(this.state.dirtyFields.value, fieldName)) {
+        deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
+      } else {
+        this.setValue(fieldName as any, safeGet(values, fieldName), { quiet: true })
+      }
+    }
+  }
+
   async trigger<T extends TParsedForm['keys']>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
@@ -917,7 +888,7 @@ export class FormControl<
     this.state.errors.value = newErrors
   }
 
-  clearErrors(name?: string | string[]) {
+  clearErrors(name?: string | string[]): void {
     if (name == null) {
       this.state.errors.set({})
       return
@@ -1136,17 +1107,7 @@ export class FormControl<
     this.derivedState.unfreeze()
   }
 
-  setDirtyValues(values: unknown) {
-    for (const fieldName of this.names.mount) {
-      if (safeGet(this.state.dirtyFields.value, fieldName)) {
-        deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
-      } else {
-        this.setValue(fieldName as any, safeGet(values, fieldName), { quiet: true })
-      }
-    }
-  }
-
-  resetFormElement() {
+  resetFormElement(): void {
     for (const name of this.names.mount) {
       const field: Field | undefined = safeGet(this.fields, name)
 
@@ -1167,5 +1128,51 @@ export class FormControl<
         break
       }
     }
+  }
+
+  mount(): void {
+    this.mounted = true
+  }
+
+  unmount(): void {
+    this.mounted = false
+    this.cleanup()
+  }
+
+  cleanup(): void {
+    this.removeUnmounted()
+  }
+
+  removeUnmounted(): void {
+    for (const name of this.names.unMount) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
+        this.unregister(name as any)
+      }
+
+      this.names.unMount.delete(name)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Internal utilities.
+  //--------------------------------------------------------------------------------------
+
+  isTracking(key: keyof typeof this.state, name?: string[]): boolean {
+    return (
+      this.derivedState.isTracking(key, name) ||
+      this.derivedState.clonesAreTracking(key, name) ||
+      this.state[key].subscribers.size > 0
+    )
+  }
+
+  shouldSkipValidationAfter(name: string, isBlurEvent?: boolean): boolean {
+    return shouldSkipValidationAfter(
+      isBlurEvent ? 'blur' : 'change',
+      safeGet(this.state.touchedFields.value, name),
+      this.state.isSubmitted.value,
+      this.options.submissionValidationMode,
+    )
   }
 }
