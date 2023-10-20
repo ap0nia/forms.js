@@ -246,7 +246,7 @@ export class FormControl<
     }
   }
 
-  setFocus(name: string, options: { shouldSelect?: boolean } = {}) {
+  setFocus(name: string, options?: { shouldSelect?: boolean }) {
     const field: Field | undefined = safeGet(this.fields, name)
 
     if (field?._f == null) {
@@ -257,7 +257,7 @@ export class FormControl<
 
     fieldRef?.focus?.()
 
-    if (options.shouldSelect && fieldRef && 'select' in fieldRef) {
+    if (options?.shouldSelect && fieldRef && 'select' in fieldRef) {
       fieldRef?.select?.()
     }
   }
