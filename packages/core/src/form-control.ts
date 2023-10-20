@@ -237,7 +237,7 @@ export class FormControl<
   }
 
   focusError(options?: TriggerOptions) {
-    if (this.options.shouldFocusError || options?.shouldFocus) {
+    if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
       focusFieldBy(
         this.fields,
         (key) => key && safeGet(this.state.errors.value, key),
