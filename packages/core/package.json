@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run tests/form-control/focus-error.test.ts",
+    "test": "vitest run tests/form-control/get-dirty.test.ts",
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
   },
