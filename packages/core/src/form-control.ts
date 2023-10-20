@@ -232,10 +232,6 @@ export class FormControl<
     }
   }
 
-  getDirty(): boolean {
-    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
-  }
-
   focusError(options?: TriggerOptions) {
     if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
       focusFieldBy(
@@ -262,16 +258,33 @@ export class FormControl<
     }
   }
 
-  get _fields() {
-    return this.fields
-  }
-
   isTracking(key: keyof typeof this.state, name?: string[]) {
     return (
       this.derivedState.isTracking(key, name) ||
       this.derivedState.clonesAreTracking(key, name) ||
       this.state[key].subscribers.size
     )
+  }
+
+  get _fields() {
+    return this.fields
+  }
+
+  getDirty(): boolean {
+    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+  }
+
+  getFieldState(name: string, formState?: FormControlState<TValues>) {
+    const errors = formState?.errors ?? this.state.errors.value
+    const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
+    const touchedFields = formState?.touchedFields ?? this.state.touchedFields.value
+
+    return {
+      invalid: Boolean(safeGet(errors, name)),
+      isDirty: Boolean(safeGet(dirtyFields, name)),
+      isTouched: Boolean(safeGet(touchedFields, name)),
+      error: safeGet(errors, name),
+    }
   }
 
   getValues(): TValues
@@ -325,19 +338,6 @@ export class FormControl<
     return nameArray.length > 1
       ? deepFilter({ ...this.state.values.value }, nameArray)
       : safeGet({ ...this.state.values.value }, name)
-  }
-
-  getFieldState(name: string, formState?: FormControlState<TValues>) {
-    const errors = formState?.errors ?? this.state.errors.value
-    const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
-    const touchedFields = formState?.touchedFields ?? this.state.touchedFields.value
-
-    return {
-      invalid: Boolean(safeGet(errors, name)),
-      isDirty: Boolean(safeGet(dirtyFields, name)),
-      isTouched: Boolean(safeGet(touchedFields, name)),
-      error: safeGet(errors, name),
-    }
   }
 
   async handleChange(event: Event): Promise<void> {
