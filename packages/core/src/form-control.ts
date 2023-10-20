@@ -506,7 +506,7 @@ export class FormControl<
   }
 
   registerElement<T extends TParsedForm['keys']>(
-    name: Extract<T, string>,
+    name: T,
     element: InputElement,
     options?: RegisterOptions<TValues, T>,
   ): void {
@@ -519,6 +519,9 @@ export class FormControl<
     const defaultValue =
       safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
+    // If the default value does not exist, then update the form control's values with the element's value.
+    // Otherwise, update the element's value with the default value.
+
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
       deepSet(this.state.values.value, name, getFieldValue(newField._f))
     } else {
@@ -530,10 +533,7 @@ export class FormControl<
     this.updateValid(undefined, fieldNames)
   }
 
-  registerField<T extends TParsedForm['keys']>(
-    name: Extract<T, string>,
-    options?: RegisterOptions<TValues, T>,
-  ) {
+  registerField<T extends TParsedForm['keys']>(name: T, options?: RegisterOptions<TValues, T>) {
     const existingField: Field | undefined = safeGet(this.fields, name)
 
     const field: Field = {
@@ -565,10 +565,7 @@ export class FormControl<
     return field
   }
 
-  unregister<T extends TParsedForm['keys']>(
-    name?: Extract<T, string> | Extract<T, string>[],
-    options?: UnregisterOptions,
-  ): void {
+  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
     this.derivedState.freeze()
 
     const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
@@ -625,7 +622,7 @@ export class FormControl<
   }
 
   unregisterElement<T extends TParsedForm['keys']>(
-    name: LiteralUnion<Extract<T, string>, string>,
+    name: LiteralUnion<T, string>,
     options?: RegisterOptions<TValues, T>,
   ): void {
     const field: Field | undefined = safeGet(this.fields, name)
@@ -724,7 +721,7 @@ export class FormControl<
   }
 
   setValue<T extends TParsedForm['keys']>(
-    name: Extract<T, string>,
+    name: T,
     value: TParsedForm['values'][T],
     options?: SetValueOptions,
   ): void {
