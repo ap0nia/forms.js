@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run tests/form-control/constructor.test.ts",
+    "test": "vitest run tests/form-control/clear-errors.test.ts",
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
   },
