@@ -74,5 +74,37 @@ describe('FormControl', () => {
 
       expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
+
+    describe('meets invariants', () => {
+      test('only updates errors once', () => {
+        const formControl = new FormControl()
+
+        const fn = vi.fn()
+
+        formControl.state.errors.subscribe(fn)
+
+        fn.mockReset()
+
+        formControl.setError('a', { type: 'min' })
+
+        expect(fn).toHaveBeenCalledOnce()
+      })
+
+      test('updates derived state once', () => {
+        const formControl = new FormControl()
+
+        const fn = vi.fn()
+
+        formControl.derivedState.proxy.errors
+        formControl.derivedState.proxy.isValid
+        formControl.derivedState.subscribe(fn)
+
+        fn.mockReset()
+
+        formControl.setError('a', { type: 'min' })
+
+        expect(fn).toHaveBeenCalledOnce()
+      })
+    })
   })
 })
