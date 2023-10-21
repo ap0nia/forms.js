@@ -1,62 +1,79 @@
 import { describe, test, expect } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
-import type { FieldRecord } from '../../src/types/fields'
+import type { Field } from '../../src/types/fields'
 
 describe('FormControl', () => {
   describe('registerElement', () => {
-    test('registering a checkbox element that is already part of the field does nothing', () => {
+    test('properly sets the new field', () => {
       const formControl = new FormControl()
 
-      const name = 'name'
+      const name = 'test'
 
-      const element = document.createElement('input')
-      element.type = 'checkbox'
+      const ref = document.createElement('input')
 
-      const fields: FieldRecord = {
-        [name]: {
-          _f: {
-            name,
-            ref: {
-              name,
-            },
-            refs: [element],
-          },
+      formControl.registerElement(name, ref)
+
+      const field: Field = {
+        _f: {
+          mount: true,
+          name,
+          ref,
         },
       }
 
-      formControl.fields = fields
-
-      formControl.registerElement(name, element)
-
-      // Fields should stay the same
-      expect(formControl.fields).toEqual(fields)
+      expect(formControl.fields[name]).toEqual(field)
     })
 
-    test('registering an element with a default value sets the default value', () => {
-      const name = 'name'
-
-      const defaultValues = {
-        [name]: 'value',
-      }
+    test('updates element value with default value if default value exists', () => {
+      const name = 'hello'
 
       const formControl = new FormControl({
-        shouldUnregister: true,
-        defaultValues,
+        defaultValues: {
+          [name]: 'test',
+        },
       })
 
-      // For test coverage, force isValid to be tracked.
-      formControl.derivedState.proxy.isValid
+      const ref = document.createElement('input')
 
-      // Since `shouldUnregister` is true, the initial values should be an empty object.
-      expect(formControl.state.values.value).toEqual({})
+      expect(ref.value).toEqual('')
 
-      const element = document.createElement('input')
+      formControl.registerElement(name, ref)
 
-      formControl.registerElement(name, element)
+      expect(ref.value).toEqual('test')
+    })
 
-      // After registering the element, the default value should be set in the form control's values.
-      expect(formControl.state.values.value).toEqual(defaultValues)
+    test('updates values with element value if default value does not exist', () => {
+      const name = 'hello'
+
+      const value = 'foobar'
+
+      const ref = document.createElement('input')
+
+      ref.value = value
+
+      const formControl = new FormControl()
+
+      formControl.registerElement(name, ref)
+
+      expect(formControl.state.values.value[name]).toEqual(value)
+    })
+
+    test('updates values with element value if field is default checked', () => {
+      const name = 'hello'
+
+      const value = 'foobar'
+
+      const ref = document.createElement('input')
+
+      ref.defaultChecked = true
+      ref.value = value
+
+      const formControl = new FormControl()
+
+      formControl.registerElement(name, ref)
+
+      expect(formControl.state.values.value[name]).toEqual(value)
     })
   })
 })

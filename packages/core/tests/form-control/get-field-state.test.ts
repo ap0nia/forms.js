@@ -38,6 +38,26 @@ describe('FormControl', () => {
         isTouched: true,
         error: [],
       })
+
+      test('works with both internal and provided state', () => {
+        const formControl = new FormControl()
+
+        formControl.state.errors.set({ test: [] })
+        formControl.state.dirtyFields.set({ test: true })
+
+        const name = 'test'
+
+        const state: FormControlState<any> = {} as any
+
+        state.touchedFields = { [name]: true }
+
+        expect(formControl.getFieldState(name, state)).toEqual({
+          invalid: true,
+          isDirty: true,
+          isTouched: true,
+          error: [],
+        })
+      })
     })
   })
 })

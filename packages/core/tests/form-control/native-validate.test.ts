@@ -5,7 +5,7 @@ import type { FieldError } from '../../src/types/errors'
 
 describe('FormContol', () => {
   describe('nativeValidate', () => {
-    test('valid if nothing to validate', async () => {
+    test('returns valid result if nothing to validate', async () => {
       const formControl = new FormControl()
 
       const result = await formControl.nativeValidate()
@@ -16,7 +16,7 @@ describe('FormContol', () => {
     })
   })
 
-  test('valid if invalid fields are filtered from checking', async () => {
+  test('returns valid result if invalid fields are filtered from checking', async () => {
     const formControl = new FormControl()
 
     formControl.fields['name'] = {
@@ -41,7 +41,7 @@ describe('FormContol', () => {
     expect(result.errors).toEqual(expectedErrors)
   })
 
-  test('single valid input', async () => {
+  test('returns valid result for a single valid input', async () => {
     const formControl = new FormControl()
 
     formControl.fields['name'] = {
@@ -66,7 +66,7 @@ describe('FormContol', () => {
     expect(result.errors).toEqual(expectedErrors)
   })
 
-  test('single invalid input', async () => {
+  test('returns invalid result for a single invalid input', async () => {
     const formControl = new FormControl()
 
     formControl.fields['name'] = {
@@ -97,7 +97,7 @@ describe('FormContol', () => {
     expect(result.errors).toEqual(expectedErrors)
   })
 
-  test('single invalid field array input', async () => {
+  test('returns invalid result for a single invalid field array input', async () => {
     const formControl = new FormControl()
 
     formControl.fields['name'] = {
