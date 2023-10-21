@@ -603,7 +603,7 @@ export class FormControl<
     this.touch(name, fieldValue, options)
 
     if (options?.shouldValidate) {
-      this.trigger(name as any)
+      this.trigger(name as any, { shouldSetErrors: true })
     }
 
     this.derivedState.unfreeze()
@@ -1045,9 +1045,7 @@ export class FormControl<
 
     this.state.isValid.set(result.isValid, fieldNames)
 
-    this.derivedState.transaction(() => {
-      this.state.isValidating.set(false, fieldNames)
-    })
+    this.state.isValidating.set(false, fieldNames)
 
     if (options?.shouldFocus && !result.isValid) {
       const callback = (key?: string) => key && safeGet(this.state.errors.value, key)
