@@ -1,4 +1,5 @@
-import { describe, test, expect } from 'vitest'
+import { waitFor } from '@testing-library/dom'
+import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 
@@ -96,6 +97,58 @@ describe('FormControl', () => {
         expect(formControl.state.defaultValues.value).toEqual(values)
         expect(formControl.state.values.value).toEqual(values)
       })
+    })
+
+    test('sets isLoading twice for promise', async () => {
+      const formControl = new FormControl()
+
+      // Subscribe to derived state to activate it.
+      formControl.derivedState.subscribe(() => {})
+      formControl.derivedState.proxy.isLoading
+
+      formControl.resetDefaultValues(Promise.resolve({}))
+
+      expect(formControl.state.isLoading.value).toBeTruthy()
+
+      await waitFor(() => expect(formControl.derivedState.value.isLoading).toBeFalsy())
+    })
+
+    test('sets derived state twice if tracking isLoading and promise is provided', async () => {
+      const formControl = new FormControl()
+
+      const fn = vi.fn()
+
+      // Subscribe to derived state to activate it.
+      formControl.derivedState.subscribe(fn)
+      formControl.derivedState.proxy.isLoading
+
+      fn.mockClear()
+
+      formControl.resetDefaultValues(Promise.resolve({}))
+
+      expect(formControl.derivedState.value.isLoading).toBeTruthy()
+
+      await waitFor(() => expect(formControl.derivedState.value.isLoading).toBeFalsy())
+
+      expect(fn).toHaveBeenCalledTimes(2)
+    })
+
+    test('sets isLoading state twice if promise is provided', async () => {
+      const formControl = new FormControl()
+
+      const fn = vi.fn()
+
+      formControl.state.isLoading.subscribe(fn)
+
+      fn.mockClear()
+
+      formControl.resetDefaultValues(Promise.resolve({}))
+
+      expect(formControl.state.isLoading.value).toBeTruthy()
+
+      await waitFor(() => expect(formControl.state.isLoading.value).toBeFalsy())
+
+      expect(fn).toHaveBeenCalledTimes(2)
     })
   })
 })
