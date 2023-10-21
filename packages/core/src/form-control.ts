@@ -949,16 +949,15 @@ export class FormControl<
 
     if (isPromise) {
       this.state.isLoading.set(true)
-      resolvedDefaultValues = await resolvingDefaultValues
+      resolvedDefaultValues = (await resolvingDefaultValues) ?? {}
     }
 
     this.derivedState.freeze()
 
-    this.state.defaultValues.set((resolvedDefaultValues ?? {}) as any)
+    this.state.defaultValues.set(resolvedDefaultValues as any)
 
     if (resetValues) {
-      const newValues = structuredClone(resolvedDefaultValues)
-      this.state.values.set(newValues as TValues)
+      this.state.values.set(structuredClone(resolvedDefaultValues) as TValues)
     }
 
     this.state.isLoading.set(false)
