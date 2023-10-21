@@ -59,10 +59,16 @@ export class Control<
     return props
   }
 
+  /**
+   * React wrapper for the vanilla handleChange method.
+   */
   async onChange(event: React.ChangeEvent) {
     return await this.handleChange(event.nativeEvent)
   }
 
+  /**
+   * React wrapper for the vanilla handleSubmit method.
+   */
   onSubmit(
     onValid?: SubmitHandler<TValues, TTransformedValues>,
     onInvalid?: SubmitErrorHandler<TValues>,
