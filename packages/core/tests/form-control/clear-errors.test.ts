@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 
@@ -14,12 +14,17 @@ describe('FormControl', () => {
       expect(formControl.state.errors.value).toEqual({})
     })
 
-    test('resets error only for specified name', () => {
+    test('resets error for one specified name', () => {
       const formControl = new FormControl()
 
       const name = 'test'
 
-      formControl.state.errors.set({ [name]: [], a: [], b: [], c: [] })
+      formControl.state.errors.set({
+        [name]: [],
+        a: [],
+        b: [],
+        c: [],
+      })
 
       formControl.clearErrors(name)
 
@@ -27,6 +32,58 @@ describe('FormControl', () => {
         a: [],
         b: [],
         c: [],
+      })
+    })
+
+    test('resets errors for multiple specified names', () => {
+      const formControl = new FormControl()
+
+      const names = ['test', 'a', 'b']
+
+      formControl.state.errors.set({
+        test: [],
+        a: [],
+        b: [],
+        c: [],
+      })
+
+      formControl.clearErrors(names)
+
+      expect(formControl.state.errors.value).toEqual({
+        c: [],
+      })
+    })
+
+    describe('meets invariants', () => {
+      test('only updates errors once', () => {
+        const formControl = new FormControl()
+
+        const fn = vi.fn()
+
+        formControl.state.errors.subscribe(fn)
+
+        fn.mockReset()
+
+        formControl.clearErrors()
+
+        expect(fn).toHaveBeenCalledOnce()
+      })
+
+      test('only updates derived state once', () => {
+        const formControl = new FormControl()
+
+        const fn = vi.fn()
+
+        formControl.derivedState.subscribe(fn)
+
+        // Track errors with the derived state.
+        formControl.derivedState.proxy.errors
+
+        fn.mockReset()
+
+        formControl.clearErrors()
+
+        expect(fn).toHaveBeenCalledOnce()
       })
     })
   })
