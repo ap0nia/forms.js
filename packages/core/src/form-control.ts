@@ -11,14 +11,7 @@ import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
-import {
-  type CriteriaMode,
-  type SubmissionValidationMode,
-  VALIDATION_EVENTS,
-  type ValidationEvent,
-  type RevalidationEvent,
-  INPUT_EVENTS,
-} from './constants'
+import { VALIDATION_EVENTS, INPUT_EVENTS } from './constants'
 import { lookupError } from './logic/errors/lookup-error'
 import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
@@ -36,120 +29,27 @@ import type { NativeValidationResult } from './logic/validation/native-validatio
 import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
 import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
-import type { ParseForm } from './types/form'
+import type {
+  FormControlOptions,
+  FormControlState,
+  HandlerCallback,
+  ParseForm,
+  ResetOptions,
+  ResolvedFormControlOptions,
+  SetValueOptions,
+  SubmitErrorHandler,
+  SubmitHandler,
+  TriggerOptions,
+  UnregisterOptions,
+  UpdateDisabledFieldOptions,
+  WatchOptions,
+} from './types/form'
 import type { InputElement } from './types/html'
 import type { RegisterOptions } from './types/register'
-import type { Resolver } from './types/resolver'
-import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
 import type { LiteralUnion } from './utils/literal-union'
-
-export type FormControlState<T> = {
-  isDirty: boolean
-  isLoading: boolean
-  isSubmitted: boolean
-  isSubmitSuccessful: boolean
-  isSubmitting: boolean
-  isValidating: boolean
-  isValid: boolean
-  disabled: boolean
-  submitCount: number
-  dirtyFields: Partial<Readonly<DeepMap<T, boolean>>>
-  touchedFields: Partial<Readonly<DeepMap<T, boolean>>>
-  defaultValues: DeepPartial<T>
-  errors: FieldErrors<T>
-  values: T
-}
-
-export type FormControlOptions<
-  TValues extends Record<string, any> = Record<string, any>,
-  TContext = any,
-> = {
-  mode?: ValidationEvent[keyof ValidationEvent]
-  reValidateMode?: RevalidationEvent[keyof RevalidationEvent]
-  disabled?: boolean
-  context?: TContext
-  defaultValues?: Defaults<TValues>
-  values?: TValues
-  resetOptions?: ResetOptions
-  resolver?: Resolver<TValues, TContext>
-  shouldFocusError?: boolean
-  shouldUnregister?: boolean
-  shouldUseNativeValidation?: boolean
-  progressive?: boolean
-  criteriaMode?: CriteriaMode[keyof CriteriaMode]
-  delayError?: number
-}
-
-export type ResolvedFormControlOptions<
-  TValues extends Record<string, any>,
-  TContext,
-> = FormControlOptions<TValues, TContext> & {
-  shouldDisplayAllAssociatedErrors: boolean
-  submissionValidationMode: SubmissionValidationMode
-  shouldCaptureDirtyFields: boolean
-}
-
-export type UpdateDisabledFieldOptions = {
-  name: string
-  disabled?: boolean
-  field?: Field
-  fields?: FieldRecord
-}
-
-export type TriggerOptions = {
-  shouldFocus?: boolean
-  shouldSetErrors?: boolean
-}
-
-export type KeepStateOptions = {
-  keepDirtyValues?: boolean
-  keepErrors?: boolean
-  keepDirty?: boolean
-  keepIsSubmitSuccessful?: boolean
-  keepTouched?: boolean
-  keepIsValid?: boolean
-}
-
-export interface ResetOptions extends KeepStateOptions {
-  keepValues?: boolean
-  keepDefaultValues?: boolean
-  keepIsSubmitted?: boolean
-  keepSubmitCount?: boolean
-}
-
-export interface UnregisterOptions extends KeepStateOptions {
-  keepValue?: boolean
-  keepDefaultValue?: boolean
-  keepError?: boolean
-}
-
-export type SetValueOptions = {
-  shouldValidate?: boolean
-  shouldDirty?: boolean
-  shouldTouch?: boolean
-  quiet?: boolean
-}
-
-export type WatchOptions<
-  T extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<T> = ParseForm<T>,
-> = {
-  name?: TParsedForm['keys'] | TParsedForm['keys'][]
-  control?: FormControl<T>
-  disabled?: boolean
-  exact?: boolean
-}
-
-export type HandlerCallback = (event?: Event) => Promise<void>
-
-export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string, any>
-  ? (data: TTransformed, event?: Event) => unknown
-  : (data: T, event?: Event) => unknown
-
-export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event?: Event) => unknown
 
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
   mode: VALIDATION_EVENTS.onSubmit,
@@ -232,31 +132,9 @@ export class FormControl<
     }
   }
 
-  focusError(options?: TriggerOptions) {
-    if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
-      focusFieldBy(
-        this.fields,
-        (key) => key && safeGet(this.state.errors.value, key),
-        this.names.mount,
-      )
-    }
-  }
-
-  setFocus(name: string, options?: { shouldSelect?: boolean }) {
-    const field: Field | undefined = safeGet(this.fields, name)
-
-    if (field?._f == null) {
-      return
-    }
-
-    const fieldRef = field?._f.refs ? field?._f.refs[0] : field?._f.ref
-
-    fieldRef?.focus?.()
-
-    if (options?.shouldSelect && fieldRef && 'select' in fieldRef) {
-      fieldRef?.select?.()
-    }
-  }
+  //--------------------------------------------------------------------------------------
+  // Getters.
+  //--------------------------------------------------------------------------------------
 
   get _fields() {
     return this.fields
@@ -332,12 +210,148 @@ export class FormControl<
       : safeGet({ ...this.state.values.value }, name)
   }
 
+  //--------------------------------------------------------------------------------------
+  // Registration and unregistration.
+  //--------------------------------------------------------------------------------------
+
+  registerElement<T extends TParsedForm['keys']>(
+    name: T,
+    element: InputElement,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field = this.registerField(name, options)
+
+    const fieldNames = toStringArray(name)
+
+    const newField = mergeElementWithField(name, field, element)
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      deepSet(this.state.values.value, name, getFieldValue(newField._f))
+    } else {
+      updateFieldReference(newField._f, defaultValue)
+    }
+
+    deepSet(this.fields, name, newField)
+
+    this.updateValid(undefined, fieldNames)
+  }
+
+  registerField<T extends TParsedForm['keys']>(name: T, options?: RegisterOptions<TValues, T>) {
+    const existingField: Field | undefined = safeGet(this.fields, name)
+
+    const field: Field = {
+      ...existingField,
+      _f: {
+        ...(existingField?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
+    }
+
+    deepSet(this.fields, name, field)
+
+    this.names.mount.add(name)
+
+    if (existingField) {
+      this.mockUpdateDisabledField({ field, disabled: options?.disabled, name })
+      return field
+    }
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ??
+      options?.value ??
+      safeGet(this.state.defaultValues.value, name)
+
+    deepSet(this.state.values.value, name, defaultValue)
+
+    return field
+  }
+
+  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
+    this.derivedState.freeze()
+
+    const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
+
+    for (const fieldName of fieldNames) {
+      this.names.mount.delete(fieldName)
+      this.names.array.delete(fieldName)
+
+      if (!options?.keepValue) {
+        deepUnset(this.fields, fieldName)
+
+        this.state.values.update((values) => {
+          deepUnset(values, fieldName)
+          return values
+        }, fieldNames)
+      }
+
+      if (!options?.keepError) {
+        this.state.errors.update((errors) => {
+          deepUnset(errors, fieldName)
+          return errors
+        }, fieldNames)
+      }
+
+      if (!options?.keepDirty) {
+        this.state.dirtyFields.update((dirtyFields) => {
+          deepUnset(dirtyFields, fieldName)
+          return dirtyFields
+        }, fieldNames)
+
+        this.state.isDirty.set(this.getDirty(), fieldNames)
+      }
+
+      if (!options?.keepTouched) {
+        this.state.touchedFields.update((touchedFields) => {
+          deepUnset(touchedFields, fieldName)
+          return touchedFields
+        }, fieldNames)
+      }
+
+      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
+        this.state.defaultValues.update((defaultValues) => {
+          deepUnset(defaultValues, fieldName)
+          return defaultValues
+        }, fieldNames)
+      }
+    }
+
+    if (!options?.keepIsValid) {
+      this.updateValid(undefined, fieldNames)
+    }
+
+    this.derivedState.unfreeze(true)
+  }
+
+  unregisterElement<T extends TParsedForm['keys']>(
+    name: LiteralUnion<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f) {
+      field._f.mount = false
+    }
+
+    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+
+    if (shouldUnregister && !this.names.array.has(name)) {
+      this.names.unMount.add(name)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Handlers.
+  //--------------------------------------------------------------------------------------
+
   async handleChange(event: Event): Promise<void> {
     this.derivedState.freeze()
 
-    const target: any = event.target
-
-    const name = target.name
+    const name = (event.target as HTMLInputElement)?.name
 
     const field: Field | undefined = safeGet(this.fields, name)
 
@@ -491,195 +505,9 @@ export class FormControl<
     }
   }
 
-  registerElement<T extends TParsedForm['keys']>(
-    name: T,
-    element: InputElement,
-    options?: RegisterOptions<TValues, T>,
-  ): void {
-    const field = this.registerField(name, options)
-
-    const fieldNames = toStringArray(name)
-
-    const newField = mergeElementWithField(name, field, element)
-
-    const defaultValue =
-      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
-
-    // If the default value does not exist, then update the form control's values with the element's value.
-    // Otherwise, update the element's value with the default value.
-
-    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      deepSet(this.state.values.value, name, getFieldValue(newField._f))
-    } else {
-      updateFieldReference(newField._f, defaultValue)
-    }
-
-    deepSet(this.fields, name, newField)
-
-    this.updateValid(undefined, fieldNames)
-  }
-
-  registerField<T extends TParsedForm['keys']>(name: T, options?: RegisterOptions<TValues, T>) {
-    const existingField: Field | undefined = safeGet(this.fields, name)
-
-    const field: Field = {
-      ...existingField,
-      _f: {
-        ...(existingField?._f ?? { ref: { name } }),
-        name,
-        mount: true,
-        ...options,
-      },
-    }
-
-    deepSet(this.fields, name, field)
-
-    this.names.mount.add(name)
-
-    if (existingField) {
-      this.mockUpdateDisabledField({ field, disabled: options?.disabled, name })
-      return field
-    }
-
-    const defaultValue =
-      safeGet(this.state.values.value, name) ??
-      options?.value ??
-      safeGet(this.state.defaultValues.value, name)
-
-    deepSet(this.state.values.value, name, defaultValue)
-
-    return field
-  }
-
-  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
-    this.derivedState.freeze()
-
-    const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
-
-    for (const fieldName of fieldNames) {
-      this.names.mount.delete(fieldName)
-      this.names.array.delete(fieldName)
-
-      if (!options?.keepValue) {
-        deepUnset(this.fields, fieldName)
-
-        this.state.values.update((values) => {
-          deepUnset(values, fieldName)
-          return values
-        }, fieldNames)
-      }
-
-      if (!options?.keepError) {
-        this.state.errors.update((errors) => {
-          deepUnset(errors, fieldName)
-          return errors
-        }, fieldNames)
-      }
-
-      if (!options?.keepDirty) {
-        this.state.dirtyFields.update((dirtyFields) => {
-          deepUnset(dirtyFields, fieldName)
-          return dirtyFields
-        }, fieldNames)
-
-        this.state.isDirty.set(this.getDirty(), fieldNames)
-      }
-
-      if (!options?.keepTouched) {
-        this.state.touchedFields.update((touchedFields) => {
-          deepUnset(touchedFields, fieldName)
-          return touchedFields
-        }, fieldNames)
-      }
-
-      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
-        this.state.defaultValues.update((defaultValues) => {
-          deepUnset(defaultValues, fieldName)
-          return defaultValues
-        }, fieldNames)
-      }
-    }
-
-    if (!options?.keepIsValid) {
-      this.updateValid(undefined, fieldNames)
-    }
-
-    this.derivedState.unfreeze(true)
-  }
-
-  unregisterElement<T extends TParsedForm['keys']>(
-    name: LiteralUnion<T, string>,
-    options?: RegisterOptions<TValues, T>,
-  ): void {
-    const field: Field | undefined = safeGet(this.fields, name)
-
-    if (field?._f) {
-      field._f.mount = false
-    }
-
-    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
-
-    if (shouldUnregister && !this.names.array.has(name)) {
-      this.names.unMount.add(name)
-    }
-  }
-
-  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
-    if (force || this.isTracking('isValid', toStringArray(name))) {
-      const result = await this.validate()
-
-      const fieldNames = toStringArray(name)
-
-      this.state.isValid.set(result.isValid, fieldNames)
-    }
-  }
-
-  async validate(name?: string | string[] | Nullish) {
-    const nameArray = toStringArray(name)
-
-    if (this.options.resolver == null) {
-      const validationResult = await this.nativeValidate(nameArray)
-
-      const isValid = validationResult.valid
-
-      return { validationResult, isValid }
-    }
-
-    const names = nameArray ?? Array.from(this.names.mount)
-
-    const fields = filterFields(names, this.fields)
-
-    const resolverResult = await this.options.resolver(
-      this.state.values.value,
-      this.options.context,
-      {
-        names: names as any,
-        fields,
-        criteriaMode: this.options.criteriaMode,
-        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-      },
-    )
-
-    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
-
-    return { resolverResult, isValid }
-  }
-
-  async nativeValidate(
-    names?: string | string[],
-    shouldOnlyCheckValid?: boolean,
-  ): Promise<NativeValidationResult> {
-    const fields = deepFilter(this.fields, names)
-
-    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
-      shouldOnlyCheckValid,
-      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
-      isFieldArrayRoot: (name) => this.names.array.has(name),
-    })
-
-    return validationResult
-  }
+  //--------------------------------------------------------------------------------------
+  // Values.
+  //--------------------------------------------------------------------------------------
 
   setValue<T extends TParsedForm['keys']>(
     name: T,
@@ -791,47 +619,9 @@ export class FormControl<
     }
   }
 
-  async trigger<T extends TParsedForm['keys']>(
-    name?: T | T[] | readonly T[],
-    options?: TriggerOptions,
-  ): Promise<boolean> {
-    this.derivedState.freeze()
-
-    const fieldNames = toStringArray(name)
-
-    this.derivedState.transaction(() => {
-      this.state.isValidating.set(true, fieldNames)
-    })
-
-    const result = await this.validate(name as any)
-
-    if (result.validationResult) {
-      this.mergeErrors(result.validationResult.errors, result.validationResult.names)
-    }
-
-    if (result.resolverResult?.errors) {
-      this.mergeErrors(result.resolverResult.errors)
-    }
-
-    this.state.isValid.set(result.isValid, fieldNames)
-
-    this.derivedState.transaction(() => {
-      this.state.isValidating.set(false, fieldNames)
-    })
-
-    if (options?.shouldFocus && !result.isValid) {
-      const callback = (key?: string) => key && safeGet(this.state.errors.value, key)
-      focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
-    }
-
-    if (options?.shouldSetErrors) {
-      this.state.errors.update((errors) => ({ ...errors }), fieldNames)
-    }
-
-    this.derivedState.unfreeze()
-
-    return result.isValid
-  }
+  //--------------------------------------------------------------------------------------
+  // Errors.
+  //--------------------------------------------------------------------------------------
 
   setError<T extends TParsedForm['keys']>(
     name: T | 'root' | `root.${string}`,
@@ -901,6 +691,10 @@ export class FormControl<
       return errors
     }, nameArray)
   }
+
+  //--------------------------------------------------------------------------------------
+  // Touched, disabled, dirty.
+  //--------------------------------------------------------------------------------------
 
   touch(name: string, value?: unknown, options?: SetValueOptions): void {
     if (!options?.shouldTouch || options.shouldDirty) {
@@ -994,6 +788,71 @@ export class FormControl<
 
     return { previousIsDirty, currentIsDirty, isDirty }
   }
+
+  //--------------------------------------------------------------------------------------
+  // Validation.
+  //--------------------------------------------------------------------------------------
+
+  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
+    if (force || this.isTracking('isValid', toStringArray(name))) {
+      const result = await this.validate()
+
+      const fieldNames = toStringArray(name)
+
+      this.state.isValid.set(result.isValid, fieldNames)
+    }
+  }
+
+  async validate(name?: string | string[] | Nullish) {
+    const nameArray = toStringArray(name)
+
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate(nameArray)
+
+      const isValid = validationResult.valid
+
+      return { validationResult, isValid }
+    }
+
+    const names = nameArray ?? Array.from(this.names.mount)
+
+    const fields = filterFields(names, this.fields)
+
+    const resolverResult = await this.options.resolver(
+      this.state.values.value,
+      this.options.context,
+      {
+        names: names as any,
+        fields,
+        criteriaMode: this.options.criteriaMode,
+        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      },
+    )
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    return { resolverResult, isValid }
+  }
+
+  async nativeValidate(
+    names?: string | string[],
+    shouldOnlyCheckValid?: boolean,
+  ): Promise<NativeValidationResult> {
+    const fields = deepFilter(this.fields, names)
+
+    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
+      shouldOnlyCheckValid,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+    })
+
+    return validationResult
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Resetters.
+  //--------------------------------------------------------------------------------------
 
   reset(
     formValues?: Defaults<TValues> extends TValues ? TValues : Defaults<TValues>,
@@ -1130,6 +989,10 @@ export class FormControl<
     }
   }
 
+  //--------------------------------------------------------------------------------------
+  // Lifecycle.
+  //--------------------------------------------------------------------------------------
+
   mount(): void {
     this.mounted = true
   }
@@ -1152,6 +1015,78 @@ export class FormControl<
       }
 
       this.names.unMount.delete(name)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Interactions with fields.
+  //--------------------------------------------------------------------------------------
+
+  async trigger<T extends TParsedForm['keys']>(
+    name?: T | T[] | readonly T[],
+    options?: TriggerOptions,
+  ): Promise<boolean> {
+    this.derivedState.freeze()
+
+    const fieldNames = toStringArray(name)
+
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(true, fieldNames)
+    })
+
+    const result = await this.validate(name as any)
+
+    if (result.validationResult) {
+      this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+    }
+
+    if (result.resolverResult?.errors) {
+      this.mergeErrors(result.resolverResult.errors)
+    }
+
+    this.state.isValid.set(result.isValid, fieldNames)
+
+    this.derivedState.transaction(() => {
+      this.state.isValidating.set(false, fieldNames)
+    })
+
+    if (options?.shouldFocus && !result.isValid) {
+      const callback = (key?: string) => key && safeGet(this.state.errors.value, key)
+      focusFieldBy(this.fields, callback, name ? fieldNames : this.names.mount)
+    }
+
+    if (options?.shouldSetErrors) {
+      this.state.errors.update((errors) => ({ ...errors }), fieldNames)
+    }
+
+    this.derivedState.unfreeze()
+
+    return result.isValid
+  }
+
+  focusError(options?: TriggerOptions) {
+    if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
+      focusFieldBy(
+        this.fields,
+        (key) => key && safeGet(this.state.errors.value, key),
+        this.names.mount,
+      )
+    }
+  }
+
+  setFocus(name: string, options?: { shouldSelect?: boolean }) {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f == null) {
+      return
+    }
+
+    const fieldRef = field?._f.refs ? field?._f.refs[0] : field?._f.ref
+
+    fieldRef?.focus?.()
+
+    if (options?.shouldSelect && fieldRef && 'select' in fieldRef) {
+      fieldRef?.select?.()
     }
   }
 
