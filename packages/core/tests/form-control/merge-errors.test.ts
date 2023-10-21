@@ -5,7 +5,7 @@ import type { FieldErrors } from '../../src/types/errors'
 
 describe('FormControl', () => {
   describe('mergeErrors', () => {
-    test('errors are same if no names specified', () => {
+    test('merges all provided errors if no names are provided', () => {
       const formControl = new FormControl()
 
       const errors: FieldErrors = {
@@ -37,7 +37,7 @@ describe('FormControl', () => {
       expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
 
-    test('errors are filtered if names specified', () => {
+    test('only sets errors for the names specified', () => {
       const formControl = new FormControl()
 
       const errors: FieldErrors = {
@@ -65,7 +65,7 @@ describe('FormControl', () => {
       expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
 
-    test('errors are unset if name specifies an absent error', () => {
+    test('unsets errors for names that do not have an error', () => {
       const formControl = new FormControl()
 
       // The form state has existing errors.
@@ -95,35 +95,35 @@ describe('FormControl', () => {
 
       expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
-  })
 
-  test('merging field array errors', () => {
-    const formControl = new FormControl()
+    test('adds field array errors to a root property', () => {
+      const formControl = new FormControl()
 
-    const name = 'a.b.c'
+      const name = 'a.b.c'
 
-    formControl.names.array.add(name)
+      formControl.names.array.add(name)
 
-    const errors: FieldErrors = {
-      [name]: {
-        type: 'required',
-      },
-    }
+      const errors: FieldErrors = {
+        [name]: {
+          type: 'required',
+        },
+      }
 
-    formControl.mergeErrors(errors)
+      formControl.mergeErrors(errors)
 
-    const expectedErrors: FieldErrors = {
-      a: {
-        b: {
-          c: {
-            root: {
-              type: 'required',
+      const expectedErrors: FieldErrors = {
+        a: {
+          b: {
+            c: {
+              root: {
+                type: 'required',
+              },
             },
           },
         },
-      },
-    }
+      }
 
-    expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.state.errors.value).toEqual(expectedErrors)
+    })
   })
 })
