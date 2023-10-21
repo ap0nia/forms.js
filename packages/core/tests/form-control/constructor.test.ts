@@ -4,15 +4,15 @@ import { FormControl } from '../../src/form-control'
 
 describe('FormControl', () => {
   describe('constructor', () => {
-    describe('correctly sets values and default values', () => {
-      test('sets them to empty object if no values provided', () => {
+    describe('correctly sets default values and values', () => {
+      test('sets default values as empty if not provided', () => {
         const form = new FormControl()
 
         expect(form.state.values.value).toEqual({})
         expect(form.state.defaultValues.value).toEqual({})
       })
 
-      test('sets them to provided values', () => {
+      test('sets default values as provided object', () => {
         const defaultValues = {
           a: 1,
           b: 2,
@@ -25,7 +25,7 @@ describe('FormControl', () => {
         expect(form.state.defaultValues.value).toEqual(defaultValues)
       })
 
-      test('sets them to the provided function result', () => {
+      test('sets default values as result of provided function', () => {
         const defaultValues = {
           a: 1,
           b: 2,
@@ -38,7 +38,20 @@ describe('FormControl', () => {
         expect(form.state.defaultValues.value).toEqual(defaultValues)
       })
 
-      test('sets default values normally and values to empty object if shouldUnregister is true', () => {
+      test('sets values as provided values', () => {
+        const values = {
+          a: 1,
+          b: 2,
+          c: 3,
+        }
+
+        const form = new FormControl({ values })
+
+        expect(form.state.values.value).toEqual(values)
+        expect(form.state.defaultValues.value).toEqual(values)
+      })
+
+      test('sets values to empty object if shouldUnregister is true', () => {
         const values = {
           a: 1,
           b: 2,
@@ -53,7 +66,7 @@ describe('FormControl', () => {
     })
 
     describe('correctly sets initial state', () => {
-      test('sets isLoading to true and defaultValues to empty object if default values is a promise', () => {
+      test('sets isLoading to true if default values is a promise', () => {
         const defaultValues = Promise.resolve({
           a: 1,
           b: 2,
@@ -63,13 +76,10 @@ describe('FormControl', () => {
         const form = new FormControl({ defaultValues })
 
         expect(form.state.isLoading.value).toBeTruthy()
-        expect(form.state.values.value).toEqual({})
-        expect(form.state.defaultValues.value).toEqual({})
       })
 
       test('sets submitCount to 0', () => {
         const form = new FormControl()
-
         expect(form.state.submitCount.value).toEqual(0)
       })
 
