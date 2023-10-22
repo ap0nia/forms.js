@@ -72,6 +72,9 @@
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
   },
+  "dependencies": {
+    "@forms.js/common": "workspace:^"
+  },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
     "tsup": "^7.2.0",
@@ -81,9 +84,5 @@
   "engines": {
     "pnpm": "^8.0.0",
     "node": ">=18"
-  },
-  "dependencies": {
-    "@forms.js/common": "workspace:^",
-    "react-hook-form": "^7.47.0"
   }
 }
