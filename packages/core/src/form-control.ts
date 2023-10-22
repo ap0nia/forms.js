@@ -37,6 +37,7 @@ import type {
   ResetOptions,
   ResolvedFormControlOptions,
   SetValueOptions,
+  SetValueResult,
   SubmitErrorHandler,
   SubmitHandler,
   TriggerOptions,
@@ -425,7 +426,7 @@ export class FormControl<
       }
 
       if (field._f.deps) {
-        this.trigger(field._f.deps as any)
+        await this.trigger(field._f.deps as any)
       } else {
         this.state.isValid.set(result.isValid, [name])
       }
@@ -455,7 +456,7 @@ export class FormControl<
       }
 
       if (isFieldValueUpdated && field._f.deps) {
-        this.trigger(field._f.deps as any)
+        await this.trigger(field._f.deps as any)
       } else {
         this.state.isValid.set(result.isValid, [name])
       }
@@ -516,44 +517,65 @@ export class FormControl<
   ): void {
     this.derivedState.freeze()
 
-    const field: Field | undefined = safeGet(this.fields, name)
+    const field: FieldRecord[T] = safeGet(this.fields, name)
 
     const fieldNames = toStringArray(name)
 
     const clonedValue = structuredClone(value)
 
-    if (options?.quiet) {
-      deepSet(this.state.values.value, name, clonedValue)
-    } else {
-      this.state.values.update((values) => {
-        deepSet(values, name, clonedValue)
-        return values
-      }, fieldNames)
-    }
+    deepSet(this.state.values.value, name, clonedValue)
 
     const isFieldArray = this.names.array.has(name)
 
     if (!isFieldArray) {
       if (field && !field._f && clonedValue != null) {
-        this.setValues(name, clonedValue, options)
+        const result = this.setValues(name, clonedValue, { quiet: true, ...options })
+
+        this.state.isDirty.set(result.isDirty, fieldNames)
+
+        if (result.dirtyFieldsChanged) {
+          this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), fieldNames)
+        }
+
+        if (result.touchedFieldsChanged) {
+          this.state.touchedFields.update((touchedFields) => ({ ...touchedFields }), fieldNames)
+        }
       } else {
-        this.setFieldValue(name, clonedValue, options)
+        const result = this.setFieldValue(name, clonedValue, options)
+
+        if (result.dirtyResult) {
+          this.state.isDirty.set(result.dirtyResult.isDirty, fieldNames)
+
+          if (result.dirtyResult.currentIsDirty !== result.dirtyResult.previousIsDirty) {
+            this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), fieldNames)
+          }
+        }
+
+        if (result.touchFieldsChanged) {
+          this.state.touchedFields.update((touchedFields) => ({ ...touchedFields }), fieldNames)
+        }
       }
     } else if (options?.shouldDirty) {
-      this.state.dirtyFields.set(
-        getDirtyFields(this.state.defaultValues.value, this.state.values.value),
-        fieldNames,
+      this.state.dirtyFields.value = getDirtyFields(
+        this.state.defaultValues.value,
+        this.state.values.value,
       )
-      this.state.isDirty.set(this.getDirty(), fieldNames)
+      this.state.isDirty.value = this.getDirty()
     }
+
+    this.state.values.update((values) => ({ ...values }), fieldNames)
 
     this.valueListeners.forEach((listener) => listener())
 
     this.derivedState.unfreeze()
   }
 
-  setValues(name: string, value: any, options?: SetValueOptions): void {
+  setValues(name: string, value: any, options?: SetValueOptions): SetValueResult {
     this.derivedState.freeze()
+
+    let isDirty = false
+    let dirtyFieldsChanged = false
+    let touchedFieldsChanged = false
 
     for (const fieldKey in value) {
       const fieldValue = value[fieldKey]
@@ -565,25 +587,45 @@ export class FormControl<
       const isDate = fieldValue instanceof Date
 
       if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
-        this.setValues(fieldName, fieldValue, options)
+        const result = this.setValues(fieldName, fieldValue, options)
+
+        dirtyFieldsChanged ||= result.dirtyFieldsChanged
+        isDirty ||= result.isDirty
+        touchedFieldsChanged ||= result.touchedFieldsChanged
       } else {
-        this.setFieldValue(fieldName, fieldValue, options)
+        const result = this.setFieldValue(fieldName, fieldValue, options)
+
+        dirtyFieldsChanged ||=
+          result.dirtyResult?.currentIsDirty !== result.dirtyResult?.previousIsDirty
+        isDirty ||= Boolean(result.dirtyResult?.isDirty)
+        touchedFieldsChanged ||= result.touchFieldsChanged
+      }
+    }
+
+    if (!options?.quiet) {
+      if (dirtyFieldsChanged) {
+        this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }))
+      }
+
+      this.state.isDirty.set(isDirty)
+
+      if (touchedFieldsChanged) {
+        this.state.touchedFields.update((touchedFields) => ({ ...touchedFields }))
       }
     }
 
     this.derivedState.unfreeze()
+
+    return { dirtyFieldsChanged, isDirty, touchedFieldsChanged }
   }
 
-  setFieldValue(name: string, value: unknown, options?: SetValueOptions): void {
-    this.derivedState.freeze()
-
+  setFieldValue(name: string, value: unknown, options?: SetValueOptions) {
     const field: Field | undefined = safeGet(this.fields, name)
 
     const fieldReference = field?._f
 
     if (fieldReference == null) {
-      this.touch(name, value, options)
-      return
+      return this.mockTouch(name, value, options)
     }
 
     const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
@@ -591,22 +633,16 @@ export class FormControl<
     updateFieldReference(fieldReference, fieldValue)
 
     if (!fieldReference.disabled) {
-      this.state.values.update(
-        (values) => {
-          deepSet(values, name, getFieldValueAs(value, fieldReference))
-          return values
-        },
-        [name],
-      )
+      deepSet(this.state.values.value, name, getFieldValueAs(value, fieldReference))
     }
 
-    this.touch(name, fieldValue, options)
+    const touchedResult = this.mockTouch(name, fieldValue, options)
 
     if (options?.shouldValidate) {
       this.trigger(name as any, { shouldSetErrors: true })
     }
 
-    this.derivedState.unfreeze()
+    return touchedResult
   }
 
   setDirtyValues(values: unknown): void {
@@ -706,17 +742,32 @@ export class FormControl<
     }
   }
 
+  mockTouch(name: string, value?: unknown, options?: SetValueOptions) {
+    const dirtyResult =
+      !options?.shouldTouch || options.shouldDirty
+        ? this.mockUpdateDirtyField(name, value)
+        : undefined
+
+    const touchFieldsChanged = Boolean(options?.shouldTouch) && this.mockUpdateTouchedField(name)
+
+    return { touchFieldsChanged, dirtyResult }
+  }
+
   updateTouchedField(name: string): boolean {
+    const previousIsTouched = this.mockUpdateTouchedField(name)
+
+    if (!previousIsTouched) {
+      this.state.touchedFields.update((touchedFields) => ({ ...touchedFields }), [name])
+    }
+
+    return !previousIsTouched
+  }
+
+  mockUpdateTouchedField(name: string): boolean {
     const previousIsTouched = safeGet(this.state.touchedFields.value, name)
 
     if (!previousIsTouched) {
-      this.state.touchedFields.update(
-        (touchedFields) => {
-          deepSet(touchedFields, name, true)
-          return touchedFields
-        },
-        [name],
-      )
+      deepSet(this.state.touchedFields.value, name, true)
     }
 
     return !previousIsTouched
@@ -725,15 +776,35 @@ export class FormControl<
   updateDirtyField(name: string, value?: unknown): boolean {
     const { previousIsDirty, currentIsDirty, isDirty } = this.mockUpdateDirtyField(name, value)
 
-    if (this.state.isDirty.value !== isDirty) {
-      this.state.isDirty.set(currentIsDirty, [name])
-    }
+    this.state.isDirty.set(isDirty, [name])
 
     if (currentIsDirty != previousIsDirty) {
       this.state.dirtyFields.update((dirtyFields) => ({ ...dirtyFields }), [name])
     }
 
     return currentIsDirty !== previousIsDirty
+  }
+
+  mockUpdateDirtyField(name: string, value?: unknown) {
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
+
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    if (previousIsDirty && !currentIsDirty) {
+      deepUnset(this.state.dirtyFields.value, name)
+    }
+
+    if (!previousIsDirty && currentIsDirty) {
+      deepSet(this.state.dirtyFields.value, name, true)
+    }
+
+    const isDirty = this.isTracking('isDirty', toStringArray(name))
+      ? this.getDirty()
+      : this.state.isDirty.value
+
+    return { previousIsDirty, currentIsDirty, isDirty }
   }
 
   updateDisabledField(options: UpdateDisabledFieldOptions): void {
@@ -765,28 +836,6 @@ export class FormControl<
     this.mockUpdateDirtyField(options.name, value)
 
     return true
-  }
-
-  mockUpdateDirtyField(name: string, value?: unknown) {
-    const defaultValue = safeGet(this.state.defaultValues.value, name)
-
-    const currentIsDirty = !deepEqual(defaultValue, value)
-
-    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
-
-    if (previousIsDirty && !currentIsDirty) {
-      deepUnset(this.state.dirtyFields.value, name)
-    }
-
-    if (!previousIsDirty && currentIsDirty) {
-      deepSet(this.state.dirtyFields.value, name, true)
-    }
-
-    const isDirty = this.isTracking('isDirty', toStringArray(name))
-      ? this.getDirty()
-      : this.state.isDirty.value
-
-    return { previousIsDirty, currentIsDirty, isDirty }
   }
 
   //--------------------------------------------------------------------------------------

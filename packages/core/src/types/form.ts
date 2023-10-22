@@ -122,6 +122,12 @@ export type SetValueOptions = {
   quiet?: boolean
 }
 
+export type SetValueResult = {
+  isDirty: boolean
+  dirtyFieldsChanged: boolean
+  touchedFieldsChanged: boolean
+}
+
 export type WatchOptions<
   T extends Record<string, any> = Record<string, any>,
   TParsedForm extends ParseForm<T> = ParseForm<T>,
