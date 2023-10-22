@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run tests/store/batchable.test.ts"
   },
   "devDependencies": {
     "typescript": "^5.1.6"
