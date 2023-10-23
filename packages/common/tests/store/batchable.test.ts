@@ -138,10 +138,14 @@ describe('store', () => {
     })
 
     describe('properly buffers', () => {
-      test('throws error if flushing before priming', () => {
+      test('never sets the depth to a negative number', () => {
         const { derived } = createDerived()
 
-        expect(() => derived.flush()).toThrowError()
+        derived.close()
+        derived.close()
+        derived.close()
+
+        expect(derived.depth).toEqual(0)
       })
 
       test('notifies once after flushing if key tracked at root changes', () => {
@@ -153,7 +157,7 @@ describe('store', () => {
 
         fn.mockReset()
 
-        derived.prime()
+        derived.open()
 
         stores.a.set(4)
 
@@ -178,7 +182,7 @@ describe('store', () => {
 
         fn.mockReset()
 
-        derived.prime()
+        derived.open()
 
         stores.a.set(4, context)
 
@@ -201,7 +205,7 @@ describe('store', () => {
 
         fn.mockReset()
 
-        derived.prime()
+        derived.open()
 
         stores.a.set(4)
 
@@ -247,7 +251,7 @@ describe('store', () => {
 
         fn.mockReset()
 
-        derived.prime()
+        derived.open()
 
         stores.a.set(4, 'context a')
 
@@ -267,7 +271,7 @@ describe('store', () => {
 
         fn.mockReset()
 
-        derived.prime()
+        derived.open()
 
         stores.a.set(4, true)
 

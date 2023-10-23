@@ -190,22 +190,25 @@ export class Batchable<
   }
 
   /**
-   * By priming the buffer, the store will not trigger updates until the buffer is explicitly flushed.
+   * Open the buffer, preventing updates until the buffer is fully closed and flushed.
    */
-  prime() {
+  open() {
     this.depth++
+  }
+
+  close() {
+    if (this.depth <= 0) {
+      this.depth = 0
+    } else {
+      this.depth--
+    }
   }
 
   /**
    * Flush the buffer and attempt to notify subscribers.
    */
   flush(force = false) {
-    this.depth--
-
-    if (this.depth < 0) {
-      throw new Error('Batchable.flush() called without matching Batchable.prime()')
-    }
-
+    this.close()
     this.notify(force)
     this.children.forEach((child) => child.flush())
   }
@@ -286,7 +289,7 @@ export class Batchable<
    * Run a function and flush the buffer after it completes.
    */
   transaction(fn: () => unknown): void {
-    this.prime()
+    this.open()
 
     fn()
 
