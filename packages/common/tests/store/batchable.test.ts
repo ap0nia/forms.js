@@ -277,14 +277,153 @@ describe('store', () => {
       })
     })
 
-    describe.todo('isTracking', () => {})
+    describe('proxy behaves correctly', () => {
+      test('accessing proxy adds keys to tracked set', () => {
+        const { derived } = createDerived()
 
-    describe.todo('childIsTracking', () => {})
+        derived.proxy.a
 
-    describe.todo('clone', () => {})
+        expect(derived.keys).toContain('a')
+      })
+    })
 
-    describe.todo('track', () => {})
+    describe('isTracking', () => {
+      test('returns true if key is in set', () => {
+        const { derived } = createDerived(new Set(['a']))
 
-    describe.todo('createTrackingProxy', () => {})
+        expect(derived.isTracking('a')).toBeTruthy()
+      })
+
+      test('returns true if key and context are in trackedContexts', () => {
+        const { derived } = createDerived(new Set())
+
+        derived.track('a', 'context')
+
+        expect(derived.isTracking('a', ['context'])).toBeTruthy()
+      })
+
+      test('returns true if context is a substring of tracked context', () => {
+        const { derived } = createDerived(new Set())
+
+        derived.track('a', 'context')
+
+        expect(derived.isTracking('a', ['cont'])).toBeTruthy()
+      })
+
+      test('returns true if tracked context is a substring of context', () => {
+        const { derived } = createDerived(new Set())
+
+        derived.track('a', 'cont')
+
+        expect(derived.isTracking('a', ['context'])).toBeTruthy()
+      })
+
+      test('returns false if context is not an exact match', () => {
+        const { derived } = createDerived(new Set())
+
+        derived.track('a', 'context', { exact: true })
+
+        expect(derived.isTracking('a', ['context-a'])).toBeFalsy()
+      })
+    })
+
+    describe('childIsTracking', () => {
+      test('returns true if any child is tracking key', () => {
+        const { derived } = createDerived()
+
+        const child = derived.clone()
+
+        child.track('a')
+
+        derived.children.add(child)
+
+        expect(derived.childIsTracking('a')).toBeTruthy()
+      })
+    })
+
+    describe('clone', () => {
+      test('adds the clone to the children set', () => {
+        const { derived } = createDerived()
+
+        const child = derived.clone()
+
+        expect(derived.children).toContain(child)
+      })
+
+      test('independently triggers updates between parent and child', () => {
+        const { derived, stores } = createDerived(new Set(['a']))
+
+        const child = derived.clone(new Set(['b']))
+
+        const parentFn = vi.fn()
+        const childFn = vi.fn()
+
+        derived.subscribe(parentFn)
+        child.subscribe(childFn)
+
+        parentFn.mockReset()
+        childFn.mockReset()
+
+        stores.a.set(4)
+
+        expect(parentFn).toHaveBeenCalledOnce()
+        expect(childFn).not.toHaveBeenCalled()
+
+        stores.b.set(5)
+
+        expect(parentFn).toHaveBeenCalledOnce()
+        expect(childFn).toHaveBeenCalledOnce()
+      })
+    })
+
+    describe('track', () => {
+      test('adds the name to the root keys if no context is provided', () => {
+        const { derived } = createDerived()
+
+        derived.track('a')
+
+        expect(derived.keys).toContain('a')
+      })
+
+      test('adds the name and context to trackedContexts if context is provided', () => {
+        const { derived } = createDerived()
+
+        derived.track('a', 'context')
+
+        expect(derived.trackedContexts.a).toEqual([{ value: 'context' }])
+      })
+    })
+
+    describe('createTrackingProxy', () => {
+      test('accessing tracking proxy adds keys to tracked set', () => {
+        const { derived } = createDerived()
+
+        const name = 'hello'
+
+        const proxy = derived.createTrackingProxy(name)
+
+        proxy.a
+
+        expect(derived.trackedContexts.a).toEqual([{ value: name }])
+      })
+    })
+
+    describe('properly manages subscription lifetimes', () => {
+      test('removes all subscribers from internal stores after last subscriber unsubscribes', () => {
+        const { derived } = createDerived()
+
+        const unsubscribe = derived.subscribe(() => {})
+
+        for (const key in derived.stores) {
+          expect(derived.stores[key as keyof typeof derived.stores].subscribers).toHaveLength(1)
+        }
+
+        unsubscribe()
+
+        for (const key in derived.stores) {
+          expect(derived.stores[key as keyof typeof derived.stores].subscribers).toHaveLength(0)
+        }
+      })
+    })
   })
 })
