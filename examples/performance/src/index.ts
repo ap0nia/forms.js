@@ -97,14 +97,14 @@ type MyForm = {
 }
 
 // Best Form!
-import { FormControl } from '@forms.js/core'
 
-export const form = new FormControl<MyForm>()
-
-form.getValues('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
-form.registerField('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
-form.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
-form.watch('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
+// import { FormControl } from '@forms.js/core'
+//
+// export const form = new FormControl<MyForm>()
+//
+// form.getValues('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
+// form.registerField('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
+// form.watch('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
 
 // Hook Form
 
@@ -113,21 +113,19 @@ form.watch('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
 // export const hookForm = useForm<MyForm>()
 //
 // hookForm.register('a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7')
-//
-//
-// // Modular Form
-//
-// import { Field, useFormStore } from '@modular-forms/react'
-//
-// export const modularForm = useFormStore<MyForm>()
-//
-// Field({
-//   of: modularForm,
-//   name: 'a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11',
-//   children: undefined as any,
-// })
-//
-//
+
+// Modular Form
+
+import { Field, useFormStore } from '@modular-forms/react'
+
+export const modularForm = useFormStore<MyForm>()
+
+Field({
+  of: modularForm,
+  name: 'a.b.1.d.f.2.h.j.3.l.n.4.p.r.5.t.v.6.x.z.7.ab.ad.8.af.ah.9.aj.al.10.an.ap.11',
+  children: undefined as any,
+})
+
 // Tanstack Form
 
 // import { FormApi } from '@tanstack/form-core'

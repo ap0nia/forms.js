@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { Writable } from '../../src/store'
+import { Writable } from '../../src/store/writable'
 
 describe('store', () => {
   describe('Writable', () => {
@@ -13,29 +13,25 @@ describe('store', () => {
     test('subscribing adds a subscriber', () => {
       const count = new Writable(0)
 
-      const mock = vi.fn().mockImplementation(() => {
-        /* noop */
-      })
+      const fn = vi.fn()
 
-      count.subscribe(mock)
+      count.subscribe(fn)
 
       expect(count.hasSubscribers).toBeTruthy()
     })
 
     test('subscription function is called once with the current value upon subscribing', () => {
-      const value = 69
+      const value = 0
 
       const count = new Writable(value)
 
-      const mock = vi.fn().mockImplementation(() => {
-        /* noop */
-      })
+      const fn = vi.fn()
 
-      count.subscribe(mock)
+      count.subscribe(fn)
 
-      expect(mock).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledTimes(1)
 
-      expect(mock).toHaveBeenCalledWith(value)
+      expect(fn).toHaveBeenCalledWith(value)
     })
 
     test('subscription function is not called for same value', () => {
@@ -43,103 +39,51 @@ describe('store', () => {
 
       const count = new Writable(value)
 
-      const mock = vi.fn().mockImplementation(() => {
-        /* noop */
-      })
+      const fn = vi.fn()
 
-      count.subscribe(mock)
+      count.subscribe(fn)
 
-      expect(mock).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledTimes(1)
 
       count.set(value)
 
-      expect(mock).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledTimes(1)
     })
 
-    describe('selective subscriptions', () => {
-      test('global context with falsy filter does not notify', () => {
-        const writable = new Writable(0, undefined, false)
+    test('does not notify subscribers if there are other queued subscribers', () => {
+      const count = new Writable(0)
 
-        const fn = vi.fn()
+      const fn = vi.fn()
 
-        writable.subscribe(fn, undefined, false, (_data, context) => {
-          return Boolean(context)
-        })
+      count.subscribe(fn)
 
-        expect(fn).not.toHaveBeenCalled()
+      fn.mockReset()
 
-        writable.set(1)
-        writable.set(2)
-        writable.set(3)
+      Writable.subscriberQueue.length = 1
 
-        expect(fn).not.toHaveBeenCalled()
-      })
+      count.set(1)
 
-      test('global context with truthy filter notifies', () => {
-        const writable = new Writable(0, undefined, true)
+      expect(fn).not.toHaveBeenCalled()
 
-        const fn = vi.fn()
+      Writable.subscriberQueue.length = 0
+    })
 
-        writable.subscribe(fn, undefined, false, (_data, context) => {
-          return Boolean(context)
-        })
+    test('calls subscriber with context', () => {
+      const count = new Writable(0)
 
-        expect(fn).not.toHaveBeenCalled()
+      const value = 1
+      const context = { foo: 'bar' }
 
-        writable.set(1)
+      const fn = vi.fn()
 
-        expect(fn).toHaveBeenLastCalledWith(1)
+      count.subscribe(fn)
 
-        writable.set(2)
+      fn.mockReset()
 
-        expect(fn).toHaveBeenLastCalledWith(2)
+      count.set(value, context)
 
-        writable.set(3)
-
-        expect(fn).toHaveBeenLastCalledWith(3)
-      })
-
-      test('local context with falsy filter does not notify', () => {
-        const writable = new Writable(0, undefined, true)
-
-        const fn = vi.fn()
-
-        writable.subscribe(fn, undefined, false, (_data, context) => {
-          return Boolean(context)
-        })
-
-        expect(fn).not.toHaveBeenCalled()
-
-        writable.set(1, false)
-        writable.set(2, false)
-        writable.set(3, false)
-
-        expect(fn).not.toHaveBeenCalled()
-      })
-
-      test('local context with truthy filter notifies', () => {
-        const writable = new Writable(0, undefined, false)
-
-        const fn = vi.fn()
-
-        writable.subscribe(fn, undefined, false, (_data, context) => {
-          return Boolean(context)
-        })
-
-        expect(fn).not.toHaveBeenCalled()
-
-        writable.set(1, true)
-
-        expect(fn).toHaveBeenLastCalledWith(1, true)
-
-        writable.set(2, true)
-
-        expect(fn).toHaveBeenLastCalledWith(2, true)
-
-        writable.set(3, true)
-
-        expect(fn).toHaveBeenLastCalledWith(3, true)
-      })
+      expect(fn).toHaveBeenCalledTimes(1)
+      expect(fn).toHaveBeenCalledWith(value, context)
     })
   })
 

@@ -1,4 +1,3 @@
-export * from './form-control'
 export * from './constants'
 
 export * from './types/errors'

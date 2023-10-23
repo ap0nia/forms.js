@@ -19,12 +19,7 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
    * Subscribe functions paired with a value to be passed to them.
    * Populated by {@link Writable.set} to update subscribers.
    */
-  public static readonly subscriberQueue: [
-    Subscriber<any, any>,
-    unknown,
-    SubscriptionFilter<any, any>?,
-    unknown?,
-  ][] = []
+  public static readonly subscriberQueue: [Subscriber<any, any>, unknown, unknown?][] = []
 
   stop?: Noop
 
@@ -50,13 +45,8 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
     this.set(updater(this.value as T), context)
   }
 
-  public subscribe(
-    run: Subscriber<T, TContext>,
-    invalidate = noop,
-    runFirst = true,
-    filter?: SubscriptionFilter<T, TContext>,
-  ) {
-    const subscriber: SubscribeInvalidateTuple<T, TContext> = [run, invalidate, filter]
+  public subscribe(run: Subscriber<T, TContext>, invalidate = noop, runFirst = true) {
+    const subscriber: SubscribeInvalidateTuple<T, TContext> = [run, invalidate]
 
     this.subscribers.add(subscriber)
 
@@ -91,24 +81,24 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
 
     const shouldRunQueue = !Writable.subscriberQueue.length
 
-    for (const [subscribe, invalidate, filter] of this.subscribers) {
+    for (const [subscribe, invalidate] of this.subscribers) {
       invalidate()
-      Writable.subscriberQueue.push([subscribe, value, filter, context])
+      Writable.subscriberQueue.push([subscribe, value, context])
     }
 
-    if (shouldRunQueue) {
-      for (const [subscribe, value, filter, context] of Writable.subscriberQueue) {
-        if (filter == null || filter(value, context ?? this.context)) {
-          if (context != null) {
-            subscribe(value, context)
-          } else {
-            subscribe(value)
-          }
-        }
+    if (!shouldRunQueue) {
+      return
+    }
+
+    for (const [subscribe, value, context] of Writable.subscriberQueue) {
+      if (context === undefined) {
+        subscribe(value)
+      } else {
+        subscribe(value, context)
       }
-
-      Writable.subscriberQueue.length = 0
     }
+
+    Writable.subscriberQueue.length = 0
   }
 }
 
@@ -118,6 +108,5 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
 export type SubscribeInvalidateTuple<T, TContext = undefined> = [
   Subscriber<T, TContext>,
   Invalidator<T>,
-  SubscriptionFilter<T, TContext>?,
   TContext?,
 ]

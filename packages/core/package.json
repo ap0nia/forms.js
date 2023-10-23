@@ -68,9 +68,12 @@
     }
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run tests/form-control/set-value.test.ts",
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
+  },
+  "dependencies": {
+    "@forms.js/common": "workspace:^"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
@@ -81,9 +84,5 @@
   "engines": {
     "pnpm": "^8.0.0",
     "node": ">=18"
-  },
-  "dependencies": {
-    "@forms.js/common": "workspace:^",
-    "react-hook-form": "^7.47.0"
   }
 }
