@@ -29,6 +29,7 @@ import type {
   ResolvedFormControlOptions,
   SetValueOptions,
   TriggerOptions,
+  UnregisterOptions,
   UpdateDisabledFieldOptions,
   WatchOptions,
 } from './types/form'
@@ -265,6 +266,62 @@ export class FormControl<
     return field
   }
 
+  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
+    this.batchedState.open()
+
+    const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
+
+    for (const fieldName of fieldNames) {
+      this.names.mount.delete(fieldName)
+      this.names.array.delete(fieldName)
+
+      if (!options?.keepValue) {
+        deepUnset(this.fields, fieldName)
+
+        this.state.values.update((values) => {
+          deepUnset(values, fieldName)
+          return values
+        }, fieldNames)
+      }
+
+      if (!options?.keepError) {
+        this.state.errors.update((errors) => {
+          deepUnset(errors, fieldName)
+          return errors
+        }, fieldNames)
+      }
+
+      if (!options?.keepDirty) {
+        this.state.dirtyFields.update((dirtyFields) => {
+          deepUnset(dirtyFields, fieldName)
+          return dirtyFields
+        }, fieldNames)
+
+        this.state.isDirty.set(this.getDirty(), fieldNames)
+      }
+
+      if (!options?.keepTouched) {
+        this.state.touchedFields.update((touchedFields) => {
+          deepUnset(touchedFields, fieldName)
+          return touchedFields
+        }, fieldNames)
+      }
+
+      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
+        this.state.defaultValues.update((defaultValues) => {
+          deepUnset(defaultValues, fieldName)
+          return defaultValues
+        }, fieldNames)
+      }
+    }
+
+    if (!options?.keepIsValid) {
+      this.updateValid(undefined, fieldNames)
+    }
+
+    this.batchedState.flush(true)
+  }
+
   async trigger<T extends TParsedForm['keys']>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
@@ -430,7 +487,7 @@ export class FormControl<
     const value = options.disabled
       ? undefined
       : safeGet(this.state.values.value, options.name) ??
-        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+        tFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
     this.state.values.update((values) => {
       deepSet(values, options.name, value)
