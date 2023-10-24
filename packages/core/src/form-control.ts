@@ -237,6 +237,34 @@ export class FormControl<
     return result.isValid
   }
 
+  updateDirtyField(name: string, value?: unknown): boolean {
+    const defaultValue = safeGet(this.state.defaultValues.value, name)
+
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+
+    if (previousIsDirty && !currentIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => {
+        deepUnset(dirtyFields, name)
+        return dirtyFields
+      })
+    }
+
+    if (!previousIsDirty && currentIsDirty) {
+      this.state.dirtyFields.update((dirtyFields) => {
+        deepSet(dirtyFields, name, true)
+        return dirtyFields
+      })
+    }
+
+    if (this.isTracking('isDirty', [name])) {
+      this.state.isDirty.set(this.getDirty())
+    }
+
+    return currentIsDirty !== previousIsDirty
+  }
+
   //--------------------------------------------------------------------------------------
   // Errors.
   //--------------------------------------------------------------------------------------
@@ -393,5 +421,17 @@ export class FormControl<
     this.state.isLoading.set(false)
 
     this.batchedState.flush()
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Internal utilities.
+  //--------------------------------------------------------------------------------------
+
+  isTracking(key: keyof typeof this.state, name?: string[]): boolean {
+    return (
+      this.batchedState.isTracking(key, name) ||
+      this.batchedState.childIsTracking(key, name) ||
+      this.state[key].subscribers.size > 0
+    )
   }
 }
