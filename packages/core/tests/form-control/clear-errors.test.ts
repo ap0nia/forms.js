@@ -24,21 +24,17 @@ describe('FormControl', () => {
     test('resets error for single specified name', () => {
       const formControl = new FormControl()
 
-      const name = 'test'
-
       formControl.state.errors.set({
-        [name]: [],
         a: [],
         b: [],
         c: [],
       })
 
-      formControl.clearErrors(name)
+      formControl.clearErrors('c')
 
       const expectedErrors: FieldErrors = {
         a: [],
         b: [],
-        c: [],
       }
 
       expect(formControl.state.errors.value).toEqual(expectedErrors)
@@ -47,16 +43,13 @@ describe('FormControl', () => {
     test('resets errors for multiple specified names', () => {
       const formControl = new FormControl()
 
-      const names = ['test', 'a', 'b']
-
       formControl.state.errors.set({
-        test: [],
         a: [],
         b: [],
         c: [],
       })
 
-      formControl.clearErrors(names)
+      formControl.clearErrors(['a', 'b'])
 
       const expectedErrors: FieldErrors = { c: [] }
 
