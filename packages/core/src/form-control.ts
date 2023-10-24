@@ -4,6 +4,7 @@ import { VALIDATION_EVENTS } from './constants'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import type { FieldRecord } from './types/fields'
 import type { FormControlOptions, FormControlState, ResolvedFormControlOptions } from './types/form'
+import type { Defaults } from './utils/defaults'
 
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
   mode: VALIDATION_EVENTS.onSubmit,
@@ -80,8 +81,41 @@ export class FormControl<
 
     this.batchedState = new Batchable(this.state, new Set())
 
-    // if (isLoading) {
-    //   this.resetDefaultValues(initialDefaultValues, true)
-    // }
+    if (isLoading) {
+      this.resetDefaultValues(initialDefaultValues, true)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Resetters.
+  //--------------------------------------------------------------------------------------
+  async resetDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
+    const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
+
+    if (resolvingDefaultValues == null) {
+      this.state.isLoading.set(false)
+      return
+    }
+
+    const isPromise = resolvingDefaultValues instanceof Promise
+
+    let resolvedDefaultValues = resolvingDefaultValues
+
+    if (isPromise) {
+      this.state.isLoading.set(true)
+      resolvedDefaultValues = (await resolvingDefaultValues) ?? {}
+    }
+
+    this.batchedState.open()
+
+    this.state.defaultValues.set(resolvedDefaultValues as any)
+
+    if (resetValues) {
+      this.state.values.set(structuredClone(resolvedDefaultValues) as TValues)
+    }
+
+    this.state.isLoading.set(false)
+
+    this.batchedState.flush()
   }
 }
