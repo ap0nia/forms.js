@@ -11,6 +11,7 @@ import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { VALIDATION_EVENTS } from './constants'
 import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getFieldValue } from './logic/fields/get-field-value'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
@@ -22,6 +23,7 @@ import type {
   ParseForm,
   ResolvedFormControlOptions,
   TriggerOptions,
+  UpdateDisabledFieldOptions,
   WatchOptions,
 } from './types/form'
 import type { DeepPartial } from './utils/deep-partial'
@@ -235,6 +237,24 @@ export class FormControl<
     this.batchedState.flush()
 
     return result.isValid
+  }
+
+  updateDisabledField(options: UpdateDisabledFieldOptions): void {
+    if (typeof options.disabled !== 'boolean') {
+      return
+    }
+
+    const value = options.disabled
+      ? undefined
+      : safeGet(this.state.values.value, options.name) ??
+        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+
+    this.state.values.update((values) => {
+      deepSet(values, options.name, value)
+      return values
+    })
+
+    this.updateDirtyField(options.name, value)
   }
 
   updateDirtyField(name: string, value?: unknown): boolean {
