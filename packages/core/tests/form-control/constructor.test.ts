@@ -68,9 +68,9 @@ describe('FormControl', () => {
       })
 
       test('sets submitCount to 0', () => {
-        const form = new FormControl()
+        const formControl = new FormControl()
 
-        expect(form.state.submitCount.value).toEqual(0)
+        expect(formControl.state.submitCount.value).toEqual(0)
       })
 
       test('sets all the boolean writable stores to false', () => {
