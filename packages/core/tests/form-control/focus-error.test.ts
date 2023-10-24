@@ -3,6 +3,8 @@ import { describe, test, expect, vi } from 'vitest'
 import { FormControl } from '../../src/form-control'
 import type { FormControlOptions } from '../../src/types/form'
 
+import { trackAll } from './helpers.test'
+
 /**
  * In order for the form control to potentially focus on an error:
  * - The mounted names must include the field name.
@@ -14,68 +16,86 @@ function createFocusableFormControl(options?: FormControlOptions) {
 
   const name = 'test'
 
-  const ref = document.createElement('input')
-  ref.focus = vi.fn()
-
   formControl.names.mount.add(name)
+
+  const focus = vi.fn()
 
   formControl.fields[name] = {
     _f: {
       name,
-      ref,
+      ref: {
+        name,
+        focus,
+      },
     },
   }
 
-  formControl.state.errors.set({
-    [name]: [],
-  })
+  formControl.state.errors.set({ [name]: [] })
 
-  return { formControl, ref }
+  return { formControl, focus }
 }
 
 describe('FormControl', () => {
   describe('focusError', () => {
-    describe('focuses properly based on root options', () => {
+    describe('focuses error properly based on root options', () => {
       test('focuses error when root option is implicitly true', () => {
-        const { formControl, ref } = createFocusableFormControl()
+        const { formControl, focus } = createFocusableFormControl()
 
         formControl.focusError()
 
-        expect(ref.focus).toHaveBeenCalledOnce()
+        expect(focus).toHaveBeenCalledOnce()
       })
 
       test('focuses error when root option is explicitly true', () => {
-        const { formControl, ref } = createFocusableFormControl({ shouldFocusError: true })
+        const { formControl, focus } = createFocusableFormControl({ shouldFocusError: true })
 
         formControl.focusError()
 
-        expect(ref.focus).toHaveBeenCalledOnce()
+        expect(focus).toHaveBeenCalledOnce()
       })
 
       test('does not focus error when root option is explicitly false', () => {
-        const { formControl, ref } = createFocusableFormControl({ shouldFocusError: false })
+        const { formControl, focus } = createFocusableFormControl({ shouldFocusError: false })
 
         formControl.focusError()
 
-        expect(ref.focus).not.toHaveBeenCalled()
+        expect(focus).not.toHaveBeenCalled()
       })
     })
 
     describe('prioritizes locally set options over root options', () => {
       test('focuses error when local option is true', () => {
-        const { formControl, ref } = createFocusableFormControl({ shouldFocusError: false })
+        const { formControl, focus } = createFocusableFormControl({ shouldFocusError: false })
 
         formControl.focusError({ shouldFocus: true })
 
-        expect(ref.focus).toHaveBeenCalledOnce()
+        expect(focus).toHaveBeenCalledOnce()
       })
 
       test('does not focus error when local option is false', () => {
-        const { formControl, ref } = createFocusableFormControl({ shouldFocusError: true })
+        const { formControl, focus } = createFocusableFormControl({ shouldFocusError: true })
 
         formControl.focusError({ shouldFocus: false })
 
-        expect(ref.focus).not.toHaveBeenCalled()
+        expect(focus).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('satisfies invariants', () => {
+      describe('notifies subscribers to batched state at most twice', () => {
+        test('does not notify subscribers to batched state', () => {
+          const { formControl } = createFocusableFormControl()
+
+          const fn = vi.fn()
+
+          formControl.batchedState.subscribe(fn, undefined, false)
+
+          trackAll(formControl)
+
+          formControl.focusError()
+
+          expect(fn).not.toHaveBeenCalled()
+        })
       })
     })
   })
