@@ -1,5 +1,6 @@
 import { Batchable, Writable } from '@forms.js/common/store'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
+import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
@@ -8,6 +9,8 @@ import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { VALIDATION_EVENTS } from './constants'
 import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
+import { nativeValidateFields } from './logic/validation/native-validation'
+import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import type { FieldErrorRecord, FieldErrors } from './types/errors'
 import type { FieldRecord } from './types/fields'
 import type {
@@ -198,6 +201,26 @@ export class FormControl<
       nameArray?.forEach((name) => deepUnset(this.state.errors.value, name))
       return errors
     }, nameArray)
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Validation.
+  //--------------------------------------------------------------------------------------
+
+  async nativeValidate(
+    names?: string | string[],
+    shouldOnlyCheckValid?: boolean,
+  ): Promise<NativeValidationResult> {
+    const fields = deepFilter(this.fields, names)
+
+    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
+      shouldOnlyCheckValid,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+    })
+
+    return validationResult
   }
 
   //--------------------------------------------------------------------------------------
