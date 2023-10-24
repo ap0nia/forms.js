@@ -38,6 +38,7 @@ import type { RegisterOptions } from './types/register'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
+import type { LiteralUnion } from './utils/literal-union'
 
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
   mode: VALIDATION_EVENTS.onSubmit,
@@ -266,7 +267,27 @@ export class FormControl<
     return field
   }
 
-  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
+  unregisterElement<T extends TParsedForm['keys']>(
+    name: LiteralUnion<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f) {
+      field._f.mount = false
+    }
+
+    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+
+    if (shouldUnregister && !this.names.array.has(name)) {
+      this.names.unMount.add(name)
+    }
+  }
+
+  unregisterField<T extends TParsedForm['keys']>(
+    name?: T | T[],
+    options?: UnregisterOptions,
+  ): void {
     this.batchedState.open()
 
     const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
@@ -487,7 +508,7 @@ export class FormControl<
     const value = options.disabled
       ? undefined
       : safeGet(this.state.values.value, options.name) ??
-        tFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+        ieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
     this.state.values.update((values) => {
       deepSet(values, options.name, value)
