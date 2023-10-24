@@ -239,6 +239,19 @@ export class FormControl<
     return result.isValid
   }
 
+  updateTouchedField(name: string): boolean {
+    const previousIsTouched = safeGet(this.state.touchedFields.value, name)
+
+    if (!previousIsTouched) {
+      this.state.touchedFields.update((touchedFields) => {
+        deepSet(touchedFields, name, true)
+        return touchedFields
+      })
+    }
+
+    return !previousIsTouched
+  }
+
   updateDisabledField(options: UpdateDisabledFieldOptions): void {
     if (typeof options.disabled !== 'boolean') {
       return
