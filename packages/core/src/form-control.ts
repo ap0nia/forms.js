@@ -3,6 +3,7 @@ import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
+import { isBrowser } from '@forms.js/common/utils/is-browser'
 import { isEmptyObject } from '@forms.js/common/utils/is-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Nullish } from '@forms.js/common/utils/null'
@@ -31,6 +32,7 @@ import type {
   FormControlState,
   HandlerCallback,
   ParseForm,
+  ResetOptions,
   ResolvedFormControlOptions,
   SetValueOptions,
   SubmitErrorHandler,
@@ -727,6 +729,19 @@ export class FormControl<
   }
 
   /**
+   * Updates the form's values based on its dirty fields.
+   */
+  setDirtyValues(values: unknown): void {
+    for (const fieldName of this.names.mount) {
+      if (safeGet(this.state.dirtyFields.value, fieldName)) {
+        deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
+      } else {
+        this.setValue(fieldName as any, safeGet(values, fieldName))
+      }
+    }
+  }
+
+  /**
    * Attempt to directly set a field's "value" property.
    */
   setFieldValue(name: string, value: unknown, options?: SetValueOptions) {
@@ -1009,6 +1024,90 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
 
   /**
+   * Reset the form control.
+   */
+  reset(
+    formValues?: Defaults<TValues> extends TValues ? TValues : Defaults<TValues>,
+    options?: ResetOptions,
+  ): void {
+    this.batchedState.open()
+
+    const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
+
+    const cloneUpdatedValues = structuredClone(updatedValues)
+
+    const values =
+      formValues && isEmptyObject(formValues) ? this.state.defaultValues.value : cloneUpdatedValues
+
+    if (!options?.keepDefaultValues) {
+      this.state.defaultValues.set(updatedValues as DeepPartial<TValues>)
+    }
+
+    if (!options?.keepValues) {
+      if (options?.keepDirtyValues || this.options.shouldCaptureDirtyFields) {
+        this.setDirtyValues(values)
+      } else {
+        if (isBrowser() && formValues == null) {
+          this.resetFormElement()
+        }
+        this.fields = {}
+      }
+
+      const newValues = this.options.shouldUnregister
+        ? options?.keepDefaultValues
+          ? structuredClone(this.state.defaultValues.value)
+          : {}
+        : structuredClone(values)
+
+      this.state.values.set(newValues as TValues, true)
+    }
+
+    this.names = {
+      mount: new Set(),
+      unMount: new Set(),
+      array: new Set(),
+    }
+
+    if (!options?.keepSubmitCount) {
+      this.state.submitCount.set(0)
+    }
+
+    if (!options?.keepDirty) {
+      this.state.isDirty.set(
+        Boolean(
+          options?.keepDefaultValues && !deepEqual(formValues, this.state.defaultValues.value),
+        ),
+      )
+    }
+
+    if (!options?.keepDirtyValues) {
+      if (options?.keepDefaultValues && formValues) {
+        this.state.dirtyFields.set(getDirtyFields(this.state.defaultValues.value, formValues))
+      } else {
+        this.state.dirtyFields.set({})
+      }
+    }
+
+    if (!options?.keepTouched) {
+      this.state.touchedFields.set({})
+    }
+
+    if (!options?.keepErrors) {
+      this.state.errors.set({})
+    }
+
+    if (!options?.keepIsSubmitSuccessful) {
+      this.state.isSubmitSuccessful.set(false)
+    }
+
+    this.state.isSubmitting.set(false)
+
+    this.valueListeners.forEach((listener) => listener(this.state.values.value))
+
+    this.batchedState.flush()
+  }
+
+  /**
    * Resolve the form control's default values.
    */
   async resetDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
@@ -1039,6 +1138,32 @@ export class FormControl<
     this.state.isLoading.set(false)
 
     this.batchedState.flush()
+  }
+
+  /**
+   * Resets the nearest {@link HTMLFormElement}.
+   */
+  resetFormElement(): void {
+    for (const name of this.names.mount) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field?._f == null) {
+        continue
+      }
+
+      const fieldReference = Array.isArray(field._f.refs) ? field._f.refs[0] : field._f.ref
+
+      if (!isHTMLElement(fieldReference)) {
+        continue
+      }
+
+      const form = fieldReference.closest('form')
+
+      if (form) {
+        form.reset()
+        break
+      }
+    }
   }
 
   //--------------------------------------------------------------------------------------
