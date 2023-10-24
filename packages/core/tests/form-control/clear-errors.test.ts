@@ -2,19 +2,27 @@ import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
 
+import type { FieldErrors } from 'packages/core/src'
+
 describe('FormControl', () => {
   describe('clearErrors', () => {
     test('resets all errors if no name provided', () => {
       const formControl = new FormControl()
 
-      formControl.state.errors.set({ test: [] })
+      formControl.state.errors.set({
+        a: [],
+        b: [],
+        c: [],
+      })
 
       formControl.clearErrors()
 
-      expect(formControl.state.errors.value).toEqual({})
+      const expectedErrors: FieldErrors = {}
+
+      expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
 
-    test('resets error for one specified name', () => {
+    test('resets error for single specified name', () => {
       const formControl = new FormControl()
 
       const name = 'test'
@@ -28,11 +36,13 @@ describe('FormControl', () => {
 
       formControl.clearErrors(name)
 
-      expect(formControl.state.errors.value).toEqual({
+      const expectedErrors: FieldErrors = {
         a: [],
         b: [],
         c: [],
-      })
+      }
+
+      expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
 
     test('resets errors for multiple specified names', () => {
@@ -49,37 +59,20 @@ describe('FormControl', () => {
 
       formControl.clearErrors(names)
 
-      expect(formControl.state.errors.value).toEqual({
-        c: [],
-      })
+      const expectedErrors: FieldErrors = { c: [] }
+
+      expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
 
-    describe('meets invariants', () => {
-      test('only updates errors once', () => {
+    describe('properly notifies subscribers to batched state', () => {
+      test('only notifies subscribers once', () => {
         const formControl = new FormControl()
 
         const fn = vi.fn()
 
-        formControl.state.errors.subscribe(fn)
+        formControl.batchedState.subscribe(fn, undefined, false)
 
-        fn.mockReset()
-
-        formControl.clearErrors()
-
-        expect(fn).toHaveBeenCalledOnce()
-      })
-
-      test('only updates derived state once', () => {
-        const formControl = new FormControl()
-
-        const fn = vi.fn()
-
-        formControl.batchedState.subscribe(fn)
-
-        // Track errors with the derived state.
         formControl.batchedState.proxy.errors
-
-        fn.mockReset()
 
         formControl.clearErrors()
 
