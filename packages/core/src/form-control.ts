@@ -31,6 +31,7 @@ import type {
   UpdateDisabledFieldOptions,
   WatchOptions,
 } from './types/form'
+import type { RegisterOptions } from './types/register'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
@@ -192,17 +193,49 @@ export class FormControl<
   }
 
   //--------------------------------------------------------------------------------------
-  // Interactions.
+  // Core API.
   //--------------------------------------------------------------------------------------
 
-  focusError(options?: TriggerOptions) {
-    if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
-      focusFieldBy(
-        this.fields,
-        (key) => key && safeGet(this.state.errors.value, key),
-        this.names.mount,
-      )
+  registerField<T extends TParsedForm['keys']>(
+    name: Extract<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ) {
+    const existingField: Field | undefined = safeGet(this.fields, name)
+
+    const field: Field = {
+      ...existingField,
+      _f: {
+        ...(existingField?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      },
     }
+
+    deepSet(this.fields, name, field)
+
+    this.names.mount.add(name)
+
+    this.batchedState.open()
+
+    if (existingField) {
+      this.updateDisabledField({ field, disabled: options?.disabled, name })
+    } else {
+      const defaultValue =
+        safeGet(this.state.values.value, name) ??
+        options?.value ??
+        safeGet(this.state.defaultValues.value, name)
+
+      this.state.values.update((values) => {
+        deepSet(values, name, defaultValue)
+        return values
+      })
+    }
+
+    // Quietly close the buffer without flushing/triggering any updates.
+    this.batchedState.close()
+
+    return field
   }
 
   async trigger<T extends TParsedForm['keys']>(
@@ -242,16 +275,6 @@ export class FormControl<
     this.batchedState.flush()
 
     return result.isValid
-  }
-
-  touch(name: string, value?: unknown, options?: SetValueOptions): void {
-    if (!options?.shouldTouch || options.shouldDirty) {
-      this.updateDirtyField(name, value)
-    }
-
-    if (options?.shouldTouch) {
-      this.updateTouchedField(name)
-    }
   }
 
   //--------------------------------------------------------------------------------------
@@ -349,6 +372,16 @@ export class FormControl<
   // Dirty, touched, disabled.
   //--------------------------------------------------------------------------------------
 
+  touch(name: string, value?: unknown, options?: SetValueOptions): void {
+    if (!options?.shouldTouch || options.shouldDirty) {
+      this.updateDirtyField(name, value)
+    }
+
+    if (options?.shouldTouch) {
+      this.updateTouchedField(name)
+    }
+  }
+
   updateTouchedField(name: string): boolean {
     const previousIsTouched = safeGet(this.state.touchedFields.value, name)
 
@@ -411,6 +444,16 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Errors.
   //--------------------------------------------------------------------------------------
+
+  focusError(options?: TriggerOptions) {
+    if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
+      focusFieldBy(
+        this.fields,
+        (key) => key && safeGet(this.state.errors.value, key),
+        this.names.mount,
+      )
+    }
+  }
 
   setError<T extends TParsedForm['keys']>(
     name: T | 'root' | `root.${string}`,
