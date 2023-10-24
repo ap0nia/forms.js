@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run tests/form-control/update-touched-field.test.ts",
+    "test": "vitest run tests/form-control/touch.test.ts",
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
   },
