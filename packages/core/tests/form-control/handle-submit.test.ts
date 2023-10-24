@@ -1,12 +1,13 @@
 import { describe, test, expect, vi } from 'vitest'
 
+import { trackAll } from '../../src/extensions/track-all'
 import { FormControl } from '../../src/form-control'
 import type { FieldErrorRecord } from '../../src/types/errors'
 import type { Resolver, ResolverResult } from '../../src/types/resolver'
 
 describe('FormControl', () => {
   describe('handleSubmit', () => {
-    test('valid form calls onValid callback', async () => {
+    test('calls onValid callback for valid form submission', async () => {
       const values = {
         a: {
           b: {
@@ -26,17 +27,18 @@ describe('FormControl', () => {
 
       const event = new Event('')
 
-      const handleSubmit = formControl.handleSubmit(onValid)
-
-      await handleSubmit(event)
+      await formControl.handleSubmit(onValid)(event)
 
       expect(onValid).toHaveBeenCalledOnce()
 
       expect(onValid).toHaveBeenCalledWith(valueClone, event)
     })
 
-    test('invalid form calls onInvalid callback', async () => {
-      const resolverResult: ResolverResult = { values: {}, errors: { a: { type: 'required' } } }
+    test('calls onInvalid callback for invalid form based on resolver', async () => {
+      const resolverResult: ResolverResult = {
+        values: {},
+        errors: { a: { type: 'required' } },
+      }
 
       const resolver: Resolver = () => resolverResult
 
@@ -46,16 +48,14 @@ describe('FormControl', () => {
 
       const event = new Event('')
 
-      const handleSubmit = formControl.handleSubmit(undefined, onInvalid)
-
-      await handleSubmit(event)
+      await formControl.handleSubmit(undefined, onInvalid)(event)
 
       expect(onInvalid).toHaveBeenCalledOnce()
 
       expect(onInvalid).toHaveBeenCalledWith(resolverResult.errors, event)
     })
 
-    test('invalid native validation calls onInvalid callback', async () => {
+    test('calls onInvalid callback for invalid form based on native validation ', async () => {
       const formControl = new FormControl()
 
       const name = 'a'
@@ -73,9 +73,7 @@ describe('FormControl', () => {
 
       const event = new Event('')
 
-      const handleSubmit = formControl.handleSubmit(undefined, onInvalid)
-
-      await handleSubmit(event)
+      await formControl.handleSubmit(undefined, onInvalid)(event)
 
       expect(onInvalid).toHaveBeenCalledOnce()
 
@@ -92,19 +90,16 @@ describe('FormControl', () => {
       expect(onInvalid).toHaveBeenCalledWith(errors, event)
     })
 
-    test('event prevent default and persist', async () => {
-      const preventDefault = vi.fn()
-
+    test('calls event prevent default', async () => {
       const event = new Event('')
-      event.preventDefault = preventDefault
+
+      event.preventDefault = vi.fn()
 
       const formControl = new FormControl()
 
-      const handleSubmit = formControl.handleSubmit()
+      await formControl.handleSubmit()(event)
 
-      await handleSubmit(event)
-
-      expect(preventDefault).toHaveBeenCalledOnce()
+      expect(event.preventDefault).toHaveBeenCalledOnce()
     })
 
     /**
@@ -126,15 +121,33 @@ describe('FormControl', () => {
 
       const onInvalid = vi.fn()
 
-      const handleSubmit = formControl.handleSubmit(undefined, onInvalid)
-
-      await handleSubmit(event)
+      await formControl.handleSubmit(undefined, onInvalid)(event)
 
       expect(onInvalid).toHaveBeenCalledOnce()
 
-      // The errors object defaults to an empty object if
-      // the validate method doesn't return errors in a validationResult or resolverResult
+      // The errors object defaults to an empty object if the validate method doesn't return errors
+      // in a validationResult or resolverResult
       expect(onInvalid).toHaveBeenCalledWith({}, event)
+    })
+
+    describe('satisfies invariants', () => {
+      describe('notifies subscribers to batched state at most twice', () => {
+        test('notifies subscribers once', async () => {
+          const formControl = new FormControl()
+
+          const fn = vi.fn()
+
+          trackAll(formControl)
+
+          formControl.batchedState.subscribe(fn, undefined, false)
+
+          const event = new Event('')
+
+          await formControl.handleSubmit()(event)
+
+          expect(fn).toHaveBeenCalledOnce()
+        })
+      })
     })
   })
 })
