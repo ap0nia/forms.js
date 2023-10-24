@@ -1,12 +1,21 @@
 import { Batchable, Writable } from '@forms.js/common/store'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
+import { safeGet } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
 import { VALIDATION_EVENTS } from './constants'
+import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import type { FieldRecord } from './types/fields'
-import type { FormControlOptions, FormControlState, ResolvedFormControlOptions } from './types/form'
+import type {
+  FormControlOptions,
+  FormControlState,
+  ResolvedFormControlOptions,
+  TriggerOptions,
+} from './types/form'
 import type { Defaults } from './utils/defaults'
+
+export type { FormControlOptions }
 
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
   mode: VALIDATION_EVENTS.onSubmit,
@@ -85,6 +94,20 @@ export class FormControl<
 
     if (isLoading) {
       this.resetDefaultValues(initialDefaultValues, true)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Interactions.
+  //--------------------------------------------------------------------------------------
+
+  focusError(options?: TriggerOptions) {
+    if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
+      focusFieldBy(
+        this.fields,
+        (key) => key && safeGet(this.state.errors.value, key),
+        this.names.mount,
+      )
     }
   }
 
