@@ -1,44 +1,50 @@
 import { fireEvent, waitFor } from '@testing-library/dom'
 import { describe, test, expect, vi } from 'vitest'
 
+import { trackAll } from '../../src/extensions/track-all'
 import { FormControl } from '../../src/form-control'
 import type { FieldError } from '../../src/types/errors'
 import type { Field } from '../../src/types/fields'
+import type { FormControlOptions } from '../../src/types/form'
+
+function createFormControl(options?: FormControlOptions) {
+  const formControl = new FormControl(options)
+
+  const name = 'test'
+
+  const ref = document.createElement('input')
+
+  ref.name = name
+  ref.addEventListener('change', (event) => formControl.handleChange(event))
+  ref.addEventListener('blur', (event) => formControl.handleChange(event))
+
+  const field: Field = {
+    _f: {
+      name,
+      ref,
+      mount: true,
+    },
+  }
+
+  formControl.fields[name] = field
+
+  return { formControl, name, field, ref }
+}
 
 describe('FormControl', () => {
   describe('handleChange', () => {
     test('does not do anything if field name is not registered', () => {
-      const input = document.createElement('input')
-
-      const formControl = new FormControl()
-
-      input.addEventListener('change', (event) => formControl.handleChange(event))
-
-      fireEvent.change(input, { target: { value: '' } })
+      const { formControl } = createFormControl()
 
       expect(formControl.state.values.value).toEqual({})
     })
 
     test('sets the new field value in the form control values', () => {
-      const formControl = new FormControl()
-
-      const name = 'test'
-
-      const value = 'Hello, World'
-
-      const ref = document.createElement('input')
-      ref.name = name
-
-      formControl.fields[name] = {
-        _f: {
-          name,
-          ref,
-        },
-      }
+      const { formControl, name, ref } = createFormControl()
 
       expect(formControl.state.values.value).toEqual({})
 
-      ref.addEventListener('change', (event) => formControl.handleChange(event))
+      const value = 'abc'
 
       ref.value = value
 
@@ -48,24 +54,9 @@ describe('FormControl', () => {
     })
 
     test('invokes onChange for change events', () => {
-      const formControl = new FormControl()
+      const { field, ref } = createFormControl()
 
-      const name = 'test'
-
-      const ref = document.createElement('input')
-      ref.name = name
-
-      const field = {
-        _f: {
-          name,
-          ref,
-          onChange: vi.fn(),
-        },
-      } satisfies Field
-
-      formControl.fields[name] = field
-
-      ref.addEventListener('change', (event) => formControl.handleChange(event))
+      field._f.onChange = vi.fn()
 
       fireEvent.change(ref)
 
@@ -73,53 +64,20 @@ describe('FormControl', () => {
     })
 
     test('invokes onBlur for blur events', () => {
-      const formControl = new FormControl()
+      const { field, ref } = createFormControl()
 
-      const name = 'test'
-
-      const ref = document.createElement('input')
-      ref.name = name
-
-      const field = {
-        _f: {
-          name,
-          ref,
-          onBlur: vi.fn(),
-        },
-      } satisfies Field
-
-      formControl.fields[name] = field
-
-      ref.addEventListener('blur', (event) => formControl.handleChange(event))
+      field._f.onBlur = vi.fn()
 
       fireEvent.blur(ref)
 
       expect(field._f.onBlur).toHaveBeenCalledOnce()
     })
 
-    describe('native validation', () => {
-      test('field reference name is the same as the ref name', async () => {
-        const formControl = new FormControl({ mode: 'onChange' })
+    describe('properly handles native validation', () => {
+      test('properly adds errors when the field name is the same as the ref name', async () => {
+        const { formControl, name, field, ref } = createFormControl({ mode: 'onChange' })
 
-        const subscriber = vi.fn()
-
-        formControl.state.isValid.subscribe(subscriber)
-
-        const name = 'test'
-
-        const ref = document.createElement('input')
-        ref.name = name
-
-        formControl.fields[name] = {
-          _f: {
-            name,
-            ref,
-            mount: true,
-            required: true,
-          },
-        }
-
-        ref.addEventListener('change', (event) => formControl.handleChange(event))
+        field._f.required = true
 
         fireEvent.change(ref)
 
@@ -134,32 +92,16 @@ describe('FormControl', () => {
         )
       })
 
-      test('field reference name is different from the ref name', async () => {
-        const formControl = new FormControl({ mode: 'onChange' })
+      test('properly adds errors when the field name is different from the ref name', async () => {
+        const { formControl, field, ref } = createFormControl({ mode: 'onChange' })
 
-        const subscriber = vi.fn()
-
-        formControl.state.isValid.subscribe(subscriber)
-
-        const name = 'test'
         const differentName = 'differentName'
 
-        const ref = document.createElement('input')
-        ref.name = name
-
-        formControl.fields[name] = {
-          _f: {
-            // In the (edge-case) event that this name is different from the ref's name,
-            // the form control will prioritize this name.
-            // It will re-run the entire validation function and merge all the errors.
-            name: differentName,
-            ref,
-            mount: true,
-            required: true,
-          },
-        }
-
-        ref.addEventListener('change', (event) => formControl.handleChange(event))
+        // In the (edge-case) event that this name is different from the ref's name,
+        // the form control will prioritize this name.
+        // It will re-run the entire validation function and merge all the errors.
+        field._f.name = differentName
+        field._f.required = true
 
         fireEvent.change(ref)
 
@@ -174,24 +116,10 @@ describe('FormControl', () => {
         )
       })
 
-      test('blur event', async () => {
-        const formControl = new FormControl({ mode: 'onBlur' })
+      test('properly adds errors after a blur event', async () => {
+        const { formControl, name, field, ref } = createFormControl({ mode: 'onBlur' })
 
-        const name = 'test'
-
-        const ref = document.createElement('input')
-        ref.name = name
-
-        formControl.fields[name] = {
-          _f: {
-            name,
-            ref,
-            mount: true,
-            required: true,
-          },
-        }
-
-        ref.addEventListener('blur', (event) => formControl.handleChange(event))
+        field._f.required = true
 
         fireEvent.blur(ref)
 
@@ -207,43 +135,31 @@ describe('FormControl', () => {
       })
 
       test('sets additional errors with trigger if field reference has deps', async () => {
-        const formControl = new FormControl({ mode: 'onBlur' })
+        const { formControl, name, ref, field } = createFormControl({ mode: 'onBlur' })
 
-        const name0 = 'test'
         const name1 = 'hello'
 
-        const ref = document.createElement('input')
-        ref.name = name0
+        // Since name1 is a dependency of name0,
+        // the form control will also validate name1 when name0 is validated.
+        field._f.deps = [name1]
+        field._f.required = true
 
-        formControl.fields[name0] = {
-          _f: {
-            name: name0,
-            ref,
-            mount: true,
-            required: true,
-
-            // Since name1 is a dependency of name0,
-            // the form control will also validate name1 when name0 is validated.
-            deps: [name1],
-          },
-        }
+        const ref1 = { name: name1 }
 
         formControl.fields[name1] = {
           _f: {
             name: name1,
-            ref: { name: name1 },
+            ref: ref1,
             mount: true,
             required: true,
           },
         }
-
-        ref.addEventListener('blur', (event) => formControl.handleChange(event))
 
         fireEvent.blur(ref)
 
         await waitFor(() =>
           expect(formControl.state.errors.value).toEqual({
-            [name0]: {
+            [name]: {
               message: '',
               type: 'required',
               ref,
@@ -251,37 +167,14 @@ describe('FormControl', () => {
             [name1]: {
               message: '',
               type: 'required',
-              ref: { name: name1 },
+              ref: ref1,
             },
           }),
         )
       })
 
       test('unsets errors with successful native validation', async () => {
-        const formControl = new FormControl({ mode: 'onBlur' })
-
-        const name0 = 'test'
-
-        const ref = document.createElement('input')
-        ref.name = name0
-
-        formControl.fields[name0] = {
-          _f: {
-            name: name0,
-            ref,
-            mount: true,
-          },
-        }
-
-        formControl.state.errors.set({
-          [name0]: {
-            message: '',
-            type: 'required',
-            ref,
-          },
-        })
-
-        ref.addEventListener('blur', (event) => formControl.handleChange(event))
+        const { formControl, ref } = createFormControl({ mode: 'onBlur' })
 
         fireEvent.blur(ref)
 
@@ -289,9 +182,9 @@ describe('FormControl', () => {
       })
     })
 
-    describe('resolver', () => {
-      test('no resolver errors unsets existing error', async () => {
-        const formControl = new FormControl({
+    describe('properly validates with a resolver during handling', () => {
+      test('unsets existing error if no resolver errors ', async () => {
+        const { formControl, name, field, ref } = createFormControl({
           mode: 'onBlur',
           resolver: (values) => {
             return {
@@ -300,19 +193,7 @@ describe('FormControl', () => {
           },
         })
 
-        const name = 'test'
-
-        const ref = document.createElement('input')
-        ref.name = name
-
-        formControl.fields[name] = {
-          _f: {
-            name,
-            ref,
-            mount: true,
-            required: true,
-          },
-        }
+        field._f.required = true
 
         // Set an existing error to be removed after the change handler.
         formControl.state.errors.set({ [name]: { type: 'test', message: 'test', ref } })
@@ -324,11 +205,8 @@ describe('FormControl', () => {
         await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
       })
 
-      test('resolver errors sets new error', async () => {
-        const name = 'test'
-
-        const ref = document.createElement('input')
-        ref.name = name
+      test('sets a new error if there resolver errors', async () => {
+        const { formControl, name, field, ref } = createFormControl({ mode: 'onBlur' })
 
         const error: FieldError = {
           type: 'value',
@@ -336,31 +214,16 @@ describe('FormControl', () => {
           ref,
         }
 
-        const formControl = new FormControl({
-          mode: 'onBlur',
-          resolver: (values) => {
-            return {
-              values,
-              errors: {
-                [name]: error,
-              },
-            }
-          },
-        })
-
-        formControl.fields[name] = {
-          _f: {
-            name,
-            ref,
-            mount: true,
-            required: true,
-          },
+        formControl.options.resolver = (values) => {
+          return {
+            values,
+            errors: {
+              [name]: error,
+            },
+          }
         }
 
-        // Set an existing error to be removed after the change handler.
-        formControl.state.errors.set({ [name]: { type: 'test', message: 'test', ref } })
-
-        ref.addEventListener('blur', (event) => formControl.handleChange(event))
+        field._f.required = true
 
         fireEvent.blur(ref)
 
@@ -368,11 +231,9 @@ describe('FormControl', () => {
       })
 
       test('resolver errors with deps sets multiple errors', async () => {
-        const name0 = 'test'
         const name1 = 'hello'
 
-        const ref = document.createElement('input')
-        ref.name = name0
+        const { formControl, name, field, ref } = createFormControl({ mode: 'onBlur' })
 
         const error: FieldError = {
           type: 'value',
@@ -380,44 +241,91 @@ describe('FormControl', () => {
           ref,
         }
 
-        const formControl = new FormControl({
-          mode: 'onBlur',
-          resolver: (values) => {
-            return {
-              values,
-              errors: {
-                [name0]: error,
-                [name1]: error,
-              },
-            }
-          },
-        })
-
-        formControl.fields[name0] = {
-          _f: {
-            name: name0,
-            ref,
-            mount: true,
-            required: true,
-
-            // More errors will be set if this field has dependencies.
-            deps: [name1],
-          },
+        formControl.options.resolver = (values) => {
+          return {
+            values,
+            errors: {
+              [name]: error,
+              [name1]: error,
+            },
+          }
         }
 
-        // Set an existing error to be removed after the change handler.
-        formControl.state.errors.set({ [name0]: { type: 'test', message: 'test', ref } })
-
-        ref.addEventListener('blur', (event) => formControl.handleChange(event))
+        // More errors will be set if this field has dependencies.
+        field._f.deps = [name1]
+        field._f.required = true
 
         fireEvent.blur(ref)
 
         await waitFor(() =>
           expect(formControl.state.errors.value).toEqual({
-            [name0]: error,
+            [name]: error,
             [name1]: error,
           }),
         )
+      })
+    })
+
+    describe('satisfies invariants', () => {
+      describe('notifies subscribers to batched state at most twice', () => {
+        test('notifies subscribers twice if no validation', async () => {
+          const { formControl, ref } = createFormControl()
+
+          trackAll(formControl)
+
+          const fn = vi.fn()
+
+          formControl.batchedState.subscribe(fn, undefined, false)
+
+          fireEvent.change(ref)
+
+          await waitFor(() => expect(fn).toHaveBeenCalledTimes(2))
+        })
+
+        test('notifies subscribers twice if validation but not tracking isValidating', async () => {
+          const { formControl, ref } = createFormControl({
+            mode: 'onChange',
+            resolver: () => {
+              return {
+                errors: {},
+              }
+            },
+          })
+
+          trackAll(formControl)
+
+          // Don't track isValidating.
+          formControl.batchedState.keys?.delete('isValidating')
+
+          const fn = vi.fn()
+
+          formControl.batchedState.subscribe(fn, undefined, false)
+
+          fireEvent.change(ref)
+
+          await waitFor(() => expect(fn).toHaveBeenCalledTimes(2))
+        })
+
+        test('notifies subscribers three times if validation and tracking isValidating', async () => {
+          const { formControl, ref } = createFormControl({
+            mode: 'onChange',
+            resolver: () => {
+              return {
+                errors: {},
+              }
+            },
+          })
+
+          trackAll(formControl)
+
+          const fn = vi.fn()
+
+          formControl.batchedState.subscribe(fn, undefined, false)
+
+          fireEvent.change(ref)
+
+          await waitFor(() => expect(fn).toHaveBeenCalledTimes(3))
+        })
       })
     })
   })
