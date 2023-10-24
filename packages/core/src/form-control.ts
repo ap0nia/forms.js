@@ -22,7 +22,9 @@ import type {
   ParseForm,
   ResolvedFormControlOptions,
   TriggerOptions,
+  WatchOptions,
 } from './types/form'
+import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
 
@@ -142,6 +144,44 @@ export class FormControl<
   getValues(...args: any[]): any {
     const names = args.length > 1 ? args : args[0]
     return safeGetMultiple(this.state.values.value, names)
+  }
+
+  watch(): TValues
+
+  watch(callback: (data: any, context: { name?: string; type?: string }) => void): () => void
+
+  watch<T extends TParsedForm['keys']>(
+    name: T,
+    defaultValues?: DeepPartial<TValues>,
+    options?: WatchOptions<TValues>,
+  ): TParsedForm['values'][T]
+
+  watch<T extends TParsedForm['keys'][]>(
+    name: T,
+    defaultValues?: DeepPartial<TParsedForm['values']>,
+    options?: WatchOptions<TValues>,
+  ): KeysToProperties<TParsedForm['values'], T>
+
+  watch(...args: any[]): any {
+    if (typeof args[0] === 'function') {
+      return this.batchedState.subscribe((state, context) => {
+        return args[0](state, context ?? this.options.context)
+      })
+    }
+
+    const [name, _defaultValues, options] = args
+
+    const nameArray = Array.isArray(name) ? name : name ? [name] : []
+
+    if (nameArray.length > 0) {
+      this.batchedState.track('values', nameArray, options)
+    } else {
+      this.batchedState.keys?.add('values')
+    }
+
+    return nameArray.length > 1
+      ? deepFilter({ ...this.state.values.value }, nameArray)
+      : safeGet({ ...this.state.values.value }, name)
   }
 
   //--------------------------------------------------------------------------------------
