@@ -12,6 +12,7 @@ import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { VALIDATION_EVENTS } from './constants'
 import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
@@ -256,6 +257,46 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Values.
   //--------------------------------------------------------------------------------------
+
+  setValue<T extends TParsedForm['keys']>(
+    name: T,
+    value: TParsedForm['values'][T],
+    options?: SetValueOptions,
+  ): void {
+    this.batchedState.open()
+
+    const field: FieldRecord[T] = safeGet(this.fields, name)
+
+    const fieldNames = toStringArray(name)
+
+    const clonedValue = structuredClone(value)
+
+    this.state.values.update((values) => {
+      deepSet(values, name, clonedValue)
+      return values
+    })
+
+    const isFieldArray = this.names.array.has(name)
+
+    if (!isFieldArray) {
+      if (field && !field._f && clonedValue != null) {
+        this.setValues(name, clonedValue, { quiet: true, ...options })
+      } else {
+        this.setFieldValue(name, clonedValue, options)
+      }
+    } else if (options?.shouldDirty) {
+      this.state.dirtyFields.set(
+        getDirtyFields(this.state.defaultValues.value, this.state.values.value),
+      )
+      this.state.isDirty.set(this.getDirty())
+    }
+
+    this.state.values.update((values) => ({ ...values }), fieldNames)
+
+    this.valueListeners.forEach((listener) => listener(this.state.values.value))
+
+    this.batchedState.flush()
+  }
 
   setValues(name: string, value: any, options?: SetValueOptions) {
     this.batchedState.open()
