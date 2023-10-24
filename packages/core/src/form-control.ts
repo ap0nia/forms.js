@@ -16,8 +16,6 @@ import type {
 } from './types/form'
 import type { Defaults } from './utils/defaults'
 
-export type { FormControlOptions }
-
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
   mode: VALIDATION_EVENTS.onSubmit,
   reValidateMode: VALIDATION_EVENTS.onChange,
@@ -98,8 +96,25 @@ export class FormControl<
     }
   }
 
+  //--------------------------------------------------------------------------------------
+  // Getters.
+  //--------------------------------------------------------------------------------------
+
   getDirty(): boolean {
     return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+  }
+
+  getFieldState(name: string, formState?: FormControlState<TValues>) {
+    const errors = formState?.errors ?? this.state.errors.value
+    const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
+    const touchedFields = formState?.touchedFields ?? this.state.touchedFields.value
+
+    return {
+      invalid: Boolean(safeGet(errors, name)),
+      isDirty: Boolean(safeGet(dirtyFields, name)),
+      isTouched: Boolean(safeGet(touchedFields, name)),
+      error: safeGet(errors, name),
+    }
   }
 
   //--------------------------------------------------------------------------------------
