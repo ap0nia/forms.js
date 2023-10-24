@@ -1,5 +1,6 @@
 import { Batchable, Writable } from '@forms.js/common/store'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
+import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
@@ -7,6 +8,7 @@ import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { VALIDATION_EVENTS } from './constants'
 import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
+import type { FieldErrorRecord, FieldErrors } from './types/errors'
 import type { FieldRecord } from './types/fields'
 import type {
   FormControlOptions,
@@ -153,6 +155,36 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Errors.
   //--------------------------------------------------------------------------------------
+
+  mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
+    const namesToMerge = names ?? Object.keys(errors)
+
+    const currentErrors = this.state.errors.value
+
+    const newErrors = names?.length ? currentErrors : {}
+
+    namesToMerge.forEach((name) => {
+      const fieldError = safeGet(errors, name)
+
+      if (fieldError == null) {
+        deepUnset(newErrors, name)
+        return
+      }
+
+      if (!this.names.array.has(name)) {
+        deepSet(newErrors, name, fieldError)
+        return
+      }
+
+      const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
+
+      deepSet(fieldArrayErrors, 'root', errors[name])
+
+      deepSet(newErrors, name, fieldArrayErrors)
+    })
+
+    this.state.errors.value = newErrors
+  }
 
   clearErrors(name?: string | string[]): void {
     if (name == null) {
