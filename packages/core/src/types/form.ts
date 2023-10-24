@@ -35,7 +35,7 @@ export type ParseForm<T, TFlattenedValues extends FlattenFormValues<T> = Flatten
   keys: Extract<keyof TFlattenedValues, string>
 }
 
-export type FormControlState<T> = {
+export type FormControlState<T = Record<string, any>> = {
   isDirty: boolean
   isLoading: boolean
   isSubmitted: boolean
@@ -50,6 +50,13 @@ export type FormControlState<T> = {
   defaultValues: DeepPartial<T>
   errors: FieldErrors<T>
   values: T
+}
+
+export type FieldState = {
+  invalid: boolean
+  isDirty: boolean
+  isTouched: boolean
+  error?: FieldErrors[string]
 }
 
 export type FormControlOptions<

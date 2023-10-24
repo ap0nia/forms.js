@@ -28,6 +28,7 @@ import { shouldSkipValidationAfter } from './logic/validation/should-skip-valida
 import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
 import type {
+  FieldState,
   FormControlOptions,
   FormControlState,
   HandlerCallback,
@@ -187,7 +188,7 @@ export class FormControl<
   /**
    * Get the current state of a field.
    */
-  getFieldState(name: string, formState?: FormControlState<TValues>) {
+  getFieldState(name: string, formState?: FormControlState<TValues>): FieldState {
     const errors = formState?.errors ?? this.state.errors.value
     const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
     const touchedFields = formState?.touchedFields ?? this.state.touchedFields.value
