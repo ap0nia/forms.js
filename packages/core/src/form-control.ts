@@ -1,4 +1,6 @@
 import { Batchable, Writable } from '@forms.js/common/store'
+import { deepUnset } from '@forms.js/common/utils/deep-unset'
+import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
 import { VALIDATION_EVENTS } from './constants'
 import { getValidationMode } from './logic/validation/get-validation-mode'
@@ -87,8 +89,27 @@ export class FormControl<
   }
 
   //--------------------------------------------------------------------------------------
+  // Errors.
+  //--------------------------------------------------------------------------------------
+
+  clearErrors(name?: string | string[]): void {
+    if (name == null) {
+      this.state.errors.set({})
+      return
+    }
+
+    const nameArray = toStringArray(name)
+
+    this.state.errors.update((errors) => {
+      nameArray?.forEach((name) => deepUnset(this.state.errors.value, name))
+      return errors
+    }, nameArray)
+  }
+
+  //--------------------------------------------------------------------------------------
   // Resetters.
   //--------------------------------------------------------------------------------------
+
   async resetDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
     const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
 
