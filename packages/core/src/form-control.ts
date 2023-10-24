@@ -158,6 +158,45 @@ export class FormControl<
     }
   }
 
+  async trigger<T extends TParsedForm['keys']>(
+    name?: T | T[] | readonly T[],
+    options?: TriggerOptions,
+  ): Promise<boolean> {
+    const fieldNames = toStringArray(name)
+
+    this.state.isValidating.set(true, fieldNames)
+
+    const result = await this.validate(name as any)
+
+    if (result.validationResult) {
+      this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+    }
+
+    if (result.resolverResult?.errors) {
+      this.mergeErrors(result.resolverResult.errors)
+    }
+
+    this.batchedState.open()
+
+    this.state.isValid.set(result.isValid, fieldNames)
+
+    this.state.isValidating.set(false, fieldNames)
+
+    if (options?.shouldFocus && !result.isValid) {
+      focusFieldBy(
+        this.fields,
+        (key?: string) => key && safeGet(this.state.errors.value, key),
+        name ? fieldNames : this.names.mount,
+      )
+    }
+
+    this.state.errors.update((errors) => ({ ...errors }), fieldNames)
+
+    this.batchedState.flush()
+
+    return result.isValid
+  }
+
   //--------------------------------------------------------------------------------------
   // Errors.
   //--------------------------------------------------------------------------------------
