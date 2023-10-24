@@ -98,7 +98,7 @@ describe('FormControl', () => {
     })
 
     describe('native validation', () => {
-      test('field reference name is the same as the ref name', () => {
+      test('field reference name is the same as the ref name', async () => {
         const formControl = new FormControl({ mode: 'onChange' })
 
         const subscriber = vi.fn()
@@ -123,12 +123,18 @@ describe('FormControl', () => {
 
         fireEvent.change(ref)
 
-        waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({ [name]: { required: true } }),
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            [name]: {
+              type: 'required',
+              message: '',
+              ref,
+            },
+          }),
         )
       })
 
-      test('field reference name is different from the ref name', () => {
+      test('field reference name is different from the ref name', async () => {
         const formControl = new FormControl({ mode: 'onChange' })
 
         const subscriber = vi.fn()
@@ -157,8 +163,14 @@ describe('FormControl', () => {
 
         fireEvent.change(ref)
 
-        waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({ [differentName]: { required: true } }),
+        await waitFor(() =>
+          expect(formControl.state.errors.value).toEqual({
+            [differentName]: {
+              type: 'required',
+              message: '',
+              ref,
+            },
+          }),
         )
       })
 
