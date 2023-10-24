@@ -3,10 +3,13 @@ import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
+import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
 import { VALIDATION_EVENTS } from './constants'
+import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
@@ -231,6 +234,37 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Validation.
   //--------------------------------------------------------------------------------------
+
+  async validate(name?: string | string[] | Nullish) {
+    const nameArray = toStringArray(name)
+
+    if (this.options.resolver == null) {
+      const validationResult = await this.nativeValidate(nameArray)
+
+      const isValid = validationResult.valid
+
+      return { validationResult, isValid }
+    }
+
+    const names = nameArray ?? Array.from(this.names.mount)
+
+    const fields = filterFields(names, this.fields)
+
+    const resolverResult = await this.options.resolver(
+      this.state.values.value,
+      this.options.context,
+      {
+        names: names as any,
+        fields,
+        criteriaMode: this.options.criteriaMode,
+        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      },
+    )
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    return { resolverResult, isValid }
+  }
 
   async nativeValidate(
     names?: string | string[],
