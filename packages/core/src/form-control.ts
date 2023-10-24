@@ -4,6 +4,7 @@ import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
@@ -255,6 +256,28 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Values.
   //--------------------------------------------------------------------------------------
+
+  setValues(name: string, value: any, options?: SetValueOptions) {
+    this.batchedState.open()
+
+    for (const fieldKey in value) {
+      const fieldValue = value[fieldKey]
+      const fieldName = `${name}.${fieldKey}`
+      const field: Field | undefined = safeGet(this.fields, fieldName)
+
+      const isFieldArray = this.names.array.has(fieldName)
+      const missingReference = field && !field._f
+      const isDate = fieldValue instanceof Date
+
+      if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
+        this.setValues(fieldName, fieldValue, options)
+      } else {
+        this.setFieldValue(fieldName, fieldValue, options)
+      }
+    }
+
+    this.batchedState.flush()
+  }
 
   setFieldValue(name: string, value: unknown, options?: SetValueOptions) {
     const field: Field | undefined = safeGet(this.fields, name)
