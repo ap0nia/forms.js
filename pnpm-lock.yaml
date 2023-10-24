@@ -133,6 +133,46 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
 
+  packages/react:
+    dependencies:
+      '@forms.js/common':
+        specifier: workspace:^
+        version: link:../common
+      '@forms.js/core':
+        specifier: workspace:^
+        version: link:../core
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      use-sync-external-store:
+        specifier: ^1.2.0
+        version: 1.2.0(react@18.2.0)
+    devDependencies:
+      '@testing-library/dom':
+        specifier: ^9.3.3
+        version: 9.3.3
+      '@testing-library/jest-dom':
+        specifier: ^6.1.3
+        version: 6.1.3(vitest@0.34.0)
+      '@testing-library/react':
+        specifier: ^14.0.0
+        version: 14.0.0(react-dom@18.2.0)(react@18.2.0)
+      '@types/react':
+        specifier: ^18.2.24
+        version: 18.2.24
+      '@types/react-dom':
+        specifier: ^18.2.8
+        version: 18.2.8
+      '@types/use-sync-external-store':
+        specifier: ^0.0.4
+        version: 0.0.4
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
+
 packages:
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution:
@@ -140,6 +180,13 @@ packages:
         integrity: sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==,
       }
     engines: { node: '>=0.10.0' }
+    dev: true
+
+  /@adobe/css-tools@4.3.1:
+    resolution:
+      {
+        integrity: sha512-/62yikz7NLScCGAAST5SHdnjaDJQBDq0M2muyRTpf2VQhw6StBg2ALiu73zSJQ4fMVLA+0uBhBHAle7Wg+2kSg==,
+      }
     dev: true
 
   /@algolia/autocomplete-core@1.9.3(@algolia/client-search@4.19.1)(algoliasearch@4.19.1)(search-insights@2.7.0):
@@ -1786,6 +1833,55 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
+  /@testing-library/jest-dom@6.1.3(vitest@0.34.0):
+    resolution:
+      {
+        integrity: sha512-YzpjRHoCBWPzpPNtg6gnhasqtE/5O4qz8WCwDEaxtfnPO6gkaLrnuXusrGSPyhIGPezr1HM7ZH0CFaUTY9PJEQ==,
+      }
+    engines: { node: '>=14', npm: '>=6', yarn: '>=1' }
+    peerDependencies:
+      '@jest/globals': '>= 28'
+      '@types/jest': '>= 28'
+      jest: '>= 28'
+      vitest: '>= 0.32'
+    peerDependenciesMeta:
+      '@jest/globals':
+        optional: true
+      '@types/jest':
+        optional: true
+      jest:
+        optional: true
+      vitest:
+        optional: true
+    dependencies:
+      '@adobe/css-tools': 4.3.1
+      '@babel/runtime': 7.22.6
+      aria-query: 5.1.3
+      chalk: 3.0.0
+      css.escape: 1.5.1
+      dom-accessibility-api: 0.5.16
+      lodash: 4.17.21
+      redent: 3.0.0
+      vitest: 0.34.0(jsdom@22.1.0)
+    dev: true
+
+  /@testing-library/react@14.0.0(react-dom@18.2.0)(react@18.2.0):
+    resolution:
+      {
+        integrity: sha512-S04gSNJbYE30TlIMLTzv6QCTzt9AqIF5y6s6SzVFILNcNvbV/jU96GeiTPillGQo+Ny64M/5PV7klNYYgv5Dfg==,
+      }
+    engines: { node: '>=14' }
+    peerDependencies:
+      react: ^18.0.0
+      react-dom: ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.22.6
+      '@testing-library/dom': 9.3.3
+      '@types/react-dom': 18.2.8
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: true
+
   /@tootallnate/once@2.0.0:
     resolution:
       {
@@ -1931,10 +2027,51 @@ packages:
       }
     dev: true
 
+  /@types/prop-types@15.7.9:
+    resolution:
+      {
+        integrity: sha512-n1yyPsugYNSmHgxDFjicaI2+gCNjsBck8UX9kuofAKlc0h1bL+20oSF72KeNaW2DUlesbEVCFgyV2dPGTiY42g==,
+      }
+    dev: true
+
+  /@types/react-dom@18.2.8:
+    resolution:
+      {
+        integrity: sha512-bAIvO5lN/U8sPGvs1Xm61rlRHHaq5rp5N3kp9C+NJ/Q41P8iqjkXSu0+/qu8POsjH9pNWb0OYabFez7taP7omw==,
+      }
+    dependencies:
+      '@types/react': 18.2.24
+    dev: true
+
+  /@types/react@18.2.24:
+    resolution:
+      {
+        integrity: sha512-Ee0Jt4sbJxMu1iDcetZEIKQr99J1Zfb6D4F3qfUWoR1JpInkY1Wdg4WwCyBjL257D0+jGqSl1twBjV8iCaC0Aw==,
+      }
+    dependencies:
+      '@types/prop-types': 15.7.9
+      '@types/scheduler': 0.16.5
+      csstype: 3.1.2
+    dev: true
+
+  /@types/scheduler@0.16.5:
+    resolution:
+      {
+        integrity: sha512-s/FPdYRmZR8SjLWGMCuax7r3qCWQw9QKHzXVukAuuIJkXkDRwp+Pu5LMIVFi0Fxbav35WURicYr8u1QsoybnQw==,
+      }
+    dev: true
+
   /@types/semver@7.5.0:
     resolution:
       {
         integrity: sha512-G8hZ6XJiHnuhQKR7ZmysCeJWE08o8T0AXtk5darsCaTVsYZhhgUrq53jizaR2FvsoeCwJhlmwTjkXBY5Pn/ZHw==,
+      }
+    dev: true
+
+  /@types/use-sync-external-store@0.0.4:
+    resolution:
+      {
+        integrity: sha512-DMBc2WDEfaGsWXqH/Sk2oBaUkvlUwqgt/YEygpqX0MaiEjqR7afd1QgE4Pq2zBr/TRz0Mpu92eBBo5UQjtTD5Q==,
       }
     dev: true
 
@@ -2958,6 +3095,17 @@ packages:
       supports-color: 5.5.0
     dev: true
 
+  /chalk@3.0.0:
+    resolution:
+      {
+        integrity: sha512-4D3B6Wf41KOYRFdszmDqMCGq5VV/uMAB273JILmO+3jAlh8X4qDtdtgCR3fxtbLEMzSx22QdhnDcJvu2u1fVwg==,
+      }
+    engines: { node: '>=8' }
+    dependencies:
+      ansi-styles: 4.3.0
+      supports-color: 7.2.0
+    dev: true
+
   /chalk@4.1.2:
     resolution:
       {
@@ -3328,6 +3476,13 @@ packages:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+    dev: true
+
+  /css.escape@1.5.1:
+    resolution:
+      {
+        integrity: sha512-YUifsXXuknHlUsmlgyY0PKzgPOr7/FjCePfHNt0jxm83wHZi44VDMQ7/fGNkjY3/jV1MC+1CmZbaHzugyeRtpg==,
+      }
     dev: true
 
   /cssstyle@3.0.0:
@@ -6800,7 +6955,6 @@ packages:
       loose-envify: 1.4.0
       react: 18.2.0
       scheduler: 0.23.0
-    dev: true
 
   /react-hook-form@7.47.0(react@18.2.0):
     resolution:
@@ -7160,7 +7314,6 @@ packages:
       }
     dependencies:
       loose-envify: 1.4.0
-    dev: true
 
   /search-insights@2.7.0:
     resolution:
