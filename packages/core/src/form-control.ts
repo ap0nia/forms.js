@@ -11,8 +11,8 @@ import { focusFieldBy } from './logic/fields/focus-field-by'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
-import type { FieldErrorRecord, FieldErrors } from './types/errors'
-import type { FieldRecord } from './types/fields'
+import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
+import type { Field, FieldRecord } from './types/fields'
 import type {
   FormControlOptions,
   FormControlState,
@@ -158,6 +158,31 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Errors.
   //--------------------------------------------------------------------------------------
+
+  setError<T extends TParsedForm['keys']>(
+    name: T | 'root' | `root.${string}`,
+    error?: ErrorOption,
+    options?: TriggerOptions,
+  ): void {
+    this.batchedState.open()
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const fieldNames = toStringArray(name)
+
+    this.state.errors.update((errors) => {
+      deepSet(errors, name, { ...error, ref: field?._f?.ref })
+      return errors
+    }, fieldNames)
+
+    this.state.isValid.set(false, fieldNames)
+
+    if (options?.shouldFocus) {
+      field?._f?.ref?.focus?.()
+    }
+
+    this.batchedState.flush()
+  }
 
   mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
     const namesToMerge = names ?? Object.keys(errors)
