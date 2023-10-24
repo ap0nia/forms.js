@@ -29,9 +29,12 @@ import type { Field, FieldRecord } from './types/fields'
 import type {
   FormControlOptions,
   FormControlState,
+  HandlerCallback,
   ParseForm,
   ResolvedFormControlOptions,
   SetValueOptions,
+  SubmitErrorHandler,
+  SubmitHandler,
   TriggerOptions,
   UnregisterOptions,
   UpdateDisabledFieldOptions,
@@ -53,7 +56,7 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
 export class FormControl<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
-  // TTransformedValues extends Record<string, any> | undefined = undefined,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
 > {
   options: ResolvedFormControlOptions<TValues, TContext>
@@ -465,6 +468,44 @@ export class FormControl<
     this.state.isValidating.set(false, [name])
 
     this.batchedState.flush()
+  }
+
+  handleSubmit(
+    onValid?: SubmitHandler<TValues, TTransformedValues>,
+    onInvalid?: SubmitErrorHandler<TValues>,
+  ): HandlerCallback {
+    return async (event) => {
+      this.batchedState.open()
+
+      event?.preventDefault?.()
+
+      this.state.isSubmitting.set(true)
+
+      const { isValid, resolverResult, validationResult } = await this.validate()
+
+      const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
+
+      deepUnset(this.state.errors.value, 'root')
+
+      this.mergeErrors(errors)
+      this.state.errors.update((errors) => ({ ...errors }))
+
+      if (isValid) {
+        const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
+        await onValid?.(data, event)
+      } else {
+        await onInvalid?.(errors, event)
+        this.focusError()
+        setTimeout(this.focusError.bind(this))
+      }
+
+      this.state.isSubmitted.set(true)
+      this.state.isSubmitting.set(false)
+      this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value))
+      this.state.submitCount.update((count) => count + 1)
+
+      this.batchedState.flush()
+    }
   }
 
   async trigger<T extends TParsedForm['keys']>(
