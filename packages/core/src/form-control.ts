@@ -16,6 +16,7 @@ import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
@@ -31,6 +32,7 @@ import type {
   UpdateDisabledFieldOptions,
   WatchOptions,
 } from './types/form'
+import type { InputElement } from './types/html'
 import type { RegisterOptions } from './types/register'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
@@ -195,6 +197,31 @@ export class FormControl<
   //--------------------------------------------------------------------------------------
   // Core API.
   //--------------------------------------------------------------------------------------
+
+  registerElement<T extends TParsedForm['keys']>(
+    name: Extract<T, string>,
+    element: InputElement,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    const field = this.registerField(name, options)
+
+    const fieldNames = toStringArray(name)
+
+    const newField = mergeElementWithField(name, field, element)
+
+    const defaultValue =
+      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      deepSet(this.state.values.value, name, getFieldValue(newField._f))
+    } else {
+      updateFieldReference(newField._f, defaultValue)
+    }
+
+    deepSet(this.fields, name, newField)
+
+    this.updateValid(undefined, fieldNames)
+  }
 
   registerField<T extends TParsedForm['keys']>(
     name: Extract<T, string>,
