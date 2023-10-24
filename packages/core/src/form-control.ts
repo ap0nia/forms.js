@@ -81,19 +81,39 @@ export class FormControl<
   /**
    * State represented as a record of writable stores.
    *
-   * These are not optimized for notifications; they may change multiple times in a function.
+   * This is not optimized for notifications; it may change multiple times in a function.
    */
   state: { [K in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[K]> }
 
+  /**
+   * Buffers updates to {@link state} until it's flushed.
+   *
+   * This is optimized for notifications and generally flushes 1-2 times per function.
+   */
   batchedState: Batchable<this['state']>
 
-  mounted = false
-
+  /**
+   * Registered fields.
+   */
   fields: FieldRecord = {}
 
+  /**
+   * Names of fields, describes their current status.
+   */
   names = {
+    /**
+     * Names of fields that are currently mounted.
+     */
     mount: new Set<string>(),
+
+    /**
+     * Names of fields that are currently unmounted (should be unregistered).
+     */
     unMount: new Set<string>(),
+
+    /**
+     * Names of field arrays.
+     */
     array: new Set<string>(),
   }
 
@@ -155,10 +175,16 @@ export class FormControl<
   // Getters.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Evaluate whether the current form values are different from the default values.
+   */
   getDirty(): boolean {
     return !deepEqual(this.state.defaultValues.value, this.state.values.value)
   }
 
+  /**
+   * Get the current state of a field.
+   */
   getFieldState(name: string, formState?: FormControlState<TValues>) {
     const errors = formState?.errors ?? this.state.errors.value
     const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
@@ -172,37 +198,71 @@ export class FormControl<
     }
   }
 
+  /**
+   * Get all the form values when no argument is supplied to this function.
+   */
   getValues(): TValues
 
+  /**
+   * Get the value of a single field when the field name is provided.
+   */
   getValues<T extends TParsedForm['keys']>(field: T): TParsedForm['values'][T]
 
+  /**
+   * Get the values of multiple fields when an array of field names is provided.
+   */
   getValues<T extends TParsedForm['keys'][]>(fields: T): KeysToProperties<TParsedForm['values'], T>
 
+  /**
+   * Get the values of multiple fields when field names are provided as rest arguments.
+   */
   getValues<T extends TParsedForm['keys'][]>(
     ...fields: T
   ): KeysToProperties<TParsedForm['values'], T>
 
+  /**
+   * Implementation.
+   */
   getValues(...args: any[]): any {
     const names = args.length > 1 ? args : args[0]
     return safeGetMultiple(this.state.values.value, names)
   }
 
+  /**
+   * Makes {@link batchedState} subscribe to all updates to values for all field names.
+   */
   watch(): TValues
 
+  /**
+   * Subscribe to all updates to {@link batchedState}.
+   */
   watch(callback: (data: any, context: { name?: string; type?: string }) => void): () => void
 
+  /**
+   * Makes {@link batchedState} subscribe to all updates to values for a specific field name.
+   */
   watch<T extends TParsedForm['keys']>(
     name: T,
     defaultValues?: DeepPartial<TValues>,
     options?: WatchOptions<TValues>,
   ): TParsedForm['values'][T]
 
+  /**
+   * Makes {@link batchedState} subscribe to all updates to values for multiple field names.
+   */
   watch<T extends TParsedForm['keys'][]>(
     name: T,
     defaultValues?: DeepPartial<TParsedForm['values']>,
     options?: WatchOptions<TValues>,
   ): KeysToProperties<TParsedForm['values'], T>
 
+  /**
+   * Implementation.
+   *
+   * Although this function can't re-run itself and isn't a subscription,
+   * this works in React because {@link batchedState} will initialize the re-render,
+   * causing the component to re-run this function and evaluate new watched values.
+   */
   watch(...args: any[]): any {
     if (typeof args[0] === 'function') {
       return this.batchedState.subscribe((state, context) => {
@@ -229,11 +289,16 @@ export class FormControl<
   // Core API.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Register an element with the form control.
+   */
   registerElement<T extends TParsedForm['keys']>(
     name: Extract<T, string>,
     element: InputElement,
     options?: RegisterOptions<TValues, T>,
   ): void {
+    this.batchedState.open()
+
     const field = this.registerField(name, options)
 
     const fieldNames = toStringArray(name)
@@ -244,7 +309,10 @@ export class FormControl<
       safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      deepSet(this.state.values.value, name, getFieldValue(newField._f))
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValue(newField._f))
+        return values
+      })
     } else {
       updateFieldReference(newField._f, defaultValue)
     }
@@ -252,8 +320,14 @@ export class FormControl<
     deepSet(this.fields, name, newField)
 
     this.updateValid(undefined, fieldNames)
+
+    // Quietly close the buffer without flushing/triggering any updates.
+    this.batchedState.close()
   }
 
+  /**
+   * Register a field with the form control.
+   */
   registerField<T extends TParsedForm['keys']>(
     name: Extract<T, string>,
     options?: RegisterOptions<TValues, T>,
@@ -296,6 +370,9 @@ export class FormControl<
     return field
   }
 
+  /**
+   * Unregister an element from the form control.
+   */
   unregisterElement<T extends TParsedForm['keys']>(
     name: LiteralUnion<T, string>,
     options?: RegisterOptions<TValues, T>,
@@ -313,6 +390,9 @@ export class FormControl<
     }
   }
 
+  /**
+   * Unregister a field from the form control.
+   */
   unregisterField<T extends TParsedForm['keys']>(
     name?: T | T[],
     options?: UnregisterOptions,
@@ -369,9 +449,13 @@ export class FormControl<
       this.updateValid(undefined, fieldNames)
     }
 
+    // Flush the buffer and force an update.
     this.batchedState.flush(true)
   }
 
+  /**
+   * Handle a change event.
+   */
   async handleChange(event: Event): Promise<void> {
     this.batchedState.open()
 
@@ -488,6 +572,11 @@ export class FormControl<
     this.batchedState.flush()
   }
 
+  /**
+   * Handle a submit event.
+   *
+   * @returns A submission event handler.
+   */
   handleSubmit(
     onValid?: SubmitHandler<TValues, TTransformedValues>,
     onInvalid?: SubmitErrorHandler<TValues>,
@@ -525,6 +614,9 @@ export class FormControl<
     }
   }
 
+  /**
+   * Trigger a field.
+   */
   async trigger<T extends TParsedForm['keys']>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
@@ -566,6 +658,9 @@ export class FormControl<
   // Values.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Set a specific field's value.
+   */
   setValue<T extends TParsedForm['keys']>(
     name: T,
     value: TParsedForm['values'][T],
@@ -606,6 +701,9 @@ export class FormControl<
     this.batchedState.flush()
   }
 
+  /**
+   * Set multiple field values, i.e. for a field array.
+   */
   setValues(name: string, value: any, options?: SetValueOptions) {
     this.batchedState.open()
 
@@ -628,6 +726,9 @@ export class FormControl<
     this.batchedState.flush()
   }
 
+  /**
+   * Attempt to directly set a field's "value" property.
+   */
   setFieldValue(name: string, value: unknown, options?: SetValueOptions) {
     const field: Field | undefined = safeGet(this.fields, name)
 
@@ -657,6 +758,9 @@ export class FormControl<
   // Dirty, touched, disabled.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Touch a field.
+   */
   touch(name: string, value?: unknown, options?: SetValueOptions): void {
     if (!options?.shouldTouch || options.shouldDirty) {
       this.updateDirtyField(name, value)
@@ -667,6 +771,9 @@ export class FormControl<
     }
   }
 
+  /**
+   * Update a field's "touched" property.
+   */
   updateTouchedField(name: string): boolean {
     const previousIsTouched = safeGet(this.state.touchedFields.value, name)
 
@@ -680,6 +787,9 @@ export class FormControl<
     return !previousIsTouched
   }
 
+  /**
+   * Update a field's disabled status.
+   */
   updateDisabledField(options: UpdateDisabledFieldOptions): void {
     if (typeof options.disabled !== 'boolean') {
       return
@@ -698,6 +808,9 @@ export class FormControl<
     this.updateDirtyField(options.name, value)
   }
 
+  /**
+   * Update a field's dirty status.
+   */
   updateDirtyField(name: string, value?: unknown): boolean {
     const defaultValue = safeGet(this.state.defaultValues.value, name)
 
@@ -730,6 +843,9 @@ export class FormControl<
   // Errors.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Focus on the first field with an error.
+   */
   focusError(options?: TriggerOptions) {
     if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
       focusFieldBy(
@@ -740,6 +856,9 @@ export class FormControl<
     }
   }
 
+  /**
+   * Set an error on a field.
+   */
   setError<T extends TParsedForm['keys']>(
     name: T | 'root' | `root.${string}`,
     error?: ErrorOption,
@@ -765,36 +884,42 @@ export class FormControl<
     this.batchedState.flush()
   }
 
+  /**
+   * Merge provided errors the form state's existing errors.
+   */
   mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
     const namesToMerge = names ?? Object.keys(errors)
 
-    const currentErrors = this.state.errors.value
+    this.state.errors.update((currentErrors) => {
+      const newErrors = names?.length ? currentErrors : {}
 
-    const newErrors = names?.length ? currentErrors : {}
+      namesToMerge.forEach((name) => {
+        const fieldError = safeGet(errors, name)
 
-    namesToMerge.forEach((name) => {
-      const fieldError = safeGet(errors, name)
+        if (fieldError == null) {
+          deepUnset(newErrors, name)
+          return
+        }
 
-      if (fieldError == null) {
-        deepUnset(newErrors, name)
-        return
-      }
+        if (!this.names.array.has(name)) {
+          deepSet(newErrors, name, fieldError)
+          return
+        }
 
-      if (!this.names.array.has(name)) {
-        deepSet(newErrors, name, fieldError)
-        return
-      }
+        const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
 
-      const fieldArrayErrors = safeGet(currentErrors, name) ?? {}
+        deepSet(fieldArrayErrors, 'root', errors[name])
 
-      deepSet(fieldArrayErrors, 'root', errors[name])
+        deepSet(newErrors, name, fieldArrayErrors)
+      })
 
-      deepSet(newErrors, name, fieldArrayErrors)
+      return newErrors
     })
-
-    this.state.errors.set(newErrors)
   }
 
+  /**
+   * Clear errors on a field.
+   */
   clearErrors(name?: string | string[]): void {
     if (name == null) {
       this.state.errors.set({})
@@ -813,6 +938,9 @@ export class FormControl<
   // Validation.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Lazily validate the form.
+   */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
     if (force || this.isTracking('isValid', toStringArray(name))) {
       const result = await this.validate()
@@ -823,6 +951,9 @@ export class FormControl<
     }
   }
 
+  /**
+   * Validate the form.
+   */
   async validate(name?: string | string[] | Nullish) {
     const nameArray = toStringArray(name)
 
@@ -854,6 +985,9 @@ export class FormControl<
     return { resolverResult, isValid }
   }
 
+  /**
+   * Natively validate the form control's values.
+   */
   async nativeValidate(
     names?: string | string[],
     shouldOnlyCheckValid?: boolean,
@@ -874,6 +1008,9 @@ export class FormControl<
   // Resetters.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Resolve the form control's default values.
+   */
   async resetDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
     const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
 
@@ -908,6 +1045,11 @@ export class FormControl<
   // Internal utilities.
   //--------------------------------------------------------------------------------------
 
+  /**
+   * Whether the form control is currently tracking a specific state property.
+   *
+   * {@link batchedState} does not trigger updates for untracked properties.
+   */
   isTracking(key: keyof typeof this.state, name?: string[]): boolean {
     return (
       this.batchedState.isTracking(key, name) ||
@@ -916,6 +1058,9 @@ export class FormControl<
     )
   }
 
+  /**
+   * Whether the form control should skip validation after a specific event.
+   */
   shouldSkipValidationAfter(name: string, isBlurEvent?: boolean): boolean {
     return shouldSkipValidationAfter(
       isBlurEvent ? 'blur' : 'change',
