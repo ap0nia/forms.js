@@ -1,7 +1,7 @@
 import { Batchable, Writable } from '@forms.js/common/store'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
 import { VALIDATION_EVENTS } from './constants'
@@ -11,10 +11,12 @@ import type { FieldRecord } from './types/fields'
 import type {
   FormControlOptions,
   FormControlState,
+  ParseForm,
   ResolvedFormControlOptions,
   TriggerOptions,
 } from './types/form'
 import type { Defaults } from './utils/defaults'
+import type { KeysToProperties } from './utils/keys-to-properties'
 
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
   mode: VALIDATION_EVENTS.onSubmit,
@@ -25,6 +27,8 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
 export class FormControl<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
+  // TTransformedValues extends Record<string, any> | undefined = undefined,
+  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
 > {
   options: ResolvedFormControlOptions<TValues, TContext>
 
@@ -115,6 +119,21 @@ export class FormControl<
       isTouched: Boolean(safeGet(touchedFields, name)),
       error: safeGet(errors, name),
     }
+  }
+
+  getValues(): TValues
+
+  getValues<T extends TParsedForm['keys']>(field: T): TParsedForm['values'][T]
+
+  getValues<T extends TParsedForm['keys'][]>(fields: T): KeysToProperties<TParsedForm['values'], T>
+
+  getValues<T extends TParsedForm['keys'][]>(
+    ...fields: T
+  ): KeysToProperties<TParsedForm['values'], T>
+
+  getValues(...args: any[]): any {
+    const names = args.length > 1 ? args : args[0]
+    return safeGetMultiple(this.state.values.value, names)
   }
 
   //--------------------------------------------------------------------------------------
