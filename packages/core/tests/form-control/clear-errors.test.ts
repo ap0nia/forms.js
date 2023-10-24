@@ -63,8 +63,8 @@ describe('FormControl', () => {
       expect(formControl.state.errors.value).toEqual(expectedErrors)
     })
 
-    describe('properly notifies subscribers to batched state', () => {
-      test('only notifies subscribers once', () => {
+    describe('satisfies invariants', () => {
+      test('only notifies subscribers to batched state once', () => {
         const formControl = new FormControl()
 
         const fn = vi.fn()
