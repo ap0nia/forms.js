@@ -1,7 +1,7 @@
 import type { FormControl } from '../../src/form-control'
 
 /**
- * Causes all properties of the provided form control's state to be tracked all properties of the provided form control's state to be tracked.
+ * Causes all properties of the provided form control's state to be tracked.
  */
 export function trackAll(formControl: FormControl): void {
   formControl.batchedState.proxy.isDirty

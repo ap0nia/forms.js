@@ -1,9 +1,8 @@
 import { describe, test, expect, vi } from 'vitest'
 
+import { trackAll } from '../../src/extensions/track-all'
 import { FormControl } from '../../src/form-control'
 import type { FormControlOptions } from '../../src/types/form'
-
-import { trackAll } from './helpers.test'
 
 /**
  * In order for the form control to potentially focus on an error:
