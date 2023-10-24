@@ -22,6 +22,7 @@ import type {
   FormControlState,
   ParseForm,
   ResolvedFormControlOptions,
+  SetValueOptions,
   TriggerOptions,
   UpdateDisabledFieldOptions,
   WatchOptions,
@@ -238,6 +239,20 @@ export class FormControl<
 
     return result.isValid
   }
+
+  touch(name: string, value?: unknown, options?: SetValueOptions): void {
+    if (!options?.shouldTouch || options.shouldDirty) {
+      this.updateDirtyField(name, value)
+    }
+
+    if (options?.shouldTouch) {
+      this.updateTouchedField(name)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Dirty, touched, disabled.
+  //--------------------------------------------------------------------------------------
 
   updateTouchedField(name: string): boolean {
     const previousIsTouched = safeGet(this.state.touchedFields.value, name)
