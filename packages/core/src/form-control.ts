@@ -11,7 +11,9 @@ import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { VALIDATION_EVENTS } from './constants'
 import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
-import { getFieldValue } from './logic/fields/get-field-value'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { updateFieldReference } from './logic/fields/update-field-reference'
+import { isHTMLElement } from './logic/html/is-html-element'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
@@ -247,6 +249,35 @@ export class FormControl<
 
     if (options?.shouldTouch) {
       this.updateTouchedField(name)
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Values.
+  //--------------------------------------------------------------------------------------
+
+  setFieldValue(name: string, value: unknown, options?: SetValueOptions) {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    const fieldReference = field?._f
+
+    if (fieldReference == null) {
+      this.touch(name, value, options)
+      return
+    }
+
+    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+    updateFieldReference(fieldReference, fieldValue)
+
+    if (!fieldReference.disabled) {
+      deepSet(this.state.values.value, name, getFieldValueAs(value, fieldReference))
+    }
+
+    this.touch(name, fieldValue, options)
+
+    if (options?.shouldValidate) {
+      this.trigger(name as any, { shouldSetErrors: true })
     }
   }
 
