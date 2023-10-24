@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run tests/form-control/update-dirty-field.test.ts",
+    "test": "vitest run tests/form-control/update-disabled-field.test.ts",
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
   },
