@@ -453,8 +453,6 @@ export class FormControl<
       } else {
         this.state.isValid.set(result.isValid, [name])
       }
-
-      this.state.errors.update((errors) => ({ ...errors }), [name])
     }
 
     if (result.validationResult) {
@@ -483,8 +481,6 @@ export class FormControl<
       } else {
         this.state.isValid.set(result.isValid, [name])
       }
-
-      this.state.errors.update((errors) => ({ ...errors }), [name])
     }
 
     this.state.isValidating.set(false, [name])
@@ -510,7 +506,6 @@ export class FormControl<
       deepUnset(this.state.errors.value, 'root')
 
       this.mergeErrors(errors)
-      this.state.errors.update((errors) => ({ ...errors }))
 
       if (isValid) {
         const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
@@ -561,8 +556,6 @@ export class FormControl<
         name ? fieldNames : this.names.mount,
       )
     }
-
-    this.state.errors.update((errors) => ({ ...errors }), fieldNames)
 
     this.batchedState.flush()
 
@@ -799,7 +792,7 @@ export class FormControl<
       deepSet(newErrors, name, fieldArrayErrors)
     })
 
-    this.state.errors.value = newErrors
+    this.state.errors.set(newErrors)
   }
 
   clearErrors(name?: string | string[]): void {
