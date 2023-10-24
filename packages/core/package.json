@@ -68,7 +68,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run tests/form-control/get-dirty.test.ts",
+    "test": "vitest run tests/form-control/get-field-state.test.ts",
     "build": "tsup",
     "perf": "tsc --generateTrace ./trace"
   },

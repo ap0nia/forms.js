@@ -1,6 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { FormControl, type FormControlOptions } from '../../src/form-control'
+import { FormControl } from '../../src/form-control'
+import type { FormControlOptions } from '../../src/types/form'
 
 /**
  * In order for the form control to potentially focus on an error:
