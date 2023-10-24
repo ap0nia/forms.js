@@ -1,8 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { FormControl } from '../../src/form-control'
-
-import type { FieldErrors } from 'packages/core/src'
+import type { FieldErrors } from '../../src/types/errors'
 
 describe('FormControl', () => {
   describe('clearErrors', () => {
