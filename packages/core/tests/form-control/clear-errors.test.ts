@@ -57,18 +57,20 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      test('only notifies subscribers to batched state once', () => {
-        const formControl = new FormControl()
+      describe('notifies subscribers to batched state at most twice', () => {
+        test('only notifies subscribers to batched state once', () => {
+          const formControl = new FormControl()
 
-        const fn = vi.fn()
+          const fn = vi.fn()
 
-        formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.batchedState.subscribe(fn, undefined, false)
 
-        formControl.batchedState.proxy.errors
+          formControl.batchedState.proxy.errors
 
-        formControl.clearErrors()
+          formControl.clearErrors()
 
-        expect(fn).toHaveBeenCalledOnce()
+          expect(fn).toHaveBeenCalledOnce()
+        })
       })
     })
   })
