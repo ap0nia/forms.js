@@ -390,6 +390,16 @@ export class FormControl<
   // Validation.
   //--------------------------------------------------------------------------------------
 
+  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
+    if (force || this.isTracking('isValid', toStringArray(name))) {
+      const result = await this.validate()
+
+      const fieldNames = toStringArray(name)
+
+      this.state.isValid.set(result.isValid, fieldNames)
+    }
+  }
+
   async validate(name?: string | string[] | Nullish) {
     const nameArray = toStringArray(name)
 
