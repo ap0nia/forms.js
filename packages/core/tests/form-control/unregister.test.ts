@@ -12,7 +12,7 @@ describe('FormControl', () => {
       formControl.names.mount.add(name)
       formControl.names.array.add(name)
 
-      formControl.unregister(name)
+      formControl.unregisterField(name)
 
       expect(formControl.names.mount).not.toContain(name)
       expect(formControl.names.array).not.toContain(name)
@@ -26,7 +26,7 @@ describe('FormControl', () => {
       formControl.names.mount.add(name)
       formControl.names.array.add(name)
 
-      formControl.unregister(name, {
+      formControl.unregisterField(name, {
         keepValue: false,
         keepError: false,
         keepDirty: false,
@@ -54,7 +54,7 @@ describe('FormControl', () => {
       formControl.names.array.add(name1)
       formControl.names.array.add(name2)
 
-      formControl.unregister([name0, name1, name2])
+      formControl.unregisterField([name0, name1, name2])
 
       expect(formControl.names.mount).not.toContain(name0)
       expect(formControl.names.mount).not.toContain(name1)
@@ -76,7 +76,7 @@ describe('FormControl', () => {
       formControl.names.mount.add(name1)
       formControl.names.mount.add(name2)
 
-      formControl.unregister()
+      formControl.unregisterField()
 
       expect(formControl.names.mount).not.toContain(name0)
       expect(formControl.names.mount).not.toContain(name1)
@@ -101,7 +101,7 @@ describe('FormControl', () => {
 
       formControl.state.values.set({ [name]: 'test' })
 
-      formControl.unregister(name)
+      formControl.unregisterField(name)
 
       expect(formControl.fields).toEqual({})
 
@@ -119,7 +119,7 @@ describe('FormControl', () => {
         },
       })
 
-      formControl.unregister(name)
+      formControl.unregisterField(name)
 
       expect(formControl.state.errors.value).toEqual({})
     })
@@ -131,7 +131,7 @@ describe('FormControl', () => {
 
       formControl.state.dirtyFields.set({ [name]: true })
 
-      formControl.unregister(name)
+      formControl.unregisterField(name)
 
       expect(formControl.state.dirtyFields.value).toEqual({})
     })
@@ -143,7 +143,7 @@ describe('FormControl', () => {
 
       formControl.state.touchedFields.set({ [name]: true })
 
-      formControl.unregister(name)
+      formControl.unregisterField(name)
 
       expect(formControl.state.touchedFields.value).toEqual({})
     })
@@ -155,7 +155,7 @@ describe('FormControl', () => {
 
       formControl.state.defaultValues.set({ [name]: 'test' })
 
-      formControl.unregister(name)
+      formControl.unregisterField(name)
 
       expect(formControl.state.defaultValues.value).toEqual({})
     })
