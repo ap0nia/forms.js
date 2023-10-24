@@ -48,19 +48,41 @@ import type { KeysToProperties } from './utils/keys-to-properties'
 import type { LiteralUnion } from './utils/literal-union'
 
 export const defaultFormControlOptions: FormControlOptions<any, any> = {
+  /**
+   * The form values are validated for the first time after submission.
+   */
   mode: VALIDATION_EVENTS.onSubmit,
+
+  /**
+   * After the form values are validated for the first time, they're validated on every change.
+   */
   reValidateMode: VALIDATION_EVENTS.onChange,
+
+  /**
+   * If an error is found during validation, the first field with an error is focused.
+   */
   shouldFocusError: true,
 }
 
+/**
+ * Core API.
+ */
 export class FormControl<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
 > {
+  /**
+   * Internally resolved options that control the form control's behavior.
+   */
   options: ResolvedFormControlOptions<TValues, TContext>
 
+  /**
+   * State represented as a record of writable stores.
+   *
+   * These are not optimized for notifications; they may change multiple times in a function.
+   */
   state: { [K in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[K]> }
 
   batchedState: Batchable<this['state']>
