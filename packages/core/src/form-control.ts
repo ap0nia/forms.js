@@ -9,17 +9,21 @@ import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 
-import { VALIDATION_EVENTS } from './constants'
+import { INPUT_EVENTS, VALIDATION_EVENTS } from './constants'
+import { lookupError } from './logic/errors/lookup-error'
 import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
 import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { isHTMLElement } from './logic/html/is-html-element'
 import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getValidationMode } from './logic/validation/get-validation-mode'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
+import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
 import type { ErrorOption, FieldErrorRecord, FieldErrors } from './types/errors'
 import type { Field, FieldRecord } from './types/fields'
 import type {
@@ -343,6 +347,126 @@ export class FormControl<
     this.batchedState.flush(true)
   }
 
+  async handleChange(event: Event): Promise<void> {
+    this.batchedState.open()
+
+    const name = (event.target as HTMLInputElement)?.name
+
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field == null) {
+      return
+    }
+
+    const fieldValue = getCurrentFieldValue(event, field)
+
+    this.state.values.update(
+      (values) => {
+        deepSet(values, name, fieldValue)
+        return values
+      },
+      [name],
+    )
+
+    const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
+
+    if (isBlurEvent) {
+      field._f.onBlur?.(event)
+    } else {
+      field._f.onChange?.(event)
+    }
+
+    if (isBlurEvent) {
+      this.updateTouchedField(name)
+    } else {
+      this.updateDirtyField(name, fieldValue)
+    }
+
+    const nothingToValidate =
+      !hasValidation(field._f) &&
+      !this.options.resolver &&
+      !safeGet(this.state.errors.value, name) &&
+      !field._f.deps
+
+    const shouldSkipValidation =
+      nothingToValidate || this.shouldSkipValidationAfter(name, isBlurEvent)
+
+    if (shouldSkipValidation) {
+      this.updateValid()
+      this.batchedState.flush()
+      return
+    }
+
+    if (!isBlurEvent) {
+      this.batchedState.flush()
+      this.batchedState.open()
+    }
+
+    this.batchedState.transaction(() => {
+      this.state.isValidating.set(true)
+    })
+
+    const result = await this.validate(name)
+
+    if (result.resolverResult) {
+      const previousError = lookupError(this.state.errors.value, this.fields, name)
+
+      const currentError = lookupError(
+        result.resolverResult.errors ?? {},
+        this.fields,
+        previousError.name,
+      )
+
+      if (currentError.error) {
+        deepSet(this.state.errors.value, currentError.name, currentError.error)
+      } else {
+        deepUnset(this.state.errors.value, currentError.name)
+      }
+
+      if (field._f.deps) {
+        await this.trigger(field._f.deps as any)
+      } else {
+        this.state.isValid.set(result.isValid, [name])
+      }
+
+      this.state.errors.update((errors) => ({ ...errors }), [name])
+    }
+
+    if (result.validationResult) {
+      const isFieldValueUpdated =
+        Number.isNaN(fieldValue) ||
+        (fieldValue === safeGet(this.state.values.value, name) ?? fieldValue)
+
+      if (!result.isValid) {
+        const error = result.validationResult.errors[name]
+
+        if (isFieldValueUpdated && !error) {
+          const fullResult = await this.validate()
+
+          if (fullResult.validationResult?.errors) {
+            this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
+          }
+        } else {
+          deepSet(this.state.errors.value, name, error)
+        }
+      } else {
+        this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+      }
+
+      if (isFieldValueUpdated && field._f.deps) {
+        await this.trigger(field._f.deps as any)
+      } else {
+        this.state.isValid.set(result.isValid, [name])
+      }
+
+      this.state.errors.update((errors) => ({ ...errors }), [name])
+    }
+
+    this.state.isValidating.set(false, [name])
+
+    this.batchedState.flush()
+  }
+
   async trigger<T extends TParsedForm['keys']>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
@@ -508,7 +632,7 @@ export class FormControl<
     const value = options.disabled
       ? undefined
       : safeGet(this.state.values.value, options.name) ??
-        ieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
+        getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
     this.state.values.update((values) => {
       deepSet(values, options.name, value)
@@ -733,6 +857,15 @@ export class FormControl<
       this.batchedState.isTracking(key, name) ||
       this.batchedState.childIsTracking(key, name) ||
       this.state[key].subscribers.size > 0
+    )
+  }
+
+  shouldSkipValidationAfter(name: string, isBlurEvent?: boolean): boolean {
+    return shouldSkipValidationAfter(
+      isBlurEvent ? 'blur' : 'change',
+      safeGet(this.state.touchedFields.value, name),
+      this.state.isSubmitted.value,
+      this.options.submissionValidationMode,
     )
   }
 }
