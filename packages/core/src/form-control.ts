@@ -1,4 +1,5 @@
 import { Batchable, Writable } from '@forms.js/common/store'
+import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { safeGet } from '@forms.js/common/utils/safe-get'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
@@ -95,6 +96,10 @@ export class FormControl<
     if (isLoading) {
       this.resetDefaultValues(initialDefaultValues, true)
     }
+  }
+
+  getDirty(): boolean {
+    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
   }
 
   //--------------------------------------------------------------------------------------
