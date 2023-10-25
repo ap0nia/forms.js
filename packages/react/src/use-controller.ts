@@ -38,7 +38,7 @@ export type UseControllerProps<
   disabled?: boolean
 }
 
-export type ControllerProps<
+export type ControllerRenderProps<
   TValues extends Record<string, any> = Record<string, any>,
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
   TName extends TParsedForm['keys'] = TParsedForm['keys'],
@@ -56,7 +56,7 @@ export type UseControllerReturn<
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
   TName extends TParsedForm['keys'] = TParsedForm['keys'],
 > = {
-  field: ControllerProps<TValues, TParsedForm, TName>
+  field: ControllerRenderProps<TValues, TParsedForm, TName>
   fieldState: ControllerFieldState
   formState: FormControlState<TValues>
 }
