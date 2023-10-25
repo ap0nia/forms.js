@@ -197,6 +197,8 @@ export class Batchable<
    */
   open() {
     this.depth++
+
+    this.children.forEach((child) => child.open())
   }
 
   close() {
@@ -205,6 +207,8 @@ export class Batchable<
     } else {
       this.depth--
     }
+
+    this.children.forEach((child) => child.close())
   }
 
   /**
@@ -213,7 +217,8 @@ export class Batchable<
   flush(force = false) {
     this.close()
     this.notify(force)
-    this.children.forEach((child) => child.flush())
+
+    this.children.forEach((child) => child.flush(force))
   }
 
   /**

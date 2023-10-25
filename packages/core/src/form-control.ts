@@ -306,6 +306,8 @@ export class FormControl<
     element: InputElement,
     options?: RegisterOptions<TValues, T>,
   ): void {
+    this.batchedState.open()
+
     const field = this.registerField(name, options)
 
     const fieldNames = toStringArray(name)
@@ -316,7 +318,10 @@ export class FormControl<
       safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      deepSet(this.state.values.value, name, getFieldValue(newField._f))
+      this.state.values.update((values) => {
+        deepSet(values, name, getFieldValue(newField._f))
+        return values
+      })
     } else {
       updateFieldReference(newField._f, defaultValue)
     }
@@ -324,6 +329,8 @@ export class FormControl<
     deepSet(this.fields, name, newField)
 
     this.updateValid(undefined, fieldNames)
+
+    this.batchedState.close()
   }
 
   /**
@@ -333,6 +340,8 @@ export class FormControl<
     name: Extract<T, string>,
     options?: RegisterOptions<TValues, T>,
   ) {
+    this.batchedState.open()
+
     const existingField: Field | undefined = safeGet(this.fields, name)
 
     const field: Field = {
@@ -357,8 +366,13 @@ export class FormControl<
         options?.value ??
         safeGet(this.state.defaultValues.value, name)
 
-      deepSet(this.state.values.value, name, defaultValue)
+      this.state.values.update((values) => {
+        deepSet(values, name, defaultValue)
+        return values
+      })
     }
+
+    this.batchedState.close()
 
     return field
   }
@@ -519,11 +533,14 @@ export class FormControl<
         previousError.name,
       )
 
-      if (currentError.error) {
-        deepSet(this.state.errors.value, currentError.name, currentError.error)
-      } else {
-        deepUnset(this.state.errors.value, currentError.name)
-      }
+      this.state.errors.update((errors) => {
+        if (currentError.error) {
+          deepSet(errors, currentError.name, currentError.error)
+        } else {
+          deepUnset(errors, currentError.name)
+        }
+        return errors
+      })
 
       if (field._f.deps) {
         await this.trigger(field._f.deps as any)
