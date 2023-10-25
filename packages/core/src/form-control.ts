@@ -19,6 +19,7 @@ import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
 import { updateFieldReference } from './logic/fields/update-field-reference'
+import { elementIsLive } from './logic/html/element-is-live'
 import { isHTMLElement } from './logic/html/is-html-element'
 import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getValidationMode } from './logic/validation/get-validation-mode'
@@ -124,6 +125,8 @@ export class FormControl<
    * Callbacks that are invoked specifically when {@link setValue} or {@link reset} is called.
    */
   valueListeners: ((newValues: TValues) => unknown)[] = []
+
+  mounted = false
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
     this.options = {
@@ -1209,6 +1212,35 @@ export class FormControl<
 
     if (options?.shouldSelect && fieldRef && 'select' in fieldRef) {
       fieldRef?.select?.()
+    }
+  }
+
+  //--------------------------------------------------------------------------------------
+  // Lifecycle.
+  //--------------------------------------------------------------------------------------
+
+  mount(): void {
+    this.mounted = true
+  }
+
+  unmount(): void {
+    this.mounted = false
+    this.cleanup()
+  }
+
+  cleanup(): void {
+    this.removeUnmounted()
+  }
+
+  removeUnmounted(): void {
+    for (const name of this.names.unMount) {
+      const field: Field | undefined = safeGet(this.fields, name)
+
+      if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
+        this.unregisterField(name as any)
+      }
+
+      this.names.unMount.delete(name)
     }
   }
 }
