@@ -1224,8 +1224,8 @@ export class FormControl<
   }
 
   unmount(): void {
-    this.mounted = false
     this.cleanup()
+    this.mounted = false
   }
 
   cleanup(): void {

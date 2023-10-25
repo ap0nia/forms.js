@@ -94,7 +94,7 @@ export function useForm<
     return () => {
       control.unmount()
     }
-  }, [])
+  }, [control])
 
   return form.current
 }

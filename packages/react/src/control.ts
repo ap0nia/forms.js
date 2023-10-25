@@ -35,6 +35,8 @@ export class Control<
     name: Extract<T, string>,
     options?: RegisterOptions<TValues, T>,
   ): ReactRegisterProps {
+    this.registerField(name, options)
+
     const onChange = this.onChange.bind(this)
 
     const props = {
