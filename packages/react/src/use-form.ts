@@ -45,9 +45,9 @@ export function useForm<
   const form = useRef<UseFormReturn<TValues, TContext, TTransformedValues>>({
     control: control,
     register: control.register.bind(control),
-    onSubmit: control.onSubmit.bind(control),
+    handleSubmit: control.handleSubmit.bind(control),
     unregister: control.unregister.bind(control),
-    formState: control.derivedState.proxy,
+    formState: control.batchedState.proxy,
     watch: control.watch.bind(control),
     reset: control.reset.bind(control),
     setError: control.setError.bind(control),
@@ -61,17 +61,17 @@ export function useForm<
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return control.derivedState.subscribe(callback)
+      return control.batchedState.subscribe(callback)
     },
     [control],
   )
 
   const getSnapshot = useCallback(() => {
-    return control.derivedState.value
+    return control.batchedState.value
   }, [control])
 
   const getServerSnapshot = useCallback(() => {
-    return control.derivedState.value
+    return control.batchedState.value
   }, [control])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
