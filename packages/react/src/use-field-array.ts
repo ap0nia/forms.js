@@ -79,6 +79,7 @@ export function useFieldArray<
 
   useEffect(() => {
     fieldArray.current.mount()
+
     if (props.rules) {
       control.register(props.name as any, props.rules)
     }
@@ -86,10 +87,13 @@ export function useFieldArray<
 
   useEffect(() => {
     if (!safeGet(control.state.values.value, props.name)) {
-      control.state.values.update((values) => {
-        deepSet(values, props.name, [])
-        return values
-      })
+      control.state.values.update(
+        (values) => {
+          deepSet(values, props.name, [])
+          return values
+        },
+        [props.name],
+      )
     }
   }, [control, props.shouldUnregister])
 
@@ -99,6 +103,10 @@ export function useFieldArray<
     return () => {
       fieldArray.current.unmount()
       unsubscribe()
+
+      if (props.shouldUnregister || control.options.shouldUnregister) {
+        control.unregister(props.name as any)
+      }
     }
   }, [fieldArray.current])
 

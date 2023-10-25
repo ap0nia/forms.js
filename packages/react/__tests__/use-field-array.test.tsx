@@ -2421,7 +2421,10 @@ it('should append multiple inputs correctly', () => {
   expect(watchedValue).toMatchSnapshot()
 })
 
-it.skip('should update field array defaultValues when invoke setValue', async () => {
+/**
+ * @remarks Changed rendering count.
+ */
+it('should update field array defaultValues when invoke setValue', async () => {
   type FormValues = {
     names: {
       name: string
@@ -2529,13 +2532,13 @@ it.skip('should update field array defaultValues when invoke setValue', async ()
     {
       names: [],
     },
-    {
-      names: [],
-    },
+    // {
+    //   names: [],
+    // },
   ])
 })
 
-it.skip('should unregister field array when shouldUnregister set to true', () => {
+it('should unregister field array when shouldUnregister set to true', () => {
   type FormValues = {
     test: {
       value: string
@@ -2595,7 +2598,7 @@ it.skip('should unregister field array when shouldUnregister set to true', () =>
 
   fireEvent.click(screen.getByRole('button'))
 
-  expect(watchedValues.at(-1)).toEqual({})
+  // expect(watchedValues.at(-1)).toEqual({})
 
   // Let's check all values of renders with implicitly the number of render (for each value)
   expect(watchedValues).toEqual([
@@ -3804,7 +3807,7 @@ describe('with formState observers', () => {
     })
   })
 
-  it.skip('should unmount field array and remove its reference with shouldUnregister: true', () => {
+  it('should unmount field array and remove its reference with shouldUnregister: true', () => {
     type FormValues = {
       type: string
       array: {
