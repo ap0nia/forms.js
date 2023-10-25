@@ -61,17 +61,17 @@ export function useForm<
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return control.batchedState.subscribe(callback)
+      return control.batchedState.subscribe(callback, undefined, false)
     },
     [control],
   )
 
   const getSnapshot = useCallback(() => {
-    return control.batchedState.value
+    return control.batchedState.writable.value
   }, [control])
 
   const getServerSnapshot = useCallback(() => {
-    return control.batchedState.value
+    return control.batchedState.writable.value
   }, [control])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)

@@ -1166,6 +1166,7 @@ describe('handleChangeRef', () => {
               }
             },
           })
+
           errorsObject = errors
 
           return (
