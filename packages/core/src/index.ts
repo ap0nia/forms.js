@@ -1,4 +1,5 @@
 export * from './constants'
+export * from './field-array'
 export * from './form-control'
 
 export * from './types/errors'
