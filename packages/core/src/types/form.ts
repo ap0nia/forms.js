@@ -146,7 +146,7 @@ export type WatchOptions<
 
 export type HandlerCallback = (event?: Partial<Event>) => Promise<void>
 
-export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string, any>
+export type SubmitHandler<T, TTransformed = T> = TTransformed extends Record<string, any>
   ? (data: TTransformed, event?: Partial<Event>) => unknown
   : (data: T, event?: Partial<Event>) => unknown
 
