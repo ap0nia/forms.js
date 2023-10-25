@@ -598,7 +598,10 @@ export class FormControl<
 
       const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
 
-      deepUnset(this.state.errors.value, 'root')
+      this.state.errors.update((errors) => {
+        deepUnset(errors, 'root')
+        return errors
+      })
 
       this.mergeErrors(errors)
 

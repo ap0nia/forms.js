@@ -3,8 +3,8 @@ import {
   type ParseForm,
   type FormControlOptions,
   type RegisterOptions,
+  type UnregisterOptions,
 } from '@forms.js/core'
-import type { LiteralUnion } from '@forms.js/core/utils/literal-union'
 import { getRuleValue } from '@forms.js/core/validation/get-rule-value'
 
 export type ReactRegisterProps = {
@@ -64,11 +64,8 @@ export class Control<
     return props
   }
 
-  unregister<T extends TParsedForm['keys']>(
-    name: LiteralUnion<T, string>,
-    options?: RegisterOptions<TValues, T>,
-  ): void {
-    this.unregisterElement(name, options)
+  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
+    this.unregisterField(name, options)
   }
 
   async onChange(event: React.ChangeEvent) {
