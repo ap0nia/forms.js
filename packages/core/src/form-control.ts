@@ -129,14 +129,17 @@ export class FormControl<
   mounted = false
 
   constructor(options?: FormControlOptions<TValues, TContext>) {
+    const mode = options?.mode ?? defaultFormControlOptions.mode
+    const reValidateMode = options?.reValidateMode ?? defaultFormControlOptions.reValidateMode
+
     this.options = {
-      mode: defaultFormControlOptions.mode,
-      reValidateMode: defaultFormControlOptions.reValidateMode,
+      mode,
+      reValidateMode,
       shouldFocusError: defaultFormControlOptions.shouldFocusError,
       shouldDisplayAllAssociatedErrors: options?.criteriaMode === VALIDATION_EVENTS.all,
       submissionValidationMode: {
-        beforeSubmission: getValidationMode(options?.mode),
-        afterSubmission: getValidationMode(options?.reValidateMode),
+        beforeSubmission: getValidationMode(mode),
+        afterSubmission: getValidationMode(reValidateMode),
       },
       shouldCaptureDirtyFields: Boolean(options?.resetOptions?.keepDirtyValues),
       ...options,
@@ -173,7 +176,7 @@ export class FormControl<
     this.batchedState = new Batchable(this.state, new Set())
 
     if (isLoading) {
-      this.resetDefaultValues(initialDefaultValues, true)
+      this.resolveDefaultValues(initialDefaultValues, true)
     }
   }
 
@@ -303,8 +306,6 @@ export class FormControl<
     element: InputElement,
     options?: RegisterOptions<TValues, T>,
   ): void {
-    this.batchedState.open()
-
     const field = this.registerField(name, options)
 
     const fieldNames = toStringArray(name)
@@ -315,10 +316,7 @@ export class FormControl<
       safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      this.state.values.update((values) => {
-        deepSet(values, name, getFieldValue(newField._f))
-        return values
-      })
+      deepSet(this.state.values.value, name, getFieldValue(newField._f))
     } else {
       updateFieldReference(newField._f, defaultValue)
     }
@@ -326,9 +324,6 @@ export class FormControl<
     deepSet(this.fields, name, newField)
 
     this.updateValid(undefined, fieldNames)
-
-    // Quietly close the buffer without flushing/triggering any updates.
-    this.batchedState.close()
   }
 
   /**
@@ -354,8 +349,6 @@ export class FormControl<
 
     this.names.mount.add(name)
 
-    this.batchedState.open()
-
     if (existingField) {
       this.updateDisabledField({ field, disabled: options?.disabled, name })
     } else {
@@ -364,14 +357,8 @@ export class FormControl<
         options?.value ??
         safeGet(this.state.defaultValues.value, name)
 
-      this.state.values.update((values) => {
-        deepSet(values, name, defaultValue)
-        return values
-      })
+      deepSet(this.state.values.value, name, defaultValue)
     }
-
-    // Quietly close the buffer without flushing/triggering any updates.
-    this.batchedState.close()
 
     return field
   }
@@ -560,7 +547,10 @@ export class FormControl<
             this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
           }
         } else {
-          deepSet(this.state.errors.value, name, error)
+          this.state.errors.update((errors) => {
+            deepSet(errors, name, error)
+            return errors
+          })
         }
       } else {
         this.mergeErrors(result.validationResult.errors, result.validationResult.names)
@@ -1117,7 +1107,7 @@ export class FormControl<
   /**
    * Resolve the form control's default values.
    */
-  async resetDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
+  async resolveDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): Promise<void> {
     const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
 
     if (resolvingDefaultValues == null) {
@@ -1127,12 +1117,9 @@ export class FormControl<
 
     const isPromise = resolvingDefaultValues instanceof Promise
 
-    let resolvedDefaultValues = resolvingDefaultValues
+    this.state.isLoading.set(isPromise)
 
-    if (isPromise) {
-      this.state.isLoading.set(true)
-      resolvedDefaultValues = (await resolvingDefaultValues) ?? {}
-    }
+    const resolvedDefaultValues = (await resolvingDefaultValues) ?? {}
 
     this.batchedState.open()
 
@@ -1145,6 +1132,15 @@ export class FormControl<
     this.state.isLoading.set(false)
 
     this.batchedState.flush()
+  }
+
+  resetDefaultValues() {
+    if (typeof this.options.defaultValues === 'function') {
+      this.options.defaultValues().then((values: any) => {
+        this.reset(values, this.options.resetOptions)
+        this.state.isLoading.set(false)
+      })
+    }
   }
 
   /**
@@ -1186,7 +1182,7 @@ export class FormControl<
     return (
       this.batchedState.isTracking(key, name) ||
       this.batchedState.childIsTracking(key, name) ||
-      this.state[key].subscribers.size > 0
+      this.state[key].subscribers.size > 1
     )
   }
 

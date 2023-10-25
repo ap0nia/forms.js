@@ -16,7 +16,7 @@ describe('FormControl', () => {
 
       formControl.state.defaultValues.set({ ...values })
 
-      await formControl.resetDefaultValues(null as any)
+      await formControl.resolveDefaultValues(null as any)
 
       expect(formControl.state.defaultValues.value).toEqual(values)
     })
@@ -32,7 +32,7 @@ describe('FormControl', () => {
 
       formControl.state.defaultValues.set({ ...values })
 
-      await formControl.resetDefaultValues(() => null as any)
+      await formControl.resolveDefaultValues(() => null as any)
 
       expect(formControl.state.defaultValues.value).toEqual(values)
     })
@@ -44,7 +44,7 @@ describe('FormControl', () => {
       formControl.batchedState.subscribe(() => {})
       formControl.batchedState.proxy.isLoading
 
-      formControl.resetDefaultValues(async () => ({}))
+      formControl.resolveDefaultValues(async () => ({}))
 
       expect(formControl.state.isLoading.value).toBeTruthy()
       expect(formControl.batchedState.value.isLoading).toBeTruthy()
@@ -53,7 +53,7 @@ describe('FormControl', () => {
     test('sets default values to empty object if provided values is a promise that resolves to null', async () => {
       const formControl = new FormControl()
 
-      await formControl.resetDefaultValues(Promise.resolve(null as any))
+      await formControl.resolveDefaultValues(Promise.resolve(null as any))
 
       expect(formControl.state.defaultValues.value).toEqual({})
     })
@@ -62,7 +62,7 @@ describe('FormControl', () => {
       test('sets both to empty object for promise that resolves to null', async () => {
         const formControl = new FormControl()
 
-        await formControl.resetDefaultValues(Promise.resolve(null as any), true)
+        await formControl.resolveDefaultValues(Promise.resolve(null as any), true)
 
         expect(formControl.state.defaultValues.value).toEqual({})
         expect(formControl.state.values.value).toEqual({})
@@ -77,7 +77,7 @@ describe('FormControl', () => {
           baz: 'qux',
         }
 
-        await formControl.resetDefaultValues({ ...values }, true)
+        await formControl.resolveDefaultValues({ ...values }, true)
 
         expect(formControl.state.defaultValues.value).toEqual(values)
         expect(formControl.state.values.value).toEqual(values)
@@ -92,7 +92,7 @@ describe('FormControl', () => {
           baz: 'qux',
         }
 
-        await formControl.resetDefaultValues(() => values, true)
+        await formControl.resolveDefaultValues(() => values, true)
 
         expect(formControl.state.defaultValues.value).toEqual(values)
         expect(formControl.state.values.value).toEqual(values)
@@ -106,7 +106,7 @@ describe('FormControl', () => {
       formControl.batchedState.subscribe(() => {})
       formControl.batchedState.proxy.isLoading
 
-      formControl.resetDefaultValues(Promise.resolve({}))
+      formControl.resolveDefaultValues(Promise.resolve({}))
 
       expect(formControl.state.isLoading.value).toBeTruthy()
 
@@ -124,7 +124,7 @@ describe('FormControl', () => {
 
       fn.mockClear()
 
-      formControl.resetDefaultValues(Promise.resolve({}))
+      formControl.resolveDefaultValues(Promise.resolve({}))
 
       expect(formControl.batchedState.value.isLoading).toBeTruthy()
 
@@ -142,7 +142,7 @@ describe('FormControl', () => {
 
       fn.mockClear()
 
-      formControl.resetDefaultValues(Promise.resolve({}))
+      formControl.resolveDefaultValues(Promise.resolve({}))
 
       expect(formControl.state.isLoading.value).toBeTruthy()
 

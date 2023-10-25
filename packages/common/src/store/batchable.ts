@@ -175,7 +175,10 @@ export class Batchable<
    * Every store is subscribed to, and notifications from all stores selectively trigger updates.
    */
   subscriptionFunction(i: number, key: keyof TStores, value: any, context?: string[]) {
-    this.value[key as keyof typeof this.value] = value
+    /**
+     * TODO: figure out if changes can work with direct modification.
+     */
+    this.value = { ...this.value, [key]: value }
     this.pending &= ~(1 << i)
     this.bufferedUpdates.push({ key: key as string, context: context })
     this.notify()

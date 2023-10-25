@@ -2,7 +2,9 @@
   "extends": ["../../tsconfig.json"],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "outDir": "dist"
+    "outDir": "dist",
+
+    "noUncheckedIndexedAccess": false
   },
   "exclude": ["coverage", "dist"]
 }
