@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run __tests__/use-watch.test.tsx"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",
