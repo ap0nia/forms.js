@@ -277,7 +277,7 @@ export class Batchable<
     }
 
     if (typeof name === 'boolean') {
-      return name
+      return name && this.trackedContexts[key] != null
     }
 
     const nameArray = Array.isArray(name) ? name : [name]

@@ -17,7 +17,9 @@ export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends FormFieldNames<TValues> = FormFieldNames<TValues>,
 >(props: UseSubscribeProps<TValues, TName>) {
-  const control = props.control ?? useFormContext<TValues>().control
+  const context = useFormContext<TValues>()
+
+  const control = props.control ?? context.control
 
   const previousDerivedState = useRef<Batchable<Control<TValues>['state']>>()
 
@@ -63,11 +65,11 @@ export function useSubscribe<
   )
 
   const getSnapshot = useCallback(() => {
-    return derivedState.value
+    return derivedState.writable.value
   }, [])
 
   const getServerSnapshot = useCallback(() => {
-    return derivedState.value
+    return derivedState.writable.value
   }, [])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
