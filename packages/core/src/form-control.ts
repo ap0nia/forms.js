@@ -820,10 +820,13 @@ export class FormControl<
     const previousIsTouched = safeGet(this.state.touchedFields.value, name)
 
     if (!previousIsTouched) {
-      this.state.touchedFields.update((touchedFields) => {
-        deepSet(touchedFields, name, true)
-        return touchedFields
-      })
+      this.state.touchedFields.update(
+        (touchedFields) => {
+          deepSet(touchedFields, name, true)
+          return touchedFields
+        },
+        [name],
+      )
     }
 
     return !previousIsTouched
@@ -842,10 +845,13 @@ export class FormControl<
       : safeGet(this.state.values.value, options.name) ??
         getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
-    this.state.values.update((values) => {
-      deepSet(values, options.name, value)
-      return values
-    })
+    this.state.values.update(
+      (values) => {
+        deepSet(values, options.name, value)
+        return values
+      },
+      [options.name],
+    )
 
     this.updateDirtyField(options.name, value)
   }
@@ -861,21 +867,27 @@ export class FormControl<
     const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
 
     if (previousIsDirty && !currentIsDirty) {
-      this.state.dirtyFields.update((dirtyFields) => {
-        deepUnset(dirtyFields, name)
-        return dirtyFields
-      })
+      this.state.dirtyFields.update(
+        (dirtyFields) => {
+          deepUnset(dirtyFields, name)
+          return dirtyFields
+        },
+        [name],
+      )
     }
 
     if (!previousIsDirty && currentIsDirty) {
-      this.state.dirtyFields.update((dirtyFields) => {
-        deepSet(dirtyFields, name, true)
-        return dirtyFields
-      })
+      this.state.dirtyFields.update(
+        (dirtyFields) => {
+          deepSet(dirtyFields, name, true)
+          return dirtyFields
+        },
+        [name],
+      )
     }
 
     if (this.isTracking('isDirty', [name])) {
-      this.state.isDirty.set(this.getDirty())
+      this.state.isDirty.set(this.getDirty(), [name])
     }
 
     return currentIsDirty !== previousIsDirty
@@ -956,7 +968,7 @@ export class FormControl<
       })
 
       return newErrors
-    })
+    }, namesToMerge)
   }
 
   /**

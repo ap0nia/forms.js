@@ -226,6 +226,7 @@ export class Batchable<
    */
   notify(force = false) {
     if (force || this.shouldUpdate()) {
+      this.value = { ...this.value }
       this.writable.set(this.value)
       this.bufferedUpdates = []
     }
@@ -301,7 +302,13 @@ export class Batchable<
 
     fn()
 
-    this.flush(true)
+    /**
+     * After a transaction, the depth it was done doesn't matter.
+     * Only whether the buffer has relevant, queued updates matters.
+     */
+    const force = this.keyChangedInBuffer()
+
+    this.flush(force)
   }
 
   /**
@@ -343,14 +350,20 @@ export class Batchable<
   /**
    * Track a specific context of all stores.
    */
-  createTrackingProxy(name?: string | string[], options?: Partial<TrackedContext>): TValues {
+  createTrackingProxy(
+    name?: string | string[],
+    options?: Partial<TrackedContext>,
+    filter = true,
+  ): TValues {
     const proxy = {} as TValues
 
     for (const key in this.value) {
       Object.defineProperty(proxy, key, {
         get: () => {
           this.track(key, name, options)
-          return deepFilter(this.value[key as keyof typeof this.value], name)
+          return filter
+            ? deepFilter(this.value[key as keyof typeof this.value], name)
+            : this.value[key as keyof typeof this.value]
         },
         enumerable: true,
       })

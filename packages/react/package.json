@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run __tests__/form.test.tsx"
+    "test": "vitest run __tests__/use-form-state.test.tsx"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",

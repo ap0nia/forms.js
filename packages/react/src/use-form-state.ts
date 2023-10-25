@@ -41,8 +41,8 @@ export function useFormState<T extends Record<string, any>>(
   }, [control, props?.name])
 
   const proxy = useMemo(() => {
-    return derivedState.createTrackingProxy(props?.name, props)
-  }, [derivedState])
+    return derivedState.createTrackingProxy(props?.name, props, false)
+  }, [derivedState, props?.name, props?.disabled, props?.exact])
 
   useEffect(() => {
     return () => {
@@ -65,16 +65,16 @@ export function useFormState<T extends Record<string, any>>(
         false,
       )
     },
-    [control, props?.disabled],
+    [props?.name, control, derivedState, props?.disabled],
   )
 
   const getSnapshot = useCallback(() => {
     return derivedState.writable.value
-  }, [])
+  }, [derivedState])
 
   const getServerSnapshot = useCallback(() => {
     return derivedState.writable.value
-  }, [])
+  }, [derivedState])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
