@@ -225,7 +225,7 @@ export class Batchable<
    * Attempt to notify subscribers.
    */
   notify(force = false) {
-    if (this.shouldUpdate(force)) {
+    if (force || this.shouldUpdate()) {
       this.writable.set(this.value)
       this.bufferedUpdates = []
     }
@@ -234,8 +234,8 @@ export class Batchable<
   /**
    * Whether the store should trigger updates.
    */
-  shouldUpdate(force = false): boolean {
-    return (this.depth === 0 || force) && !this.pending && this.keyChangedInBuffer()
+  shouldUpdate(): boolean {
+    return this.depth === 0 && !this.pending && this.keyChangedInBuffer()
   }
 
   /**

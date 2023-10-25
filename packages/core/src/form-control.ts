@@ -279,7 +279,7 @@ export class FormControl<
       })
     }
 
-    const [name, _defaultValues, options] = args
+    const [name, defaultValue, options] = args
 
     const nameArray = Array.isArray(name) ? name : name ? [name] : []
 
@@ -289,9 +289,19 @@ export class FormControl<
       this.batchedState.keys?.add('values')
     }
 
+    const values = this.mounted
+      ? this.state.values.value
+      : defaultValue == null
+      ? this.state.defaultValues.value
+      : typeof name === 'string'
+      ? { [name]: defaultValue }
+      : defaultValue
+
+    const duplicateValues = { ...values }
+
     return nameArray.length > 1
-      ? deepFilter({ ...this.state.values.value }, nameArray)
-      : safeGet({ ...this.state.values.value }, name)
+      ? deepFilter(duplicateValues, nameArray)
+      : safeGet(duplicateValues, name)
   }
 
   //--------------------------------------------------------------------------------------
@@ -1119,9 +1129,7 @@ export class FormControl<
 
     this.state.isSubmitting.set(false)
 
-    this.batchedState.flush()
-
-    console.log('done resetting')
+    this.batchedState.flush(true)
   }
 
   /**

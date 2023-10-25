@@ -4,8 +4,10 @@ import { vi as jest } from 'vitest'
 
 import type { Control } from '../src/control'
 import { Controller } from '../src/controller'
+import { FormProvider } from '../src/form-provider'
 import { useController } from '../src/use-controller'
 import { useForm } from '../src/use-form'
+import { useFormContext } from '../src/use-form-context'
 
 describe('useController', () => {
   it('should render input correctly', () => {
@@ -468,5 +470,371 @@ describe('useController', () => {
         test: 'test',
       }),
     )
+  })
+
+  it('should return defaultValues when component is not yet mounted', async () => {
+    const defaultValues = {
+      test: {
+        deep: [
+          {
+            test: '0',
+            test1: '1',
+          },
+        ],
+      },
+    }
+
+    const App = () => {
+      const { control, getValues } = useForm<{
+        test: {
+          deep: { test: string; test1: string }[]
+        }
+      }>({
+        defaultValues,
+      })
+
+      const { field } = useController({
+        control,
+        name: 'test.deep.0.test',
+      })
+
+      return (
+        <div>
+          <input {...field} />
+          <p>{JSON.stringify(getValues())}</p>
+        </div>
+      )
+    }
+
+    render(<App />)
+
+    expect(true).toEqual(true)
+
+    expect(await screen.findByText('{"test":{"deep":[{"test":"0","test1":"1"}]}}')).toBeVisible()
+  })
+
+  it('should trigger extra re-render and update latest value when setValue called during mount', async () => {
+    const Child = () => {
+      const { setValue } = useFormContext()
+      const {
+        field: { value },
+      } = useController({
+        name: 'content',
+      })
+
+      React.useEffect(() => {
+        setValue('content', 'expected value')
+      }, [setValue])
+
+      return <p>{value}</p>
+    }
+
+    function App() {
+      const methods = useForm({
+        defaultValues: {
+          content: 'default',
+        },
+      })
+
+      return (
+        <FormProvider {...methods}>
+          <form>
+            <Child />
+            <input type="submit" />
+          </form>
+        </FormProvider>
+      )
+    }
+
+    render(<App />)
+
+    expect(await screen.findByText('expected value')).toBeVisible()
+  })
+
+  it('should remount with input with current formValue', () => {
+    let data: unknown
+
+    function Input<T extends Record<string, any>>({
+      control,
+      name,
+    }: {
+      control: Control<T>
+      name: FieldPath<T>
+    }) {
+      const {
+        field: { value },
+      } = useController({
+        control,
+        name,
+        shouldUnregister: true,
+      })
+
+      data = value
+
+      return null
+    }
+
+    const App = () => {
+      const { control } = useForm<{
+        test: string
+      }>({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+      const [toggle, setToggle] = React.useState(true)
+
+      return (
+        <div>
+          {toggle && <Input control={control} name={'test'} />}
+          <button onClick={() => setToggle(!toggle)}>toggle</button>
+        </div>
+      )
+    }
+
+    render(<App />)
+
+    expect(data).toEqual('test')
+
+    fireEvent.click(screen.getByRole('button'))
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(data).toBeUndefined()
+  })
+
+  it('should always get the latest value for onBlur event', async () => {
+    const watchResults: unknown[] = []
+
+    const App = () => {
+      const { control, watch } = useForm()
+      const { field } = useController({
+        control,
+        name: 'test',
+        defaultValue: '',
+      })
+
+      watchResults.push(watch())
+
+      return (
+        <button
+          onClick={() => {
+            field.onChange('updated value')
+            field.onBlur()
+          }}
+        >
+          test
+        </button>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button'), {
+      target: {
+        value: 'test',
+      },
+    })
+
+    expect(watchResults).toEqual([
+      {},
+      {
+        test: 'updated value',
+      },
+    ])
+  })
+
+  it('should focus and select the input text', () => {
+    const select = jest.fn()
+    const focus = jest.fn()
+
+    const App = () => {
+      const { control, setFocus } = useForm({
+        defaultValues: {
+          test: 'data',
+        },
+      })
+      const { field } = useController({
+        control,
+        name: 'test',
+      })
+
+      field.ref({
+        select,
+        focus,
+      })
+
+      React.useEffect(() => {
+        setFocus('test', { shouldSelect: true })
+      }, [setFocus])
+
+      return null
+    }
+
+    render(<App />)
+
+    expect(select).toBeCalled()
+    expect(focus).toBeCalled()
+  })
+
+  it('should update isValid correctly with strict mode', async () => {
+    const App = () => {
+      const form = useForm({
+        mode: 'onChange',
+        defaultValues: {
+          name: '',
+        },
+      })
+      const { isValid } = form.formState
+
+      return (
+        <React.StrictMode>
+          <FormProvider {...form}>
+            <Controller
+              render={({ field }) => <input value={field.value} onChange={field.onChange} />}
+              name="name"
+              rules={{
+                required: true,
+              }}
+            />
+            <p>{isValid ? 'valid' : 'not'}</p>
+          </FormProvider>
+        </React.StrictMode>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      screen.getByText('not')
+    })
+  })
+
+  it('should restore defaultValues with react strict mode double useEffect', () => {
+    function Form() {
+      return (
+        <Controller
+          name="lastName"
+          shouldUnregister={true}
+          render={({ field }) => <input {...field} />}
+        />
+      )
+    }
+
+    function App() {
+      const methods = useForm({
+        defaultValues: {
+          lastName: 'luo',
+        },
+      })
+      const {
+        formState: { dirtyFields },
+      } = methods
+
+      return (
+        <React.StrictMode>
+          <FormProvider {...methods}>
+            <form>
+              <Form />
+              {dirtyFields.lastName ? 'dirty' : 'pristine'}
+            </form>
+          </FormProvider>
+        </React.StrictMode>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: {
+        value: 'luo1',
+      },
+    })
+
+    screen.getByText('dirty')
+
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: {
+        value: 'luo',
+      },
+    })
+
+    screen.getByText('pristine')
+  })
+
+  it('should disable the controller input', async () => {
+    function Form() {
+      const { field } = useController({
+        name: 'lastName',
+      })
+      return <p>{field.disabled ? 'disabled' : ''}</p>
+    }
+
+    function App() {
+      const methods = useForm({
+        disabled: true,
+      })
+
+      return (
+        <FormProvider {...methods}>
+          <form>
+            <Form />
+          </form>
+        </FormProvider>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      screen.getByText('disabled')
+    })
+  })
+
+  it('should disable form input with disabled prop', async () => {
+    const App = () => {
+      const [disabled, setDisabled] = React.useState(false)
+      const { control, watch } = useForm({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+      const {
+        field: { disabled: disabledProps },
+      } = useController({
+        control,
+        name: 'test',
+        disabled,
+      })
+
+      const input = watch('test')
+
+      return (
+        <form>
+          <p>{input}</p>
+          <button
+            onClick={() => {
+              setDisabled(!disabled)
+            }}
+            type={'button'}
+          >
+            toggle
+          </button>
+          <p>{disabledProps ? 'disable' : 'notDisabled'}</p>
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    screen.getByText('test')
+    screen.getByText('notDisabled')
+
+    fireEvent.click(screen.getByRole('button'))
+
+    waitFor(() => {
+      screen.getByText('')
+      screen.getByText('disable')
+    })
   })
 })
