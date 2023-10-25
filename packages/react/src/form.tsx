@@ -94,7 +94,7 @@ function Form<T extends Record<string, any>, U extends Record<string, any> | und
     ...rest
   } = props
 
-  const submit = async (event?: React.BaseSyntheticEvent<any>) => {
+  const submit = async (event?: React.BaseSyntheticEvent) => {
     let hasError = false
     let type = ''
 
@@ -128,7 +128,9 @@ function Form<T extends Record<string, any>, U extends Record<string, any> | und
             (value) => value && value.includes('json'),
           )
 
-          const response = await fetch(action, {
+          const url = location.origin + action
+
+          const response = await fetch(url, {
             method,
             headers: {
               ...headers,
@@ -150,6 +152,7 @@ function Form<T extends Record<string, any>, U extends Record<string, any> | und
             onSuccess && onSuccess({ response })
           }
         } catch (error: unknown) {
+          console.log({ error })
           hasError = true
           onError && onError({ error })
         }
