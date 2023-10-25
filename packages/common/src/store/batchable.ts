@@ -156,7 +156,7 @@ export class Batchable<
       const unsubscriber = store.subscribe(
         this.subscriptionFunction.bind(this, i, key),
         this.invalidateFunction.bind(this, i),
-        undefined,
+        false,
       )
       this.unsubscribers.push(unsubscriber)
     })

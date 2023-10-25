@@ -547,10 +547,13 @@ export class FormControl<
             this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
           }
         } else {
-          this.state.errors.update((errors) => {
-            deepSet(errors, name, error)
-            return errors
-          })
+          this.state.errors.update(
+            (errors) => {
+              deepSet(errors, name, error)
+              return errors
+            },
+            [name],
+          )
         }
       } else {
         this.mergeErrors(result.validationResult.errors, result.validationResult.names)
@@ -591,7 +594,7 @@ export class FormControl<
       this.state.errors.update((errors) => {
         deepUnset(errors, 'root')
         return errors
-      })
+      }, true)
 
       this.mergeErrors(errors)
 
@@ -604,10 +607,10 @@ export class FormControl<
         setTimeout(this.focusError.bind(this))
       }
 
-      this.state.isSubmitted.set(true)
-      this.state.isSubmitting.set(false)
-      this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value))
-      this.state.submitCount.update((count) => count + 1)
+      this.state.isSubmitted.set(true, true)
+      this.state.isSubmitting.set(false, true)
+      this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value), true)
+      this.state.submitCount.update((count) => count + 1, true)
 
       this.batchedState.flush()
     }
