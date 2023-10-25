@@ -1141,6 +1141,8 @@ export class FormControl<
 
     this.state.isSubmitting.set(false)
 
+    this.valueListeners.forEach((listener) => listener(this.state.values.value))
+
     this.batchedState.flush(true)
   }
 

@@ -178,7 +178,7 @@ export class Batchable<
     /**
      * TODO: figure out if changes can work with direct modification.
      */
-    this.value = { ...this.value, [key]: value }
+    this.value[key as keyof typeof this.value] = value
     this.pending &= ~(1 << i)
     this.bufferedUpdates.push({ key: key as string, context: context })
     this.notify()

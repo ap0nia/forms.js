@@ -994,7 +994,7 @@ describe('initialize', () => {
     })
   })
 
-  describe.skip('with reset', () => {
+  describe('with reset', () => {
     it('should reset with field array', async () => {
       let fieldsTemp: unknown[] = []
 
@@ -1833,7 +1833,7 @@ describe('array of array fields', () => {
     expect(nestedArrayInput1).toHaveValue('21')
   })
 
-  it.skip('should worked with deep nested field array without chaining useFieldArray', () => {
+  it('should worked with deep nested field array without chaining useFieldArray', () => {
     type FormValues = {
       nest: {
         value: string
