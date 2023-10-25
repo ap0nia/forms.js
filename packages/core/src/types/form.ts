@@ -144,10 +144,10 @@ export type WatchOptions<
   exact?: boolean
 }
 
-export type HandlerCallback = (event?: Event) => Promise<void>
+export type HandlerCallback = (event?: Partial<Event>) => Promise<void>
 
 export type SubmitHandler<T, TTransformed> = TTransformed extends Record<string, any>
-  ? (data: TTransformed, event?: Event) => unknown
-  : (data: T, event?: Event) => unknown
+  ? (data: TTransformed, event?: Partial<Event>) => unknown
+  : (data: T, event?: Partial<Event>) => unknown
 
-export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event?: Event) => unknown
+export type SubmitErrorHandler<T> = (errors: FieldErrors<T>, event?: Partial<Event>) => unknown

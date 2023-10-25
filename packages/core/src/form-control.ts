@@ -1195,4 +1195,20 @@ export class FormControl<
       this.options.submissionValidationMode,
     )
   }
+
+  setFocus(name: string, options?: { shouldSelect?: boolean }) {
+    const field: Field | undefined = safeGet(this.fields, name)
+
+    if (field?._f == null) {
+      return
+    }
+
+    const fieldRef = field?._f.refs ? field?._f.refs[0] : field?._f.ref
+
+    fieldRef?.focus?.()
+
+    if (options?.shouldSelect && fieldRef && 'select' in fieldRef) {
+      fieldRef?.select?.()
+    }
+  }
 }
