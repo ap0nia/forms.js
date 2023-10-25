@@ -1,3 +1,4 @@
+import 'vitest'
 import '@testing-library/jest-dom'
 
 import { beforeEach, afterEach } from 'vitest'
