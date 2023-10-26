@@ -98,11 +98,12 @@ export function useFieldArray<
   }, [control, props.shouldUnregister])
 
   useEffect(() => {
-    const unsubscribe = fieldArray.current.createSubscription()
+    fieldArray.current.doSomething()
+  }, [fields, props.name, props.shouldUnregister])
 
+  useEffect(() => {
     return () => {
       fieldArray.current.unmount()
-      unsubscribe()
 
       if (props.shouldUnregister || control.options.shouldUnregister) {
         control.unregister(props.name as any)

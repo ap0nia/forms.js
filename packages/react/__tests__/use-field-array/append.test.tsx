@@ -205,18 +205,15 @@ describe('append', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /append/i }))
 
-    /**
-     * CHANGED RENDERING COUNT
-     */
     expect(watched).toEqual([
       {},
       { test: [] },
       { test: [{ value: '' }] },
-      // { test: [{ value: '' }] },
+      { test: [{ value: '' }] },
     ])
   })
 
-  it.only('should focus if shouldFocus is true', () => {
+  it('should focus if shouldFocus is true', () => {
     const Component = () => {
       const { register, control } = useForm<{
         test: { value: string }[]

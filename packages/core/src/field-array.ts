@@ -497,40 +497,28 @@ export class FieldArray<
     this.control.batchedState.flush()
   }
 
-  /**
-   * Whenever the field array's fields changes, update the form control.
-   */
-  createSubscription(): () => void {
-    const unsubscribe = this.fields.subscribe(
-      () => {
-        this.control.batchedState.open()
+  doSomething() {
+    this.control.batchedState.open()
 
-        this.validate()
+    this.validate()
 
-        const focus = this.focus
+    const focus = this.focus
 
-        if (focus) {
-          console.log(this.control.fields, this.fields.value)
-          iterateFieldsByAction(this.control.fields, (ref, key: string) => {
-            if (key.startsWith(focus)) {
-              ref.focus?.()
-            }
-          })
+    if (focus) {
+      iterateFieldsByAction(this.control.fields, (ref, key: string) => {
+        if (key.startsWith(focus)) {
+          ref.focus?.()
         }
+      })
+    }
 
-        this.focus = ''
+    this.focus = ''
 
-        this.control.updateValid()
+    this.control.updateValid()
 
-        this.action.set(false)
+    this.action.set(false)
 
-        this.control.batchedState.flush()
-      },
-      undefined,
-      false,
-    )
-
-    return unsubscribe
+    this.control.batchedState.flush()
   }
 
   async validate(fields = this.control.fields) {
