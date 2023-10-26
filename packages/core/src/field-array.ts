@@ -162,6 +162,8 @@ export class FieldArray<
     shouldSetValues = true,
     shouldUpdateFieldsAndState = true,
   ) {
+    this.control.batchedState.open()
+
     const field = safeGet(this.control.fields, this.name)
 
     if (shouldUpdateFieldsAndState && Array.isArray(field)) {
@@ -217,6 +219,10 @@ export class FieldArray<
         [this.name],
       )
     }
+
+    this.control.state.isDirty.set(this.control.getDirty())
+
+    this.control.batchedState.flush()
   }
 
   append(
@@ -504,6 +510,7 @@ export class FieldArray<
         const focus = this.focus
 
         if (focus) {
+          console.log(this.control.fields, this.fields.value)
           iterateFieldsByAction(this.control.fields, (ref, key: string) => {
             if (key.startsWith(focus)) {
               ref.focus?.()

@@ -128,7 +128,7 @@ describe('append', () => {
     ])
   })
 
-  it.only.each(['isDirty', 'dirtyFields'])(
+  it.each(['isDirty', 'dirtyFields'])(
     'should be dirtyFields when value is appended with %s',
     () => {
       let isDirtyValue
@@ -205,15 +205,18 @@ describe('append', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /append/i }))
 
+    /**
+     * CHANGED RENDERING COUNT
+     */
     expect(watched).toEqual([
       {},
       { test: [] },
       { test: [{ value: '' }] },
-      { test: [{ value: '' }] },
+      // { test: [{ value: '' }] },
     ])
   })
 
-  it('should focus if shouldFocus is true', () => {
+  it.only('should focus if shouldFocus is true', () => {
     const Component = () => {
       const { register, control } = useForm<{
         test: { value: string }[]
@@ -276,6 +279,9 @@ describe('append', () => {
     expect(document.activeElement).toEqual(document.body)
   })
 
+  /**
+   * @remarks CHANGED RENDERING COUNT
+   */
   it('should return watched value with watch API', async () => {
     const renderedItems: any = []
     const Component = () => {
@@ -304,8 +310,16 @@ describe('append', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /append/i }))
 
+    /**
+     * CHANGED RENDER COUNT
+     */
     await waitFor(() =>
-      expect(renderedItems).toEqual([undefined, [], [{ value: 'test' }], [{ value: 'test' }]]),
+      expect(renderedItems).toEqual([
+        undefined,
+        [],
+        [{ value: 'test' }],
+        // [{ value: 'test' }]
+      ]),
     )
   })
 
