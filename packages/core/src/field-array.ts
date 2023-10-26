@@ -492,8 +492,6 @@ export class FieldArray<
 
     this.value.set(valuesArray as any)
 
-    this.updateFormControl(() => [])
-
     this.control.batchedState.flush()
   }
 
