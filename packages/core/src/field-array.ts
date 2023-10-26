@@ -461,12 +461,20 @@ export class FieldArray<
       return currentValues
     })
 
+    this.ids = [...updatedFieldArrayValues].map((item, i) =>
+      !item || i === index ? this.idGenerator() : this.ids[i],
+    )
+
     this.value.set(updatedFieldArrayValues as any)
 
-    this.updateFormControl((args) => {
-      args[index] = undefined
-      return args
-    })
+    this.updateFormControl(
+      (args) => {
+        args[index] = undefined
+        return args
+      },
+      undefined,
+      false,
+    )
 
     this.control.batchedState.flush()
   }
