@@ -275,7 +275,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
 
-    this.ids = valuesArray.map(this.idGenerator.bind(this)).concat(this.ids)
+    this.ids = [...valuesArray.map(this.idGenerator.bind(this)), ...this.ids]
 
     this.action.set(true)
 
@@ -290,8 +290,7 @@ export class FieldArray<
     this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
-      valuesArray.map(() => undefined).concat(args)
-      return args
+      return [...valuesArray.map(() => undefined), ...args]
     })
 
     this.control.batchedState.flush()
@@ -507,9 +506,11 @@ export class FieldArray<
 
     if (focus) {
       iterateFieldsByAction(this.control.fields, (ref, key: string) => {
-        if (key.startsWith(focus)) {
-          ref.focus?.()
+        if (key.startsWith(focus) && ref.focus) {
+          ref.focus()
+          return 1
         }
+        return
       })
     }
 
