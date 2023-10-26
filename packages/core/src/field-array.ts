@@ -418,29 +418,30 @@ export class FieldArray<
   move(from: number, to: number) {
     this.control.batchedState.open()
 
-    const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
+    const updatedValues = Array.from(this.getControlFieldArrayValues())
 
-    const value = updatedFieldArrayValues[from]
+    updatedValues[to] ??= undefined
 
-    updatedFieldArrayValues.splice(from, 1)
-    updatedFieldArrayValues.splice(to, 0, value)
+    updatedValues.splice(to, 0, updatedValues.splice(from, 1)[0])
 
     this.action.set(true)
 
     this.control.state.values.update(
       (currentValues) => {
-        deepSet(currentValues, this.name, updatedFieldArrayValues)
+        deepSet(currentValues, this.name, updatedValues)
         return currentValues
       },
       [this.name],
     )
 
-    this.value.set(updatedFieldArrayValues as any)
+    this.ids[to] ??= this.idGenerator()
+    this.ids.splice(to, 0, this.ids.splice(from, 1)[0] ?? this.idGenerator())
+
+    this.value.set(updatedValues as any)
 
     this.updateFormControl((args) => {
-      args.splice(from, 1)
-      args.splice(to, 0, undefined)
-
+      args[to] ??= undefined
+      args.splice(to, 0, args.splice(from, 1)[0])
       return args
     })
 
