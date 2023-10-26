@@ -4,7 +4,6 @@ import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { generateId } from '@forms.js/common/utils/generate-id'
 import { isEmptyObject } from '@forms.js/common/utils/is-object'
 import { safeGet } from '@forms.js/common/utils/safe-get'
-import { safeUnset } from '@forms.js/common/utils/safe-unset'
 
 import { VALIDATION_EVENTS } from './constants'
 import { FormControl } from './form-control'
@@ -185,7 +184,9 @@ export class FieldArray<
             deepSet(currentErrors, this.name, newErrors)
           }
 
-          unsetEmptyArray(currentErrors, this.name)
+          if (!safeGet<any[]>(currentErrors, this.name).filter(Boolean).length) {
+            deepUnset(currentErrors, this.name)
+          }
 
           return currentErrors
         },
@@ -323,7 +324,7 @@ export class FieldArray<
     this.value.set(updatedFieldArrayValues as any)
 
     this.updateFormControl((args) => {
-      return args.filter((_, i) => !indexArray?.includes(i))
+      return index == null ? [] : args.filter((_, i) => !indexArray?.includes(i))
     })
 
     this.control.batchedState.flush()
@@ -462,7 +463,7 @@ export class FieldArray<
     })
 
     this.ids = [...updatedFieldArrayValues].map((item, i) =>
-      !item || i === index ? this.idGenerator() : this.ids[i],
+      !item || i === index ? this.idGenerator() : this.ids[i] ?? this.idGenerator(),
     )
 
     this.value.set(updatedFieldArrayValues as any)
@@ -654,10 +655,4 @@ function getFocusFieldName(
   return options.shouldFocus || options.shouldFocus == null
     ? options.focusName || `${name}.${options.focusIndex == null ? index : options.focusIndex}.`
     : ''
-}
-
-function unsetEmptyArray<T>(ref: T, name: string) {
-  if (!safeGet<any[]>(ref, name).filter(Boolean).length) {
-    safeUnset(ref, name)
-  }
 }
