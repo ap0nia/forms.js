@@ -1,5 +1,4 @@
 import { cloneObject } from '../utils/clone-object'
-import { deepFilter } from '../utils/deep-filter'
 import { noop } from '../utils/noop'
 
 import type { Subscriber, Unsubscriber } from './types'
@@ -69,11 +68,6 @@ export class Batchable<
   contexts: { [K in keyof TStores]?: TrackedContext[] } = {}
 
   /**
-   * Accessing keys under the proxy will cause them to be tracked.
-   */
-  proxy: TValues
-
-  /**
    * The writable store that will be updated when the batchable store is flushed.
    * It contains the current value of this derived store.
    */
@@ -85,29 +79,26 @@ export class Batchable<
   pending = 0
 
   /**
-   * The number of times the store has been primed. Notifications can only occur when the depth is 0.
+   * The number of times the buffer has been opened.
+   * Notifications can only occur when the buffer has been fully closed.
    */
   depth = 0
 
   /**
-   * All notifications from subscribed stores will be buffered prior to triggering updates from this store.
+   * Notifications from subscribed stores can be buffered to prevent notifications from this store.
    */
-  bufferedUpdates: BufferedUpdate[] = []
+  buffer: BufferedUpdate[] = []
 
   /**
-   * Functions to run when after all subscribers unsubscribe.
+   * Unsubscribe functions for all the stores in the provided object.
    */
   unsubscribers: Unsubscriber[] = []
 
-  /**
-   * Stores that are children of this store.
-   * Children are just synchronized with the parent's primed state and flushes.
-   */
-  children = new Set<Batchable<any, any>>()
-
   constructor(stores: TStores, keys = new Set<PropertyKey>(), all = false) {
     this.stores = stores
+
     this.keys = keys
+
     this.all = all
 
     this.writable = new Writable(
@@ -117,18 +108,6 @@ export class Batchable<
       }, {} as TValues),
       this.startStopNotifier.bind(this),
     )
-
-    this.proxy = Object.keys(this.writable.value).reduce((accumulated, key) => {
-      Object.defineProperty(this.proxy, key, {
-        get: () => {
-          this.keys.add(key)
-          return this.writable.value[key as keyof TValues]
-        },
-        enumerable: true,
-      })
-
-      return accumulated
-    }, {} as TValues)
   }
 
   /**
@@ -172,7 +151,7 @@ export class Batchable<
   subscriptionFunction(i: number, key: string, value: any, context?: string[]) {
     this.writable.value[key as keyof TValues] = value
     this.pending &= ~(1 << i)
-    this.bufferedUpdates.push({ key, context })
+    this.buffer.push({ key, context })
     this.notify()
   }
 
@@ -189,8 +168,6 @@ export class Batchable<
    */
   open() {
     this.depth++
-
-    this.children.forEach((child) => child.open())
   }
 
   close() {
@@ -199,8 +176,6 @@ export class Batchable<
     } else {
       this.depth--
     }
-
-    this.children.forEach((child) => child.close())
   }
 
   /**
@@ -209,8 +184,6 @@ export class Batchable<
   flush(force = false) {
     this.close()
     this.notify(force)
-
-    this.children.forEach((child) => child.flush(force))
   }
 
   /**
@@ -219,7 +192,7 @@ export class Batchable<
   notify(force = false) {
     if (force || this.shouldUpdate()) {
       this.writable.update((value) => ({ ...value }))
-      this.bufferedUpdates = []
+      this.buffer = []
     }
   }
 
@@ -234,24 +207,17 @@ export class Batchable<
    * Whether any key in the buffer is being tracked. If true, then an update can be triggered.
    */
   keyChangedInBuffer(): boolean {
-    const keysChangedByRoot = this.bufferedUpdates.some((k) => this.keys?.has(k.key))
+    const keysChangedByRoot = this.buffer.some((k) => this.keys?.has(k.key))
 
     if (keysChangedByRoot) {
       return true
     }
 
-    const keysChangedByContext = this.bufferedUpdates.some((keyChanged) => {
+    const keysChangedByContext = this.buffer.some((keyChanged) => {
       return this.isTracking(keyChanged.key, keyChanged.context)
     })
 
     return keysChangedByContext
-  }
-
-  /**
-   * Whether any child is tracking the given key and context.
-   */
-  childIsTracking(key: string, name?: string[] | boolean): boolean {
-    return Array.from(this.children).some((clone) => clone.isTracking(key, name))
   }
 
   /**
@@ -323,30 +289,5 @@ export class Batchable<
 
     this.contexts[key] ??= []
     this.contexts[key]?.push(...nameArray.map((n) => ({ value: n, ...options })))
-  }
-
-  /**
-   * Track a specific context of all stores.
-   */
-  createTrackingProxy(
-    name?: string | string[],
-    options?: Partial<TrackedContext>,
-    filter = true,
-  ): TValues {
-    const proxy = {} as TValues
-
-    for (const key in this.writable.value) {
-      Object.defineProperty(proxy, key, {
-        get: () => {
-          this.track(key, name, options)
-          return filter
-            ? deepFilter(this.writable.value[key as keyof TValues], name)
-            : this.writable.value[key as keyof TValues]
-        },
-        enumerable: true,
-      })
-    }
-
-    return proxy
   }
 }
