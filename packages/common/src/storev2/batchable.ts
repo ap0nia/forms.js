@@ -43,9 +43,9 @@ export class Batchable<
     this.stores = stores
   }
 
-  override startStopNotifier() {
+  startStopNotifier() {
     this.start()
-    return super.startStopNotifier()
+    return this.stop()
   }
 
   /**
@@ -65,10 +65,9 @@ export class Batchable<
   /**
    * This store should unsubscribe from all stores when it has no more subscribers.
    */
-  override stop() {
+  stop() {
     this.unsubscribers.forEach((unsubscriber) => unsubscriber())
     this.unsubscribers = []
-    return super.stop()
   }
 
   /**

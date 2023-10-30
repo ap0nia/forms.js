@@ -75,7 +75,7 @@ export class DumbBatchable<
   depth = 0
 
   constructor(
-    writable: Writable<TValues, string[] | boolean>,
+    writable = new Writable<TValues, string[] | boolean>(),
     keys = new Set<PropertyKey>(),
     all = false,
   ) {
@@ -89,19 +89,6 @@ export class DumbBatchable<
    */
   subscribe(run: Subscriber<TValues>, invalidate = noop, runFirst = true) {
     return this.writable.subscribe(run, invalidate, runFirst)
-  }
-
-  /**
-   */
-  startStopNotifier() {
-    return this.stop.bind(this)
-  }
-
-  /**
-   * Runs after this store's last subscriber unsubscribes.
-   */
-  stop() {
-    this.depth = 0
   }
 
   /**
@@ -124,7 +111,7 @@ export class DumbBatchable<
   /**
    * Flush the buffer and attempt to notify subscribers.
    */
-  flush(force = false, buffer: BufferedUpdate[]) {
+  flush(force = false, buffer = new Array<BufferedUpdate>()) {
     this.close()
     this.notify(force, buffer)
   }
@@ -132,7 +119,7 @@ export class DumbBatchable<
   /**
    * Attempt to notify subscribers.
    */
-  notify(force = false, buffer: BufferedUpdate[]) {
+  notify(force = false, buffer = new Array<BufferedUpdate>()) {
     if (force || this.shouldUpdate(buffer)) {
       this.writable.update((value) => ({ ...value }))
     }
@@ -180,9 +167,7 @@ export class DumbBatchable<
       return name && this.contexts[key] != null
     }
 
-    const nameArray = Array.isArray(name) ? name : [name]
-
-    const nameAndContextAreTracked = nameArray.some((n) => {
+    const nameAndContextAreTracked = name.some((n) => {
       return this.contexts[key]?.some((trackedContext) => {
         return trackedContext.exact
           ? n === trackedContext.value

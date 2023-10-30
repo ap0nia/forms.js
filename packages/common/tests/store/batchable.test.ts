@@ -55,7 +55,7 @@ describe('store', () => {
         stores.b.set(5)
         stores.c.set(6)
 
-        expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 3 })
+        expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
         expect(fn).toHaveBeenCalledOnce()
       })
 
