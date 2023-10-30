@@ -1,12 +1,12 @@
 import { Batchable } from './batchable'
-import type { DumbBatchable, StoresValues } from './dumb-batchable'
+import type { Bufferable, StoresValues } from './bufferable'
 import { Writable } from './writable'
 
-export class LinkedBatchable<
+export class Linkable<
   TStores extends Record<string, Writable<any, any>>,
   TValues extends StoresValues<TStores> = StoresValues<TStores>,
 > extends Batchable<TStores, TValues> {
-  children: Set<DumbBatchable<TStores, TValues>> = new Set()
+  children: Set<Bufferable<TStores, TValues>> = new Set()
 
   constructor(stores: TStores, keys = new Set<PropertyKey>(), all = false) {
     super(stores, keys, all)

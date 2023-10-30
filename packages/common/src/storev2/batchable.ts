@@ -1,6 +1,6 @@
 import { cloneObject } from '../utils/clone-object'
 
-import { DumbBatchable, type BufferedUpdate, type StoresValues } from './dumb-batchable'
+import { Bufferable, type BufferedUpdate, type StoresValues } from './bufferable'
 import type { Unsubscriber } from './types'
 import { Writable } from './writable'
 
@@ -11,7 +11,7 @@ import { Writable } from './writable'
 export class Batchable<
   TStores extends Record<string, Writable<any, any>>,
   TValues extends StoresValues<TStores> = StoresValues<TStores>,
-> extends DumbBatchable<TStores, TValues> {
+> extends Bufferable<TStores, TValues> {
   /**
    * Stores to batch updates from.
    */
@@ -38,36 +38,25 @@ export class Batchable<
       return acc
     }, {} as TValues)
 
-    super(new Writable(value), keys, all)
+    const startStopNotifier = () => {
+      Object.entries(stores).forEach(([key, store], i) => {
+        const unsubscriber = store.subscribe(
+          this.subscriptionFunction.bind(this, i, key),
+          this.invalidateFunction.bind(this, i),
+          false,
+        )
+        this.unsubscribers.push(unsubscriber)
+      })
+
+      return () => {
+        this.unsubscribers.forEach((unsubscriber) => unsubscriber())
+        this.unsubscribers = []
+      }
+    }
+
+    super(new Writable(value, startStopNotifier), keys, all)
 
     this.stores = stores
-  }
-
-  startStopNotifier() {
-    this.start()
-    return this.stop()
-  }
-
-  /**
-   * Runs after this store receives its first subscriber.
-   */
-  start() {
-    Object.entries(this.stores).forEach(([key, store], i) => {
-      const unsubscriber = store.subscribe(
-        this.subscriptionFunction.bind(this, i, key),
-        this.invalidateFunction.bind(this, i),
-        false,
-      )
-      this.unsubscribers.push(unsubscriber)
-    })
-  }
-
-  /**
-   * This store should unsubscribe from all stores when it has no more subscribers.
-   */
-  stop() {
-    this.unsubscribers.forEach((unsubscriber) => unsubscriber())
-    this.unsubscribers = []
   }
 
   /**

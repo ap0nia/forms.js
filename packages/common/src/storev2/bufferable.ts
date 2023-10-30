@@ -39,10 +39,10 @@ export type TrackedContext = {
 }
 
 /**
- * A dumb batchable is a store that can selectively notify subscribers when it's manually flushed
- * with buffered updates that contain any keys and/or contexts that are being tracked.
+ * A bufferable is a store that can selectively notify subscribers when it's flushed
+ * with a buffer that contain any keys and/or contexts that are being tracked.
  */
-export class DumbBatchable<
+export class Bufferable<
   TStores extends Record<string, Writable<any, any>>,
   TValues extends StoresValues<TStores> = StoresValues<TStores>,
 > {
@@ -122,6 +122,7 @@ export class DumbBatchable<
   notify(force = false, buffer = new Array<BufferedUpdate>()) {
     if (force || this.shouldUpdate(buffer)) {
       this.writable.update((value) => ({ ...value }))
+      buffer.length = 0
     }
   }
 
@@ -152,7 +153,7 @@ export class DumbBatchable<
   /**
    * Whether the given key and context are being tracked by this store.
    */
-  isTracking(key: string, name?: string[] | boolean): boolean {
+  isTracking(key: string, name?: string | string[] | boolean): boolean {
     if (this.all == true) {
       return true
     }
@@ -167,7 +168,9 @@ export class DumbBatchable<
       return name && this.contexts[key] != null
     }
 
-    const nameAndContextAreTracked = name.some((n) => {
+    const nameArray = Array.isArray(name) ? name : [name]
+
+    const nameAndContextAreTracked = nameArray.some((n) => {
       return this.contexts[key]?.some((trackedContext) => {
         return trackedContext.exact
           ? n === trackedContext.value
