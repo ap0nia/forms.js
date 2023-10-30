@@ -1,5 +1,5 @@
+import { Batchable } from './batchable'
 import type { DumbBatchable, StoresValues } from './dumb-batchable'
-import { Batchable } from './revised-batchable'
 import { Writable } from './writable'
 
 export class LinkedBatchable<
@@ -22,8 +22,8 @@ export class LinkedBatchable<
     this.children.forEach((child) => child.close())
   }
 
-  override flush(buffer = this.buffer, force = false) {
-    super.flush(buffer, force)
-    this.children.forEach((child) => child.flush(buffer, force))
+  override flush(force = false) {
+    super.flush(force)
+    this.children.forEach((child) => child.flush(force, super.buffer))
   }
 }

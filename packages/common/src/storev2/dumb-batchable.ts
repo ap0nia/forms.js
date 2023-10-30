@@ -80,9 +80,7 @@ export class DumbBatchable<
     all = false,
   ) {
     this.keys = keys
-
     this.all = all
-
     this.writable = writable
   }
 
@@ -126,15 +124,15 @@ export class DumbBatchable<
   /**
    * Flush the buffer and attempt to notify subscribers.
    */
-  flush(buffer: BufferedUpdate[], force = false) {
+  flush(force = false, buffer: BufferedUpdate[]) {
     this.close()
-    this.notify(buffer, force)
+    this.notify(force, buffer)
   }
 
   /**
    * Attempt to notify subscribers.
    */
-  notify(buffer: BufferedUpdate[], force = false) {
+  notify(force = false, buffer: BufferedUpdate[]) {
     if (force || this.shouldUpdate(buffer)) {
       this.writable.update((value) => ({ ...value }))
     }

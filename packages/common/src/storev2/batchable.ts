@@ -45,7 +45,6 @@ export class Batchable<
 
   override startStopNotifier() {
     this.start()
-
     return super.startStopNotifier()
   }
 
@@ -63,12 +62,27 @@ export class Batchable<
     })
   }
 
+  /**
+   * This store should unsubscribe from all stores when it has no more subscribers.
+   */
   override stop() {
     this.unsubscribers.forEach((unsubscriber) => unsubscriber())
-
     this.unsubscribers = []
-
     return super.stop()
+  }
+
+  /**
+   * This store maintains and builds its own buffer while its open.
+   */
+  override notify(force = false) {
+    super.notify(force, this.buffer)
+  }
+
+  /**
+   * This store maintains and builds its own buffer while its open.
+   */
+  override flush(force = false) {
+    super.flush(force, this.buffer)
   }
 
   /**
@@ -81,7 +95,7 @@ export class Batchable<
 
     this.buffer.push({ key, context })
 
-    super.notify(this.buffer)
+    this.notify()
   }
 
   /**
@@ -106,6 +120,6 @@ export class Batchable<
      */
     const force = this.keyChangedInBuffer(this.buffer)
 
-    super.flush(this.buffer, force)
+    this.flush(force)
   }
 }
