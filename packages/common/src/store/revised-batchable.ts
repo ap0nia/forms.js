@@ -4,53 +4,14 @@ import { noop } from '../utils/noop'
 import type { Subscriber, Unsubscriber } from './types'
 import { Writable } from './writable'
 
-export type StoresValues<T> = T extends Writable<infer U>
-  ? U
-  : { [K in keyof T]: T[K] extends Writable<infer U> ? U : never }
-
 /**
- * A buffered update contains information about the store that changed.
- * The value is not needed because it's set directly without triggering an update.
+ * A batchable is a store that subscribes to multiple stores and selectively notifies subscribers,
+ * i.e. batching the updates from all the stores.
  */
-export type BufferedUpdate = {
-  /**
-   * The key of the store that changed.
-   */
-  key: string
-
-  /**
-   * The context provided with the updated value, if any.
-   */
-  context?: string[] | boolean
-}
-
-/**
- * Updates to a certain store can be filtered by those accompanied by a specific context.
- */
-export type TrackedContext = {
-  /**
-   * The value of the context. e.g. the name of a form field that changed.
-   */
-  value: string
-
-  /**
-   * Whether the context must match exactly or if it can be a subset of the context or vice versa.
-   */
-  exact?: boolean
-}
-
-/**
- * Batchable.
- */
-export class Batchable<
+export class DumbBatchable<
   TStores extends Record<string, Writable<any, any>>,
   TValues extends StoresValues<TStores> = StoresValues<TStores>,
 > {
-  /**
-   * Stores to batch updates from.
-   */
-  stores: TStores
-
   /**
    * Whether to track all keys in the store. Shortcut for adding all the keys manually.
    */
@@ -94,20 +55,12 @@ export class Batchable<
    */
   unsubscribers: Unsubscriber[] = []
 
-  constructor(stores: TStores, keys = new Set<PropertyKey>(), all = false) {
-    this.stores = stores
-
+  constructor(value: TValues, keys = new Set<PropertyKey>(), all = false) {
     this.keys = keys
 
     this.all = all
 
-    this.writable = new Writable(
-      Object.entries(stores).reduce((acc, [key, store]) => {
-        acc[key as keyof typeof acc] = cloneObject(store.value)
-        return acc
-      }, {} as TValues),
-      this.startStopNotifier.bind(this),
-    )
+    this.writable = new Writable(value, this.startStopNotifier.bind(this))
   }
 
   /**
@@ -118,22 +71,7 @@ export class Batchable<
   }
 
   startStopNotifier() {
-    this.start()
     return this.stop.bind(this)
-  }
-
-  /**
-   * Runs after this store receives its first subscriber.
-   */
-  start() {
-    Object.entries(this.stores).forEach(([key, store], i) => {
-      const unsubscriber = store.subscribe(
-        this.subscriptionFunction.bind(this, i, key),
-        this.invalidateFunction.bind(this, i),
-        false,
-      )
-      this.unsubscribers.push(unsubscriber)
-    })
   }
 
   /**
@@ -143,24 +81,6 @@ export class Batchable<
     this.unsubscribers.forEach((unsubscriber) => unsubscriber())
     this.unsubscribers = []
     this.depth = 0
-  }
-
-  /**
-   * Every store is subscribed to, and notifications from all stores selectively trigger updates.
-   */
-  subscriptionFunction(i: number, key: string, value: any, context?: string[]) {
-    this.writable.value[key as keyof TValues] = value
-    this.pending &= ~(1 << i)
-    this.buffer.push({ key, context })
-    this.notify()
-  }
-
-  /**
-   * The invalidation function is called before the subscription function.
-   * If not entirely sequential, then pending will be desynchronized and updates will be prevented.
-   */
-  invalidateFunction(i: number) {
-    this.pending |= 1 << i
   }
 
   /**
@@ -289,5 +209,102 @@ export class Batchable<
 
     this.contexts[key] ??= []
     this.contexts[key]?.push(...nameArray.map((n) => ({ value: n, ...options })))
+  }
+}
+
+export type StoresValues<T> = T extends Writable<infer U>
+  ? U
+  : { [K in keyof T]: T[K] extends Writable<infer U> ? U : never }
+
+/**
+ * A buffered update contains information about the store that changed.
+ * The value is not needed because it's set directly without triggering an update.
+ */
+export type BufferedUpdate = {
+  /**
+   * The key of the store that changed.
+   */
+  key: string
+
+  /**
+   * The context provided with the updated value, if any.
+   */
+  context?: string[] | boolean
+}
+
+/**
+ * Updates to a certain store can be filtered by those accompanied by a specific context.
+ */
+export type TrackedContext = {
+  /**
+   * The value of the context. e.g. the name of a form field that changed.
+   */
+  value: string
+
+  /**
+   * Whether the context must match exactly or if it can be a subset of the context or vice versa.
+   */
+  exact?: boolean
+}
+
+/**
+ * A batchable is a store that subscribes to multiple stores and selectively notifies subscribers,
+ * i.e. batching the updates from all the stores.
+ */
+export class Batchable<
+  TStores extends Record<string, Writable<any, any>>,
+  TValues extends StoresValues<TStores> = StoresValues<TStores>,
+> extends DumbBatchable<TStores, TValues> {
+  /**
+   * Stores to batch updates from.
+   */
+  stores: TStores
+
+  constructor(stores: TStores, keys = new Set<PropertyKey>(), all = false) {
+    const value = Object.entries(stores).reduce((acc, [key, store]) => {
+      acc[key as keyof typeof acc] = cloneObject(store.value)
+      return acc
+    }, {} as TValues)
+
+    super(value, keys, all)
+
+    this.stores = stores
+  }
+
+  override startStopNotifier() {
+    this.start()
+    return this.stop.bind(this)
+  }
+
+  /**
+   * Runs after this store receives its first subscriber.
+   */
+  start() {
+    Object.entries(this.stores).forEach(([key, store], i) => {
+      const unsubscriber = store.subscribe(
+        this.subscriptionFunction.bind(this, i, key),
+        this.invalidateFunction.bind(this, i),
+        false,
+      )
+      this.unsubscribers.push(unsubscriber)
+    })
+  }
+
+  /**
+   * Every store is subscribed to, and notifications from all stores selectively trigger updates.
+   */
+  subscriptionFunction(i: number, key: string, value: any, context?: string[]) {
+    this.writable.value[key as keyof TValues] = value
+    this.pending &= ~(1 << i)
+    this.buffer.push({ key, context })
+    this.notify()
+  }
+
+  /**
+   * The invalidation function is called before the subscription function.
+   * If not entirely sequential, then pending will be desynchronized and updates will be prevented.
+   */
+  invalidateFunction(i: number) {
+    this.pending |= 1 << i
   }
 }
