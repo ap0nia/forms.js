@@ -1,43 +1,8 @@
 import { cloneObject } from '../utils/clone-object'
 
-import { DumbBatchable } from './dumb-batchable'
+import { DumbBatchable, type BufferedUpdate, type StoresValues } from './dumb-batchable'
 import type { Unsubscriber } from './types'
 import { Writable } from './writable'
-
-export type StoresValues<T> = T extends Writable<infer U>
-  ? U
-  : { [K in keyof T]: T[K] extends Writable<infer U> ? U : never }
-
-/**
- * A buffered update contains information about the store that changed.
- * The value is not needed because it's set directly without triggering an update.
- */
-export type BufferedUpdate = {
-  /**
-   * The key of the store that changed.
-   */
-  key: string
-
-  /**
-   * The context provided with the updated value, if any.
-   */
-  context?: string[] | boolean
-}
-
-/**
- * Updates to a certain store can be filtered by those accompanied by a specific context.
- */
-export type TrackedContext = {
-  /**
-   * The value of the context. e.g. the name of a form field that changed.
-   */
-  value: string
-
-  /**
-   * Whether the context must match exactly or if it can be a subset of the context or vice versa.
-   */
-  exact?: boolean
-}
 
 /**
  * A batchable is a store that subscribes to multiple stores and selectively notifies subscribers,
@@ -80,6 +45,7 @@ export class Batchable<
 
   override startStopNotifier() {
     this.start()
+
     return super.startStopNotifier()
   }
 
@@ -99,8 +65,10 @@ export class Batchable<
 
   override stop() {
     this.unsubscribers.forEach((unsubscriber) => unsubscriber())
+
     this.unsubscribers = []
-    super.stop()
+
+    return super.stop()
   }
 
   /**
@@ -108,9 +76,12 @@ export class Batchable<
    */
   subscriptionFunction(i: number, key: string, value: any, context?: string[]) {
     this.writable.value[key as keyof TValues] = value
+
     this.pending &= ~(1 << i)
+
     this.buffer.push({ key, context })
-    this.notify(this.buffer)
+
+    super.notify(this.buffer)
   }
 
   /**
@@ -125,7 +96,7 @@ export class Batchable<
    * Run a function and flush the buffer after it completes.
    */
   transaction(fn: () => unknown): void {
-    this.open()
+    super.open()
 
     fn()
 
@@ -135,6 +106,6 @@ export class Batchable<
      */
     const force = this.keyChangedInBuffer(this.buffer)
 
-    this.flush(this.buffer, force)
+    super.flush(this.buffer, force)
   }
 }
