@@ -89,7 +89,7 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
    *
    * @remarks It's also called once during the initial subscription.
    */
-  public subscribe(run: Subscriber<T, TContext>, invalidate = noop): Noop {
+  public subscribe(run: Subscriber<T, TContext>, invalidate = noop, runFirst = true): Noop {
     const subscriber: SubscribeInvalidateTuple<T, TContext> = [run, invalidate]
 
     this.subscribers.add(subscriber)
@@ -98,7 +98,9 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
       this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
     }
 
-    run(this.value, undefined)
+    if (runFirst) {
+      run(this.value, undefined)
+    }
 
     return this.unsubscribe.bind(this, subscriber)
   }

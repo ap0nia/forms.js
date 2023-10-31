@@ -127,8 +127,8 @@ export class Batchable<
   /**
    * Subscribe.
    */
-  subscribe(run: Subscriber<TValues>, invalidate = noop) {
-    return this.writable.subscribe(run, invalidate)
+  subscribe(run: Subscriber<TValues>, invalidate = noop, runFirst = true) {
+    return this.writable.subscribe(run, invalidate, runFirst)
   }
 
   /**
