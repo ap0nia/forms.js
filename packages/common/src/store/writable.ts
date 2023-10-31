@@ -62,14 +62,10 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
 
     this.value = value
 
-    if (this.stop == null) {
-      return
-    }
-
     const shouldRunQueue = !Writable.subscriberQueue.length
 
     for (const [subscribe, invalidate] of this.subscribers) {
-      invalidate()
+      invalidate?.()
       Writable.subscriberQueue.push([subscribe, value, context])
     }
 
@@ -86,17 +82,15 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
 
   /**
    * Subscribe to the store by providing a function that's called whenever the store's value changes.
-   *
-   * @remarks It's also called once during the initial subscription.
    */
-  public subscribe(run: Subscriber<T, TContext>, invalidate = noop, runFirst = true): Noop {
+  public subscribe(run: Subscriber<T, TContext>, invalidate?: Noop, runFirst = true): Noop {
     const subscriber: SubscribeInvalidateTuple<T, TContext> = [run, invalidate]
 
-    this.subscribers.add(subscriber)
-
-    if (this.subscribers.size === 1) {
+    if (this.subscribers.size === 0) {
       this.stop = this.start(this.set.bind(this), this.update.bind(this)) ?? noop
     }
+
+    this.subscribers.add(subscriber)
 
     if (runFirst) {
       run(this.value, undefined)
@@ -123,5 +117,5 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
  */
 export type SubscribeInvalidateTuple<T, TContext = undefined> = [
   Subscriber<T, TContext>,
-  Invalidator<T>,
+  Invalidator<T>?,
 ]
