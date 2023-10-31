@@ -130,10 +130,10 @@ export function useController<
     if (shouldUnregisterField) {
       const value = structuredClone(safeGet(formControl.options.defaultValues, props.name))
 
-      deepSet(formControl.state.defaultValues.value, props.name, value)
+      deepSet(formControl.state.value.defaultValues, props.name, value)
 
-      if (safeGet(formControl.state.values.value, props.name)) {
-        deepSet(formControl.state.values.value, props.name, value)
+      if (safeGet(formControl.state.value.values, props.name)) {
+        deepSet(formControl.state.value.values, props.name, value)
       }
     }
 
@@ -179,7 +179,7 @@ export function useController<
     ) as ControllerFieldState
   }, [formState, props.name])
 
-  const disabled = props.disabled || formControl.state.disabled.value
+  const disabled = props.disabled || formControl.state.value.disabled
 
   return {
     field: {

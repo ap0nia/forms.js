@@ -125,6 +125,13 @@ export class Batchable<
   }
 
   /**
+   * Proxy over the writable store's value.
+   */
+  get value() {
+    return this.writable.value
+  }
+
+  /**
    * Subscribe.
    */
   subscribe(run: Subscriber<TValues>, invalidate = noop, runFirst = true) {

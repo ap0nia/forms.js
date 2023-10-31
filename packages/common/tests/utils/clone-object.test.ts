@@ -76,4 +76,14 @@ describe('cloneObject', () => {
 
     expect(clone.a.b.c[0]).toBe(object.a.b.c[0])
   })
+
+  test('does not recur on HTML elements', () => {
+    const element = document.createElement('div')
+
+    const input = { element }
+
+    const clone = cloneObject(input)
+
+    expect(clone.element).toBe(input.element)
+  })
 })

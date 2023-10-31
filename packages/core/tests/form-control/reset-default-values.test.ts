@@ -14,11 +14,11 @@ describe('FormControl', () => {
         baz: 'qux',
       }
 
-      formControl.state.defaultValues.set({ ...values })
+      formControl.stores.defaultValues.set({ ...values })
 
       await formControl.resolveDefaultValues(null as any)
 
-      expect(formControl.state.defaultValues.value).toEqual(values)
+      expect(formControl.stores.defaultValues.value).toEqual(values)
     })
 
     test('does not change default values if provided function resolves to null', async () => {
@@ -30,24 +30,24 @@ describe('FormControl', () => {
         baz: 'qux',
       }
 
-      formControl.state.defaultValues.set({ ...values })
+      formControl.stores.defaultValues.set({ ...values })
 
       await formControl.resolveDefaultValues(() => null as any)
 
-      expect(formControl.state.defaultValues.value).toEqual(values)
+      expect(formControl.stores.defaultValues.value).toEqual(values)
     })
 
     test('sets isLoading to true if provided function resolves to a promise', async () => {
       const formControl = new FormControl()
 
       // Subscribe to derived state to activate it.
-      formControl.batchedState.subscribe(() => {})
-      formControl.batchedState.proxy.isLoading
+      formControl.state.subscribe(() => {})
+      formControl.state.proxy.isLoading
 
       formControl.resolveDefaultValues(async () => ({}))
 
-      expect(formControl.state.isLoading.value).toBeTruthy()
-      expect(formControl.batchedState.writable.value.isLoading).toBeTruthy()
+      expect(formControl.stores.isLoading.value).toBeTruthy()
+      expect(formControl.state.writable.value.isLoading).toBeTruthy()
     })
 
     test('sets default values to empty object if provided values is a promise that resolves to null', async () => {
@@ -55,7 +55,7 @@ describe('FormControl', () => {
 
       await formControl.resolveDefaultValues(Promise.resolve(null as any))
 
-      expect(formControl.state.defaultValues.value).toEqual({})
+      expect(formControl.stores.defaultValues.value).toEqual({})
     })
 
     describe('values and default values are the same if resetValues is true', () => {
@@ -64,8 +64,8 @@ describe('FormControl', () => {
 
         await formControl.resolveDefaultValues(Promise.resolve(null as any), true)
 
-        expect(formControl.state.defaultValues.value).toEqual({})
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.stores.defaultValues.value).toEqual({})
+        expect(formControl.stores.values.value).toEqual({})
       })
 
       test('sets both to same provided values', async () => {
@@ -79,8 +79,8 @@ describe('FormControl', () => {
 
         await formControl.resolveDefaultValues({ ...values }, true)
 
-        expect(formControl.state.defaultValues.value).toEqual(values)
-        expect(formControl.state.values.value).toEqual(values)
+        expect(formControl.stores.defaultValues.value).toEqual(values)
+        expect(formControl.stores.values.value).toEqual(values)
       })
 
       test('sets both to same resolved function result', async () => {
@@ -94,8 +94,8 @@ describe('FormControl', () => {
 
         await formControl.resolveDefaultValues(() => values, true)
 
-        expect(formControl.state.defaultValues.value).toEqual(values)
-        expect(formControl.state.values.value).toEqual(values)
+        expect(formControl.stores.defaultValues.value).toEqual(values)
+        expect(formControl.stores.values.value).toEqual(values)
       })
     })
 
@@ -103,14 +103,14 @@ describe('FormControl', () => {
       const formControl = new FormControl()
 
       // Subscribe to derived state to activate it.
-      formControl.batchedState.subscribe(() => {})
-      formControl.batchedState.proxy.isLoading
+      formControl.state.subscribe(() => {})
+      formControl.state.proxy.isLoading
 
       formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.state.isLoading.value).toBeTruthy()
+      expect(formControl.stores.isLoading.value).toBeTruthy()
 
-      await waitFor(() => expect(formControl.batchedState.writable.value.isLoading).toBeFalsy())
+      await waitFor(() => expect(formControl.state.writable.value.isLoading).toBeFalsy())
     })
 
     test('sets derived state twice if tracking isLoading and promise is provided', async () => {
@@ -119,16 +119,16 @@ describe('FormControl', () => {
       const fn = vi.fn()
 
       // Subscribe to derived state to activate it.
-      formControl.batchedState.subscribe(fn)
-      formControl.batchedState.proxy.isLoading
+      formControl.state.subscribe(fn)
+      formControl.state.proxy.isLoading
 
       fn.mockClear()
 
       formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.batchedState.writable.value.isLoading).toBeTruthy()
+      expect(formControl.state.writable.value.isLoading).toBeTruthy()
 
-      await waitFor(() => expect(formControl.batchedState.writable.value.isLoading).toBeFalsy())
+      await waitFor(() => expect(formControl.state.writable.value.isLoading).toBeFalsy())
 
       expect(fn).toHaveBeenCalledTimes(2)
     })
@@ -138,15 +138,15 @@ describe('FormControl', () => {
 
       const fn = vi.fn()
 
-      formControl.state.isLoading.subscribe(fn)
+      formControl.stores.isLoading.subscribe(fn)
 
       fn.mockClear()
 
       formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.state.isLoading.value).toBeTruthy()
+      expect(formControl.stores.isLoading.value).toBeTruthy()
 
-      await waitFor(() => expect(formControl.state.isLoading.value).toBeFalsy())
+      await waitFor(() => expect(formControl.stores.isLoading.value).toBeFalsy())
 
       expect(fn).toHaveBeenCalledTimes(2)
     })

@@ -19,16 +19,16 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
 
   const control = props?.control ?? context.control
 
-  const previousDerivedState = useRef<Batchable<Control<T>['state']>>()
+  const previousDerivedState = useRef<Batchable<Control<T>['stores']>>()
 
   const derivedState = useMemo(() => {
     if (previousDerivedState.current) {
-      control.batchedState.children.delete(previousDerivedState.current)
+      control.state.children.delete(previousDerivedState.current)
     }
 
-    const derived = new Batchable(control.state, new Set())
+    const derived = new Batchable(control.stores, new Set())
 
-    control.batchedState.children.add(derived)
+    control.state.children.add(derived)
 
     previousDerivedState.current = derived
 
@@ -39,7 +39,7 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
 
   useEffect(() => {
     return () => {
-      control.batchedState.children.delete(derivedState)
+      control.state.children.delete(derivedState)
     }
   }, [control, derivedState])
 
@@ -71,7 +71,7 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
   const values = control.mounted
     ? derivedState.proxy.values
     : props?.defaultValue == null
-    ? control.state.defaultValues.value
+    ? control.state.value.defaultValues
     : typeof props?.name === 'string'
     ? { [props.name]: props?.defaultValue }
     : props?.defaultValue

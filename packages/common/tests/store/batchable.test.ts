@@ -514,4 +514,10 @@ describe('Batchable', () => {
       })
     })
   })
+
+  test('returns writable value when getter is accessed', () => {
+    const { batchable } = createStores()
+
+    expect(batchable.value).toBe(batchable.writable.value)
+  })
 })

@@ -34,7 +34,7 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     test('only sets errors for the names specified', () => {
@@ -62,14 +62,14 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     test('unsets errors for names that do not have an error', () => {
       const formControl = new FormControl()
 
       // The form state has existing errors.
-      formControl.state.errors.set({
+      formControl.stores.errors.set({
         a: {
           type: 'validate',
         },
@@ -93,7 +93,7 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     test('adds field array errors to a root property', () => {
@@ -123,7 +123,7 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
   })
 })

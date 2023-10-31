@@ -8,8 +8,8 @@ describe('FormControl', () => {
       test('sets values and default values to empty object if no values provided', () => {
         const formControl = new FormControl()
 
-        expect(formControl.state.values.value).toEqual({})
-        expect(formControl.state.defaultValues.value).toEqual({})
+        expect(formControl.stores.values.value).toEqual({})
+        expect(formControl.stores.defaultValues.value).toEqual({})
       })
 
       test('sets them to provided values', () => {
@@ -21,8 +21,8 @@ describe('FormControl', () => {
 
         const formControl = new FormControl({ defaultValues })
 
-        expect(formControl.state.values.value).toEqual(defaultValues)
-        expect(formControl.state.defaultValues.value).toEqual(defaultValues)
+        expect(formControl.stores.values.value).toEqual(defaultValues)
+        expect(formControl.stores.defaultValues.value).toEqual(defaultValues)
       })
 
       test('sets values and default values to the result of the provided function', () => {
@@ -34,8 +34,8 @@ describe('FormControl', () => {
 
         const formControl = new FormControl({ defaultValues: () => defaultValues })
 
-        expect(formControl.state.values.value).toEqual(defaultValues)
-        expect(formControl.state.defaultValues.value).toEqual(defaultValues)
+        expect(formControl.stores.values.value).toEqual(defaultValues)
+        expect(formControl.stores.defaultValues.value).toEqual(defaultValues)
       })
 
       test('sets values to empty object and default values to provided values if shouldUnregister is true', () => {
@@ -47,8 +47,8 @@ describe('FormControl', () => {
 
         const formControl = new FormControl({ shouldUnregister: true, values })
 
-        expect(formControl.state.values.value).toEqual({})
-        expect(formControl.state.defaultValues.value).toEqual(values)
+        expect(formControl.stores.values.value).toEqual({})
+        expect(formControl.stores.defaultValues.value).toEqual(values)
       })
     })
 
@@ -62,35 +62,35 @@ describe('FormControl', () => {
 
         const formControl = new FormControl({ defaultValues })
 
-        expect(formControl.state.isLoading.value).toBeTruthy()
-        expect(formControl.state.values.value).toEqual({})
-        expect(formControl.state.defaultValues.value).toEqual({})
+        expect(formControl.stores.isLoading.value).toBeTruthy()
+        expect(formControl.stores.values.value).toEqual({})
+        expect(formControl.stores.defaultValues.value).toEqual({})
       })
 
       test('sets submitCount to 0', () => {
         const formControl = new FormControl()
 
-        expect(formControl.state.submitCount.value).toEqual(0)
+        expect(formControl.stores.submitCount.value).toEqual(0)
       })
 
       test('sets all the boolean writable stores to false', () => {
         const formControl = new FormControl()
 
-        expect(formControl.state.isDirty.value).toBeFalsy()
-        expect(formControl.state.isValidating.value).toBeFalsy()
-        expect(formControl.state.isSubmitted.value).toBeFalsy()
-        expect(formControl.state.isSubmitting.value).toBeFalsy()
-        expect(formControl.state.isSubmitSuccessful.value).toBeFalsy()
-        expect(formControl.state.isValidating.value).toBeFalsy()
-        expect(formControl.state.isValid.value).toBeFalsy()
+        expect(formControl.stores.isDirty.value).toBeFalsy()
+        expect(formControl.stores.isValidating.value).toBeFalsy()
+        expect(formControl.stores.isSubmitted.value).toBeFalsy()
+        expect(formControl.stores.isSubmitting.value).toBeFalsy()
+        expect(formControl.stores.isSubmitSuccessful.value).toBeFalsy()
+        expect(formControl.stores.isValidating.value).toBeFalsy()
+        expect(formControl.stores.isValid.value).toBeFalsy()
       })
 
       test('sets all the object writable stores to empty objects', () => {
         const formControl = new FormControl()
 
-        expect(formControl.state.errors.value).toEqual({})
-        expect(formControl.state.touchedFields.value).toEqual({})
-        expect(formControl.state.dirtyFields.value).toEqual({})
+        expect(formControl.stores.errors.value).toEqual({})
+        expect(formControl.stores.touchedFields.value).toEqual({})
+        expect(formControl.stores.dirtyFields.value).toEqual({})
       })
     })
 

@@ -87,14 +87,14 @@ export class FormControl<
    *
    * This is not optimized for notifications; it may change multiple times in a function.
    */
-  state: { [K in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[K]> }
+  stores: { [K in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[K]> }
 
   /**
-   * Buffers updates to {@link state} until it's flushed.
+   * Buffers updates to {@link stores} until it's flushed.
    *
    * This is optimized for notifications and generally flushes 1-2 times per function.
    */
-  batchedState: Batchable<this['state']>
+  state: Batchable<this['stores']>
 
   /**
    * Registered fields.
@@ -156,7 +156,7 @@ export class FormControl<
       (!isLoading && structuredClone(initialDefaultValues)) ||
       structuredClone(options?.values ?? {})
 
-    this.state = {
+    this.stores = {
       submitCount: new Writable(0),
       isDirty: new Writable(false),
       isLoading: new Writable(isLoading),
@@ -173,7 +173,7 @@ export class FormControl<
       disabled: new Writable(Boolean(options?.disabled)),
     }
 
-    this.batchedState = new Batchable(this.state, new Set())
+    this.state = new Batchable(this.stores, new Set())
 
     if (isLoading) {
       this.resolveDefaultValues(initialDefaultValues, true)
@@ -188,16 +188,16 @@ export class FormControl<
    * Evaluate whether the current form values are different from the default values.
    */
   getDirty(): boolean {
-    return !deepEqual(this.state.defaultValues.value, this.state.values.value)
+    return !deepEqual(this.stores.defaultValues.value, this.stores.values.value)
   }
 
   /**
    * Get the current state of a field.
    */
   getFieldState(name: string, formState?: FormControlState<TValues>): FieldState {
-    const errors = formState?.errors ?? this.state.errors.value
-    const dirtyFields = formState?.dirtyFields ?? this.state.dirtyFields.value
-    const touchedFields = formState?.touchedFields ?? this.state.touchedFields.value
+    const errors = formState?.errors ?? this.stores.errors.value
+    const dirtyFields = formState?.dirtyFields ?? this.stores.dirtyFields.value
+    const touchedFields = formState?.touchedFields ?? this.stores.touchedFields.value
 
     return {
       invalid: Boolean(safeGet(errors, name)),
@@ -234,21 +234,21 @@ export class FormControl<
    */
   getValues(...args: any[]): any {
     const names = args.length > 1 ? args : args[0]
-    return safeGetMultiple(this.state.values.value, names)
+    return safeGetMultiple(this.stores.values.value, names)
   }
 
   /**
-   * Makes {@link batchedState} subscribe to all updates to values for all field names.
+   * Makes {@link state} subscribe to all updates to values for all field names.
    */
   watch(): TValues
 
   /**
-   * Subscribe to all updates to {@link batchedState}.
+   * Subscribe to all updates to {@link state}.
    */
   watch(callback: (data: any, context: { name?: string; type?: string }) => void): () => void
 
   /**
-   * Makes {@link batchedState} subscribe to all updates to values for a specific field name.
+   * Makes {@link state} subscribe to all updates to values for a specific field name.
    */
   watch<T extends TParsedForm['keys']>(
     name: T,
@@ -257,7 +257,7 @@ export class FormControl<
   ): TParsedForm['values'][T]
 
   /**
-   * Makes {@link batchedState} subscribe to all updates to values for multiple field names.
+   * Makes {@link state} subscribe to all updates to values for multiple field names.
    */
   watch<T extends TParsedForm['keys'][]>(
     name: T,
@@ -269,12 +269,12 @@ export class FormControl<
    * Implementation.
    *
    * Although this function can't re-run itself and isn't a subscription,
-   * this works in React because {@link batchedState} will initialize the re-render,
+   * this works in React because {@link state} will initialize the re-render,
    * causing the component to re-run this function and evaluate new watched values.
    */
   watch(...args: any[]): any {
     if (typeof args[0] === 'function') {
-      return this.batchedState.subscribe((state, context) => {
+      return this.state.subscribe((state, context) => {
         return args[0](state, context ?? this.options.context)
       })
     }
@@ -284,15 +284,15 @@ export class FormControl<
     const nameArray = Array.isArray(name) ? name : name ? [name] : []
 
     if (nameArray.length > 0) {
-      this.batchedState.track('values', nameArray, options)
+      this.state.track('values', nameArray, options)
     } else {
-      this.batchedState.keys?.add('values')
+      this.state.keys?.add('values')
     }
 
     const values = this.mounted
-      ? this.state.values.value
+      ? this.stores.values.value
       : defaultValue == null
-      ? this.state.defaultValues.value
+      ? this.stores.defaultValues.value
       : typeof name === 'string'
       ? { [name]: defaultValue }
       : defaultValue
@@ -316,7 +316,7 @@ export class FormControl<
     element: InputElement,
     options?: RegisterOptions<TValues, T>,
   ): void {
-    this.batchedState.open()
+    this.state.open()
 
     const field = this.registerField(name, options)
 
@@ -325,10 +325,10 @@ export class FormControl<
     const newField = mergeElementWithField(name, field, element)
 
     const defaultValue =
-      safeGet(this.state.values.value, name) ?? safeGet(this.state.defaultValues.value, name)
+      safeGet(this.stores.values.value, name) ?? safeGet(this.stores.defaultValues.value, name)
 
     if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      this.state.values.update((values) => {
+      this.stores.values.update((values) => {
         deepSet(values, name, getFieldValue(newField._f))
         return values
       })
@@ -340,7 +340,7 @@ export class FormControl<
 
     this.updateValid(undefined, fieldNames)
 
-    this.batchedState.close()
+    this.state.close()
   }
 
   /**
@@ -350,7 +350,7 @@ export class FormControl<
     name: Extract<T, string>,
     options?: RegisterOptions<TValues, T>,
   ) {
-    this.batchedState.open()
+    this.state.open()
 
     const existingField: Field | undefined = safeGet(this.fields, name)
 
@@ -372,17 +372,17 @@ export class FormControl<
       this.updateDisabledField({ field, disabled: options?.disabled, name })
     } else {
       const defaultValue =
-        safeGet(this.state.values.value, name) ??
+        safeGet(this.stores.values.value, name) ??
         options?.value ??
-        safeGet(this.state.defaultValues.value, name)
+        safeGet(this.stores.defaultValues.value, name)
 
-      this.state.values.update((values) => {
+      this.stores.values.update((values) => {
         deepSet(values, name, defaultValue)
         return values
       })
     }
 
-    this.batchedState.close()
+    this.state.close()
 
     return field
   }
@@ -414,7 +414,7 @@ export class FormControl<
     name?: T | T[],
     options?: UnregisterOptions,
   ): void {
-    this.batchedState.open()
+    this.state.open()
 
     const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
 
@@ -425,37 +425,37 @@ export class FormControl<
       if (!options?.keepValue) {
         deepUnset(this.fields, fieldName)
 
-        this.state.values.update((values) => {
+        this.stores.values.update((values) => {
           deepUnset(values, fieldName)
           return values
         }, fieldNames)
       }
 
       if (!options?.keepError) {
-        this.state.errors.update((errors) => {
+        this.stores.errors.update((errors) => {
           deepUnset(errors, fieldName)
           return errors
         }, fieldNames)
       }
 
       if (!options?.keepDirty) {
-        this.state.dirtyFields.update((dirtyFields) => {
+        this.stores.dirtyFields.update((dirtyFields) => {
           deepUnset(dirtyFields, fieldName)
           return dirtyFields
         }, fieldNames)
 
-        this.state.isDirty.set(this.getDirty(), fieldNames)
+        this.stores.isDirty.set(this.getDirty(), fieldNames)
       }
 
       if (!options?.keepTouched) {
-        this.state.touchedFields.update((touchedFields) => {
+        this.stores.touchedFields.update((touchedFields) => {
           deepUnset(touchedFields, fieldName)
           return touchedFields
         }, fieldNames)
       }
 
       if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
-        this.state.defaultValues.update((defaultValues) => {
+        this.stores.defaultValues.update((defaultValues) => {
           deepUnset(defaultValues, fieldName)
           return defaultValues
         }, fieldNames)
@@ -467,14 +467,14 @@ export class FormControl<
     }
 
     // Flush the buffer and force an update.
-    this.batchedState.flush(true)
+    this.state.flush(true)
   }
 
   /**
    * Handle a change event.
    */
   async handleChange(event: Event): Promise<void> {
-    this.batchedState.open()
+    this.state.open()
 
     const name = (event.target as HTMLInputElement)?.name
 
@@ -486,7 +486,7 @@ export class FormControl<
 
     const fieldValue = getCurrentFieldValue(event, field)
 
-    this.state.values.update(
+    this.stores.values.update(
       (values) => {
         deepSet(values, name, fieldValue)
         return values
@@ -511,7 +511,7 @@ export class FormControl<
     const nothingToValidate =
       !hasValidation(field._f) &&
       !this.options.resolver &&
-      !safeGet(this.state.errors.value, name) &&
+      !safeGet(this.stores.errors.value, name) &&
       !field._f.deps
 
     const shouldSkipValidation =
@@ -519,23 +519,23 @@ export class FormControl<
 
     if (shouldSkipValidation) {
       this.updateValid()
-      this.batchedState.flush()
+      this.state.flush()
       return
     }
 
     if (!isBlurEvent) {
-      this.batchedState.flush()
-      this.batchedState.open()
+      this.state.flush()
+      this.state.open()
     }
 
-    this.batchedState.transaction(() => {
-      this.state.isValidating.set(true)
+    this.state.transaction(() => {
+      this.stores.isValidating.set(true)
     })
 
     const result = await this.validate(name)
 
     if (result.resolverResult) {
-      const previousError = lookupError(this.state.errors.value, this.fields, name)
+      const previousError = lookupError(this.stores.errors.value, this.fields, name)
 
       const currentError = lookupError(
         result.resolverResult.errors ?? {},
@@ -543,7 +543,7 @@ export class FormControl<
         previousError.name,
       )
 
-      this.state.errors.update((errors) => {
+      this.stores.errors.update((errors) => {
         if (currentError.error) {
           deepSet(errors, currentError.name, currentError.error)
         } else {
@@ -555,14 +555,14 @@ export class FormControl<
       if (field._f.deps) {
         await this.trigger(field._f.deps as any)
       } else {
-        this.state.isValid.set(result.isValid, [name])
+        this.stores.isValid.set(result.isValid, [name])
       }
     }
 
     if (result.validationResult) {
       const isFieldValueUpdated =
         Number.isNaN(fieldValue) ||
-        (fieldValue === safeGet(this.state.values.value, name) ?? fieldValue)
+        (fieldValue === safeGet(this.stores.values.value, name) ?? fieldValue)
 
       if (!result.isValid) {
         const error = result.validationResult.errors[name]
@@ -574,7 +574,7 @@ export class FormControl<
             this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
           }
         } else {
-          this.state.errors.update(
+          this.stores.errors.update(
             (errors) => {
               deepSet(errors, name, error)
               return errors
@@ -589,13 +589,13 @@ export class FormControl<
       if (isFieldValueUpdated && field._f.deps) {
         await this.trigger(field._f.deps as any)
       } else {
-        this.state.isValid.set(result.isValid, [name])
+        this.stores.isValid.set(result.isValid, [name])
       }
     }
 
-    this.state.isValidating.set(false, [name])
+    this.stores.isValidating.set(false, [name])
 
-    this.batchedState.flush()
+    this.state.flush()
   }
 
   /**
@@ -608,17 +608,17 @@ export class FormControl<
     onInvalid?: SubmitErrorHandler<TValues>,
   ): HandlerCallback {
     return async (event) => {
-      this.batchedState.open()
+      this.state.open()
 
       event?.preventDefault?.()
 
-      this.state.isSubmitting.set(true)
+      this.stores.isSubmitting.set(true)
 
       const { isValid, resolverResult, validationResult } = await this.validate()
 
       const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
 
-      this.state.errors.update((errors) => {
+      this.stores.errors.update((errors) => {
         deepUnset(errors, 'root')
         return errors
       }, true)
@@ -626,7 +626,7 @@ export class FormControl<
       this.mergeErrors(errors)
 
       if (isValid) {
-        const data = structuredClone(resolverResult?.values ?? this.state.values.value) as any
+        const data = structuredClone(resolverResult?.values ?? this.stores.values.value) as any
         await onValid?.(data, event)
       } else {
         await onInvalid?.(errors, event)
@@ -634,12 +634,12 @@ export class FormControl<
         setTimeout(this.focusError.bind(this))
       }
 
-      this.state.isSubmitted.set(true, true)
-      this.state.isSubmitting.set(false, true)
-      this.state.isSubmitSuccessful.set(isEmptyObject(this.state.errors.value), true)
-      this.state.submitCount.update((count) => count + 1, true)
+      this.stores.isSubmitted.set(true, true)
+      this.stores.isSubmitting.set(false, true)
+      this.stores.isSubmitSuccessful.set(isEmptyObject(this.stores.errors.value), true)
+      this.stores.submitCount.update((count) => count + 1, true)
 
-      this.batchedState.flush()
+      this.state.flush()
     }
   }
 
@@ -652,7 +652,7 @@ export class FormControl<
   ): Promise<boolean> {
     const fieldNames = toStringArray(name)
 
-    this.state.isValidating.set(true, fieldNames)
+    this.stores.isValidating.set(true, fieldNames)
 
     const result = await this.validate(name as any)
 
@@ -664,21 +664,21 @@ export class FormControl<
       this.mergeErrors(result.resolverResult.errors)
     }
 
-    this.batchedState.open()
+    this.state.open()
 
-    this.state.isValid.set(result.isValid, fieldNames)
+    this.stores.isValid.set(result.isValid, fieldNames)
 
-    this.state.isValidating.set(false, fieldNames)
+    this.stores.isValidating.set(false, fieldNames)
 
     if (options?.shouldFocus && !result.isValid) {
       focusFieldBy(
         this.fields,
-        (key?: string) => key && safeGet(this.state.errors.value, key),
+        (key?: string) => key && safeGet(this.stores.errors.value, key),
         name ? fieldNames : this.names.mount,
       )
     }
 
-    this.batchedState.flush()
+    this.state.flush()
 
     return result.isValid
   }
@@ -695,7 +695,7 @@ export class FormControl<
     value: TParsedForm['values'][T],
     options?: SetValueOptions,
   ): void {
-    this.batchedState.open()
+    this.state.open()
 
     const field: FieldRecord[T] = safeGet(this.fields, name)
 
@@ -703,7 +703,7 @@ export class FormControl<
 
     const clonedValue = structuredClone(value)
 
-    this.state.values.update((values) => {
+    this.stores.values.update((values) => {
       deepSet(values, name, clonedValue)
       return values
     })
@@ -717,24 +717,24 @@ export class FormControl<
         this.setFieldValue(name, clonedValue, options)
       }
     } else if (options?.shouldDirty) {
-      this.state.dirtyFields.set(
-        getDirtyFields(this.state.defaultValues.value, this.state.values.value),
+      this.stores.dirtyFields.set(
+        getDirtyFields(this.stores.defaultValues.value, this.stores.values.value),
       )
-      this.state.isDirty.set(this.getDirty())
+      this.stores.isDirty.set(this.getDirty())
     }
 
-    this.state.values.update((values) => ({ ...values }), fieldNames)
+    this.stores.values.update((values) => ({ ...values }), fieldNames)
 
-    this.valueListeners.forEach((listener) => listener(this.state.values.value))
+    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
 
-    this.batchedState.flush()
+    this.state.flush()
   }
 
   /**
    * Set multiple field values, i.e. for a field array.
    */
   setValues(name: string, value: any, options?: SetValueOptions) {
-    this.batchedState.open()
+    this.state.open()
 
     for (const fieldKey in value) {
       const fieldValue = value[fieldKey]
@@ -752,7 +752,7 @@ export class FormControl<
       }
     }
 
-    this.batchedState.flush()
+    this.state.flush()
   }
 
   /**
@@ -760,8 +760,8 @@ export class FormControl<
    */
   setDirtyValues(values: unknown): void {
     for (const fieldName of this.names.mount) {
-      if (safeGet(this.state.dirtyFields.value, fieldName)) {
-        deepSet(values, fieldName, safeGet(this.state.values.value, fieldName))
+      if (safeGet(this.stores.dirtyFields.value, fieldName)) {
+        deepSet(values, fieldName, safeGet(this.stores.values.value, fieldName))
       } else {
         this.setValue(fieldName as any, safeGet(values, fieldName))
       }
@@ -786,7 +786,7 @@ export class FormControl<
     updateFieldReference(fieldReference, fieldValue)
 
     if (!fieldReference.disabled) {
-      deepSet(this.state.values.value, name, getFieldValueAs(value, fieldReference))
+      deepSet(this.stores.values.value, name, getFieldValueAs(value, fieldReference))
     }
 
     this.touch(name, fieldValue, options)
@@ -817,10 +817,10 @@ export class FormControl<
    * Update a field's "touched" property.
    */
   updateTouchedField(name: string): boolean {
-    const previousIsTouched = safeGet(this.state.touchedFields.value, name)
+    const previousIsTouched = safeGet(this.stores.touchedFields.value, name)
 
     if (!previousIsTouched) {
-      this.state.touchedFields.update(
+      this.stores.touchedFields.update(
         (touchedFields) => {
           deepSet(touchedFields, name, true)
           return touchedFields
@@ -842,10 +842,10 @@ export class FormControl<
 
     const value = options.disabled
       ? undefined
-      : safeGet(this.state.values.value, options.name) ??
+      : safeGet(this.stores.values.value, options.name) ??
         getFieldValue(options.field?._f ?? safeGet(options.fields, options.name)._f)
 
-    this.state.values.update(
+    this.stores.values.update(
       (values) => {
         deepSet(values, options.name, value)
         return values
@@ -860,14 +860,14 @@ export class FormControl<
    * Update a field's dirty status.
    */
   updateDirtyField(name: string, value?: unknown): boolean {
-    const defaultValue = safeGet(this.state.defaultValues.value, name)
+    const defaultValue = safeGet(this.stores.defaultValues.value, name)
 
     const currentIsDirty = !deepEqual(defaultValue, value)
 
-    const previousIsDirty = Boolean(safeGet(this.state.dirtyFields.value, name))
+    const previousIsDirty = Boolean(safeGet(this.stores.dirtyFields.value, name))
 
     if (previousIsDirty && !currentIsDirty) {
-      this.state.dirtyFields.update(
+      this.stores.dirtyFields.update(
         (dirtyFields) => {
           deepUnset(dirtyFields, name)
           return dirtyFields
@@ -877,7 +877,7 @@ export class FormControl<
     }
 
     if (!previousIsDirty && currentIsDirty) {
-      this.state.dirtyFields.update(
+      this.stores.dirtyFields.update(
         (dirtyFields) => {
           deepSet(dirtyFields, name, true)
           return dirtyFields
@@ -887,7 +887,7 @@ export class FormControl<
     }
 
     if (this.isTracking('isDirty', [name])) {
-      this.state.isDirty.set(this.getDirty(), [name])
+      this.stores.isDirty.set(this.getDirty(), [name])
     }
 
     return currentIsDirty !== previousIsDirty
@@ -904,7 +904,7 @@ export class FormControl<
     if (options?.shouldFocus || (options == null && this.options.shouldFocusError)) {
       focusFieldBy(
         this.fields,
-        (key) => key && safeGet(this.state.errors.value, key),
+        (key) => key && safeGet(this.stores.errors.value, key),
         this.names.mount,
       )
     }
@@ -918,24 +918,24 @@ export class FormControl<
     error?: ErrorOption,
     options?: TriggerOptions,
   ): void {
-    this.batchedState.open()
+    this.state.open()
 
     const field: Field | undefined = safeGet(this.fields, name)
 
     const fieldNames = toStringArray(name)
 
-    this.state.errors.update((errors) => {
+    this.stores.errors.update((errors) => {
       deepSet(errors, name, { ...error, ref: field?._f?.ref })
       return errors
     }, fieldNames)
 
-    this.state.isValid.set(false, fieldNames)
+    this.stores.isValid.set(false, fieldNames)
 
     if (options?.shouldFocus) {
       field?._f?.ref?.focus?.()
     }
 
-    this.batchedState.flush()
+    this.state.flush()
   }
 
   /**
@@ -944,7 +944,7 @@ export class FormControl<
   mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
     const namesToMerge = names ?? Object.keys(errors)
 
-    this.state.errors.update((currentErrors) => {
+    this.stores.errors.update((currentErrors) => {
       const newErrors = names?.length ? currentErrors : {}
 
       namesToMerge.forEach((name) => {
@@ -976,14 +976,14 @@ export class FormControl<
    */
   clearErrors(name?: string | string[]): void {
     if (name == null) {
-      this.state.errors.set({})
+      this.stores.errors.set({})
       return
     }
 
     const nameArray = toStringArray(name)
 
-    this.state.errors.update((errors) => {
-      nameArray?.forEach((name) => deepUnset(this.state.errors.value, name))
+    this.stores.errors.update((errors) => {
+      nameArray?.forEach((name) => deepUnset(this.stores.errors.value, name))
       return errors
     }, nameArray)
   }
@@ -1001,7 +1001,7 @@ export class FormControl<
 
       const fieldNames = toStringArray(name)
 
-      this.state.isValid.set(result.isValid, fieldNames)
+      this.stores.isValid.set(result.isValid, fieldNames)
     }
   }
 
@@ -1024,7 +1024,7 @@ export class FormControl<
     const fields = filterFields(names, this.fields)
 
     const resolverResult = await this.options.resolver(
-      this.state.values.value,
+      this.stores.values.value,
       this.options.context,
       {
         names: names as any,
@@ -1048,7 +1048,7 @@ export class FormControl<
   ): Promise<NativeValidationResult> {
     const fields = deepFilter(this.fields, names)
 
-    const validationResult = await nativeValidateFields(fields, this.state.values.value, {
+    const validationResult = await nativeValidateFields(fields, this.stores.values.value, {
       shouldOnlyCheckValid,
       shouldUseNativeValidation: this.options.shouldUseNativeValidation,
       shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
@@ -1069,17 +1069,17 @@ export class FormControl<
     formValues?: Defaults<TValues> extends TValues ? TValues : Defaults<TValues>,
     options?: ResetOptions,
   ): void {
-    this.batchedState.open()
+    this.state.open()
 
-    const updatedValues = formValues ? structuredClone(formValues) : this.state.defaultValues.value
+    const updatedValues = formValues ? structuredClone(formValues) : this.stores.defaultValues.value
 
     const cloneUpdatedValues = structuredClone(updatedValues)
 
     const values =
-      formValues && isEmptyObject(formValues) ? this.state.defaultValues.value : cloneUpdatedValues
+      formValues && isEmptyObject(formValues) ? this.stores.defaultValues.value : cloneUpdatedValues
 
     if (!options?.keepDefaultValues) {
-      this.state.defaultValues.set(updatedValues as DeepPartial<TValues>)
+      this.stores.defaultValues.set(updatedValues as DeepPartial<TValues>)
     }
 
     if (!options?.keepValues) {
@@ -1094,11 +1094,11 @@ export class FormControl<
 
       const newValues = this.options.shouldUnregister
         ? options?.keepDefaultValues
-          ? structuredClone(this.state.defaultValues.value)
+          ? structuredClone(this.stores.defaultValues.value)
           : {}
         : structuredClone(values)
 
-      this.state.values.set(newValues as TValues, true)
+      this.stores.values.set(newValues as TValues, true)
     }
 
     this.names = {
@@ -1108,42 +1108,42 @@ export class FormControl<
     }
 
     if (!options?.keepSubmitCount) {
-      this.state.submitCount.set(0)
+      this.stores.submitCount.set(0)
     }
 
     if (!options?.keepDirty) {
-      this.state.isDirty.set(
+      this.stores.isDirty.set(
         Boolean(
-          options?.keepDefaultValues && !deepEqual(formValues, this.state.defaultValues.value),
+          options?.keepDefaultValues && !deepEqual(formValues, this.stores.defaultValues.value),
         ),
       )
     }
 
     if (!options?.keepDirtyValues) {
       if (options?.keepDefaultValues && formValues) {
-        this.state.dirtyFields.set(getDirtyFields(this.state.defaultValues.value, formValues))
+        this.stores.dirtyFields.set(getDirtyFields(this.stores.defaultValues.value, formValues))
       } else {
-        this.state.dirtyFields.set({})
+        this.stores.dirtyFields.set({})
       }
     }
 
     if (!options?.keepTouched) {
-      this.state.touchedFields.set({})
+      this.stores.touchedFields.set({})
     }
 
     if (!options?.keepErrors) {
-      this.state.errors.set({})
+      this.stores.errors.set({})
     }
 
     if (!options?.keepIsSubmitSuccessful) {
-      this.state.isSubmitSuccessful.set(false)
+      this.stores.isSubmitSuccessful.set(false)
     }
 
-    this.state.isSubmitting.set(false)
+    this.stores.isSubmitting.set(false)
 
-    this.valueListeners.forEach((listener) => listener(this.state.values.value))
+    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
 
-    this.batchedState.flush(true)
+    this.state.flush(true)
   }
 
   /**
@@ -1153,34 +1153,34 @@ export class FormControl<
     const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
 
     if (resolvingDefaultValues == null) {
-      this.state.isLoading.set(false)
+      this.stores.isLoading.set(false)
       return
     }
 
     const isPromise = resolvingDefaultValues instanceof Promise
 
-    this.state.isLoading.set(isPromise)
+    this.stores.isLoading.set(isPromise)
 
     const resolvedDefaultValues = (await resolvingDefaultValues) ?? {}
 
-    this.batchedState.open()
+    this.state.open()
 
-    this.state.defaultValues.set(resolvedDefaultValues as any)
+    this.stores.defaultValues.set(resolvedDefaultValues as any)
 
     if (resetValues) {
-      this.state.values.set(structuredClone(resolvedDefaultValues) as TValues)
+      this.stores.values.set(structuredClone(resolvedDefaultValues) as TValues)
     }
 
-    this.state.isLoading.set(false)
+    this.stores.isLoading.set(false)
 
-    this.batchedState.flush()
+    this.state.flush()
   }
 
   resetDefaultValues() {
     if (typeof this.options.defaultValues === 'function') {
       this.options.defaultValues().then((values: any) => {
         this.reset(values, this.options.resetOptions)
-        this.state.isLoading.set(false)
+        this.stores.isLoading.set(false)
       })
     }
   }
@@ -1218,13 +1218,13 @@ export class FormControl<
   /**
    * Whether the form control is currently tracking a specific state property.
    *
-   * {@link batchedState} does not trigger updates for untracked properties.
+   * {@link state} does not trigger updates for untracked properties.
    */
-  isTracking(key: keyof typeof this.state, name?: string[]): boolean {
+  isTracking(key: keyof typeof this.stores, name?: string[]): boolean {
     return (
-      this.batchedState.isTracking(key, name) ||
-      this.batchedState.childIsTracking(key, name) ||
-      this.state[key].subscribers.size > 1
+      this.state.isTracking(key, name) ||
+      this.state.childIsTracking(key, name) ||
+      this.stores[key].subscribers.size > 1
     )
   }
 
@@ -1234,8 +1234,8 @@ export class FormControl<
   shouldSkipValidationAfter(name: string, isBlurEvent?: boolean): boolean {
     return shouldSkipValidationAfter(
       isBlurEvent ? 'blur' : 'change',
-      safeGet(this.state.touchedFields.value, name),
-      this.state.isSubmitted.value,
+      safeGet(this.stores.touchedFields.value, name),
+      this.stores.isSubmitted.value,
       this.options.submissionValidationMode,
     )
   }

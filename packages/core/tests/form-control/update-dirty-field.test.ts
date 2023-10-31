@@ -21,34 +21,34 @@ describe('FormContol', () => {
 
       expect(formControl.updateDirtyField('name', 'value')).toBeTruthy()
 
-      expect(formControl.state.dirtyFields.value).toEqual({ name: true })
+      expect(formControl.stores.dirtyFields.value).toEqual({ name: true })
 
       // Step 2: set the field to the default value, marking it clean.
 
       expect(formControl.updateDirtyField('name')).toBeTruthy()
 
-      expect(formControl.state.dirtyFields.value).toEqual({})
+      expect(formControl.stores.dirtyFields.value).toEqual({})
     })
 
     test('updates isDirty only when there are subscribers', () => {
       const formControl = new FormControl()
 
-      formControl.state.values.set({
+      formControl.stores.values.set({
         hello: 'world',
       })
 
       // This shouldn't update isDirty because it isn't being tracked.
       formControl.updateDirtyField('hello', '')
 
-      expect(formControl.state.isDirty.value).toBeFalsy()
+      expect(formControl.stores.isDirty.value).toBeFalsy()
 
       // Subscribe to isDirty and cause it to be tracked.
-      formControl.batchedState.proxy.isDirty
+      formControl.state.proxy.isDirty
 
       // This should update isDirty because it is being tracked.
       formControl.updateDirtyField('hello', '')
 
-      expect(formControl.state.isDirty.value).toBeTruthy()
+      expect(formControl.stores.isDirty.value).toBeTruthy()
     })
   })
 })

@@ -24,8 +24,8 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
-      expect(formControl.state.isValid.value).toBeFalsy()
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.isValid.value).toBeFalsy()
     })
 
     test('invokes focus method on field if shouldFocus is true', () => {
@@ -72,7 +72,7 @@ describe('FormControl', () => {
         },
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     describe('meets invariants', () => {
@@ -81,7 +81,7 @@ describe('FormControl', () => {
 
         const fn = vi.fn()
 
-        formControl.state.errors.subscribe(fn)
+        formControl.stores.errors.subscribe(fn)
 
         fn.mockReset()
 
@@ -95,9 +95,9 @@ describe('FormControl', () => {
 
         const fn = vi.fn()
 
-        formControl.batchedState.proxy.errors
-        formControl.batchedState.proxy.isValid
-        formControl.batchedState.subscribe(fn)
+        formControl.state.proxy.errors
+        formControl.state.proxy.isValid
+        formControl.state.subscribe(fn)
 
         fn.mockReset()
 

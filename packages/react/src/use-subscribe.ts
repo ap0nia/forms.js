@@ -22,9 +22,9 @@ export function useSubscribe<
   const control = props.control ?? context.control
 
   const derivedState = useMemo(() => {
-    const derived = new Batchable(control.state, new Set())
+    const derived = new Batchable(control.stores, new Set())
 
-    control.batchedState.children.add(derived)
+    control.state.children.add(derived)
 
     return derived
   }, [control])
@@ -33,7 +33,7 @@ export function useSubscribe<
 
   useEffect(() => {
     return () => {
-      control.batchedState.children.delete(derivedState)
+      control.state.children.delete(derivedState)
     }
   }, [control, derivedState])
 

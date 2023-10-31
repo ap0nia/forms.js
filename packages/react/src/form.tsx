@@ -160,7 +160,7 @@ function Form<T extends Record<string, any>, U extends Record<string, any> | und
     })(event?.nativeEvent)
 
     if (hasError && props.control) {
-      props.control.state.isSubmitSuccessful.set(false)
+      props.control.stores.isSubmitSuccessful.set(false)
       props.control.setError('root.server', { type })
     }
   }

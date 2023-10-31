@@ -7,14 +7,14 @@ describe('FormControl', () => {
     test('returns false if values are deeply equal to default values', () => {
       const formControl = new FormControl()
 
-      formControl.state.values.set({
+      formControl.stores.values.set({
         foo: 'bar',
         baz: {
           qux: 'quux',
         },
       })
 
-      formControl.state.defaultValues.set({
+      formControl.stores.defaultValues.set({
         foo: 'bar',
         baz: {
           qux: 'quux',
@@ -27,14 +27,14 @@ describe('FormControl', () => {
     test('returns true if values are not deeply equal to default values', () => {
       const formControl = new FormControl()
 
-      formControl.state.values.set({
+      formControl.stores.values.set({
         foo: 'bar',
         baz: {
           qux: 'quux',
         },
       })
 
-      formControl.state.defaultValues.set({
+      formControl.stores.defaultValues.set({
         foo: 'bar',
         baz: {
           qux: 'quux',
@@ -43,7 +43,7 @@ describe('FormControl', () => {
 
       const fn = vi.fn()
 
-      formControl.batchedState.subscribe(fn, undefined, false)
+      formControl.state.subscribe(fn, undefined, false)
 
       formControl.getDirty()
 
@@ -55,20 +55,20 @@ describe('FormControl', () => {
         test('does not notify subscribers to batched state when not dirty', () => {
           const formControl = new FormControl()
 
-          formControl.state.values.set({
+          formControl.stores.values.set({
             foo: 'bar',
             baz: {
               qux: 'quux',
             },
           })
 
-          formControl.state.defaultValues.set({
+          formControl.stores.defaultValues.set({
             foo: 'bar',
           })
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           formControl.getDirty()
 
@@ -77,21 +77,21 @@ describe('FormControl', () => {
         test('does not notify subscribers to batched state when dirty', () => {
           const formControl = new FormControl()
 
-          formControl.state.values.set({
+          formControl.stores.values.set({
             foo: 'bar',
             baz: {
               qux: 'quux',
             },
           })
 
-          formControl.state.defaultValues.set({
+          formControl.stores.defaultValues.set({
             foo: 'bar',
             baz: {},
           })
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           formControl.getDirty()
 

@@ -139,7 +139,7 @@ describe('FormControl', () => {
 
           trackAll(formControl)
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           const event = new Event('')
 

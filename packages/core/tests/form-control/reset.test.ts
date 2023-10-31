@@ -18,21 +18,21 @@ describe('FormControl', () => {
       test('resets submitCount if keepSubmitCount is false', () => {
         const form = new FormControl()
 
-        form.state.submitCount.set(1)
+        form.stores.submitCount.set(1)
 
         form.reset()
 
-        expect(form.state.submitCount.value).toEqual(0)
+        expect(form.stores.submitCount.value).toEqual(0)
       })
 
       test('preserves submitCount if keepSubmitCount is true', () => {
         const form = new FormControl()
 
-        form.state.submitCount.set(1)
+        form.stores.submitCount.set(1)
 
         form.reset({}, { keepSubmitCount: true })
 
-        expect(form.state.submitCount.value).toEqual(1)
+        expect(form.stores.submitCount.value).toEqual(1)
       })
     })
 
@@ -40,21 +40,21 @@ describe('FormControl', () => {
       test('resets touchedFields if keepTouchedFields is false', () => {
         const form = new FormControl()
 
-        form.state.touchedFields.set({ foo: true })
+        form.stores.touchedFields.set({ foo: true })
 
         form.reset()
 
-        expect(form.state.touchedFields.value).toEqual({})
+        expect(form.stores.touchedFields.value).toEqual({})
       })
 
       test('preserves touchedFields if keepTouchedFields is true', () => {
         const form = new FormControl()
 
-        form.state.touchedFields.set({ foo: true })
+        form.stores.touchedFields.set({ foo: true })
 
         form.reset({}, { keepTouched: true })
 
-        expect(form.state.touchedFields.value).toEqual({ foo: true })
+        expect(form.stores.touchedFields.value).toEqual({ foo: true })
       })
     })
 
@@ -62,21 +62,21 @@ describe('FormControl', () => {
       test('resets isSubmitSuccessful if keepIsSubmitSuccessful is false', () => {
         const form = new FormControl()
 
-        form.state.isSubmitSuccessful.set(true)
+        form.stores.isSubmitSuccessful.set(true)
 
         form.reset()
 
-        expect(form.state.isSubmitSuccessful.value).toEqual(false)
+        expect(form.stores.isSubmitSuccessful.value).toEqual(false)
       })
 
       test('preserves isSubmitSuccessful if keepIsSubmitSuccessful is true', () => {
         const form = new FormControl()
 
-        form.state.isSubmitSuccessful.set(true)
+        form.stores.isSubmitSuccessful.set(true)
 
         form.reset({}, { keepIsSubmitSuccessful: true })
 
-        expect(form.state.isSubmitSuccessful.value).toEqual(true)
+        expect(form.stores.isSubmitSuccessful.value).toEqual(true)
       })
     })
 
@@ -86,7 +86,7 @@ describe('FormControl', () => {
 
         form.reset({ foo: 'bar-baz' })
 
-        expect(form.state.defaultValues.value).toEqual({ foo: 'bar-baz' })
+        expect(form.stores.defaultValues.value).toEqual({ foo: 'bar-baz' })
       })
 
       test('preserves defaultValues if keepDefaultValues is true', () => {
@@ -94,7 +94,7 @@ describe('FormControl', () => {
 
         form.reset({ foo: 'bar-baz' }, { keepDefaultValues: true })
 
-        expect(form.state.defaultValues.value).toEqual({ foo: 'bar' })
+        expect(form.stores.defaultValues.value).toEqual({ foo: 'bar' })
       })
     })
 
@@ -104,7 +104,7 @@ describe('FormControl', () => {
 
         form.reset()
 
-        expect(form.state.values.value).toEqual({})
+        expect(form.stores.values.value).toEqual({})
       })
 
       test('default values if shouldUnregister is true and keepDefaultValues is true', () => {
@@ -112,7 +112,7 @@ describe('FormControl', () => {
 
         form.reset({}, { keepDefaultValues: true })
 
-        expect(form.state.values.value).toEqual({ foo: 'bar' })
+        expect(form.stores.values.value).toEqual({ foo: 'bar' })
       })
     })
 
@@ -223,13 +223,13 @@ describe('FormControl', () => {
         const formControl = new FormControl()
 
         formControl.names.mount.add(name)
-        formControl.state.defaultValues.set(defaultValues)
+        formControl.stores.defaultValues.set(defaultValues)
 
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.stores.values.value).toEqual({})
 
         formControl.reset(undefined, { keepDirtyValues: true })
 
-        expect(formControl.state.values.value).toEqual(defaultValues)
+        expect(formControl.stores.values.value).toEqual(defaultValues)
       })
 
       test('clean fields inherit default values works with root option to keepDirtyValues', () => {
@@ -238,13 +238,13 @@ describe('FormControl', () => {
         const formControl = new FormControl({ resetOptions: { keepDirtyValues: true } })
 
         formControl.names.mount.add(name)
-        formControl.state.defaultValues.set(defaultValues)
+        formControl.stores.defaultValues.set(defaultValues)
 
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.stores.values.value).toEqual({})
 
         formControl.reset()
 
-        expect(formControl.state.values.value).toEqual(defaultValues)
+        expect(formControl.stores.values.value).toEqual(defaultValues)
       })
 
       test('dirtyFields keep their current values', () => {
@@ -253,14 +253,14 @@ describe('FormControl', () => {
         const formControl = new FormControl()
 
         formControl.names.mount.add(name)
-        formControl.state.defaultValues.set(defaultValues)
-        formControl.state.dirtyFields.set({ [name]: true })
+        formControl.stores.defaultValues.set(defaultValues)
+        formControl.stores.dirtyFields.set({ [name]: true })
 
-        expect(formControl.state.values.value).toEqual({})
+        expect(formControl.stores.values.value).toEqual({})
 
         formControl.reset(undefined, { keepDirtyValues: true })
 
-        expect(formControl.state.values.value).toEqual({ [name]: undefined })
+        expect(formControl.stores.values.value).toEqual({ [name]: undefined })
       })
     })
   })

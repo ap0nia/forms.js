@@ -4,18 +4,18 @@ import type { FormControl } from '../../src/form-control'
  * Causes all properties of the provided form control's state to be tracked.
  */
 export function trackAll(formControl: FormControl): void {
-  formControl.batchedState.proxy.isDirty
-  formControl.batchedState.proxy.isLoading
-  formControl.batchedState.proxy.isSubmitted
-  formControl.batchedState.proxy.isSubmitSuccessful
-  formControl.batchedState.proxy.isSubmitting
-  formControl.batchedState.proxy.isValidating
-  formControl.batchedState.proxy.isValid
-  formControl.batchedState.proxy.disabled
-  formControl.batchedState.proxy.submitCount
-  formControl.batchedState.proxy.dirtyFields
-  formControl.batchedState.proxy.touchedFields
-  formControl.batchedState.proxy.defaultValues
-  formControl.batchedState.proxy.errors
-  formControl.batchedState.proxy.values
+  formControl.state.proxy.isDirty
+  formControl.state.proxy.isLoading
+  formControl.state.proxy.isSubmitted
+  formControl.state.proxy.isSubmitSuccessful
+  formControl.state.proxy.isSubmitting
+  formControl.state.proxy.isValidating
+  formControl.state.proxy.isValid
+  formControl.state.proxy.disabled
+  formControl.state.proxy.submitCount
+  formControl.state.proxy.dirtyFields
+  formControl.state.proxy.touchedFields
+  formControl.state.proxy.defaultValues
+  formControl.state.proxy.errors
+  formControl.state.proxy.values
 }

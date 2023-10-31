@@ -10,12 +10,12 @@ describe('FormContol', () => {
       const name = 'name'
 
       // No touched fields yet.
-      expect(formControl.state.touchedFields.value).toEqual({})
+      expect(formControl.stores.touchedFields.value).toEqual({})
 
       // Truthy because it's the first time the field is touched.
       expect(formControl.updateTouchedField(name)).toBeTruthy()
 
-      expect(formControl.state.touchedFields.value).toEqual({ [name]: true })
+      expect(formControl.stores.touchedFields.value).toEqual({ [name]: true })
     })
 
     test('mutates touched fields', () => {
@@ -24,12 +24,12 @@ describe('FormContol', () => {
       const name = 'name'
 
       // No touched fields yet.
-      expect(formControl.state.touchedFields.value).toEqual({})
+      expect(formControl.stores.touchedFields.value).toEqual({})
 
       // Truthy because it's the first time the field is touched.
       formControl.updateTouchedField(name)
 
-      expect(formControl.state.touchedFields.value).toEqual({ [name]: true })
+      expect(formControl.stores.touchedFields.value).toEqual({ [name]: true })
     })
 
     test('returns false for subsequent touches', () => {
@@ -38,7 +38,7 @@ describe('FormContol', () => {
       const name = 'name'
 
       // No touched fields yet.
-      expect(formControl.state.touchedFields.value).toEqual({})
+      expect(formControl.stores.touchedFields.value).toEqual({})
 
       // Truthy because it's the first time the field is touched.
       formControl.updateTouchedField(name)
@@ -46,7 +46,7 @@ describe('FormContol', () => {
       // Falsy because it's the second time the field is touched.
       expect(formControl.updateTouchedField(name)).toBeFalsy()
 
-      expect(formControl.state.touchedFields.value).toEqual({ [name]: true })
+      expect(formControl.stores.touchedFields.value).toEqual({ [name]: true })
     })
   })
 })

@@ -8,7 +8,7 @@ describe('FormControl', () => {
     test('resets all errors if no name provided', () => {
       const formControl = new FormControl()
 
-      formControl.state.errors.set({
+      formControl.stores.errors.set({
         a: [],
         b: [],
         c: [],
@@ -18,13 +18,13 @@ describe('FormControl', () => {
 
       const expectedErrors: FieldErrors = {}
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     test('resets error for single specified name', () => {
       const formControl = new FormControl()
 
-      formControl.state.errors.set({
+      formControl.stores.errors.set({
         a: [],
         b: [],
         c: [],
@@ -37,13 +37,13 @@ describe('FormControl', () => {
         b: [],
       }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     test('resets errors for multiple specified names', () => {
       const formControl = new FormControl()
 
-      formControl.state.errors.set({
+      formControl.stores.errors.set({
         a: [],
         b: [],
         c: [],
@@ -53,7 +53,7 @@ describe('FormControl', () => {
 
       const expectedErrors: FieldErrors = { c: [] }
 
-      expect(formControl.state.errors.value).toEqual(expectedErrors)
+      expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
     describe('satisfies invariants', () => {
@@ -63,9 +63,9 @@ describe('FormControl', () => {
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
-          formControl.batchedState.proxy.errors
+          formControl.state.proxy.errors
 
           formControl.clearErrors()
 

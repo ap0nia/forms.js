@@ -36,13 +36,13 @@ describe('FormControl', () => {
     test('does not do anything if field name is not registered', () => {
       const { formControl } = createFormControl()
 
-      expect(formControl.state.values.value).toEqual({})
+      expect(formControl.stores.values.value).toEqual({})
     })
 
     test('sets the new field value in the form control values', () => {
       const { formControl, name, ref } = createFormControl()
 
-      expect(formControl.state.values.value).toEqual({})
+      expect(formControl.stores.values.value).toEqual({})
 
       const value = 'abc'
 
@@ -50,7 +50,7 @@ describe('FormControl', () => {
 
       fireEvent.change(ref)
 
-      expect(formControl.state.values.value).toEqual({ [name]: value })
+      expect(formControl.stores.values.value).toEqual({ [name]: value })
     })
 
     test('invokes onChange for change events', () => {
@@ -82,7 +82,7 @@ describe('FormControl', () => {
         fireEvent.change(ref)
 
         await waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({
+          expect(formControl.stores.errors.value).toEqual({
             [name]: {
               type: 'required',
               message: '',
@@ -106,7 +106,7 @@ describe('FormControl', () => {
         fireEvent.change(ref)
 
         await waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({
+          expect(formControl.stores.errors.value).toEqual({
             [differentName]: {
               type: 'required',
               message: '',
@@ -124,7 +124,7 @@ describe('FormControl', () => {
         fireEvent.blur(ref)
 
         await waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({
+          expect(formControl.stores.errors.value).toEqual({
             [name]: {
               type: 'required',
               message: '',
@@ -158,7 +158,7 @@ describe('FormControl', () => {
         fireEvent.blur(ref)
 
         await waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({
+          expect(formControl.stores.errors.value).toEqual({
             [name]: {
               message: '',
               type: 'required',
@@ -178,7 +178,7 @@ describe('FormControl', () => {
 
         fireEvent.blur(ref)
 
-        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+        await waitFor(() => expect(formControl.stores.errors.value).toEqual({}))
       })
     })
 
@@ -196,13 +196,13 @@ describe('FormControl', () => {
         field._f.required = true
 
         // Set an existing error to be removed after the change handler.
-        formControl.state.errors.set({ [name]: { type: 'test', message: 'test', ref } })
+        formControl.stores.errors.set({ [name]: { type: 'test', message: 'test', ref } })
 
         ref.addEventListener('blur', (event) => formControl.handleChange(event))
 
         fireEvent.blur(ref)
 
-        await waitFor(() => expect(formControl.state.errors.value).toEqual({}))
+        await waitFor(() => expect(formControl.stores.errors.value).toEqual({}))
       })
 
       test('sets a new error if there resolver errors', async () => {
@@ -227,7 +227,7 @@ describe('FormControl', () => {
 
         fireEvent.blur(ref)
 
-        await waitFor(() => expect(formControl.state.errors.value).toEqual({ [name]: error }))
+        await waitFor(() => expect(formControl.stores.errors.value).toEqual({ [name]: error }))
       })
 
       test('resolver errors with deps sets multiple errors', async () => {
@@ -258,7 +258,7 @@ describe('FormControl', () => {
         fireEvent.blur(ref)
 
         await waitFor(() =>
-          expect(formControl.state.errors.value).toEqual({
+          expect(formControl.stores.errors.value).toEqual({
             [name]: error,
             [name1]: error,
           }),
@@ -275,7 +275,7 @@ describe('FormControl', () => {
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           fireEvent.change(ref)
 
@@ -295,11 +295,11 @@ describe('FormControl', () => {
           trackAll(formControl)
 
           // Don't track isValidating.
-          formControl.batchedState.keys?.delete('isValidating')
+          formControl.state.keys?.delete('isValidating')
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           fireEvent.change(ref)
 
@@ -320,7 +320,7 @@ describe('FormControl', () => {
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           fireEvent.change(ref)
 

@@ -73,8 +73,8 @@ export function useFieldArray<
   })
 
   useEffect(() => {
-    if (!safeGet(control.state.values.value, props.name)) {
-      control.state.values.update(
+    if (!safeGet(control.state.value.values, props.name)) {
+      control.stores.values.update(
         (values) => {
           deepSet(values, props.name, [])
           return values

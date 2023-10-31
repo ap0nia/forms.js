@@ -103,7 +103,7 @@ export class FieldArray<
     this.control = options.control
 
     this.value = new Writable<TFieldArrayValue>(
-      Array.from(safeGet(this.control.state.values.value, this.name) ?? []) as any,
+      Array.from(safeGet(this.control.stores.values.value, this.name) ?? []) as any,
     )
 
     this.idGenerator = options.idGenerator ?? generateId
@@ -142,12 +142,12 @@ export class FieldArray<
     const controlFieldArrayValues =
       safeGet(
         this.control.mounted
-          ? this.control.state.values.value
-          : this.control.state.defaultValues.value,
+          ? this.control.stores.values.value
+          : this.control.stores.defaultValues.value,
         this.name,
       ) ??
       (this.control.options.shouldUnregister
-        ? safeGet(this.control.state.defaultValues.value, this.name) ?? []
+        ? safeGet(this.control.stores.defaultValues.value, this.name) ?? []
         : [])
 
     return controlFieldArrayValues as TFieldArrayValue
@@ -161,7 +161,7 @@ export class FieldArray<
     shouldSetValues = true,
     shouldUpdateFieldsAndState = true,
   ) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const field = safeGet(this.control.fields, this.name)
 
@@ -173,12 +173,12 @@ export class FieldArray<
       }
     }
 
-    const errors = safeGet(this.control.state.errors.value, this.name)
+    const errors = safeGet(this.control.stores.errors.value, this.name)
 
     if (shouldUpdateFieldsAndState && Array.isArray(errors)) {
       const newErrors = mutateArray(errors)
 
-      this.control.state.errors.update(
+      this.control.stores.errors.update(
         (currentErrors) => {
           if (shouldSetValues) {
             deepSet(currentErrors, this.name, newErrors)
@@ -194,17 +194,17 @@ export class FieldArray<
       )
     }
 
-    const touchedFields = safeGet(this.control.state.touchedFields.value, this.name)
+    const touchedFields = safeGet(this.control.stores.touchedFields.value, this.name)
 
     if (
       shouldUpdateFieldsAndState &&
       Array.isArray(touchedFields) &&
-      this.control.batchedState.isTracking('touchedFields')
+      this.control.state.isTracking('touchedFields')
     ) {
       const newTouchedFields = mutateArray(touchedFields)
 
       if (shouldSetValues) {
-        this.control.state.touchedFields.update(
+        this.control.stores.touchedFields.update(
           (currentTouchedFields) => {
             deepSet(currentTouchedFields, this.name, newTouchedFields)
             return currentTouchedFields
@@ -214,23 +214,23 @@ export class FieldArray<
       }
     }
 
-    if (this.control.batchedState.isTracking('dirtyFields')) {
-      this.control.state.dirtyFields.set(
-        getDirtyFields(this.control.state.defaultValues.value, this.control.state.values.value),
+    if (this.control.state.isTracking('dirtyFields')) {
+      this.control.stores.dirtyFields.set(
+        getDirtyFields(this.control.stores.defaultValues.value, this.control.stores.values.value),
         [this.name],
       )
     }
 
-    this.control.state.isDirty.set(this.control.getDirty())
+    this.control.stores.isDirty.set(this.control.getDirty())
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   append(
     value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
     options?: FieldArrayMethodProps,
   ) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const valueClone = structuredClone(value)
 
@@ -244,7 +244,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
         return currentValues
@@ -259,14 +259,14 @@ export class FieldArray<
       return args
     })
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   prepend(
     value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
     options?: FieldArrayMethodProps,
   ) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const valueClone = structuredClone(value)
 
@@ -280,7 +280,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
         return currentValues
@@ -294,11 +294,11 @@ export class FieldArray<
       return [...valuesArray.map(() => undefined), ...args]
     })
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   remove(index?: number | number[]) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const indexArray = Array.isArray(index) ? index : index != null ? [index] : undefined
 
@@ -311,7 +311,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
         return currentValues
@@ -327,7 +327,7 @@ export class FieldArray<
       return index == null ? [] : args.filter((_, i) => !indexArray?.includes(i))
     })
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   insert(
@@ -335,7 +335,7 @@ export class FieldArray<
     value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>,
     options?: FieldArrayMethodProps,
   ) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const valueClone = structuredClone(value)
 
@@ -355,7 +355,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
         return currentValues
@@ -370,11 +370,11 @@ export class FieldArray<
       return args
     })
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   swap(left: number, right: number) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
 
@@ -386,7 +386,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedFieldArrayValues)
         return currentValues
@@ -412,11 +412,11 @@ export class FieldArray<
       return args
     })
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   move(from: number, to: number) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const updatedValues = Array.from(this.getControlFieldArrayValues())
 
@@ -426,7 +426,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, updatedValues)
         return currentValues
@@ -445,11 +445,11 @@ export class FieldArray<
       return args
     })
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   update(index: number, value: TFieldArrayValue[number]) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const updatedFieldArrayValues = Array.from(this.getControlFieldArrayValues())
 
@@ -457,7 +457,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update((currentValues) => {
+    this.control.stores.values.update((currentValues) => {
       deepSet(currentValues, this.name, updatedFieldArrayValues)
       return currentValues
     })
@@ -477,11 +477,11 @@ export class FieldArray<
       false,
     )
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   replace(value: Partial<TFieldArrayValue[number]> | Partial<TFieldArrayValue>) {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     const valueClone = structuredClone(value)
 
@@ -491,7 +491,7 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.state.values.update(
+    this.control.stores.values.update(
       (currentValues) => {
         deepSet(currentValues, this.name, valuesArray)
         return currentValues
@@ -501,11 +501,11 @@ export class FieldArray<
 
     this.value.set(valuesArray as any)
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   doSomething() {
-    this.control.batchedState.open()
+    this.control.state.open()
 
     this.validate()
 
@@ -527,12 +527,13 @@ export class FieldArray<
 
     this.action.set(false)
 
-    this.control.batchedState.flush()
+    this.control.state.flush()
   }
 
   async validate(fields = this.control.fields) {
     const submitted =
-      !getValidationMode(this.control.options.mode).onSubmit || this.control.state.isSubmitted.value
+      !getValidationMode(this.control.options.mode).onSubmit ||
+      this.control.stores.isSubmitted.value
 
     if (!this.action.value || !submitted) {
       return
@@ -550,7 +551,7 @@ export class FieldArray<
       }
 
       const result = await this.control.options.resolver(
-        this.control.state.values.value,
+        this.control.stores.values.value,
         this.control.options.context,
         {
           names: [this.name] as any,
@@ -562,7 +563,7 @@ export class FieldArray<
 
       const error = safeGet(result.errors, this.name)
 
-      const existingError = safeGet(this.control.state.errors.value, this.name)
+      const existingError = safeGet(this.control.stores.errors.value, this.name)
 
       const errorChanged = existingError
         ? (!error && existingError.type) ||
@@ -570,7 +571,7 @@ export class FieldArray<
         : error && error.type
 
       if (errorChanged) {
-        this.control.state.errors.update((currentErrors) => {
+        this.control.stores.errors.update((currentErrors) => {
           if (error) {
             deepSet(currentErrors, this.name, error)
           } else {
@@ -591,14 +592,14 @@ export class FieldArray<
 
     const result = await nativeValidateSingleField(
       field,
-      this.control.state.values.value,
+      this.control.stores.values.value,
       this.control.options.criteriaMode === VALIDATION_EVENTS.all,
       this.control.options.shouldUseNativeValidation,
       true,
     )
 
     if (!isEmptyObject(result)) {
-      this.control.state.errors.update((currentErrors) => {
+      this.control.stores.errors.update((currentErrors) => {
         const fieldArrayErrors = (safeGet(currentErrors, this.name) ?? []).filter(Boolean)
 
         deepSet(fieldArrayErrors, 'root', result[this.name])
@@ -623,14 +624,14 @@ export class FieldArray<
   getFieldArray(): any {
     const valueFromControl = safeGet(
       this.control.mounted
-        ? this.control.state.values.value
-        : this.control.state.defaultValues.value,
+        ? this.control.stores.values.value
+        : this.control.stores.defaultValues.value,
       this.name,
     )
 
     const fallbackValue =
       (this.control.options.shouldUnregister
-        ? safeGet(this.control.state.defaultValues.value, this.name)
+        ? safeGet(this.control.stores.defaultValues.value, this.name)
         : []) ?? []
 
     const value: any[] = valueFromControl ?? fallbackValue

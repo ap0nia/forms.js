@@ -24,16 +24,16 @@ export function useFormState<T extends Record<string, any>>(
 
   const mounted = useRef(false)
 
-  const previousDerivedState = useRef<Batchable<Control<T>['state']>>()
+  const previousDerivedState = useRef<Batchable<Control<T>['stores']>>()
 
-  const derivedState = useMemo<Batchable<Control<T>['state']>>(() => {
+  const derivedState = useMemo<Batchable<Control<T>['stores']>>(() => {
     if (previousDerivedState.current) {
-      control.batchedState.children.delete(previousDerivedState.current)
+      control.state.children.delete(previousDerivedState.current)
     }
 
-    const derived = new Batchable(control.state, new Set())
+    const derived = new Batchable(control.stores, new Set())
 
-    control.batchedState.children.add(derived)
+    control.state.children.add(derived)
 
     previousDerivedState.current = derived
 
@@ -47,7 +47,7 @@ export function useFormState<T extends Record<string, any>>(
   useEffect(() => {
     return () => {
       if (previousDerivedState.current) {
-        control.batchedState.children.delete(previousDerivedState.current)
+        control.state.children.delete(previousDerivedState.current)
         previousDerivedState.current = undefined
       }
     }

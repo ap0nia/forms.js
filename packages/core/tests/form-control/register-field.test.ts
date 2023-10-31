@@ -83,7 +83,7 @@ describe('FormContol', () => {
 
       const name = 'name'
 
-      formControl.state.values.value[name] = 'Hello, World!'
+      formControl.stores.values.value[name] = 'Hello, World!'
 
       formControl.fields[name] = {
         _f: {
@@ -95,7 +95,7 @@ describe('FormContol', () => {
 
       formControl.registerField(name, { disabled: true })
 
-      expect(formControl.state.values.value[name]).toBeUndefined()
+      expect(formControl.stores.values.value[name]).toBeUndefined()
     })
 
     test('adds registered name to set of mounted names', () => {
@@ -116,13 +116,13 @@ describe('FormContol', () => {
 
         const value = 'Hello, World!'
 
-        formControl.state.values.set({ [name]: value })
+        formControl.stores.values.set({ [name]: value })
 
-        const originalValues = structuredClone(formControl.state.values.value)
+        const originalValues = structuredClone(formControl.stores.values.value)
 
         formControl.registerField(name)
 
-        expect(formControl.state.values.value).toEqual(originalValues)
+        expect(formControl.stores.values.value).toEqual(originalValues)
       })
 
       test('updates values with provided value if value does not exist for the field name', () => {
@@ -134,7 +134,7 @@ describe('FormContol', () => {
 
         formControl.registerField(name, { value })
 
-        expect(formControl.state.values.value[name]).toEqual(value)
+        expect(formControl.stores.values.value[name]).toEqual(value)
       })
 
       test('updates values with default value if the value does not exist and no value is provided', () => {
@@ -150,7 +150,7 @@ describe('FormContol', () => {
 
         formControl.registerField(name)
 
-        expect(formControl.state.values.value[name]).toEqual(value)
+        expect(formControl.stores.values.value[name]).toEqual(value)
       })
 
       test('does not change values if value does not exist, no value is provided, and default value does not exist', () => {
@@ -166,11 +166,11 @@ describe('FormContol', () => {
 
         const originalValues = structuredClone(values)
 
-        formControl.state.values.set(values)
+        formControl.stores.values.set(values)
 
         formControl.registerField(name)
 
-        expect(formControl.state.values.value).toEqual(originalValues)
+        expect(formControl.stores.values.value).toEqual(originalValues)
       })
     })
 
@@ -179,22 +179,22 @@ describe('FormContol', () => {
 
       const fn = vi.fn()
 
-      formControl.batchedState.proxy.errors
-      formControl.batchedState.proxy.defaultValues
-      formControl.batchedState.proxy.dirtyFields
-      formControl.batchedState.proxy.disabled
-      formControl.batchedState.proxy.isDirty
-      formControl.batchedState.proxy.isLoading
-      formControl.batchedState.proxy.isSubmitted
-      formControl.batchedState.proxy.isSubmitting
-      formControl.batchedState.proxy.isSubmitSuccessful
-      formControl.batchedState.proxy.isValid
-      formControl.batchedState.proxy.isValidating
-      formControl.batchedState.proxy.touchedFields
-      formControl.batchedState.proxy.values
-      formControl.batchedState.proxy.submitCount
+      formControl.state.proxy.errors
+      formControl.state.proxy.defaultValues
+      formControl.state.proxy.dirtyFields
+      formControl.state.proxy.disabled
+      formControl.state.proxy.isDirty
+      formControl.state.proxy.isLoading
+      formControl.state.proxy.isSubmitted
+      formControl.state.proxy.isSubmitting
+      formControl.state.proxy.isSubmitSuccessful
+      formControl.state.proxy.isValid
+      formControl.state.proxy.isValidating
+      formControl.state.proxy.touchedFields
+      formControl.state.proxy.values
+      formControl.state.proxy.submitCount
 
-      formControl.batchedState.subscribe(fn)
+      formControl.state.subscribe(fn)
 
       fn.mockReset()
 

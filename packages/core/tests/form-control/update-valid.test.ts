@@ -18,11 +18,11 @@ describe('FormControl', () => {
         },
       }
 
-      const originalValue = formControl.state.isValid.value
+      const originalValue = formControl.stores.isValid.value
 
       formControl.updateValid()
 
-      expect(formControl.state.isValid.value).toBe(originalValue)
+      expect(formControl.stores.isValid.value).toBe(originalValue)
     })
 
     test('updates valid state for invalid form when proxy state accessed', async () => {
@@ -39,11 +39,11 @@ describe('FormControl', () => {
         },
       }
 
-      formControl.batchedState.proxy.isValid
+      formControl.state.proxy.isValid
 
       const subscriber = vi.fn()
 
-      formControl.state.isValid.subscribe(subscriber)
+      formControl.stores.isValid.subscribe(subscriber)
 
       await formControl.updateValid()
 
@@ -51,7 +51,7 @@ describe('FormControl', () => {
       expect(subscriber).toHaveBeenCalledTimes(1)
       expect(subscriber).toHaveBeenCalledWith(false, undefined)
 
-      expect(formControl.state.isValid.value).toBeFalsy()
+      expect(formControl.stores.isValid.value).toBeFalsy()
     })
 
     test('updates valid state for valid form when subscribers present', async () => {
@@ -67,11 +67,11 @@ describe('FormControl', () => {
         },
       }
 
-      formControl.batchedState.proxy.isValid
+      formControl.state.proxy.isValid
 
       const subscriber = vi.fn()
 
-      formControl.state.isValid.subscribe(subscriber)
+      formControl.stores.isValid.subscribe(subscriber)
 
       await formControl.updateValid()
 
@@ -79,7 +79,7 @@ describe('FormControl', () => {
       expect(subscriber).toHaveBeenCalled()
       expect(subscriber).toHaveBeenLastCalledWith(true, undefined)
 
-      expect(formControl.state.isValid.value).toBeTruthy()
+      expect(formControl.stores.isValid.value).toBeTruthy()
     })
   })
 })

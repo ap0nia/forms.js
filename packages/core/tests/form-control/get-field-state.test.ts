@@ -25,9 +25,9 @@ describe('FormControl', () => {
 
       const name = 'test'
 
-      formControl.state.errors.set({ [name]: [] })
-      formControl.state.dirtyFields.set({ [name]: true })
-      formControl.state.touchedFields.set({ [name]: true })
+      formControl.stores.errors.set({ [name]: [] })
+      formControl.stores.dirtyFields.set({ [name]: true })
+      formControl.stores.touchedFields.set({ [name]: true })
 
       const expectedFormState: FieldState = {
         invalid: true,
@@ -63,8 +63,8 @@ describe('FormControl', () => {
     test('returns correct field state when provided with both internal and provided state', () => {
       const formControl = new FormControl()
 
-      formControl.state.errors.set({ test: [] })
-      formControl.state.dirtyFields.set({ test: true })
+      formControl.stores.errors.set({ test: [] })
+      formControl.stores.dirtyFields.set({ test: true })
 
       const name = 'test'
 
@@ -91,7 +91,7 @@ describe('FormControl', () => {
 
           formControl.getFieldState('a')
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           expect(fn).not.toHaveBeenCalled()
         })

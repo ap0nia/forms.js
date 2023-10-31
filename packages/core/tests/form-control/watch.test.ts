@@ -15,10 +15,10 @@ describe('FormControl', () => {
         fn.mockReset()
 
         // Access a property so it's tracked.
-        formControl.batchedState.proxy.values
+        formControl.state.proxy.values
 
         // Update the tracked property.
-        formControl.state.values.set({ a: 123 })
+        formControl.stores.values.set({ a: 123 })
 
         expect(fn).toHaveBeenCalled()
       })
@@ -32,17 +32,17 @@ describe('FormControl', () => {
 
         const fn = vi.fn()
 
-        formControl.batchedState.subscribe(fn)
+        formControl.state.subscribe(fn)
 
         fn.mockReset()
 
         // When state is updated with an unrelated context, don't update.
-        formControl.state.values.set({ a: 123 })
+        formControl.stores.values.set({ a: 123 })
 
         expect(fn).not.toHaveBeenCalled()
 
         // When state is updated with a context similar to the one subscribed to, update.
-        formControl.state.values.set({ a: 123 }, ['abc'])
+        formControl.stores.values.set({ a: 123 }, ['abc'])
 
         expect(fn).toHaveBeenCalled()
       })
@@ -54,22 +54,22 @@ describe('FormControl', () => {
 
         const fn = vi.fn()
 
-        formControl.batchedState.subscribe(fn)
+        formControl.state.subscribe(fn)
 
         fn.mockReset()
 
         // Unrelated context, don't update.
-        formControl.state.values.set({ a: 123 })
+        formControl.stores.values.set({ a: 123 })
 
         expect(fn).not.toHaveBeenCalled()
 
         // Don't update since it's not an exact match.
-        formControl.state.values.set({ a: 123 }, ['abc'])
+        formControl.stores.values.set({ a: 123 }, ['abc'])
 
         expect(fn).not.toHaveBeenCalled()
 
         // Exact match, update.
-        formControl.state.values.set({ a: 123 }, ['a'])
+        formControl.stores.values.set({ a: 123 }, ['a'])
 
         expect(fn).toHaveBeenCalled()
       })
@@ -81,32 +81,32 @@ describe('FormControl', () => {
 
         const fn = vi.fn()
 
-        formControl.batchedState.subscribe(fn)
+        formControl.state.subscribe(fn)
 
         fn.mockReset()
 
         // Unrelated context, don't update.
-        formControl.state.values.set({ a: 123 })
+        formControl.stores.values.set({ a: 123 })
 
         expect(fn).not.toHaveBeenCalled()
 
         // Don't update since it's not an exact match.
-        formControl.state.values.set({ a: 123 }, ['abc'])
+        formControl.stores.values.set({ a: 123 }, ['abc'])
 
         expect(fn).not.toHaveBeenCalled()
 
         // Exact match with at least one name, update.
-        formControl.state.values.set({ a: 123 }, ['a'])
+        formControl.stores.values.set({ a: 123 }, ['a'])
 
         expect(fn).toHaveBeenCalledTimes(1)
 
         // Exact match with at least one name, update.
-        formControl.state.values.set({ a: 123 }, ['b'])
+        formControl.stores.values.set({ a: 123 }, ['b'])
 
         expect(fn).toHaveBeenCalledTimes(2)
 
         // Exact match with at least one name, update.
-        formControl.state.values.set({ a: 123 }, ['c'])
+        formControl.stores.values.set({ a: 123 }, ['c'])
 
         expect(fn).toHaveBeenCalledTimes(3)
       })
@@ -116,7 +116,7 @@ describe('FormControl', () => {
 
         formControl.watch()
 
-        expect(formControl.batchedState.keys).toContain('values')
+        expect(formControl.state.keys).toContain('values')
       })
     })
   })

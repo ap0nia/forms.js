@@ -56,7 +56,7 @@ describe('FormControl', () => {
 
       formControl.registerElement(name, ref)
 
-      expect(formControl.state.values.value[name]).toEqual(value)
+      expect(formControl.stores.values.value[name]).toEqual(value)
     })
 
     test('updates values with element value if field is default checked', () => {
@@ -73,7 +73,7 @@ describe('FormControl', () => {
 
       formControl.registerElement(name, ref)
 
-      expect(formControl.state.values.value[name]).toEqual(value)
+      expect(formControl.stores.values.value[name]).toEqual(value)
     })
   })
 })

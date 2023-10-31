@@ -28,7 +28,7 @@ describe('FormControl', () => {
 
       expect(ref.value).toEqual(value)
 
-      expect(formControl.state.values.value).toEqual({
+      expect(formControl.stores.values.value).toEqual({
         [name0]: {
           [name1]: value,
         },
@@ -63,7 +63,7 @@ describe('FormControl', () => {
 
       const subscriber = vi.fn()
 
-      const unsubscribe = formControl.state.dirtyFields.subscribe(subscriber)
+      const unsubscribe = formControl.stores.dirtyFields.subscribe(subscriber)
 
       const name = 'abc'
 
@@ -78,7 +78,7 @@ describe('FormControl', () => {
 
       formControl.setValue(name, 'foobarbaz', { shouldDirty: true })
 
-      expect(formControl.state.isDirty.value).toBeTruthy()
+      expect(formControl.stores.isDirty.value).toBeTruthy()
 
       unsubscribe()
     })
@@ -106,7 +106,7 @@ describe('FormControl', () => {
 
       expect(ref.value).toEqual(value)
 
-      expect(formControl.state.values.value).toEqual({
+      expect(formControl.stores.values.value).toEqual({
         [name0]: {
           [name1]: value,
         },
@@ -120,7 +120,7 @@ describe('FormControl', () => {
 
       const subscriber = vi.fn()
 
-      const unsubscribe = formControl.state.dirtyFields.subscribe(subscriber)
+      const unsubscribe = formControl.stores.dirtyFields.subscribe(subscriber)
 
       const name = 'abc'
 
@@ -135,7 +135,7 @@ describe('FormControl', () => {
 
       formControl.setValue(name, 'Elysia', { shouldDirty: true })
 
-      expect(formControl.state.isDirty.value).toBeTruthy()
+      expect(formControl.stores.isDirty.value).toBeTruthy()
 
       unsubscribe()
     })
@@ -155,14 +155,14 @@ describe('FormControl', () => {
           },
         }
 
-        formControl.batchedState.proxy.values
-        formControl.batchedState.proxy.isDirty
-        formControl.batchedState.proxy.dirtyFields
-        formControl.batchedState.proxy.touchedFields
+        formControl.state.proxy.values
+        formControl.state.proxy.isDirty
+        formControl.state.proxy.dirtyFields
+        formControl.state.proxy.touchedFields
 
         const fn = vi.fn()
 
-        formControl.batchedState.subscribe(fn)
+        formControl.state.subscribe(fn)
 
         fn.mockReset()
 

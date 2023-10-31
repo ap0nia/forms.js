@@ -29,7 +29,7 @@ function createFocusableFormControl(options?: FormControlOptions) {
     },
   }
 
-  formControl.state.errors.set({ [name]: [] })
+  formControl.stores.errors.set({ [name]: [] })
 
   return { formControl, focus }
 }
@@ -87,7 +87,7 @@ describe('FormControl', () => {
 
           const fn = vi.fn()
 
-          formControl.batchedState.subscribe(fn, undefined, false)
+          formControl.state.subscribe(fn, undefined, false)
 
           trackAll(formControl)
 

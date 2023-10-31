@@ -99,13 +99,13 @@ describe('FormControl', () => {
         },
       }
 
-      formControl.state.values.set({ [name]: 'test' })
+      formControl.stores.values.set({ [name]: 'test' })
 
       formControl.unregisterField(name)
 
       expect(formControl.fields).toEqual({})
 
-      expect(formControl.state.values.value).toEqual({})
+      expect(formControl.stores.values.value).toEqual({})
     })
 
     test('removes field error', () => {
@@ -113,7 +113,7 @@ describe('FormControl', () => {
 
       const name = 'test'
 
-      formControl.state.errors.set({
+      formControl.stores.errors.set({
         [name]: {
           type: 'min',
         },
@@ -121,7 +121,7 @@ describe('FormControl', () => {
 
       formControl.unregisterField(name)
 
-      expect(formControl.state.errors.value).toEqual({})
+      expect(formControl.stores.errors.value).toEqual({})
     })
 
     test('removes dirty field', () => {
@@ -129,11 +129,11 @@ describe('FormControl', () => {
 
       const name = 'test'
 
-      formControl.state.dirtyFields.set({ [name]: true })
+      formControl.stores.dirtyFields.set({ [name]: true })
 
       formControl.unregisterField(name)
 
-      expect(formControl.state.dirtyFields.value).toEqual({})
+      expect(formControl.stores.dirtyFields.value).toEqual({})
     })
 
     test('removes touched field', () => {
@@ -141,11 +141,11 @@ describe('FormControl', () => {
 
       const name = 'test'
 
-      formControl.state.touchedFields.set({ [name]: true })
+      formControl.stores.touchedFields.set({ [name]: true })
 
       formControl.unregisterField(name)
 
-      expect(formControl.state.touchedFields.value).toEqual({})
+      expect(formControl.stores.touchedFields.value).toEqual({})
     })
 
     test('removes default value', () => {
@@ -153,11 +153,11 @@ describe('FormControl', () => {
 
       const name = 'test'
 
-      formControl.state.defaultValues.set({ [name]: 'test' })
+      formControl.stores.defaultValues.set({ [name]: 'test' })
 
       formControl.unregisterField(name)
 
-      expect(formControl.state.defaultValues.value).toEqual({})
+      expect(formControl.stores.defaultValues.value).toEqual({})
     })
   })
 })

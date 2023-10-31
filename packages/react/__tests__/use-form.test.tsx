@@ -1400,11 +1400,11 @@ describe('handleChangeRef', () => {
 
       const { unmount } = render(<App />)
 
-      expect(tempControl.batchedState.writable.subscribers.size).toBeTruthy()
+      expect(tempControl.state.writable.subscribers.size).toBeTruthy()
 
       unmount()
 
-      expect(tempControl.batchedState.writable.subscribers.size).toBeFalsy()
+      expect(tempControl.state.writable.subscribers.size).toBeFalsy()
     })
 
     it('should update isValidating to true when other validation still running', async () => {

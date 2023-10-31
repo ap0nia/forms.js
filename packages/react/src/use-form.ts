@@ -14,7 +14,7 @@ export type UseFormReturn<
   >,
 > = {
   control: TControl
-  formState: TControl['batchedState']['proxy']
+  formState: TControl['state']['value']
 } & Pick<
   TControl,
   | 'register'
@@ -47,7 +47,7 @@ export function useForm<
     register: control.register.bind(control),
     handleSubmit: control.handleSubmit.bind(control),
     unregister: control.unregister.bind(control),
-    formState: control.batchedState.proxy,
+    formState: control.state.proxy,
     watch: control.watch.bind(control),
     reset: control.reset.bind(control),
     setError: control.setError.bind(control),
@@ -61,23 +61,23 @@ export function useForm<
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return control.batchedState.subscribe(callback, undefined, false)
+      return control.state.subscribe(callback, undefined, false)
     },
     [control],
   )
 
   const getSnapshot = useCallback(() => {
-    return control.batchedState.writable.value
+    return control.state.value
   }, [control])
 
   const getServerSnapshot = useCallback(() => {
-    return control.batchedState.writable.value
+    return control.state.value
   }, [control])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (props?.values && !deepEqual(props.values, control.state.values.value)) {
+    if (props?.values && !deepEqual(props.values, control.state.value.values)) {
       control.reset(props.values, control.options.resetOptions)
     } else {
       control.resetDefaultValues()

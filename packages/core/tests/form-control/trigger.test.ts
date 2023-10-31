@@ -9,13 +9,13 @@ describe('FormContol', () => {
 
       const fn = vi.fn()
 
-      formControl.state.isValidating.subscribe(fn)
+      formControl.stores.isValidating.subscribe(fn)
 
       fn.mockClear()
 
       formControl.trigger()
 
-      expect(formControl.state.isValidating.value).toBeTruthy()
+      expect(formControl.stores.isValidating.value).toBeTruthy()
     })
 
     describe('merges new errors with existing errors state', () => {
@@ -35,7 +35,7 @@ describe('FormContol', () => {
 
         await formControl.trigger()
 
-        expect(formControl.state.errors.value).toEqual({
+        expect(formControl.stores.errors.value).toEqual({
           test: {
             message: '',
             ref: { name },
@@ -51,7 +51,7 @@ describe('FormContol', () => {
 
         await formControl.trigger()
 
-        expect(formControl.state.errors.value).toEqual({
+        expect(formControl.stores.errors.value).toEqual({
           name: {
             type: 'required',
           },
