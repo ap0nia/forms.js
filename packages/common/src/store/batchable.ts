@@ -118,7 +118,7 @@ export class Batchable<
         acc[key as keyof typeof acc] = cloneObject(store.value)
         return acc
       }, {} as TValues),
-      this.startStopNotifier.bind(this),
+      this.start.bind(this),
     )
 
     this.proxy = this.createTrackingProxy(undefined, undefined, false)
@@ -132,14 +132,7 @@ export class Batchable<
   }
 
   /**
-   */
-  startStopNotifier() {
-    this.start()
-    return this.stop.bind(this)
-  }
-
-  /**
-   * Runs after this store receives its first subscriber.
+   * Runs when this store receives its first subscriber.
    */
   start() {
     Object.entries(this.stores).forEach(([key, store]: [keyof TStores, Writable<any, any>], i) => {
@@ -150,6 +143,8 @@ export class Batchable<
       )
       this.unsubscribers.push(unsubscriber)
     })
+
+    return this.stop.bind(this)
   }
 
   /**
@@ -184,7 +179,6 @@ export class Batchable<
    */
   open() {
     this.depth++
-
     this.children.forEach((child) => child.open())
   }
 
@@ -196,7 +190,6 @@ export class Batchable<
     } else {
       this.depth--
     }
-
     this.children.forEach((child) => child.close())
   }
 
@@ -206,7 +199,6 @@ export class Batchable<
   flush(force = false) {
     this.close()
     this.notify(force)
-
     this.children.forEach((child) => child.flush(force))
   }
 
@@ -248,13 +240,13 @@ export class Batchable<
    * Whether any child is tracking the given key and context.
    */
   childIsTracking(key: string, name?: string[] | boolean): boolean {
-    return Array.from(this.children).some((clone) => clone.isTracking(key, name))
+    return Array.from(this.children).some((child) => child.isTracking(key, name))
   }
 
   /**
    * Whether the given key and context are being tracked by this store.
    */
-  isTracking(key: string, name?: string[] | boolean): boolean {
+  isTracking(key: string, name?: string | string[] | boolean): boolean {
     if (this.all === true) {
       return true
     }
@@ -309,15 +301,13 @@ export class Batchable<
 
     const nameArray = Array.isArray(name) ? name : [name]
 
-    const alreadyTracked = nameArray.every(
-      (n) => this.contexts[key]?.some((k) => k.value === n && k.exact === options?.exact),
+    this.contexts[key]?.push(
+      ...nameArray
+        .filter(
+          (n) => !this.contexts[key]?.some((c) => c.value === n && c.exact === options?.exact),
+        )
+        .map((n) => ({ value: n, ...options })),
     )
-
-    if (alreadyTracked) {
-      return
-    }
-
-    this.contexts[key]?.push(...nameArray.map((n) => ({ value: n, ...options })))
   }
 
   /**
@@ -339,7 +329,7 @@ export class Batchable<
   ): TValues {
     const proxy = {} as TValues
 
-    for (const key in this.writable.value) {
+    for (const key in this.stores) {
       Object.defineProperty(proxy, key, {
         get: () => {
           this.track(key, name, options)
