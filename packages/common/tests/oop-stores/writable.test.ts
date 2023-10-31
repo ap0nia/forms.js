@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { Writable } from '../../src/storev2/writable'
+import { Writable } from '../../src/oop-stores/writable'
 
 describe('store', () => {
   describe('Writable', () => {

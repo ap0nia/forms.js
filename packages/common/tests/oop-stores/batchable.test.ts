@@ -1,7 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { Batchable, createProxy } from '../../src/storev2/batchable'
-import { Writable } from '../../src/storev2/writable'
+import { Batchable, createProxy } from '../../src/oop-stores/batchable'
+import { Writable } from '../../src/oop-stores/writable'
 
 function createStores(set?: Set<string>, all = false) {
   const writables = {

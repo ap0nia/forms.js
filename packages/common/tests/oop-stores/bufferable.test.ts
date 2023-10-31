@@ -1,7 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { Bufferable } from '../../src/storev2/bufferable'
-import { Writable } from '../../src/storev2/writable'
+import { Bufferable } from '../../src/oop-stores/bufferable'
+import { Writable } from '../../src/oop-stores/writable'
 
 describe('Bufferable', () => {
   test('does not notify if listening to all changes but not fully closed', () => {

@@ -1,7 +1,7 @@
 import { describe, test, expect, vi } from 'vitest'
 
-import { Linkable } from '../../src/storev2/linkable'
-import { Writable } from '../../src/storev2/writable'
+import { Linkable } from '../../src/oop-stores/linkable'
+import { Writable } from '../../src/oop-stores/writable'
 
 function createStores(set?: Set<string>, all = false) {
   const writables = {
