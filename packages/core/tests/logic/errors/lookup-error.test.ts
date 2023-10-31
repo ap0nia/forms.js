@@ -17,7 +17,7 @@ describe('lookupError', () => {
 
     const fields = {}
 
-    // This is not a top level property because there are no dots in the name.
+    // This is a top level property because there are no dots in the name.
     const name = 'hello'
 
     const result = lookupError(errors, fields, name)
@@ -60,7 +60,7 @@ describe('lookupError', () => {
 
     const fields = {}
 
-    // This is a top level property because there are dots in the name.
+    // This is a nested property because there are dots in the name.
     const name = 'a.b.c'
 
     const result = lookupError(errors, fields, name)
