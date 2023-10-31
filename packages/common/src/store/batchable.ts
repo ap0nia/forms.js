@@ -53,15 +53,20 @@ export class Batchable<
   stores: TStores
 
   /**
+   * Whether to track updates from all stores.
+   */
+  all: boolean
+
+  /**
    * All updates to keys in this set will trigger updates, regardless of the context.
    * If undefined, then all keys will trigger updates.
    */
-  keys?: Set<PropertyKey> | undefined = undefined
+  keys: Set<PropertyKey>
 
   /**
    * Updates to keys in this object will only trigger updates if they're paired with a matching context.
    */
-  trackedContexts: { [K in keyof TStores]?: TrackedContext[] } = {}
+  contexts: { [K in keyof TStores]?: TrackedContext[] } = {}
 
   /**
    * The current value of the store.
@@ -91,7 +96,7 @@ export class Batchable<
   /**
    * All notifications from subscribed stores will be buffered prior to triggering updates from this store.
    */
-  bufferedUpdates: BufferedUpdate[] = []
+  buffer: BufferedUpdate[] = []
 
   /**
    * Functions to run when after all subscribers unsubscribe.
@@ -104,28 +109,23 @@ export class Batchable<
    */
   children = new Set<Batchable<any, any>>()
 
-  constructor(
-    stores: TStores,
-    keys: Set<PropertyKey> | undefined = undefined,
-    defaultValue?: TValues,
-  ) {
+  constructor(stores: TStores, keys = new Set<PropertyKey>(), all = false) {
     this.stores = stores
 
     this.keys = keys
 
-    this.value =
-      defaultValue ??
-      Object.entries(stores).reduce((acc, [key, store]) => {
-        acc[key as keyof typeof acc] = cloneObject(store.value)
-        return acc
-      }, {} as TValues)
+    this.all = all
+
+    this.value = Object.entries(stores).reduce((acc, [key, store]) => {
+      acc[key as keyof typeof acc] = cloneObject(store.value)
+      return acc
+    }, {} as TValues)
 
     this.proxy = {} as TValues
 
     for (const key in this.value) {
       Object.defineProperty(this.proxy, key, {
         get: () => {
-          this.keys ??= new Set()
           this.keys.add(key)
           return this.value[key as keyof typeof this.value]
         },
@@ -177,7 +177,7 @@ export class Batchable<
   subscriptionFunction(i: number, key: keyof TStores, value: any, context?: string[]) {
     this.value[key as keyof typeof this.value] = value
     this.pending &= ~(1 << i)
-    this.bufferedUpdates.push({ key: key as string, context: context })
+    this.buffer.push({ key: key as string, context: context })
     this.notify()
   }
 
@@ -225,7 +225,7 @@ export class Batchable<
     if (force || this.shouldUpdate()) {
       this.value = { ...this.value }
       this.writable.set(this.value)
-      this.bufferedUpdates = []
+      this.buffer = []
     }
   }
 
@@ -240,13 +240,13 @@ export class Batchable<
    * Whether any key in the buffer is being tracked. If true, then an update can be triggered.
    */
   keyChangedInBuffer(): boolean {
-    const keysChangedByRoot = this.bufferedUpdates.some((k) => this.keys?.has(k.key))
+    const keysChangedByRoot = this.buffer.some((k) => this.keys.has(k.key))
 
     if (keysChangedByRoot) {
       return true
     }
 
-    const keysChangedByContext = this.bufferedUpdates.some((keyChanged) => {
+    const keysChangedByContext = this.buffer.some((keyChanged) => {
       return this.isTracking(keyChanged.key, keyChanged.context)
     })
 
@@ -264,7 +264,7 @@ export class Batchable<
    * Whether the given key and context are being tracked by this store.
    */
   isTracking(key: string, name?: string[] | boolean): boolean {
-    if (this.keys == null) {
+    if (this.all === true) {
       return true
     }
 
@@ -275,13 +275,13 @@ export class Batchable<
     }
 
     if (typeof name === 'boolean') {
-      return name && this.trackedContexts[key] != null
+      return name && this.contexts[key] != null
     }
 
     const nameArray = Array.isArray(name) ? name : [name]
 
     const nameAndContextAreTracked = nameArray.some((n) => {
-      return this.trackedContexts[key]?.some((trackedContext) => {
+      return this.contexts[key]?.some((trackedContext) => {
         return trackedContext.exact
           ? n === trackedContext.value
           : n.includes(trackedContext.value) || trackedContext.value.includes(n)
@@ -303,9 +303,7 @@ export class Batchable<
      * After a transaction, the depth it was done doesn't matter.
      * Only whether the buffer has relevant, queued updates matters.
      */
-    const force = this.keyChangedInBuffer()
-
-    this.flush(force)
+    this.flush(this.keyChangedInBuffer())
   }
 
   /**
@@ -313,33 +311,32 @@ export class Batchable<
    */
   track(key: keyof TStores, name?: string | string[], options?: Partial<TrackedContext>): void {
     if (name == null) {
-      this.keys ??= new Set()
       this.keys.add(key)
       return
     }
 
-    this.trackedContexts[key] ??= []
+    this.contexts[key] ??= []
 
     const nameArray = Array.isArray(name) ? name : [name]
 
     const alreadyTracked = nameArray.every(
-      (n) => this.trackedContexts[key]?.some((k) => k.value === n && k.exact === options?.exact),
+      (n) => this.contexts[key]?.some((k) => k.value === n && k.exact === options?.exact),
     )
 
     if (alreadyTracked) {
       return
     }
 
-    this.trackedContexts[key]?.push(...nameArray.map((n) => ({ value: n, ...options })))
+    this.contexts[key]?.push(...nameArray.map((n) => ({ value: n, ...options })))
   }
 
   /**
    * Creates and links a child.
    */
-  clone(keys: Set<PropertyKey> | undefined = undefined): Batchable<TStores, TValues> {
-    const batchable = new Batchable(this.stores, keys, this.value)
-    this.children.add(batchable)
-    return batchable
+  clone(keys = new Set<PropertyKey>()): Batchable<TStores, TValues> {
+    const child = new Batchable<TStores, TValues>(this.stores, keys, this.all)
+    this.children.add(child)
+    return child
   }
 
   /**
