@@ -175,9 +175,6 @@ export class Batchable<
    * Every store is subscribed to, and notifications from all stores selectively trigger updates.
    */
   subscriptionFunction(i: number, key: keyof TStores, value: any, context?: string[]) {
-    /**
-     * TODO: figure out if changes can work with direct modification.
-     */
     this.value[key as keyof typeof this.value] = value
     this.pending &= ~(1 << i)
     this.bufferedUpdates.push({ key: key as string, context: context })
@@ -341,9 +338,7 @@ export class Batchable<
    */
   clone(keys: Set<PropertyKey> | undefined = undefined): Batchable<TStores, TValues> {
     const batchable = new Batchable(this.stores, keys, this.value)
-
     this.children.add(batchable)
-
     return batchable
   }
 
