@@ -1,5 +1,5 @@
 import { Batchable } from './batchable'
-import type { Bufferable, StoresValues } from './bufferable'
+import { Bufferable, type StoresValues } from './bufferable'
 import { Writable } from './writable'
 
 export class Linkable<
@@ -23,7 +23,14 @@ export class Linkable<
   }
 
   override flush(force = false) {
+    const buffer = [...this.buffer]
     super.flush(force)
-    this.children.forEach((child) => child.flush(force, super.buffer))
+    this.children.forEach((child) => child.flush(force, buffer))
+  }
+
+  clone(keys = new Set<PropertyKey>(), all = false) {
+    const child = new Bufferable(new Writable(this.writable.value), keys, all)
+    this.children.add(child)
+    return child
   }
 }

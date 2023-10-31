@@ -3,28 +3,15 @@ import { describe, test, expect, vi } from 'vitest'
 import { Bufferable } from '../../src/storev2/bufferable'
 import { Writable } from '../../src/storev2/writable'
 
-describe('DumbBatchable', () => {
-  test('does not notify if not fully closed', () => {
-    const store = new Bufferable(new Writable({}))
+describe('Bufferable', () => {
+  test('does not notify if listening to all changes but not fully closed', () => {
+    const store = new Bufferable(new Writable({}), undefined, true)
 
     const fn = vi.fn()
 
     store.subscribe(fn, undefined, false)
 
     store.open()
-
-    store.notify()
-
-    expect(fn).not.toHaveBeenCalled()
-  })
-
-  test('does not notify if no buffered updates', () => {
-    const store = new Bufferable(new Writable({}))
-
-    const fn = vi.fn()
-
-    store.subscribe(fn, undefined, false)
-
     store.open()
     store.flush()
 
@@ -165,7 +152,7 @@ describe('DumbBatchable', () => {
   })
 
   describe('track', () => {
-    test('adds provided key to tracked keys set if no name is provided', () => {
+    test('adds provided key to tracked keys set if no context is provided', () => {
       const store = new Bufferable(new Writable({}))
 
       store.track('a')
@@ -173,7 +160,7 @@ describe('DumbBatchable', () => {
       expect(store.keys).toContain('a')
     })
 
-    test('adds provided key and name to context for string name', () => {
+    test('adds provided key and context to tracked contexts for string context', () => {
       const store = new Bufferable(new Writable({}))
 
       store.track('a', 'hello')
@@ -181,7 +168,7 @@ describe('DumbBatchable', () => {
       expect(store.contexts['a']).toEqual([{ value: 'hello' }])
     })
 
-    test('adds provided key and names to context for string array name', () => {
+    test('adds provided key and context to tracked contexts for string array context', () => {
       const store = new Bufferable(new Writable({}))
 
       store.track('a', ['hello', 'goodbye'])
@@ -223,7 +210,6 @@ describe('DumbBatchable', () => {
       const store = new Bufferable(new Writable({}))
 
       store.depth = 1
-
       store.close()
 
       expect(store.depth).toEqual(0)
@@ -270,7 +256,7 @@ describe('DumbBatchable', () => {
 
       store.track('a', 'hello', { exact: true })
 
-      expect(store.isTracking('a', ['hello'])).toBeTruthy()
+      expect(store.isTracking('a', 'hello')).toBeTruthy()
     })
 
     test('returns false if provided context is not an exact match in tracked contexts', () => {
@@ -278,7 +264,7 @@ describe('DumbBatchable', () => {
 
       store.track('a', 'hello', { exact: true })
 
-      expect(store.isTracking('a', ['ello, hel'])).toBeFalsy()
+      expect(store.isTracking('a', 'ello')).toBeFalsy()
     })
 
     test('returns true if provided context is a loose match in tracked contexts', () => {
@@ -286,7 +272,7 @@ describe('DumbBatchable', () => {
 
       store.track('a', 'hello', { exact: false })
 
-      expect(store.isTracking('a', ['he'])).toBeTruthy()
+      expect(store.isTracking('a', 'he')).toBeTruthy()
     })
   })
 })

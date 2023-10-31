@@ -38,14 +38,25 @@ export class Batchable<
       return acc
     }, {} as TValues)
 
+    const createSubscriber = (i: number, key: string) => {
+      return (value: any, context?: string[]) => {
+        this.writable.value[key as keyof TValues] = value
+        this.pending &= ~(1 << i)
+        this.buffer.push({ key, context })
+        this.notify()
+      }
+    }
+
+    const createInvalidator = (i: number) => {
+      return () => {
+        this.pending |= 1 << i
+      }
+    }
+
     const startStopNotifier = () => {
       Object.entries(stores).forEach(([key, store], i) => {
-        const unsubscriber = store.subscribe(
-          this.subscriptionFunction.bind(this, i, key),
-          this.invalidateFunction.bind(this, i),
-          false,
-        )
-        this.unsubscribers.push(unsubscriber)
+        const unsubscribe = store.subscribe(createSubscriber(i, key), createInvalidator(i), false)
+        this.unsubscribers.push(unsubscribe)
       })
 
       return () => {
@@ -74,27 +85,6 @@ export class Batchable<
   }
 
   /**
-   * Every store is subscribed to, and notifications from all stores selectively trigger updates.
-   */
-  subscriptionFunction(i: number, key: string, value: any, context?: string[]) {
-    this.writable.value[key as keyof TValues] = value
-
-    this.pending &= ~(1 << i)
-
-    this.buffer.push({ key, context })
-
-    this.notify()
-  }
-
-  /**
-   * The invalidation function is called before the subscription function.
-   * If not entirely sequential, then pending will be desynchronized and updates will be prevented.
-   */
-  invalidateFunction(i: number) {
-    this.pending |= 1 << i
-  }
-
-  /**
    * Run a function and flush the buffer after it completes.
    */
   transaction(fn: () => unknown): void {
@@ -103,11 +93,24 @@ export class Batchable<
     fn()
 
     /**
-     * After a transaction, the depth it was done doesn't matter.
-     * Only whether the buffer has relevant, queued updates matters.
+     * After a transaction, force an update if any tracked keys and/or contexts have changed.
      */
-    const force = this.keyChangedInBuffer(this.buffer)
-
-    this.flush(force)
+    this.flush(this.keyChangedInBuffer(this.buffer))
   }
+}
+
+export function createProxy<T extends Record<string, any>>(batchable: Batchable<T>): T {
+  const proxy = {} as T
+
+  for (const key in batchable.stores) {
+    Object.defineProperty(proxy, key, {
+      get: () => {
+        batchable.keys.add(key)
+        return batchable.writable.value[key]
+      },
+      enumerable: true,
+    })
+  }
+
+  return proxy
 }
