@@ -45,20 +45,7 @@ export function useFieldArray<
     }),
   )
 
-  useEffect(() => {
-    if (fieldArray.current.name !== props.name) {
-      fieldArray.current = new FieldArray<
-        TValues,
-        TContext,
-        TTransformedValues,
-        TParsedFieldArray,
-        TFieldArrayName
-      >({
-        ...props,
-        control,
-      })
-    }
-  }, [props.name])
+  fieldArray.current.name = props.name
 
   const subscribe = useCallback(
     (callback: () => void) => {

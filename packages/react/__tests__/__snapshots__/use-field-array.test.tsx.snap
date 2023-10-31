@@ -63,6 +63,19 @@ exports[`should append multiple inputs correctly 1`] = `
       },
     ],
   },
+  {
+    "test": [
+      {
+        "value": "data",
+      },
+      {
+        "value": "test",
+      },
+      {
+        "value": "test1",
+      },
+    ],
+  },
 ]
 `;
 

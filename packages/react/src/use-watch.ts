@@ -28,8 +28,6 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
 
     const derived = new Batchable(control.state, new Set())
 
-    derived.track('values', props?.name, props)
-
     control.batchedState.children.add(derived)
 
     previousDerivedState.current = derived
@@ -37,14 +35,13 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
     return derived
   }, [control, props?.name])
 
+  derivedState.track('values', props?.name, props)
+
   useEffect(() => {
     return () => {
-      if (previousDerivedState.current) {
-        control.batchedState.children.delete(previousDerivedState.current)
-        previousDerivedState.current = undefined
-      }
+      control.batchedState.children.delete(derivedState)
     }
-  }, [])
+  }, [control, derivedState])
 
   const subscribe = useCallback(
     (callback: () => void) => {
