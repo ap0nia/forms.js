@@ -31,7 +31,7 @@ describe('deepFilter', () => {
     expect(deepFilter(obj, [])).toEqual(obj)
   })
 
-  test('filters a single existing key', () => {
+  test('returns object filtered by an existing key', () => {
     const obj = {
       a: 'foo',
       b: {
@@ -47,7 +47,7 @@ describe('deepFilter', () => {
     expect(deepFilter(obj, 'a')).toEqual(expectedResult)
   })
 
-  test('filters a single non-existing key', () => {
+  test('returns (almost) empty filtered by a non-existing key', () => {
     const obj = {
       a: 'foo',
       b: {
@@ -63,7 +63,7 @@ describe('deepFilter', () => {
     expect(deepFilter(obj, 'z')).toEqual(expectedResult)
   })
 
-  test('filters an array of existing keys', () => {
+  test('returns object filtered by an array of keys', () => {
     const obj = {
       a: 'foo',
       b: {
@@ -84,7 +84,7 @@ describe('deepFilter', () => {
     expect(deepFilter(obj, ['a', 'b.c'])).toEqual(expectedResult)
   })
 
-  test('filters an array of existing and non-existing keys', () => {
+  test('returns object filtered by an array of existing and non-existing keys', () => {
     const obj = {
       a: 'foo',
       b: {

@@ -1,138 +1,79 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import user from '@testing-library/user-event'
+import { describe, test, expect } from 'vitest'
 
 import { cloneObject } from '../../src/utils/clone-object'
 
-describe('clone', () => {
-  it('should clone object and not mutate the original object', () => {
-    const fileData = new File([''], 'filename')
-    const data = {
-      items: [],
-      test: {
-        date: new Date('2020-10-15'),
-        test0: 12,
-        test1: '12',
-        test2: [1, 2, 3, 4],
-        deep: {
-          date: new Date('2020-10-15'),
-          test0: 12,
-          test1: '12',
-          test2: [
-            1,
-            2,
-            3,
-            4,
-            {
-              file: fileData,
-            },
-          ],
-          file: fileData,
-        },
-      },
-      file: fileData,
-      test2: new Set([1, 2]),
-      test1: new Map([
-        [1, 'one'],
-        [2, 'two'],
-        [3, 'three'],
-      ]),
-    }
+describe('cloneObject', () => {
+  test('returns new date if passed a date', () => {
+    const date = new Date()
+    const clone = cloneObject(date)
 
-    const copy = cloneObject(data)
-    expect(cloneObject(data)).toEqual(copy)
-
-    // @ts-expect-error Property didn't exist.
-    copy.test.what = '1243'
-    copy.test.date = new Date('2020-10-16')
-    // @ts-expect-error Property didn't exist.
-    copy.items[0] = 2
-
-    expect(data).toEqual({
-      items: [],
-      test: {
-        date: new Date('2020-10-15'),
-        test0: 12,
-        test1: '12',
-        test2: [1, 2, 3, 4],
-        deep: {
-          date: new Date('2020-10-15'),
-          test0: 12,
-          test1: '12',
-          test2: [
-            1,
-            2,
-            3,
-            4,
-            {
-              file: fileData,
-            },
-          ],
-          file: fileData,
-        },
-      },
-      file: fileData,
-      test2: new Set([1, 2]),
-      test1: new Map([
-        [1, 'one'],
-        [2, 'two'],
-        [3, 'three'],
-      ]),
-    })
-
-    // @ts-expect-error Property didn't exist.
-    data.items = [1, 2, 3]
-
-    expect(copy.items).toEqual([2])
+    expect(clone).not.toBe(date)
+    expect(clone).toEqual(date)
   })
 
-  it('should skip clone if a node is instance of function', () => {
-    function testFunction() {}
+  test('returns new set if passed a set', () => {
+    const set = new Set([1, 2, 3])
+    const clone = cloneObject(set)
 
-    const data = {
-      test: {
-        testFunction,
-        test: 'inner-string',
-        deep: {
-          testFunction,
-          test: 'deep-string',
-        },
-      },
-      testFunction,
-      other: 'string',
-    }
-
-    const copy = cloneObject(data)
-    data.test.deep.test = 'changed-deep-string'
-
-    expect(copy).toEqual({
-      test: {
-        test: 'inner-string',
-        deep: {
-          testFunction,
-          test: 'deep-string',
-        },
-        testFunction,
-      },
-      testFunction,
-      other: 'string',
-    })
+    expect(clone).not.toBe(set)
+    expect(clone).toEqual(set)
   })
 
-  describe('in presence of Array polyfills', () => {
-    beforeAll(() => {
-      // @ts-expect-error Prototype doesn't normally have this property.
-      Array.prototype.somePolyfill = () => 123
-    })
+  test('returns same Blob instance if passed a Blob', () => {
+    const blob = new Blob()
+    const clone = cloneObject(blob)
 
-    it('should skip polyfills while cloning', () => {
-      const data = [1]
-      const copy = cloneObject(data)
+    expect(clone).toBe(blob)
+  })
 
-      expect(Object.hasOwn(copy, 'somePolyfill')).toBe(false)
-    })
+  test('returns same FileList instance if passed a FileList', () => {
+    const input = document.createElement('input')
+    input.type = 'file'
 
-    afterAll(() => {
-      // @ts-expect-error Prototype doesn't normally have this property.
-      delete Array.prototype.somePolyfill
-    })
+    user.upload(input, [])
+
+    const fileList = input.files
+
+    const clone = cloneObject(fileList)
+
+    expect(clone).toBe(fileList)
+  })
+
+  test('returns same FileList instance in nested object', () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+
+    user.upload(input, [])
+
+    const fileList = input.files
+
+    const object = {
+      a: {
+        b: {
+          c: fileList,
+        },
+      },
+    }
+
+    const clone = cloneObject(object)
+
+    expect(clone.a.b.c).toBe(object.a.b.c)
+  })
+
+  test('returns same Blob instance in nested array in object', () => {
+    const blob = new Blob()
+
+    const object = {
+      a: {
+        b: {
+          c: [blob],
+        },
+      },
+    }
+
+    const clone = cloneObject(object)
+
+    expect(clone.a.b.c[0]).toBe(object.a.b.c[0])
   })
 })

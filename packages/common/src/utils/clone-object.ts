@@ -1,5 +1,5 @@
 import { isBrowser } from './is-browser'
-import { isObject, isPlainObject } from './is-object'
+import { isObject } from './is-object'
 
 /**
  * Similar to {@link structuredClone}, but compatible with stuff like React nodes.
@@ -13,14 +13,10 @@ export function cloneObject<T>(data: T): T {
     return new Set(data) as T
   }
 
-  const dataIsArray = Array.isArray(data)
+  const isArray = Array.isArray(data)
 
-  if (!(isBrowser() && isRawData(data)) && (dataIsArray || isObject(data))) {
-    if (!dataIsArray && !isPlainObject(data)) {
-      return data
-    }
-
-    const copy: any = dataIsArray ? [] : {}
+  if (!(isBrowser() && isRawData(data)) && (isArray || isObject(data))) {
+    const copy: any = isArray ? [] : {}
 
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {

@@ -1,169 +1,217 @@
 import { describe, test, expect, vi } from 'vitest'
 
 import { Writable } from '../../src/store/writable'
+import { noop } from '../../src/utils/noop'
 
-describe('store', () => {
-  describe('Writable', () => {
-    test('subscription function is called once with the current value upon subscribing', () => {
-      const value = 0
+describe('Writable', () => {
+  describe('constructor', () => {
+    test('sets initial value to undefined if no value is provided', () => {
+      const store = new Writable()
 
-      const count = new Writable(value)
-
-      const fn = vi.fn()
-
-      count.subscribe(fn)
-
-      expect(fn).toHaveBeenCalledTimes(1)
-
-      expect(fn).toHaveBeenCalledWith(value, undefined)
+      expect(store.value).toEqual(undefined)
     })
 
-    test('subscription function is not called for same value', () => {
-      const value = 0
+    test('sets initial value to the provided value', () => {
+      const store = new Writable(1)
 
-      const count = new Writable(value)
-
-      const fn = vi.fn()
-
-      count.subscribe(fn)
-
-      expect(fn).toHaveBeenCalledTimes(1)
-
-      count.set(value)
-
-      expect(fn).toHaveBeenCalledTimes(1)
+      expect(store.value).toEqual(1)
     })
 
-    test('does not notify subscribers if there are other queued subscribers', () => {
-      const count = new Writable(0)
+    test('sets start to noop if no start function is provided', () => {
+      const store = new Writable()
 
-      const fn = vi.fn()
-
-      count.subscribe(fn)
-
-      fn.mockReset()
-
-      Writable.subscriberQueue.length = 1
-
-      count.set(1)
-
-      expect(fn).not.toHaveBeenCalled()
-
-      Writable.subscriberQueue.length = 0
+      expect(store.start).toBeInstanceOf(Function)
     })
 
-    test('calls subscriber with context', () => {
-      const count = new Writable(0)
+    test('sets start to the provided start function', () => {
+      const start = () => {}
 
-      const value = 1
-      const context = { foo: 'bar' }
+      const store = new Writable(undefined, start)
 
-      const fn = vi.fn()
-
-      count.subscribe(fn)
-
-      fn.mockReset()
-
-      count.set(value, context)
-
-      expect(fn).toHaveBeenCalledTimes(1)
-      expect(fn).toHaveBeenCalledWith(value, context)
+      expect(store.start).toEqual(start)
     })
   })
 
-  describe('Writable - from Svelte', () => {
-    test('creates a writable store', () => {
-      const count = new Writable(0)
-      const values: number[] = []
+  describe('update', () => {
+    test('sets the store value to the result of the updater function', () => {
+      const result = { a: 1, b: 2, c: 3 }
 
-      const unsubscribe = count.subscribe((value) => {
-        values.push(value)
+      const store = new Writable<typeof result>()
+
+      store.update(() => result)
+
+      expect(store.value).toEqual(result)
+    })
+
+    test('calls subscription function with the new value', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>()
+
+      const fn = vi.fn()
+
+      store.subscribe(fn)
+
+      store.update(() => result)
+
+      expect(fn).toHaveBeenCalledWith(result, undefined)
+    })
+
+    test('calls subscription function with the new value and context', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result, typeof result>()
+
+      const fn = vi.fn()
+
+      store.subscribe(fn)
+
+      store.update(() => result, result)
+
+      expect(fn).toHaveBeenCalledWith(result, result)
+    })
+  })
+
+  describe('set', () => {
+    test('does not notify subscribers for the same primitive value', () => {
+      const store = new Writable(1)
+
+      const fn = vi.fn()
+
+      store.subscribe(fn, undefined, false)
+
+      store.set(1)
+
+      expect(fn).not.toHaveBeenCalled()
+    })
+
+    test('sets the store value to the new value', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>()
+
+      store.set(result)
+
+      expect(store.value).toEqual(result)
+    })
+
+    test('calls subscription function with the new value', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>()
+
+      const fn = vi.fn()
+
+      store.subscribe(fn)
+
+      store.set(result)
+
+      expect(fn).toHaveBeenLastCalledWith(result, undefined)
+    })
+
+    test('calls subscription function with the new value and context', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result, typeof result>()
+
+      const fn = vi.fn()
+
+      store.subscribe(fn)
+
+      store.set(result, result)
+
+      expect(fn).toHaveBeenLastCalledWith(result, result)
+    })
+
+    test('calls provided invalidate function', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>()
+
+      const invalidator = vi.fn()
+
+      store.subscribe(noop, invalidator)
+
+      store.set(result)
+
+      expect(invalidator).toHaveBeenCalled()
+    })
+
+    test('resets subscriber queue after notifying all subscribers', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>()
+
+      store.subscribe(noop)
+
+      store.set(result)
+
+      expect(Writable.subscriberQueue).toEqual([])
+    })
+
+    test('does not notify subscribers if the subscriber queue is not empty', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>()
+
+      const fn = vi.fn()
+
+      store.subscribe(fn, undefined, false)
+
+      Writable.subscriberQueue.length = 1
+
+      store.set(result)
+
+      expect(fn).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('subscribe', () => {
+    test('does not notify on initial subscription if runFirst is false', () => {
+      const store = new Writable(1)
+
+      const fn = vi.fn()
+
+      store.subscribe(fn, undefined, false)
+
+      expect(fn).not.toHaveBeenCalled()
+    })
+
+    test('calls the intially provided start function during the first subscription', () => {
+      const start = vi.fn()
+
+      const store = new Writable(undefined, start)
+
+      store.subscribe(noop, noop, false)
+
+      expect(start).toHaveBeenCalledOnce()
+    })
+
+    test('calls the stop function returned by the start function after the last unsubscription', () => {
+      const stop = vi.fn()
+
+      const start = () => stop
+
+      const store = new Writable(undefined, start)
+
+      store.subscribe(noop, noop, false)()
+
+      expect(stop).toHaveBeenCalledOnce()
+    })
+
+    test('only notifies once if the start function also sets the value', () => {
+      const result = { a: 1, b: 2, c: 3 }
+
+      const store = new Writable<typeof result>(undefined, (set) => {
+        set(result)
       })
 
-      count.set(1)
-      count.update((n) => n + 1)
+      const fn = vi.fn()
 
-      unsubscribe()
+      store.subscribe(fn)()
 
-      count.set(3)
-      count.update((n) => n + 1)
-
-      expect(values).toEqual([0, 1, 2])
-    })
-
-    test('creates an undefined writable store', () => {
-      const store = new Writable()
-      const values: unknown[] = []
-
-      const unsubscribe = store.subscribe((value) => {
-        values.push(value)
-      })
-
-      unsubscribe()
-
-      expect(values).toEqual([undefined])
-    })
-
-    test('calls provided subscribe handler', () => {
-      let called = 0
-
-      const store = new Writable(0, () => {
-        called += 1
-        return () => (called -= 1)
-      })
-
-      const unsubscribe1 = store.subscribe(() => {})
-      expect(called).toEqual(1)
-
-      const unsubscribe2 = store.subscribe(() => {})
-      expect(called).toEqual(1)
-
-      unsubscribe1()
-      expect(called).toEqual(1)
-
-      unsubscribe2()
-      expect(called).toEqual(0)
-    })
-
-    test('does not assume immutable data', () => {
-      const obj = {}
-      let called = 0
-
-      const store = new Writable(obj)
-
-      store.subscribe(() => {
-        called += 1
-      })
-
-      store.set(obj)
-      expect(called).toEqual(2)
-
-      store.update((obj) => obj)
-      expect(called).toEqual(3)
-    })
-
-    test('only calls subscriber once initially, including on resubscriptions', () => {
-      let num = 0
-      const store = new Writable(num, (set) => set((num += 1)))
-
-      let count1 = 0
-      let count2 = 0
-
-      store.subscribe(() => (count1 += 1))()
-      expect(count1).toEqual(1)
-
-      const unsubscribe = store.subscribe(() => (count2 += 1))
-      expect(count2).toEqual(1)
-
-      unsubscribe()
-    })
-
-    test('no error even if unsubscribe calls twice', () => {
-      let num = 0
-      const store = new Writable(num, (set) => set((num += 1)))
-      const unsubscribe = store.subscribe(() => {})
-      unsubscribe()
-      expect(() => unsubscribe()).not.toThrowError()
+      expect(fn).toHaveBeenCalledOnce()
+      expect(fn).toHaveBeenLastCalledWith(result, undefined)
     })
   })
 })

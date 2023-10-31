@@ -3,7 +3,7 @@ import { describe, test, expect } from 'vitest'
 import { stringToPath } from '../../src/utils/string-to-path'
 
 describe('stringToPath', () => {
-  test('should convert string to path', () => {
+  test('converts string to path', () => {
     expect(stringToPath('test')).toEqual(['test'])
 
     expect(stringToPath('[test]]')).toEqual(['test'])

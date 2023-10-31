@@ -11,7 +11,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('empty object and empty key', () => {
+  test('returns undefined for empty object and empty key', () => {
     const input = {}
     const key = ''
     const output = undefined
@@ -19,7 +19,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('empty object and non-empty key', () => {
+  test('returns undefined for empty object and non-empty key', () => {
     const input = {}
     const key = 'a.b.c'
     const output = undefined
@@ -27,7 +27,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('non-empty object and simple existing key', () => {
+  test('returns value for non-empty object and simple existing key', () => {
     const input = { a: 123 }
     const key = 'a'
     const output = 123
@@ -35,7 +35,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('non-empty object and simple non-existing key', () => {
+  test('returns undefined non-empty object and simple non-existing key', () => {
     const input = { a: 123 }
     const key = 'b'
     const output = undefined
@@ -43,7 +43,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('non-empty object and complex existing key', () => {
+  test('returns value for non-empty object and complex existing key', () => {
     const input = { a: { b: { c: 123 } } }
     const key = 'a.b.c'
     const output = 123
@@ -51,7 +51,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('non-empty object and complex non-existing key', () => {
+  test('returns undefined for non-empty object and complex non-existing key', () => {
     const input = { a: { b: { c: 123 } } }
     const key = 'a.b.d'
     const output = undefined
@@ -59,7 +59,7 @@ describe('safeGet', () => {
     expect(safeGet(input, key)).toBe(output)
   })
 
-  test('number key', () => {
+  test('returns top level property for number key', () => {
     const input = { 0: 123 }
     const key = 0
     const output = 123
@@ -71,7 +71,7 @@ describe('safeGet', () => {
     expect(safeGet(input2, key2)).toBe(output2)
   })
 
-  test('symbol key', () => {
+  test('returns top level property for symbol key', () => {
     const input = { [Symbol.for('test')]: 123 }
     const key = Symbol.for('test')
     const output = 123
@@ -80,7 +80,7 @@ describe('safeGet', () => {
 })
 
 describe('safeGetMultiple', () => {
-  test('should return the entire object if no key is provided', () => {
+  test('returns the entire object if no key is provided', () => {
     const obj = { foo: { bar: { baz: 'qux' } } }
 
     const result = safeGetMultiple(obj, null)
@@ -88,7 +88,7 @@ describe('safeGetMultiple', () => {
     expect(result).toEqual(obj)
   })
 
-  test('should return the value of a single key', () => {
+  test('returns the value of a single key', () => {
     const obj = { foo: { bar: { baz: 'qux' } } }
 
     const result = safeGetMultiple(obj, 'foo.bar.baz')
@@ -96,7 +96,7 @@ describe('safeGetMultiple', () => {
     expect(result).toEqual('qux')
   })
 
-  test('should return the value of multiple keys', () => {
+  test('returns the value of multiple keys', () => {
     const obj = { foo: { bar: { baz: 'qux' } } }
 
     const result = safeGetMultiple(obj, ['foo.bar.baz', 'foo.bar.qux'])

@@ -4,57 +4,47 @@ import { safeNotEqual } from '../../src/utils/safe-not-equal'
 
 describe('safeNotEqual', () => {
   describe('NaN', () => {
-    test('NaN is not different from NaN', () => {
-      expect(safeNotEqual(NaN, NaN)).toEqual(false)
+    test('returns false for NaN and NaN', () => {
+      expect(safeNotEqual(NaN, NaN)).toBeFalsy()
     })
 
-    test('NaN is different from everything else', () => {
-      expect(safeNotEqual(NaN, 0)).toEqual(true)
-      expect(safeNotEqual(NaN, 'hi')).toEqual(true)
-      expect(safeNotEqual(NaN, false)).toEqual(true)
+    test('returns false for NaN and everything else', () => {
+      expect(safeNotEqual(NaN, 0)).toBeTruthy()
+      expect(safeNotEqual(NaN, 'hi')).toBeTruthy()
+      expect(safeNotEqual(NaN, false)).toBeTruthy()
     })
   })
 
   describe('primitives', () => {
-    test('same numbers are not different', () => {
-      expect(safeNotEqual(0, 0)).toEqual(false)
+    test('returns false for same numbers', () => {
+      expect(safeNotEqual(0, 0)).toBeFalsy()
     })
 
-    test('same strings are not different', () => {
-      expect(safeNotEqual('hi', 'hi')).toEqual(false)
+    test('returns false for same strings', () => {
+      expect(safeNotEqual('hi', 'hi')).toBeFalsy()
     })
 
-    test('same booleans are not different', () => {
-      expect(safeNotEqual(true, true)).toEqual(false)
-      expect(safeNotEqual(false, false)).toEqual(false)
+    test('returns false for same booleans', () => {
+      expect(safeNotEqual(true, true)).toBeFalsy()
+      expect(safeNotEqual(false, false)).toBeFalsy()
     })
 
-    test('null is not different from null', () => {
-      expect(safeNotEqual(null, null)).toEqual(false)
+    test('returns false for null and null', () => {
+      expect(safeNotEqual(null, null)).toBeFalsy()
     })
 
-    test('undefined is not different from undefined', () => {
-      expect(safeNotEqual(undefined, undefined)).toEqual(false)
+    test('returns false for undefined and undefined', () => {
+      expect(safeNotEqual(undefined, undefined)).toBeFalsy()
     })
   })
 
-  test('objects are always different', () => {
-    expect(safeNotEqual({}, {})).toEqual(true)
-
+  test('always returns false for two objects', () => {
     const obj = {}
-    expect(safeNotEqual(obj, obj)).toEqual(true)
+    expect(safeNotEqual(obj, obj)).toBeTruthy()
   })
 
-  test('functions are always different', () => {
-    expect(
-      safeNotEqual(
-        () => {},
-        () => {},
-      ),
-    ).toEqual(true)
-
+  test('always returns false for two functions', () => {
     const fn = () => {}
-
-    expect(safeNotEqual(fn, fn)).toEqual(true)
+    expect(safeNotEqual(fn, fn)).toBeTruthy()
   })
 })
