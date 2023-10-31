@@ -47,7 +47,7 @@ describe('FormControl', () => {
       formControl.resolveDefaultValues(async () => ({}))
 
       expect(formControl.state.isLoading.value).toBeTruthy()
-      expect(formControl.batchedState.value.isLoading).toBeTruthy()
+      expect(formControl.batchedState.writable.value.isLoading).toBeTruthy()
     })
 
     test('sets default values to empty object if provided values is a promise that resolves to null', async () => {
@@ -110,7 +110,7 @@ describe('FormControl', () => {
 
       expect(formControl.state.isLoading.value).toBeTruthy()
 
-      await waitFor(() => expect(formControl.batchedState.value.isLoading).toBeFalsy())
+      await waitFor(() => expect(formControl.batchedState.writable.value.isLoading).toBeFalsy())
     })
 
     test('sets derived state twice if tracking isLoading and promise is provided', async () => {
@@ -126,9 +126,9 @@ describe('FormControl', () => {
 
       formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.batchedState.value.isLoading).toBeTruthy()
+      expect(formControl.batchedState.writable.value.isLoading).toBeTruthy()
 
-      await waitFor(() => expect(formControl.batchedState.value.isLoading).toBeFalsy())
+      await waitFor(() => expect(formControl.batchedState.writable.value.isLoading).toBeFalsy())
 
       expect(fn).toHaveBeenCalledTimes(2)
     })

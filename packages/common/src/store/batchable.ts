@@ -5,6 +5,9 @@ import { noop } from '../utils/noop'
 import type { Subscriber, Unsubscriber } from './types'
 import { Writable } from './writable'
 
+/**
+ * Translates a record of stores into a record of their values.
+ */
 export type StoresValues<T> = T extends Writable<infer U>
   ? U
   : { [K in keyof T]: T[K] extends Writable<infer U> ? U : never }
@@ -59,7 +62,6 @@ export class Batchable<
 
   /**
    * All updates to keys in this set will trigger updates, regardless of the context.
-   * If undefined, then all keys will trigger updates.
    */
   keys: Set<PropertyKey>
 
@@ -67,11 +69,6 @@ export class Batchable<
    * Updates to keys in this object will only trigger updates if they're paired with a matching context.
    */
   contexts: { [K in keyof TStores]?: TrackedContext[] } = {}
-
-  /**
-   * The current value of the store.
-   */
-  value: TValues
 
   /**
    * Accessing keys under the proxy will cause them to be tracked.
@@ -116,24 +113,15 @@ export class Batchable<
 
     this.all = all
 
-    this.value = Object.entries(stores).reduce((acc, [key, store]) => {
-      acc[key as keyof typeof acc] = cloneObject(store.value)
-      return acc
-    }, {} as TValues)
+    this.writable = new Writable(
+      Object.entries(stores).reduce((acc, [key, store]) => {
+        acc[key as keyof typeof acc] = cloneObject(store.value)
+        return acc
+      }, {} as TValues),
+      this.startStopNotifier.bind(this),
+    )
 
-    this.proxy = {} as TValues
-
-    for (const key in this.value) {
-      Object.defineProperty(this.proxy, key, {
-        get: () => {
-          this.keys.add(key)
-          return this.value[key as keyof typeof this.value]
-        },
-        enumerable: true,
-      })
-    }
-
-    this.writable = new Writable(this.value, this.startStopNotifier.bind(this))
+    this.proxy = this.createTrackingProxy(undefined, undefined, false)
   }
 
   /**
@@ -143,6 +131,8 @@ export class Batchable<
     return this.writable.subscribe(run, invalidate, runFirst)
   }
 
+  /**
+   */
   startStopNotifier() {
     this.start()
     return this.stop.bind(this)
@@ -175,7 +165,7 @@ export class Batchable<
    * Every store is subscribed to, and notifications from all stores selectively trigger updates.
    */
   subscriptionFunction(i: number, key: keyof TStores, value: any, context?: string[]) {
-    this.value[key as keyof typeof this.value] = value
+    this.writable.value[key as keyof TValues] = value
     this.pending &= ~(1 << i)
     this.buffer.push({ key: key as string, context: context })
     this.notify()
@@ -198,6 +188,8 @@ export class Batchable<
     this.children.forEach((child) => child.open())
   }
 
+  /**
+   */
   close() {
     if (this.depth <= 0) {
       this.depth = 0
@@ -223,8 +215,7 @@ export class Batchable<
    */
   notify(force = false) {
     if (force || this.shouldUpdate()) {
-      this.value = { ...this.value }
-      this.writable.set(this.value)
+      this.writable.update((value) => ({ ...value }))
       this.buffer = []
     }
   }
@@ -300,8 +291,7 @@ export class Batchable<
     fn()
 
     /**
-     * After a transaction, the depth it was done doesn't matter.
-     * Only whether the buffer has relevant, queued updates matters.
+     * After a transaction, force an update if the buffer contains relevant updates.
      */
     this.flush(this.keyChangedInBuffer())
   }
@@ -349,13 +339,13 @@ export class Batchable<
   ): TValues {
     const proxy = {} as TValues
 
-    for (const key in this.value) {
+    for (const key in this.writable.value) {
       Object.defineProperty(proxy, key, {
         get: () => {
           this.track(key, name, options)
           return filter
-            ? deepFilter(this.value[key as keyof typeof this.value], name)
-            : this.value[key as keyof typeof this.value]
+            ? deepFilter(this.writable.value[key as keyof TValues], name)
+            : this.writable.value[key as keyof TValues]
         },
         enumerable: true,
       })

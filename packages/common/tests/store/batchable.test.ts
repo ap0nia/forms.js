@@ -403,7 +403,7 @@ describe('Batchable', () => {
 
       const proxy = batchable.createTrackingProxy(undefined, undefined, false)
 
-      expect(proxy.a).toEqual(batchable.value.a)
+      expect(proxy.a).toEqual(batchable.writable.value.a)
       expect(batchable.keys).toContain('a')
     })
   })
