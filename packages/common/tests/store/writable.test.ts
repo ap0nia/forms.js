@@ -4,22 +4,6 @@ import { Writable } from '../../src/store/writable'
 
 describe('store', () => {
   describe('Writable', () => {
-    test('initially has no subscribers', () => {
-      const count = new Writable(0)
-
-      expect(count.hasSubscribers).toBeFalsy()
-    })
-
-    test('subscribing adds a subscriber', () => {
-      const count = new Writable(0)
-
-      const fn = vi.fn()
-
-      count.subscribe(fn)
-
-      expect(count.hasSubscribers).toBeTruthy()
-    })
-
     test('subscription function is called once with the current value upon subscribing', () => {
       const value = 0
 
@@ -31,7 +15,7 @@ describe('store', () => {
 
       expect(fn).toHaveBeenCalledTimes(1)
 
-      expect(fn).toHaveBeenCalledWith(value)
+      expect(fn).toHaveBeenCalledWith(value, undefined)
     })
 
     test('subscription function is not called for same value', () => {

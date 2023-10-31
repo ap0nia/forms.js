@@ -28,15 +28,15 @@ describe('Batchable', () => {
 
       writables.a.set(4)
 
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 }, undefined)
 
       writables.b.set(5)
 
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 3 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 3 }, undefined)
 
       writables.c.set(6)
 
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 }, undefined)
 
       expect(fn).toHaveBeenCalledTimes(3)
     })
@@ -46,13 +46,15 @@ describe('Batchable', () => {
 
       const fn = vi.fn()
 
-      batchable.subscribe(fn, undefined, false)
+      batchable.subscribe(fn, undefined)
+
+      fn.mockReset()
 
       writables.a.set(4)
       writables.b.set(5)
       writables.c.set(6)
 
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 }, undefined)
       expect(fn).toHaveBeenCalledOnce()
     })
 
@@ -93,7 +95,7 @@ describe('Batchable', () => {
       })
 
       expect(fn).toHaveBeenCalledOnce()
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 }, undefined)
     })
 
     test('notifies once after a transaction with tracked keys', () => {
@@ -112,7 +114,7 @@ describe('Batchable', () => {
       })
 
       expect(fn).toHaveBeenCalledOnce()
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 5, c: 6 }, undefined)
     })
 
     test('does not notify after a transaction with no tracked keys', () => {
@@ -163,7 +165,7 @@ describe('Batchable', () => {
       batchable.flush()
 
       expect(fn).toHaveBeenCalledOnce()
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 }, undefined)
     })
 
     test('notifies once after flushing if tracked key and context pair changes', () => {
@@ -188,7 +190,7 @@ describe('Batchable', () => {
       batchable.flush()
 
       expect(fn).toHaveBeenCalledOnce()
-      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 })
+      expect(fn).toHaveBeenLastCalledWith({ a: 4, b: 2, c: 3 }, undefined)
     })
 
     test('does not notify after flushing if tracked key and context pair does not change', () => {
