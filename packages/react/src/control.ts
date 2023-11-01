@@ -7,7 +7,7 @@ import {
 } from '@forms.js/core'
 import { getRuleValue } from '@forms.js/core/validation/get-rule-value'
 
-export type ReactRegisterProps = {
+export type RegisterProps = {
   disabled?: boolean
   name: string
   onBlur: (event: React.ChangeEvent) => Promise<void>
@@ -42,7 +42,7 @@ export class Control<
   register<T extends TParsedForm['keys']>(
     name: Extract<T, string>,
     options?: RegisterOptions<TValues, T>,
-  ): ReactRegisterProps {
+  ): RegisterProps {
     this.registerField(name, options)
 
     const onChange = this.onChange.bind(this)
