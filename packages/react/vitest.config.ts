@@ -7,6 +7,6 @@ export default defineConfig({
       provider: 'v8',
     },
     globals: true,
-    setupFiles: ['./__tests__/setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
   },
 })
