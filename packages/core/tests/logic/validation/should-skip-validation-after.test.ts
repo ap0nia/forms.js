@@ -4,7 +4,7 @@ import type { SubmissionValidationMode } from '../../..//src/constants'
 import { shouldSkipValidationAfter } from '../../../src/logic/validation/should-skip-validation-after'
 
 describe('shouldSkipValidationAfter', () => {
-  test('false if validating on all events', () => {
+  test('returns false if validating on all events', () => {
     const eventType = 'blur'
 
     const isTouched = false
@@ -34,7 +34,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeFalsy()
   })
 
-  test('skip if validating on touch events and neither touched or blur event', () => {
+  test('returns true if validating on touch events and neither touched or blur event', () => {
     // Not a blur event.
     const eventType = 'change'
 
@@ -68,7 +68,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeTruthy()
   })
 
-  test('do not skip if validating on touch events either touched or blur event', () => {
+  test('returns false if validating on touch events either touched or blur event', () => {
     // Not a blur event.
     let eventType: 'blur' | 'change' = 'change'
 
@@ -112,7 +112,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeFalsy()
   })
 
-  test('skip if validating on blur events and not a blur event', () => {
+  test('returns true validating on blur events and not a blur event', () => {
     // Not a blur event.
     const eventType = 'change'
 
@@ -145,7 +145,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeTruthy()
   })
 
-  test('do not skip if validating on blur events and a blur event', () => {
+  test('returns false if validating on blur events and a blur event', () => {
     // Blur event.
     const eventType = 'blur'
 
@@ -178,7 +178,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeFalsy()
   })
 
-  test('skip if validating on change events and not a change event', () => {
+  test('returns true if validating on change events and not a change event', () => {
     // Not a change event.
     const eventType = 'blur'
 
@@ -211,7 +211,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeTruthy()
   })
 
-  test('do not skip if validating on change events and a change event', () => {
+  test('returns false if validating on change events and a change event', () => {
     // Change event.
     const eventType = 'change'
 
@@ -254,7 +254,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeFalsy()
   })
 
-  test('skip if everything is false lol', () => {
+  test('returns true if everything is false', () => {
     const eventType = 'blur'
 
     const isTouched = false
@@ -283,7 +283,7 @@ describe('shouldSkipValidationAfter', () => {
     ).toBeTruthy()
   })
 
-  test('skip if nothing is defined', () => {
+  test('returns true if nothing is defined', () => {
     expect(shouldSkipValidationAfter('blur')).toBeTruthy()
     expect(shouldSkipValidationAfter('change')).toBeTruthy()
   })

@@ -125,37 +125,37 @@ describe('getFieldValue', () => {
 })
 
 describe('getFieldValueAs', () => {
-  test('null', () => {
-    expect(getFieldValueAs(null, {})).toEqual(null)
+  test('returns null if null value with no conversions', () => {
+    expect(getFieldValueAs(null)).toEqual(null)
   })
 
-  test('value as number', () => {
+  test('returns value converted to number if valueAsNumber is true', () => {
     expect(getFieldValueAs('123', { valueAsNumber: true })).toEqual(123)
   })
 
-  test('value as date', () => {
+  test('returns value converted to date if valueAsDate is true', () => {
     expect(getFieldValueAs('2020-01-01', { valueAsDate: true })).toEqual(new Date('2020-01-01'))
   })
 
-  test('set value as', () => {
+  test('returns value from result of setValueAs', () => {
     expect(getFieldValueAs('123', { setValueAs: () => '456' })).toEqual('456')
   })
 })
 
 describe('valueToNumber', () => {
-  test('empty string', () => {
+  test('returns NaN for empty string', () => {
     expect(valueToNumber('')).toEqual(NaN)
   })
 
-  test('null', () => {
+  test('returns null for null', () => {
     expect(valueToNumber(null)).toEqual(null)
   })
 
-  test('string', () => {
+  test('returns string converted to number', () => {
     expect(valueToNumber('123')).toEqual(123)
   })
 
-  test('number', () => {
+  test('returns the same number if already a number', () => {
     expect(valueToNumber(123)).toEqual(123)
   })
 })

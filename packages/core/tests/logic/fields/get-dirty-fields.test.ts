@@ -45,7 +45,7 @@ describe('markFieldsDirty', () => {
     })
   })
 
-  describe('all array properties in data creates arrays in fields', () => {
+  describe('creates arrays in fields for all array properties in data', () => {
     test('creates empty array in fields if array is empty in data', () => {
       const data = {
         test: [],
@@ -137,7 +137,7 @@ describe('getDirtyFieldsFromDefaultValues', () => {
   })
 
   describe('eagerly evaluates dirty state of non-array objects with functions', () => {
-    test('dirty if not deeply equal starting from object with function', () => {
+    test('returns not dirty if not deeply equal starting from object with function', () => {
       const d = () => {}
 
       const data = {
@@ -165,7 +165,7 @@ describe('getDirtyFieldsFromDefaultValues', () => {
       expect(dirtyFields).toEqual({ a: true })
     })
 
-    test('not dirty if deeply equal starting from object with function', () => {
+    test('returns not dirty if deeply equal starting from object with function', () => {
       const d = () => {}
 
       const data = {

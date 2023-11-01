@@ -3,7 +3,7 @@ import { describe, test, expect } from 'vitest'
 import { getEventValue } from '../../../src/logic/html/get-event-value'
 
 describe('getEventValue', () => {
-  test('getEventValue should return correct value', () => {
+  test('returns correct value', () => {
     expect(
       getEventValue({
         target: { checked: true, type: 'checkbox' },

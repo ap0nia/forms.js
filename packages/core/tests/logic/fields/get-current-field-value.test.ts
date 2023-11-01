@@ -4,7 +4,7 @@ import { getCurrentFieldValue } from '../../../src/logic/fields/get-current-fiel
 import type { Field } from '../../../src/types/fields'
 
 describe('getCurrentFieldValue', () => {
-  test('returns the event event.target.type is not defined', () => {
+  test('returns the event if event.target.type is not defined', () => {
     const ref = document.createElement('input')
 
     const field: Field = {

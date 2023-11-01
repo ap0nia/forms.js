@@ -4,7 +4,7 @@ import { describe, test, expect, vi } from 'vitest'
 import { focusFieldBy } from '../../../src/logic/fields/focus-field-by'
 
 describe('focusFieldBy', () => {
-  test('focus the first error encountered', () => {
+  test('focuses the first error encountered', () => {
     const focus = vi.fn()
 
     focusFieldBy(
@@ -34,7 +34,7 @@ describe('focusFieldBy', () => {
     expect(focus).toBeCalled()
   })
 
-  test('focus first option when options input error encounters', () => {
+  test('focuses first option when options input error encounters', () => {
     const focus = vi.fn()
 
     const input = document.createElement('input')
@@ -88,7 +88,7 @@ describe('focusFieldBy', () => {
     }).not.toThrow()
   })
 
-  test('nested object', () => {
+  test('focuses field in nested object', () => {
     const focus = vi.fn()
 
     focusFieldBy(

@@ -39,7 +39,7 @@ export function getFieldValue(_f: FieldReference) {
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/getFieldValueAs.ts
  */
-export function getFieldValueAs(value: unknown, as: ValueAs) {
+export function getFieldValueAs(value: unknown, as: ValueAs = {}) {
   const { valueAsNumber, valueAsDate, setValueAs } = as
 
   const convertedValue = valueAsNumber

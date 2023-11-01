@@ -5,7 +5,7 @@ import type { FieldReference } from '../../../src/types/fields'
 
 describe('update field reference', () => {
   describe('multiple select input', () => {
-    test('should update all multi-select options', () => {
+    test('updates all multi-select options', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -36,7 +36,7 @@ describe('update field reference', () => {
   })
 
   describe('checkbox input', () => {
-    test('should not do anything for no checkboxes', () => {
+    test('does nothing for no checkboxes', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -54,7 +54,7 @@ describe('update field reference', () => {
       expect(reference.ref.checked).toBeFalsy()
     })
 
-    test('should update single checkbox option', () => {
+    test('updates single checkbox option', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -72,7 +72,7 @@ describe('update field reference', () => {
       expect(reference.refs[0].checked).toBeTruthy()
     })
 
-    test('should update correct checkbox option with single value', () => {
+    test('updates correct checkbox option with single value', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -93,7 +93,7 @@ describe('update field reference', () => {
       expect(reference.refs[1].checked).toBeTruthy()
     })
 
-    test('update multiple checkbox options', () => {
+    test('updates multiple checkbox options', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -125,7 +125,7 @@ describe('update field reference', () => {
   })
 
   describe('radio input', () => {
-    test('should update all radio options', () => {
+    test('updates all radio options', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -157,7 +157,7 @@ describe('update field reference', () => {
   })
 
   describe('file input', () => {
-    test('should update file input value', () => {
+    test('updates file input value', () => {
       const reference = {
         name: 'test',
         ref: {
@@ -176,7 +176,7 @@ describe('update field reference', () => {
   })
 
   describe('custom input', () => {
-    test('should update custom input value', () => {
+    test('updates custom input value', () => {
       const reference = {
         name: 'test',
         ref: {
