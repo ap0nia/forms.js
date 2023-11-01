@@ -25,7 +25,7 @@ describe('FormControl', () => {
     })
 
     describe('properly handles subscription to value changes for a single field name', () => {
-      test('updates derived state when a similar name to the watched name changes', () => {
+      test('updates state when a similar name to the watched name changes', () => {
         const formControl = new FormControl()
 
         formControl.watch('a')
@@ -47,7 +47,7 @@ describe('FormControl', () => {
         expect(fn).toHaveBeenCalled()
       })
 
-      test('updates derived state only when the exact field name was changed', () => {
+      test('updates state only when the exact field name was changed', () => {
         const formControl = new FormControl()
 
         formControl.watch('a', undefined, { exact: true })
@@ -74,7 +74,7 @@ describe('FormControl', () => {
         expect(fn).toHaveBeenCalled()
       })
 
-      test('updates derived state if changed field name exactly matches with any of multiple names', () => {
+      test('updates state if changed field name exactly matches with any of multiple names', () => {
         const formControl = new FormControl()
 
         formControl.watch(['a', 'b', 'c'], undefined, { exact: true })
@@ -111,12 +111,54 @@ describe('FormControl', () => {
         expect(fn).toHaveBeenCalledTimes(3)
       })
 
-      test('updates derived state to track changes to values when no keys specified', () => {
+      test('updates state to track changes to values when no keys specified', () => {
         const formControl = new FormControl()
 
         formControl.watch()
 
         expect(formControl.state.keys).toContain('values')
+      })
+    })
+
+    describe('generates correct output', () => {
+      test('uses the current values if the form control is mounted', () => {
+        const formControl = new FormControl()
+
+        formControl.stores.values.set({ a: { b: 123 } })
+        formControl.stores.defaultValues.set({ a: { b: 456 } })
+
+        formControl.mount()
+
+        expect(formControl.watch('a.b')).toEqual(123)
+      })
+
+      describe('when unmounted', () => {
+        test('uses the form control default values if not default values provided', () => {
+          const formControl = new FormControl()
+
+          formControl.stores.values.set({ a: { b: 123 } })
+          formControl.stores.defaultValues.set({ a: { b: 456 } })
+
+          expect(formControl.watch('a.b')).toEqual(456)
+        })
+
+        test('uses object with name set to default value if name is a string', () => {
+          const formControl = new FormControl()
+
+          formControl.stores.values.set({ a: { b: 123 } })
+          formControl.stores.defaultValues.set({ a: { b: 456 } })
+
+          expect(formControl.watch('a', { b: 789 })).toEqual({ b: 789 })
+        })
+
+        test('uses provided default value if name is not a string', () => {
+          const formControl = new FormControl()
+
+          formControl.stores.values.set({ a: { b: 123 } })
+          formControl.stores.defaultValues.set({ a: { b: 456 } })
+
+          expect(formControl.watch(['a'], { a: { b: 789 } })).toEqual({ b: 789 })
+        })
       })
     })
   })

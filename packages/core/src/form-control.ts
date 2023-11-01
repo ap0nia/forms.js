@@ -297,11 +297,9 @@ export class FormControl<
       ? { [name]: defaultValue }
       : defaultValue
 
-    const duplicateValues = { ...values }
-
     return nameArray.length > 1
-      ? deepFilter(duplicateValues, nameArray)
-      : safeGet(duplicateValues, name)
+      ? deepFilter({ ...values }, nameArray)
+      : safeGet({ ...values }, nameArray[0])
   }
 
   //--------------------------------------------------------------------------------------
