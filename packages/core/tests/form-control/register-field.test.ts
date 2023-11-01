@@ -1,5 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
 
+import { trackAll } from '../../src/extensions/track-all'
 import { FormControl } from '../../src/form-control'
 import type { RegisterOptions } from '../../src/types/register'
 
@@ -174,33 +175,22 @@ describe('FormContol', () => {
       })
     })
 
-    test('does not notify any subscribers to batched state', () => {
-      const formControl = new FormControl()
+    describe('satisfies invariants', () => {
+      test('does not update state', () => {
+        const formControl = new FormControl()
 
-      const fn = vi.fn()
+        const fn = vi.fn()
 
-      formControl.state.proxy.errors
-      formControl.state.proxy.defaultValues
-      formControl.state.proxy.dirtyFields
-      formControl.state.proxy.disabled
-      formControl.state.proxy.isDirty
-      formControl.state.proxy.isLoading
-      formControl.state.proxy.isSubmitted
-      formControl.state.proxy.isSubmitting
-      formControl.state.proxy.isSubmitSuccessful
-      formControl.state.proxy.isValid
-      formControl.state.proxy.isValidating
-      formControl.state.proxy.touchedFields
-      formControl.state.proxy.values
-      formControl.state.proxy.submitCount
+        trackAll(formControl)
 
-      formControl.state.subscribe(fn)
+        formControl.state.subscribe(fn)
 
-      fn.mockReset()
+        fn.mockReset()
 
-      formControl.registerField('name')
+        formControl.registerField('name')
 
-      expect(fn).not.toHaveBeenCalled()
+        expect(fn).not.toHaveBeenCalled()
+      })
     })
   })
 })

@@ -83,18 +83,16 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      describe('notifies subscribers to batched state at most twice', () => {
-        test('does not notify subscribers to batched state', () => {
-          const formControl = new FormControl()
+      test('does not update state', () => {
+        const formControl = new FormControl()
 
-          const fn = vi.fn()
+        const fn = vi.fn()
 
-          formControl.getFieldState('a')
+        formControl.getFieldState('a')
 
-          formControl.state.subscribe(fn, undefined, false)
+        formControl.state.subscribe(fn, undefined, false)
 
-          expect(fn).not.toHaveBeenCalled()
-        })
+        expect(fn).not.toHaveBeenCalled()
       })
     })
   })

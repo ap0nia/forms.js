@@ -75,8 +75,8 @@ describe('FormControl', () => {
       expect(formControl.stores.errors.value).toEqual(expectedErrors)
     })
 
-    describe('meets invariants', () => {
-      test('only updates errors once', () => {
+    describe('satisfies invariants', () => {
+      test('updates errors once', () => {
         const formControl = new FormControl()
 
         const fn = vi.fn()
@@ -90,7 +90,7 @@ describe('FormControl', () => {
         expect(fn).toHaveBeenCalledOnce()
       })
 
-      test('updates derived state once', () => {
+      test('updates state once', () => {
         const formControl = new FormControl()
 
         const fn = vi.fn()

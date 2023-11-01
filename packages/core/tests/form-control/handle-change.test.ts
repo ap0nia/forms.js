@@ -267,65 +267,63 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      describe('notifies subscribers to batched state at most twice', () => {
-        test('notifies subscribers twice if no validation', async () => {
-          const { formControl, ref } = createFormControl()
+      test('updates state twice if no validation', async () => {
+        const { formControl, ref } = createFormControl()
 
-          trackAll(formControl)
+        trackAll(formControl)
 
-          const fn = vi.fn()
+        const fn = vi.fn()
 
-          formControl.state.subscribe(fn, undefined, false)
+        formControl.state.subscribe(fn, undefined, false)
 
-          fireEvent.change(ref)
+        fireEvent.change(ref)
 
-          await waitFor(() => expect(fn).toHaveBeenCalledTimes(2))
+        await waitFor(() => expect(fn).toHaveBeenCalledTimes(2))
+      })
+
+      test('updates state twice if validation but not tracking isValidating', async () => {
+        const { formControl, ref } = createFormControl({
+          mode: 'onChange',
+          resolver: () => {
+            return {
+              errors: {},
+            }
+          },
         })
 
-        test('notifies subscribers twice if validation but not tracking isValidating', async () => {
-          const { formControl, ref } = createFormControl({
-            mode: 'onChange',
-            resolver: () => {
-              return {
-                errors: {},
-              }
-            },
-          })
+        trackAll(formControl)
 
-          trackAll(formControl)
+        // Don't track isValidating.
+        formControl.state.keys?.delete('isValidating')
 
-          // Don't track isValidating.
-          formControl.state.keys?.delete('isValidating')
+        const fn = vi.fn()
 
-          const fn = vi.fn()
+        formControl.state.subscribe(fn, undefined, false)
 
-          formControl.state.subscribe(fn, undefined, false)
+        fireEvent.change(ref)
 
-          fireEvent.change(ref)
+        await waitFor(() => expect(fn).toHaveBeenCalledTimes(2))
+      })
 
-          await waitFor(() => expect(fn).toHaveBeenCalledTimes(2))
+      test('updates state three times if validation and tracking isValidating', async () => {
+        const { formControl, ref } = createFormControl({
+          mode: 'onChange',
+          resolver: () => {
+            return {
+              errors: {},
+            }
+          },
         })
 
-        test('notifies subscribers three times if validation and tracking isValidating', async () => {
-          const { formControl, ref } = createFormControl({
-            mode: 'onChange',
-            resolver: () => {
-              return {
-                errors: {},
-              }
-            },
-          })
+        trackAll(formControl)
 
-          trackAll(formControl)
+        const fn = vi.fn()
 
-          const fn = vi.fn()
+        formControl.state.subscribe(fn, undefined, false)
 
-          formControl.state.subscribe(fn, undefined, false)
+        fireEvent.change(ref)
 
-          fireEvent.change(ref)
-
-          await waitFor(() => expect(fn).toHaveBeenCalledTimes(3))
-        })
+        await waitFor(() => expect(fn).toHaveBeenCalledTimes(3))
       })
     })
   })

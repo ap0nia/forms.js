@@ -131,22 +131,20 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      describe('notifies subscribers to batched state at most twice', () => {
-        test('notifies subscribers once', async () => {
-          const formControl = new FormControl()
+      test('updates state once', async () => {
+        const formControl = new FormControl()
 
-          const fn = vi.fn()
+        const fn = vi.fn()
 
-          trackAll(formControl)
+        trackAll(formControl)
 
-          formControl.state.subscribe(fn, undefined, false)
+        formControl.state.subscribe(fn, undefined, false)
 
-          const event = new Event('')
+        const event = new Event('')
 
-          await formControl.handleSubmit()(event)
+        await formControl.handleSubmit()(event)
 
-          expect(fn).toHaveBeenCalledOnce()
-        })
+        expect(fn).toHaveBeenCalledOnce()
       })
     })
   })

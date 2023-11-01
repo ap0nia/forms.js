@@ -141,7 +141,7 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      test('updates derived store once for existing, non-field array field with nested fields', async () => {
+      test('updates state once for existing, non-field array field with nested fields', async () => {
         const formControl = new FormControl()
 
         const name = 'abc'

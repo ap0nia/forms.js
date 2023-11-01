@@ -51,52 +51,51 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      describe('notifies subscribers to batched state at most twice', () => {
-        test('does not notify subscribers to batched state when not dirty', () => {
-          const formControl = new FormControl()
+      test('does not update state when not dirty', () => {
+        const formControl = new FormControl()
 
-          formControl.stores.values.set({
-            foo: 'bar',
-            baz: {
-              qux: 'quux',
-            },
-          })
-
-          formControl.stores.defaultValues.set({
-            foo: 'bar',
-          })
-
-          const fn = vi.fn()
-
-          formControl.state.subscribe(fn, undefined, false)
-
-          formControl.getDirty()
-
-          expect(fn).not.toHaveBeenCalled()
+        formControl.stores.values.set({
+          foo: 'bar',
+          baz: {
+            qux: 'quux',
+          },
         })
-        test('does not notify subscribers to batched state when dirty', () => {
-          const formControl = new FormControl()
 
-          formControl.stores.values.set({
-            foo: 'bar',
-            baz: {
-              qux: 'quux',
-            },
-          })
-
-          formControl.stores.defaultValues.set({
-            foo: 'bar',
-            baz: {},
-          })
-
-          const fn = vi.fn()
-
-          formControl.state.subscribe(fn, undefined, false)
-
-          formControl.getDirty()
-
-          expect(fn).not.toHaveBeenCalled()
+        formControl.stores.defaultValues.set({
+          foo: 'bar',
         })
+
+        const fn = vi.fn()
+
+        formControl.state.subscribe(fn, undefined, false)
+
+        formControl.getDirty()
+
+        expect(fn).not.toHaveBeenCalled()
+      })
+
+      test('does not update state when dirty', () => {
+        const formControl = new FormControl()
+
+        formControl.stores.values.set({
+          foo: 'bar',
+          baz: {
+            qux: 'quux',
+          },
+        })
+
+        formControl.stores.defaultValues.set({
+          foo: 'bar',
+          baz: {},
+        })
+
+        const fn = vi.fn()
+
+        formControl.state.subscribe(fn, undefined, false)
+
+        formControl.getDirty()
+
+        expect(fn).not.toHaveBeenCalled()
       })
     })
   })

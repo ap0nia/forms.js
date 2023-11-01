@@ -99,56 +99,58 @@ describe('FormControl', () => {
       })
     })
 
-    test('sets isLoading twice for promise', async () => {
-      const formControl = new FormControl()
+    describe('satisfies invariants', () => {
+      test('sets isLoading twice for promise', async () => {
+        const formControl = new FormControl()
 
-      // Subscribe to derived state to activate it.
-      formControl.state.subscribe(() => {})
-      formControl.state.proxy.isLoading
+        // Subscribe to derived state to activate it.
+        formControl.state.subscribe(() => {})
+        formControl.state.proxy.isLoading
 
-      formControl.resolveDefaultValues(Promise.resolve({}))
+        formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.stores.isLoading.value).toBeTruthy()
+        expect(formControl.stores.isLoading.value).toBeTruthy()
 
-      await waitFor(() => expect(formControl.state.writable.value.isLoading).toBeFalsy())
-    })
+        await waitFor(() => expect(formControl.state.writable.value.isLoading).toBeFalsy())
+      })
 
-    test('sets derived state twice if tracking isLoading and promise is provided', async () => {
-      const formControl = new FormControl()
+      test('updates state twice if tracking isLoading and promise is provided', async () => {
+        const formControl = new FormControl()
 
-      const fn = vi.fn()
+        const fn = vi.fn()
 
-      // Subscribe to derived state to activate it.
-      formControl.state.subscribe(fn)
-      formControl.state.proxy.isLoading
+        // Subscribe to derived state to activate it.
+        formControl.state.subscribe(fn)
+        formControl.state.proxy.isLoading
 
-      fn.mockClear()
+        fn.mockClear()
 
-      formControl.resolveDefaultValues(Promise.resolve({}))
+        formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.state.writable.value.isLoading).toBeTruthy()
+        expect(formControl.state.writable.value.isLoading).toBeTruthy()
 
-      await waitFor(() => expect(formControl.state.writable.value.isLoading).toBeFalsy())
+        await waitFor(() => expect(formControl.state.writable.value.isLoading).toBeFalsy())
 
-      expect(fn).toHaveBeenCalledTimes(2)
-    })
+        expect(fn).toHaveBeenCalledTimes(2)
+      })
 
-    test('sets isLoading state twice if promise is provided', async () => {
-      const formControl = new FormControl()
+      test('sets isLoading twice if promise is provided', async () => {
+        const formControl = new FormControl()
 
-      const fn = vi.fn()
+        const fn = vi.fn()
 
-      formControl.stores.isLoading.subscribe(fn)
+        formControl.stores.isLoading.subscribe(fn)
 
-      fn.mockClear()
+        fn.mockClear()
 
-      formControl.resolveDefaultValues(Promise.resolve({}))
+        formControl.resolveDefaultValues(Promise.resolve({}))
 
-      expect(formControl.stores.isLoading.value).toBeTruthy()
+        expect(formControl.stores.isLoading.value).toBeTruthy()
 
-      await waitFor(() => expect(formControl.stores.isLoading.value).toBeFalsy())
+        await waitFor(() => expect(formControl.stores.isLoading.value).toBeFalsy())
 
-      expect(fn).toHaveBeenCalledTimes(2)
+        expect(fn).toHaveBeenCalledTimes(2)
+      })
     })
   })
 })

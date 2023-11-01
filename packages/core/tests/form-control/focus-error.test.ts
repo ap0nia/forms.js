@@ -81,20 +81,18 @@ describe('FormControl', () => {
     })
 
     describe('satisfies invariants', () => {
-      describe('notifies subscribers to batched state at most twice', () => {
-        test('does not notify subscribers to batched state', () => {
-          const { formControl } = createFocusableFormControl()
+      test('does not update state', () => {
+        const { formControl } = createFocusableFormControl()
 
-          const fn = vi.fn()
+        const fn = vi.fn()
 
-          formControl.state.subscribe(fn, undefined, false)
+        formControl.state.subscribe(fn, undefined, false)
 
-          trackAll(formControl)
+        trackAll(formControl)
 
-          formControl.focusError()
+        formControl.focusError()
 
-          expect(fn).not.toHaveBeenCalled()
-        })
+        expect(fn).not.toHaveBeenCalled()
       })
     })
   })

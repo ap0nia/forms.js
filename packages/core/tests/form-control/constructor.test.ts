@@ -12,7 +12,7 @@ describe('FormControl', () => {
         expect(formControl.stores.defaultValues.value).toEqual({})
       })
 
-      test('sets them to provided values', () => {
+      test('sets values and default values to provided values', () => {
         const defaultValues = {
           a: 1,
           b: 2,
