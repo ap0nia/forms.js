@@ -36,9 +36,7 @@ export function useForm<
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
 >(props?: ControlOptions<TValues, TContext>): UseFormReturn<TValues, TContext, TTransformedValues> {
-  const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>()
-
-  formControlRef.current ??= new Control(props)
+  const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>(new Control(props))
 
   const control = formControlRef.current
 
@@ -60,19 +58,13 @@ export function useForm<
   })
 
   const subscribe = useCallback(
-    (callback: () => void) => {
-      return control.state.subscribe(callback, undefined, false)
-    },
+    (callback: () => void) => control.state.subscribe(callback, undefined, false),
     [control],
   )
 
-  const getSnapshot = useCallback(() => {
-    return control.state.value
-  }, [control])
+  const getSnapshot = useCallback(() => control.state.value, [control])
 
-  const getServerSnapshot = useCallback(() => {
-    return control.state.value
-  }, [control])
+  const getServerSnapshot = useCallback(() => control.state.value, [control])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 

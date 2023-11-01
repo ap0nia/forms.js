@@ -1,6 +1,5 @@
-import { Batchable } from '@forms.js/common/store'
 import type { FormControlState, FormFieldNames } from '@forms.js/core'
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'
 import { useFormContext } from './use-form-context'
@@ -22,71 +21,33 @@ export function useFormState<T extends Record<string, any>>(
 
   const control = props?.control ?? context.control
 
-  const mounted = useRef(false)
+  const state = useMemo(() => control.state.clone(), [control])
 
-  const previousDerivedState = useRef<Batchable<Control<T>['stores']>>()
-
-  const derivedState = useMemo<Batchable<Control<T>['stores']>>(() => {
-    if (previousDerivedState.current) {
-      control.state.children.delete(previousDerivedState.current)
-    }
-
-    const derived = new Batchable(control.stores, new Set())
-
-    control.state.children.add(derived)
-
-    previousDerivedState.current = derived
-
-    return derived
-  }, [control, props?.name])
-
-  const proxy = useMemo(() => {
-    return derivedState.createTrackingProxy(props?.name, props, false)
-  }, [derivedState, props?.name, props?.disabled, props?.exact])
-
-  useEffect(() => {
-    return () => {
-      if (previousDerivedState.current) {
-        control.state.children.delete(previousDerivedState.current)
-        previousDerivedState.current = undefined
-      }
-    }
-  }, [])
+  const proxy = useMemo(
+    () => state.createTrackingProxy(props?.name, props, false),
+    [state, props?.name, props?.disabled, props?.exact],
+  )
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return derivedState.subscribe(
-        () => {
-          if (!props?.disabled) {
-            callback()
-          }
-        },
-        undefined,
-        false,
-      )
+      return state.subscribe(() => !props?.disabled && callback(), undefined, false)
     },
-    [props?.name, control, derivedState, props?.disabled],
+    [state, props?.disabled],
   )
 
-  const getSnapshot = useCallback(() => {
-    return derivedState.writable.value
-  }, [derivedState])
+  const getSnapshot = useCallback(() => state.value, [state])
 
-  const getServerSnapshot = useCallback(() => {
-    return derivedState.writable.value
-  }, [derivedState])
+  const getServerSnapshot = useCallback(() => state.value, [state])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    mounted.current = true
-
-    if (derivedState.proxy.isValid) {
+    if (state.proxy.isValid) {
       control.updateValid(true)
     }
 
     return () => {
-      mounted.current = false
+      control.state.children.delete(state)
     }
   }, [control])
 

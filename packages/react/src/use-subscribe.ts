@@ -1,4 +1,3 @@
-import { Batchable } from '@forms.js/common/store'
 import type { FormFieldNames } from '@forms.js/core'
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 
@@ -21,49 +20,28 @@ export function useSubscribe<
 
   const control = props.control ?? context.control
 
-  const derivedState = useMemo(() => {
-    const derived = new Batchable(control.stores, new Set())
+  const state = useMemo(() => control.state.clone(), [control])
 
-    control.state.children.add(derived)
+  state.keys?.add(props.name)
 
-    return derived
-  }, [control])
+  const proxy = useMemo(() => state.createTrackingProxy(props.name, { exact: true }), [props.name])
 
-  derivedState.keys?.add(props.name)
+  const subscribe = useCallback(
+    (callback: () => void) => state.subscribe(callback, undefined, false),
+    [state],
+  )
+
+  const getSnapshot = useCallback(() => state.value, [state])
+
+  const getServerSnapshot = useCallback(() => state.value, [state])
+
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
     return () => {
-      control.state.children.delete(derivedState)
+      control.state.children.delete(state)
     }
-  }, [control, derivedState])
-
-  const proxy = useMemo(
-    () => derivedState.createTrackingProxy(props.name, { exact: true }),
-    [props.name],
-  )
-
-  const subscribe = useCallback(
-    (callback: () => void) => {
-      return derivedState.subscribe(
-        () => {
-          callback()
-        },
-        undefined,
-        false,
-      )
-    },
-    [control],
-  )
-
-  const getSnapshot = useCallback(() => {
-    return derivedState.writable.value
-  }, [])
-
-  const getServerSnapshot = useCallback(() => {
-    return derivedState.writable.value
-  }, [])
-
-  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  }, [control, state])
 
   return proxy
 }

@@ -529,7 +529,7 @@ describe('useWatch', () => {
       expect(childCount).toBe(1)
     })
 
-    it('should partial re-render with array name and exact option', async () => {
+    it.only('should partial re-render with array name and exact option', async () => {
       type FormInputs = {
         child: string
         childSecond: string

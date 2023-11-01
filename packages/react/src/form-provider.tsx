@@ -22,19 +22,13 @@ export function FormProvider<
   const { control, ...rest } = props
 
   const subscribe = useCallback(
-    (callback: () => void) => {
-      return control.state.subscribe(callback)
-    },
+    (callback: () => void) => control.state.subscribe(callback),
     [control],
   )
 
-  const getSnapshot = useCallback(() => {
-    return control.state.value
-  }, [control])
+  const getSnapshot = useCallback(() => control.state.value, [control])
 
-  const getServerSnapshot = useCallback(() => {
-    return control.state.value
-  }, [control])
+  const getServerSnapshot = useCallback(() => control.state.value, [control])
 
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 

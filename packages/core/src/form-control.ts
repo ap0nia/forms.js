@@ -289,6 +289,14 @@ export class FormControl<
       this.state.keys?.add('values')
     }
 
+    return this.getWatchOutput(name, defaultValue, nameArray)
+  }
+
+  getWatchOutput(
+    name: string | string[],
+    defaultValue: unknown,
+    nameArray = toStringArray(name) ?? [],
+  ): any {
     const values = this.mounted
       ? this.stores.values.value
       : defaultValue == null

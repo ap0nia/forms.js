@@ -48,19 +48,13 @@ export function useFieldArray<
   fieldArray.current.name = props.name
 
   const subscribe = useCallback(
-    (callback: () => void) => {
-      return fieldArray.current.fields.subscribe(callback, undefined, false)
-    },
+    (callback: () => void) => fieldArray.current.fields.subscribe(callback, undefined, false),
     [fieldArray.current, props.name],
   )
 
-  const getSnapshot = useCallback(() => {
-    return fieldArray.current.fields.value
-  }, [fieldArray.current])
+  const getSnapshot = useCallback(() => fieldArray.current.fields.value, [fieldArray.current])
 
-  const getServerSnapshot = useCallback(() => {
-    return fieldArray.current.fields.value
-  }, [fieldArray.current])
+  const getServerSnapshot = useCallback(() => fieldArray.current.fields.value, [fieldArray.current])
 
   const fields = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 

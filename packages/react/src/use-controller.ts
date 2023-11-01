@@ -70,87 +70,20 @@ export function useController<
 ): UseControllerReturn<TValues, TParsedForm, TName> {
   const context = useFormContext<TValues>()
 
-  const formControl = props.control ?? context.control
+  const control = props.control ?? context.control
 
-  const formState = useSubscribe({ control: formControl, name: props.name })
+  const formState = useSubscribe({ control: control, name: props.name })
 
   // Always subscribe to values.
   formState.values
 
-  const value: any = formControl.getValues(props.name) ?? props.defaultValue
+  const value: any = control.getValues(props.name) ?? props.defaultValue
 
-  const registerProps = useRef(formControl.register(props.name, { ...props.rules, value }))
+  const registerProps = useRef(control.register(props.name, { ...props.rules, value }))
 
-  registerProps.current = formControl.register(props.name, props.rules)
+  registerProps.current = control.register(props.name, props.rules)
 
-  const isArrayField = useMemo(() => {
-    return formControl.names.array.has(props.name)
-  }, [formControl, props.name])
-
-  const onChange = useCallback(
-    async (event: any) => {
-      return await registerProps.current.onChange({
-        nativeEvent: {
-          type: INPUT_EVENTS.CHANGE,
-          target: {
-            name: props.name,
-            value: getEventValue(event),
-          },
-        },
-      } as any)
-    },
-    [registerProps.current, props.name],
-  )
-
-  const onBlur = useCallback(async () => {
-    return await registerProps.current.onBlur({
-      nativeEvent: {
-        type: INPUT_EVENTS.BLUR,
-        target: {
-          name: props.name,
-          value: formControl.getValues(props.name),
-        },
-      },
-    } as any)
-  }, [formControl, registerProps.current, props.name])
-
-  useEffect(() => {
-    const shouldUnregisterField = formControl.options.shouldUnregister || props.shouldUnregister
-
-    const updateMounted = (name: string, value: boolean) => {
-      const field: Field | undefined = safeGet(formControl.fields, name)
-
-      if (field) {
-        field._f.mount = value
-      }
-    }
-
-    updateMounted(props.name, true)
-
-    if (shouldUnregisterField) {
-      const value = structuredClone(safeGet(formControl.options.defaultValues, props.name))
-
-      deepSet(formControl.state.value.defaultValues, props.name, value)
-
-      if (safeGet(formControl.state.value.values, props.name)) {
-        deepSet(formControl.state.value.values, props.name, value)
-      }
-    }
-
-    return () => {
-      if (isArrayField ? shouldUnregisterField : shouldUnregisterField) {
-        formControl.unregister(props.name)
-      } else {
-        updateMounted(props.name, false)
-      }
-    }
-  }, [formControl, isArrayField, props.name, props.shouldUnregister])
-
-  useEffect(() => {
-    if (safeGet(formControl.fields, props.name)) {
-      formControl.updateDisabledField({ fields: formControl.fields, ...props })
-    }
-  }, [formControl, props.name, props.disabled])
+  const isArrayField = useMemo(() => control.names.array.has(props.name), [control, props.name])
 
   const fieldState = useMemo(() => {
     return Object.defineProperties(
@@ -179,7 +112,91 @@ export function useController<
     ) as ControllerFieldState
   }, [formState, props.name])
 
-  const disabled = props.disabled || formControl.state.value.disabled
+  const disabled = useMemo(
+    () => props.disabled || control.state.value.disabled,
+    [props.disabled, control],
+  )
+
+  const onChange = useCallback(
+    async (event: any) => {
+      return await registerProps.current.onChange({
+        nativeEvent: {
+          type: INPUT_EVENTS.CHANGE,
+          target: {
+            name: props.name,
+            value: getEventValue(event),
+          },
+        },
+      } as any)
+    },
+    [registerProps.current, props.name],
+  )
+
+  const onBlur = useCallback(async () => {
+    return await registerProps.current.onBlur({
+      nativeEvent: {
+        type: INPUT_EVENTS.BLUR,
+        target: {
+          name: props.name,
+          value: control.getValues(props.name),
+        },
+      },
+    } as any)
+  }, [control, registerProps.current, props.name])
+
+  const ref = useCallback(
+    (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
+      const field = safeGet(control.fields, props.name)
+
+      if (field && instance) {
+        field._f.ref = {
+          focus: () => instance.focus(),
+          select: () => instance.select(),
+          setCustomValidity: (message: string) => instance.setCustomValidity(message),
+          reportValidity: () => instance.reportValidity(),
+        }
+      }
+    },
+    [control, props.name],
+  )
+
+  useEffect(() => {
+    const shouldUnregisterField = control.options.shouldUnregister || props.shouldUnregister
+
+    const updateMounted = (name: string, value: boolean) => {
+      const field: Field | undefined = safeGet(control.fields, name)
+
+      if (field) {
+        field._f.mount = value
+      }
+    }
+
+    updateMounted(props.name, true)
+
+    if (shouldUnregisterField) {
+      const value = structuredClone(safeGet(control.options.defaultValues, props.name))
+
+      deepSet(control.state.value.defaultValues, props.name, value)
+
+      if (safeGet(control.state.value.values, props.name)) {
+        deepSet(control.state.value.values, props.name, value)
+      }
+    }
+
+    return () => {
+      if (isArrayField ? shouldUnregisterField : shouldUnregisterField) {
+        control.unregister(props.name)
+      } else {
+        updateMounted(props.name, false)
+      }
+    }
+  }, [control, isArrayField, props.name, props.shouldUnregister])
+
+  useEffect(() => {
+    if (safeGet(control.fields, props.name)) {
+      control.updateDisabledField({ fields: control.fields, ...props })
+    }
+  }, [control, props.name, props.disabled])
 
   return {
     field: {
@@ -188,18 +205,7 @@ export function useController<
       ...(typeof disabled === 'boolean' && { disabled }),
       onChange,
       onBlur,
-      ref: (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
-        const field = safeGet(formControl.fields, props.name)
-
-        if (field && instance) {
-          field._f.ref = {
-            focus: () => instance.focus(),
-            select: () => instance.select(),
-            setCustomValidity: (message: string) => instance.setCustomValidity(message),
-            reportValidity: () => instance.reportValidity(),
-          }
-        }
-      },
+      ref,
     },
     formState,
     fieldState,
