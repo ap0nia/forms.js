@@ -88,9 +88,9 @@ describe('FormControl', () => {
 
         const fn = vi.fn()
 
-        formControl.getFieldState('a')
-
         formControl.state.subscribe(fn, undefined, false)
+
+        formControl.getFieldState('a')
 
         expect(fn).not.toHaveBeenCalled()
       })

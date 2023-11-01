@@ -62,7 +62,7 @@ describe('FormControl', () => {
       })
     })
 
-    describe('prioritizes locally set options over root options', () => {
+    describe('prioritizes local options over root options', () => {
       test('focuses error when local option is true', () => {
         const { formControl, focus } = createFocusableFormControl({ shouldFocusError: false })
 
