@@ -34,7 +34,11 @@ function createFormControl(options?: FormControlOptions) {
 describe('FormControl', () => {
   describe('handleChange', () => {
     test('does not do anything if field name is not registered', () => {
-      const { formControl } = createFormControl()
+      const { formControl, ref } = createFormControl()
+
+      ref.name = 'differentName'
+
+      fireEvent.change(ref)
 
       expect(formControl.stores.values.value).toEqual({})
     })
@@ -74,6 +78,20 @@ describe('FormControl', () => {
     })
 
     describe('properly handles native validation', () => {
+      test('removes existing errors with successful validation', async () => {
+        const { formControl, field, ref } = createFormControl({ mode: 'onChange' })
+
+        field._f.required = true
+
+        fireEvent.change(ref)
+
+        expect(formControl.stores.errors.value).toBeDefined()
+
+        fireEvent.change(ref, { target: { value: 'abc' } })
+
+        await waitFor(() => expect(formControl.stores.errors.value).toEqual({}))
+      })
+
       test('properly adds errors when the field name is the same as the ref name', async () => {
         const { formControl, name, field, ref } = createFormControl({ mode: 'onChange' })
 

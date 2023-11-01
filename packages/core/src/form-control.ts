@@ -474,8 +474,6 @@ export class FormControl<
    * Handle a change event.
    */
   async handleChange(event: Event): Promise<void> {
-    this.state.open()
-
     const name = (event.target as HTMLInputElement)?.name
 
     const field: Field | undefined = safeGet(this.fields, name)
@@ -485,6 +483,8 @@ export class FormControl<
     }
 
     const fieldValue = getCurrentFieldValue(event, field)
+
+    this.state.open()
 
     this.stores.values.update(
       (values) => {
@@ -608,9 +608,9 @@ export class FormControl<
     onInvalid?: SubmitErrorHandler<TValues>,
   ): HandlerCallback {
     return async (event) => {
-      this.state.open()
-
       event?.preventDefault?.()
+
+      this.state.open()
 
       this.stores.isSubmitting.set(true)
 
@@ -654,6 +654,8 @@ export class FormControl<
 
     this.stores.isValidating.set(true, fieldNames)
 
+    this.state.open()
+
     const result = await this.validate(name as any)
 
     if (result.validationResult) {
@@ -663,8 +665,6 @@ export class FormControl<
     if (result.resolverResult?.errors) {
       this.mergeErrors(result.resolverResult.errors)
     }
-
-    this.state.open()
 
     this.stores.isValid.set(result.isValid, fieldNames)
 
@@ -695,13 +695,13 @@ export class FormControl<
     value: TParsedForm['values'][T],
     options?: SetValueOptions,
   ): void {
-    this.state.open()
-
     const field: FieldRecord[T] = safeGet(this.fields, name)
 
     const fieldNames = toStringArray(name)
 
     const clonedValue = structuredClone(value)
+
+    this.state.open()
 
     this.stores.values.update((values) => {
       deepSet(values, name, clonedValue)
@@ -1176,12 +1176,10 @@ export class FormControl<
     this.state.flush()
   }
 
-  resetDefaultValues() {
+  async resetDefaultValues() {
     if (typeof this.options.defaultValues === 'function') {
-      this.options.defaultValues().then((values: any) => {
-        this.reset(values, this.options.resetOptions)
-        this.stores.isLoading.set(false)
-      })
+      const values: any = await this.options.defaultValues()
+      this.reset(values, this.options.resetOptions)
     }
   }
 
