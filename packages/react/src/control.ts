@@ -70,6 +70,7 @@ export class Control<
     if (instance) {
       this.registerElement(name, instance as HTMLInputElement)
     } else {
+      console.log('ref unregister')
       this.unregisterElement(name)
     }
   }

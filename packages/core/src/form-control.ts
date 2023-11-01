@@ -295,7 +295,7 @@ export class FormControl<
   getWatchOutput(
     name: string | string[],
     defaultValue: unknown,
-    nameArray = toStringArray(name) ?? [],
+    nameArray = toStringArray(name),
   ): any {
     const values = this.mounted
       ? this.stores.values.value
@@ -406,7 +406,7 @@ export class FormControl<
       field._f.mount = false
     }
 
-    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+    const shouldUnregister = options?.shouldUnregister ?? this.options.shouldUnregister
 
     if (shouldUnregister && !this.names.array.has(name)) {
       this.names.unMount.add(name)
@@ -420,6 +420,13 @@ export class FormControl<
     name?: T | T[],
     options?: UnregisterOptions,
   ): void {
+    const keepValue = options?.keepValue ?? this.options.resetOptions?.keepValues
+    const keepError = options?.keepError ?? this.options.resetOptions?.keepErrors
+    const keepDirty = options?.keepDirty ?? this.options.resetOptions?.keepDirty
+    const keepTouched = options?.keepTouched ?? this.options.resetOptions?.keepTouched
+    const keepDefaultValues = options?.keepDefaultValue ?? this.options.shouldUnregister
+    const keepIsValid = options?.keepIsValid ?? this.options.resetOptions?.keepIsValid
+
     this.state.open()
 
     const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
@@ -428,7 +435,7 @@ export class FormControl<
       this.names.mount.delete(fieldName)
       this.names.array.delete(fieldName)
 
-      if (!options?.keepValue) {
+      if (!keepValue) {
         deepUnset(this.fields, fieldName)
 
         this.stores.values.update((values) => {
@@ -437,14 +444,14 @@ export class FormControl<
         }, fieldNames)
       }
 
-      if (!options?.keepError) {
+      if (!keepError) {
         this.stores.errors.update((errors) => {
           deepUnset(errors, fieldName)
           return errors
         }, fieldNames)
       }
 
-      if (!options?.keepDirty) {
+      if (!keepDirty) {
         this.stores.dirtyFields.update((dirtyFields) => {
           deepUnset(dirtyFields, fieldName)
           return dirtyFields
@@ -453,14 +460,14 @@ export class FormControl<
         this.stores.isDirty.set(this.getDirty(), fieldNames)
       }
 
-      if (!options?.keepTouched) {
+      if (!keepTouched) {
         this.stores.touchedFields.update((touchedFields) => {
           deepUnset(touchedFields, fieldName)
           return touchedFields
         }, fieldNames)
       }
 
-      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
+      if (!keepDefaultValues) {
         this.stores.defaultValues.update((defaultValues) => {
           deepUnset(defaultValues, fieldName)
           return defaultValues
@@ -468,7 +475,7 @@ export class FormControl<
       }
     }
 
-    if (!options?.keepIsValid) {
+    if (!keepIsValid) {
       this.updateValid(undefined, fieldNames)
     }
 

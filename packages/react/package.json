@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run tests/use-form/unregister"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",

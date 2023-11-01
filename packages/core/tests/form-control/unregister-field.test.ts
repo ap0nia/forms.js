@@ -161,3 +161,53 @@ describe('FormControl', () => {
     })
   })
 })
+
+// describe.skip('works correctly when called manually', () => {
+//   describe('respects reset options', () => {
+//     test('does not unset field value if local keepValue is true', async () => {
+//       const { result } = renderHook(() => useForm({ defaultValues: { test: 'test' } }))
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//
+//       act(() => result.current.unregister('test', { keepValue: true }))
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//     })
+//
+//     test('does not unset field value if root keepValue is true', async () => {
+//       const { result } = renderHook(() =>
+//         useForm({ defaultValues: { test: 'test' }, resetOptions: { keepValues: true } }),
+//       )
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//
+//       act(() => result.current.unregister('test'))
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//     })
+//
+//     test('unsets field value if local keepValue is false and root keepValue is true', async () => {
+//       const { result } = renderHook(() =>
+//         useForm({ defaultValues: { test: 'test' }, resetOptions: { keepValues: true } }),
+//       )
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//
+//       act(() => result.current.unregister('test', { keepValue: false }))
+//
+//       expect(result.current.getValues()).toEqual({})
+//     })
+//
+//     test('does not unset field value if local keepValue is true and root keepValue is false', async () => {
+//       const { result } = renderHook(() =>
+//         useForm({ defaultValues: { test: 'test' }, resetOptions: { keepValues: false } }),
+//       )
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//
+//       act(() => result.current.unregister('test', { keepValue: true }))
+//
+//       expect(result.current.getValues()).toEqual({ test: 'test' })
+//     })
+//   })
+// })
