@@ -13,6 +13,14 @@ export type ReactRegisterProps = {
   onBlur: (event: React.ChangeEvent) => Promise<void>
   onChange: (event: React.ChangeEvent) => Promise<void>
   ref: (instance: HTMLElement | null) => void
+
+  // Progressive validation props
+  required?: boolean
+  min?: string | number
+  max?: string | number
+  minLength?: number
+  maxLength?: number
+  pattern?: string
 }
 
 export type { FormControlOptions as ControlOptions }
@@ -52,16 +60,18 @@ export class Control<
       name,
       onBlur: onChange,
       onChange,
-      ref: (instance: HTMLElement | null) => {
-        if (instance) {
-          this.registerElement(name, instance as HTMLInputElement)
-        } else {
-          this.unregisterElement(name)
-        }
-      },
+      ref: this.ref.bind(this, name),
     }
 
     return props
+  }
+
+  ref<T extends TParsedForm['keys']>(name: Extract<T, string>, instance: HTMLElement | null): void {
+    if (instance) {
+      this.registerElement(name, instance as HTMLInputElement)
+    } else {
+      this.unregisterElement(name)
+    }
   }
 
   unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
