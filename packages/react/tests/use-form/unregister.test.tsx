@@ -1,240 +1,311 @@
 import { render, renderHook } from '@testing-library/react'
+import { useEffect } from 'react'
 import { describe, test, expect, vi } from 'vitest'
 
 import { useForm } from '../../src/use-form'
 
 describe('control', () => {
   describe('unregister', () => {
-    describe('works correctly when unmounting and shouldUnregister is true', () => {
-      test('unsets value when root keepValues is undefined or false', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepValues: false },
-          }),
-        )
+    test('unsets value when root keepValues is undefined or false', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepValues: false },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        expect(hook.result.current.getValues()).toEqual({ test: 'test' })
+      expect(hook.result.current.getValues()).toEqual({ test: '' })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.getValues()).toEqual({})
-      })
+      expect(hook.result.current.getValues()).toEqual({})
+    })
 
-      test('does not unset value when root keepValues is true', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepValues: true },
-          }),
-        )
+    test('unsets array value when root keepValues is undefined or false', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(
+        <div>
+          <input {...hook.result.current.register('test.0')} />
+          <input {...hook.result.current.register('test.1')} />
+          <input {...hook.result.current.register('test.2')} />
+        </div>,
+      )
 
-        expect(hook.result.current.getValues()).toEqual({ test: 'test' })
+      expect(hook.result.current.getValues()).toEqual({ test: ['', '', ''] })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.getValues()).toEqual({ test: 'test' })
-      })
+      expect(hook.result.current.getValues()).toEqual({})
+    })
 
-      test('unsets field when root keepValues is undefined or false', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepValues: false },
-          }),
-        )
+    test('does not unset array value when root keepValues is true', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepValues: true },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(
+        <div>
+          <input {...hook.result.current.register('test.0')} />
+          <input {...hook.result.current.register('test.1')} />
+          <input {...hook.result.current.register('test.2')} />
+        </div>,
+      )
 
-        expect(hook.result.current.control._fields.test).toBeDefined()
+      expect(hook.result.current.getValues()).toEqual({ test: ['', '', ''] })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control._fields.test).toBeUndefined()
-      })
+      expect(hook.result.current.getValues()).toEqual({ test: ['', '', ''] })
+    })
 
-      test('does not unset field when root keepValues is true', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepValues: true },
-          }),
-        )
+    test('does not unset value when root keepValues is true', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepValues: true },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        expect(hook.result.current.control._fields.test).toBeDefined()
+      expect(hook.result.current.getValues()).toEqual({ test: '' })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control._fields.test).toBeDefined()
-      })
+      expect(hook.result.current.getValues()).toEqual({ test: '' })
+    })
 
-      test('unsets error when root keepErrors is undefined or false', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepErrors: false },
-          }),
-        )
+    test('unsets field when root keepValues is undefined or false', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepValues: false },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.stores.errors.set({ test: {} })
+      expect(hook.result.current.control._fields.test).toBeDefined()
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control.stores.errors.value.test).toBeUndefined()
-      })
+      expect(hook.result.current.control._fields.test).toBeUndefined()
+    })
 
-      test('does not unset error when root keepErrors is true', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepErrors: true },
-          }),
-        )
+    test('does not unset field when root keepValues is true', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepValues: true },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.stores.errors.set({ test: {} })
+      expect(hook.result.current.control._fields.test).toBeDefined()
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control.stores.errors.value.test).toBeDefined()
-      })
+      expect(hook.result.current.control._fields.test).toBeDefined()
+    })
 
-      test('unsets dirty field when root keepDirty is undefined or false', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepDirty: false },
-          }),
-        )
+    test('unsets error when root keepErrors is undefined or false', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepErrors: false },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.stores.dirtyFields.set({ test: true })
+      hook.result.current.control.stores.errors.set({ test: {} })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control.stores.dirtyFields.value.test).toBeUndefined()
-      })
+      expect(hook.result.current.control.stores.errors.value.test).toBeUndefined()
+    })
 
-      test('does not unset dirty field when root keepDirty is true', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepDirty: true },
-          }),
-        )
+    test('does not unset error when root keepErrors is true', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepErrors: true },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.stores.dirtyFields.set({ test: true })
+      hook.result.current.control.stores.errors.set({ test: {} })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control.stores.dirtyFields.value.test).toBeDefined()
-      })
+      expect(hook.result.current.control.stores.errors.value.test).toBeDefined()
+    })
 
-      test('unsets touched field when root keepTouched is undefined or false', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepTouched: false },
-          }),
-        )
+    test('unsets dirty field when root keepDirty is undefined or false', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepDirty: false },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.stores.touchedFields.set({ test: true })
+      hook.result.current.control.stores.dirtyFields.set({ test: true })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control.stores.touchedFields.value.test).toBeUndefined()
-      })
+      expect(hook.result.current.control.stores.dirtyFields.value.test).toBeUndefined()
+    })
 
-      test('does not unset touched field when root keepTouched is true', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test' },
-            resetOptions: { keepTouched: true },
-          }),
-        )
+    test('does not unset dirty field when root keepDirty is true', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepDirty: true },
+        }),
+      )
 
-        const component = render(<input {...hook.result.current.register('test')} />)
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.stores.touchedFields.set({ test: true })
+      hook.result.current.control.stores.dirtyFields.set({ test: true })
 
-        component.unmount()
-        hook.unmount()
+      component.unmount()
+      hook.unmount()
 
-        expect(hook.result.current.control.stores.touchedFields.value.test).toBeDefined()
-      })
+      expect(hook.result.current.control.stores.dirtyFields.value.test).toBeDefined()
+    })
 
-      test('unsets all relevant store values and updates once per input unregistered', async () => {
-        const hook = renderHook(() =>
-          useForm({
-            shouldUnregister: true,
-            defaultValues: { test: 'test', test2: 'test2' },
-            resetOptions: {
-              keepValues: false,
-              keepErrors: false,
-              keepDirty: false,
-              keepTouched: false,
-            },
-          }),
-        )
+    test('unsets touched field when root keepTouched is undefined or false', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepTouched: false },
+        }),
+      )
 
-        const fn = vi.fn()
+      const component = render(<input {...hook.result.current.register('test')} />)
 
-        hook.result.current.control.state.subscribe(fn, undefined, false)
+      hook.result.current.control.stores.touchedFields.set({ test: true })
 
-        const component = render(
+      component.unmount()
+      hook.unmount()
+
+      expect(hook.result.current.control.stores.touchedFields.value.test).toBeUndefined()
+    })
+
+    test('does not unset touched field when root keepTouched is true', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: { keepTouched: true },
+        }),
+      )
+
+      const component = render(<input {...hook.result.current.register('test')} />)
+
+      hook.result.current.control.stores.touchedFields.set({ test: true })
+
+      component.unmount()
+      hook.unmount()
+
+      expect(hook.result.current.control.stores.touchedFields.value.test).toBeDefined()
+    })
+
+    test('unsets relevant store values and notifies once during unmount', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: {
+            keepValues: false,
+            keepErrors: false,
+            keepDirty: false,
+            keepTouched: false,
+          },
+        }),
+      )
+
+      const fn = vi.fn()
+
+      hook.result.current.control.state.subscribe(fn, undefined, false)
+
+      const component = render(
+        <>
+          <input {...hook.result.current.register('test')} />
+          <input {...hook.result.current.register('test2')} />
+        </>,
+      )
+
+      hook.result.current.control.stores.errors.set({ test: {} })
+      hook.result.current.control.stores.dirtyFields.set({ test: true })
+      hook.result.current.control.stores.touchedFields.set({ test: true })
+
+      component.unmount()
+      hook.unmount()
+
+      expect(hook.result.current.control.stores.errors.value).toEqual({})
+      expect(hook.result.current.control.stores.dirtyFields.value).toEqual({})
+      expect(hook.result.current.control.stores.touchedFields.value).toEqual({})
+      expect(hook.result.current.control.stores.values.value).toEqual({})
+
+      expect(fn).toHaveBeenCalledOnce()
+    })
+
+    test('notifies each time unregister is called manually', () => {
+      const hook = renderHook(() =>
+        useForm({
+          shouldUnregister: true,
+          resetOptions: {
+            keepValues: false,
+            keepErrors: false,
+            keepDirty: false,
+            keepTouched: false,
+          },
+        }),
+      )
+
+      const fn = vi.fn()
+
+      hook.result.current.control.state.subscribe(fn, undefined, false)
+
+      function Component() {
+        useEffect(() => {
+          hook.result.current.unregister('test')
+          hook.result.current.unregister('test2')
+        }, [])
+
+        return (
           <>
             <input {...hook.result.current.register('test')} />
             <input {...hook.result.current.register('test2')} />
-          </>,
+          </>
         )
+      }
 
-        hook.result.current.control.stores.errors.set({ test: {} })
-        hook.result.current.control.stores.dirtyFields.set({ test: true })
-        hook.result.current.control.stores.touchedFields.set({ test: true })
+      render(<Component />)
 
-        component.unmount()
-        hook.unmount()
-
-        expect(hook.result.current.control.stores.errors.value).toEqual({})
-        expect(hook.result.current.control.stores.dirtyFields.value).toEqual({})
-        expect(hook.result.current.control.stores.touchedFields.value).toEqual({})
-        expect(hook.result.current.control.stores.values.value).toEqual({})
-
-        expect(fn).toHaveBeenCalledTimes(2)
-      })
+      expect(fn).toHaveBeenCalledTimes(2)
     })
   })
 })

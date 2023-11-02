@@ -106,7 +106,7 @@ describe('control', () => {
       describe.todo('pattern', () => {})
     })
 
-    test('renders component once', () => {
+    test('registering inputs never re-renders the component', () => {
       let renderCount = 0
 
       function Component(props: ComponentProps) {
@@ -114,7 +114,14 @@ describe('control', () => {
 
         renderCount++
 
-        return <input {...form.register(name, props.register)} />
+        return (
+          <div>
+            <input {...form.register('a', props.register)} />
+            <input {...form.register('b', props.register)} />
+            <input {...form.register('c', props.register)} />
+            <input {...form.register('d', props.register)} />
+          </div>
+        )
       }
 
       const { unmount } = render(<Component />)

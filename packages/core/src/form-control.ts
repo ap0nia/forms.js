@@ -419,6 +419,7 @@ export class FormControl<
   unregisterField<T extends TParsedForm['keys']>(
     name?: T | T[],
     options?: UnregisterOptions,
+    force = true,
   ): void {
     const keepValue = options?.keepValue ?? this.options.resetOptions?.keepValues
     const keepError = options?.keepError ?? this.options.resetOptions?.keepErrors
@@ -479,8 +480,7 @@ export class FormControl<
       this.updateValid(undefined, fieldNames)
     }
 
-    // Flush the buffer and force an update.
-    this.state.flush(true)
+    this.state.flush(force)
   }
 
   /**
@@ -1271,25 +1271,42 @@ export class FormControl<
   // Lifecycle.
   //--------------------------------------------------------------------------------------
 
+  /**
+   */
   mount(): void {
     this.mounted = true
   }
 
+  /**
+   */
   unmount(): void {
-    this.cleanup()
+    this.state.open()
+
+    this.removeUnmounted()
+
     this.mounted = false
+
+    this.state.flush(true)
   }
 
+  /**
+   * Cleanup.
+   */
   cleanup(): void {
     this.removeUnmounted()
   }
 
-  removeUnmounted(): void {
+  /**
+   * Remove any fields that should be unmounted.
+   *
+   * @param force Whether to force notify state subscribers.
+   */
+  removeUnmounted(force = false): void {
     for (const name of this.names.unMount) {
       const field: Field | undefined = safeGet(this.fields, name)
 
       if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
-        this.unregisterField(name as any)
+        this.unregisterField(name as any, undefined, force)
       }
 
       this.names.unMount.delete(name)
