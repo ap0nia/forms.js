@@ -1,5 +1,5 @@
 import { render, renderHook } from '@testing-library/react'
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import { useForm } from '../../src/use-form'
 
@@ -194,6 +194,46 @@ describe('control', () => {
         hook.unmount()
 
         expect(hook.result.current.control.stores.touchedFields.value.test).toBeDefined()
+      })
+
+      test('unsets all relevant store values and updates once per input unregistered', async () => {
+        const hook = renderHook(() =>
+          useForm({
+            shouldUnregister: true,
+            defaultValues: { test: 'test', test2: 'test2' },
+            resetOptions: {
+              keepValues: false,
+              keepErrors: false,
+              keepDirty: false,
+              keepTouched: false,
+            },
+          }),
+        )
+
+        const fn = vi.fn()
+
+        hook.result.current.control.state.subscribe(fn, undefined, false)
+
+        const component = render(
+          <>
+            <input {...hook.result.current.register('test')} />
+            <input {...hook.result.current.register('test2')} />
+          </>,
+        )
+
+        hook.result.current.control.stores.errors.set({ test: {} })
+        hook.result.current.control.stores.dirtyFields.set({ test: true })
+        hook.result.current.control.stores.touchedFields.set({ test: true })
+
+        component.unmount()
+        hook.unmount()
+
+        expect(hook.result.current.control.stores.errors.value).toEqual({})
+        expect(hook.result.current.control.stores.dirtyFields.value).toEqual({})
+        expect(hook.result.current.control.stores.touchedFields.value).toEqual({})
+        expect(hook.result.current.control.stores.values.value).toEqual({})
+
+        expect(fn).toHaveBeenCalledTimes(2)
       })
     })
   })
