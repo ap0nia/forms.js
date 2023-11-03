@@ -5,7 +5,7 @@ import { useForm } from '../../src/use-form'
 import { expectWaitForError } from '../expect-wait-for-error'
 
 describe('control', () => {
-  describe('unregister', () => {
+  describe('handleChange', () => {
     test('does not validate on input when validation and reValidation modes are onChange', async () => {
       const hook = renderHook(() => useForm())
 
