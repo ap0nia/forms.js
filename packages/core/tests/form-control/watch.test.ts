@@ -111,12 +111,12 @@ describe('FormControl', () => {
         expect(fn).toHaveBeenCalledTimes(3)
       })
 
-      test('updates state to track changes to values when no keys specified', () => {
+      test('tracks all changes if no arguments provided', () => {
         const formControl = new FormControl()
 
         formControl.watch()
 
-        expect(formControl.state.keys).toContain('values')
+        expect(formControl.state.all).toBeTruthy()
       })
     })
 

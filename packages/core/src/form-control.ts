@@ -279,6 +279,11 @@ export class FormControl<
       })
     }
 
+    if (args.length === 0) {
+      this.state.all = true
+      return
+    }
+
     const [name, defaultValue, options] = args
 
     const nameArray = Array.isArray(name) ? name : name ? [name] : []
@@ -556,14 +561,17 @@ export class FormControl<
         previousError.name,
       )
 
-      this.stores.errors.update((errors) => {
-        if (currentError.error) {
-          deepSet(errors, currentError.name, currentError.error)
-        } else {
-          deepUnset(errors, currentError.name)
-        }
-        return errors
-      })
+      this.stores.errors.update(
+        (errors) => {
+          if (currentError.error) {
+            deepSet(errors, currentError.name, currentError.error)
+          } else {
+            deepUnset(errors, currentError.name)
+          }
+          return errors
+        },
+        [name],
+      )
 
       if (field._f.deps) {
         await this.trigger(field._f.deps as any)
