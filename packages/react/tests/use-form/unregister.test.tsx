@@ -1,4 +1,4 @@
-import { render, renderHook } from '@testing-library/react'
+import { act, fireEvent, render, renderHook, getByRole } from '@testing-library/react'
 import { useEffect } from 'react'
 import { describe, test, expect, vi } from 'vitest'
 
@@ -303,9 +303,114 @@ describe('control', () => {
         )
       }
 
-      render(<Component />)
+      render(<Component />).unmount()
 
       expect(fn).toHaveBeenCalledTimes(2)
+    })
+
+    test('only validates inputs that are currently registered', async () => {
+      const hook = renderHook(() =>
+        useForm<{ a: string; b: string }>({
+          shouldUnregister: true,
+          resetOptions: {
+            keepValues: false,
+            keepErrors: false,
+            keepDirty: false,
+            keepTouched: false,
+          },
+        }),
+      )
+
+      const a = render(<input {...hook.result.current.register('a', { required: true })} />)
+      const b = render(<input {...hook.result.current.register('b', { required: true })} />)
+
+      const handleSubmit = hook.result.current.handleSubmit()
+
+      await handleSubmit()
+
+      expect(hook.result.current.control.stores.errors.value.a).toBeDefined()
+      expect(hook.result.current.control.stores.errors.value.b).toBeDefined()
+
+      a.unmount()
+      hook.result.current.control.cleanup()
+
+      await handleSubmit()
+
+      expect(hook.result.current.control.stores.errors.value.a).toBeUndefined()
+      expect(hook.result.current.control.stores.errors.value.b).toBeDefined()
+
+      b.unmount()
+      hook.result.current.control.cleanup()
+
+      await handleSubmit()
+
+      expect(hook.result.current.control.stores.errors.value.a).toBeUndefined()
+      expect(hook.result.current.control.stores.errors.value.b).toBeUndefined()
+    })
+
+    test('keeps track of submit count', async () => {
+      const hook = renderHook(() =>
+        useForm<{ a: string; show: boolean }>({
+          shouldUnregister: true,
+          resetOptions: {
+            keepValues: false,
+            keepErrors: false,
+            keepDirty: false,
+            keepTouched: false,
+          },
+        }),
+      )
+
+      const a = render(<input {...hook.result.current.register('a', { maxLength: 3 })} />)
+      const b = render(<input type="checkbox" {...hook.result.current.register('show')} />)
+
+      fireEvent.change(getByRole(a.container, 'textbox'), { target: { value: 'test' } })
+
+      const handleSubmit = hook.result.current.handleSubmit()
+
+      await act(handleSubmit)
+
+      expect(hook.result.current.control.stores.submitCount.value).toEqual(1)
+      expect(hook.result.current.control.stores.errors.value.a).toBeDefined()
+
+      fireEvent.click(getByRole(b.container, 'checkbox'))
+
+      expect(hook.result.current.control.stores.submitCount.value).toEqual(1)
+      expect(hook.result.current.control.stores.errors.value.a).toBeDefined()
+      expect(hook.result.current.watch('show')).toEqual(true)
+
+      await act(handleSubmit)
+
+      expect(hook.result.current.control.stores.submitCount.value).toEqual(2)
+      expect(hook.result.current.control.stores.errors.value.a).toBeDefined()
+      expect(hook.result.current.watch('show')).toEqual(true)
+    })
+
+    test('only unregisters input after all child checkboxes are unmounted', async () => {
+      const hook = renderHook(() => useForm({ shouldUnregister: true }))
+
+      const test1 = render(
+        <input {...hook.result.current.register('test')} type="radio" value="1" />,
+      )
+      const test2 = render(
+        <input {...hook.result.current.register('test')} type="radio" value="2" />,
+      )
+
+      test1.unmount()
+      hook.result.current.control.cleanup()
+
+      const handleSubmit = hook.result.current.handleSubmit()
+
+      await act(handleSubmit)
+
+      expect(hook.result.current.control.stores.values.value).toEqual({ test: null })
+
+      test2.unmount()
+      hook.result.current.control.cleanup()
+
+      await act(handleSubmit)
+
+      expect(hook.result.current.control.stores.values.value).toEqual({})
     })
   })
 })
