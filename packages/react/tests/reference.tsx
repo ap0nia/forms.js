@@ -8,7 +8,6 @@ import {
   render,
   screen,
   waitFor,
-  waitForElementToBeRemoved,
 } from '@testing-library/react'
 import React, { useState } from 'react'
 
@@ -669,100 +668,6 @@ describe('useForm', () => {
           names: ['test.sub', 'test1'],
         })
       })
-    })
-  })
-
-  describe('mode with onTouched', () => {
-    it('should validate form only when input is been touched', async () => {
-      const Component = () => {
-        const {
-          register,
-          formState: { errors },
-        } = useForm<{
-          test: string
-        }>({
-          mode: 'onTouched',
-        })
-
-        return (
-          <>
-            <input type="text" {...register('test', { required: 'This is required.' })} />
-            {errors.test?.message}
-          </>
-        )
-      }
-
-      render(<Component />)
-
-      const input = screen.getByRole('textbox')
-
-      fireEvent.focus(input)
-
-      fireEvent.blur(input)
-
-      expect(await screen.findByText('This is required.')).toBeVisible()
-
-      fireEvent.input(input, {
-        target: {
-          value: 'test',
-        },
-      })
-
-      await waitFor(() => expect(screen.queryByText('This is required.')).not.toBeInTheDocument())
-
-      fireEvent.input(input, {
-        target: {
-          value: '',
-        },
-      })
-
-      expect(await screen.findByText('This is required.')).toBeVisible()
-    })
-
-    it('should validate onFocusout event', async () => {
-      const Component = () => {
-        const {
-          register,
-          formState: { errors },
-        } = useForm<{
-          test: string
-        }>({
-          mode: 'onTouched',
-        })
-
-        return (
-          <>
-            <input type="text" {...register('test', { required: 'This is required.' })} />
-            {errors.test?.message}
-          </>
-        )
-      }
-
-      render(<Component />)
-
-      const input = screen.getByRole('textbox')
-
-      fireEvent.focus(input)
-
-      fireEvent.focusOut(input)
-
-      expect(await screen.findByText('This is required.')).toBeVisible()
-
-      fireEvent.input(input, {
-        target: {
-          value: 'test',
-        },
-      })
-
-      await waitFor(() => expect(screen.queryByText('This is required.')).not.toBeInTheDocument())
-
-      fireEvent.input(input, {
-        target: {
-          value: '',
-        },
-      })
-
-      expect(await screen.findByText('This is required.')).toBeVisible()
     })
   })
 

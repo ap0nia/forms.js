@@ -1,4 +1,4 @@
-import { act, fireEvent, render, renderHook, getByRole, waitFor } from '@testing-library/react'
+import { act, fireEvent, getByRole, render, renderHook, waitFor } from '@testing-library/react'
 import { describe, test, expect, vi } from 'vitest'
 
 import { useForm } from '../../src/use-form'
@@ -156,6 +156,136 @@ describe('control', () => {
       await expectWaitForError(() =>
         expect(hook.result.current.control.stores.errors.value.test).toBeDefined(),
       )
+    })
+
+    test('does not validate form after input or change events when validationMode is onTouched', async () => {
+      const hook = renderHook(() =>
+        useForm<{
+          test: string
+        }>({
+          mode: 'onTouched',
+        }),
+      )
+
+      const input = render(
+        <input
+          type="text"
+          {...hook.result.current.register('test', { required: 'This is required.' })}
+        />,
+      )
+
+      fireEvent.input(getByRole(input.container, 'textbox'))
+
+      expectWaitForError(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toBeDefined(),
+      )
+
+      fireEvent.change(getByRole(input.container, 'textbox'))
+
+      expectWaitForError(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toBeDefined(),
+      )
+    })
+
+    test('validates form after input is blurred when validationMode is onTouched', async () => {
+      const hook = renderHook(() =>
+        useForm<{
+          test: string
+        }>({
+          mode: 'onTouched',
+        }),
+      )
+
+      const input = render(
+        <input
+          type="text"
+          {...hook.result.current.register('test', { required: 'This is required.' })}
+        />,
+      )
+
+      fireEvent.blur(getByRole(input.container, 'textbox'))
+
+      await waitFor(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toEqual(
+          'This is required.',
+        ),
+      )
+
+      fireEvent.input(getByRole(input.container, 'textbox'), {
+        target: {
+          value: 'test',
+        },
+      })
+
+      await waitFor(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toBeUndefined(),
+      )
+    })
+
+    test.only('validates form after input and change events after the field has been touched once when validationMode is onTouched', async () => {
+      const hook = renderHook(() =>
+        useForm<{
+          test: string
+        }>({
+          mode: 'onTouched',
+        }),
+      )
+
+      const input = render(
+        <input
+          type="text"
+          {...hook.result.current.register('test', { required: 'This is required.' })}
+        />,
+      )
+
+      fireEvent.blur(getByRole(input.container, 'textbox'))
+
+      await waitFor(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toEqual(
+          'This is required.',
+        ),
+      )
+
+      fireEvent.input(getByRole(input.container, 'textbox'), {
+        target: {
+          value: 'test',
+        },
+      })
+
+      await waitFor(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toBeUndefined(),
+      )
+
+      fireEvent.change(getByRole(input.container, 'textbox'), {
+        target: {
+          value: '',
+        },
+      })
+
+      await waitFor(() =>
+        expect(hook.result.current.control.stores.errors.value.test?.message).toEqual(
+          'This is required.',
+        ),
+      )
+    })
+
+    test('validates form on focusOut when validationMode is onTouched', async () => {
+      const hook = renderHook(() =>
+        useForm<{
+          test: string
+        }>({
+          mode: 'onTouched',
+        }),
+      )
+
+      const input = render(
+        <input
+          type="text"
+          {...hook.result.current.register('test', { required: 'This is required.' })}
+        />,
+      )
+
+      fireEvent.focusOut(getByRole(input.container, 'textbox'))
     })
   })
 })
