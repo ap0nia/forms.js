@@ -287,5 +287,61 @@ describe('control', () => {
 
       fireEvent.focusOut(getByRole(input.container, 'textbox'))
     })
+
+    test('triggers and clears errors for group errors object', async () => {
+      const hook = renderHook(() =>
+        useForm<{
+          checkbox: string[]
+        }>({
+          mode: 'onChange',
+          resolver: (data) => {
+            return {
+              errors: {
+                ...(data.checkbox.every((value) => !value)
+                  ? { checkbox: { type: 'error', message: 'wrong' } }
+                  : {}),
+              },
+              values: {},
+            }
+          },
+        }),
+      )
+
+      const createCheckbox = (value: number, index: number) =>
+        render(
+          <input
+            type="checkbox"
+            {...hook.result.current.register(`checkbox.${index}` as const)}
+            value={value}
+          />,
+        )
+
+      const input = createCheckbox(1, 0)
+
+      fireEvent.click(getByRole(input.container, 'checkbox'))
+      fireEvent.click(getByRole(input.container, 'checkbox'))
+
+      await waitFor(() =>
+        expect(hook.result.current.control.stores.errors.value).toEqual({
+          checkbox: { type: 'error', message: 'wrong' },
+        }),
+      )
+
+      fireEvent.click(getByRole(input.container, 'checkbox'))
+
+      await waitFor(() => expect(hook.result.current.control.stores.errors.value).toEqual({}))
+
+      fireEvent.click(getByRole(input.container, 'checkbox'))
+
+      await hook.result.current.handleSubmit()()
+
+      expect(hook.result.current.control.stores.errors.value).toEqual({
+        checkbox: { type: 'error', message: 'wrong' },
+      })
+
+      fireEvent.click(getByRole(input.container, 'checkbox'))
+
+      await waitFor(() => expect(hook.result.current.control.stores.errors.value).toEqual({}))
+    })
   })
 })

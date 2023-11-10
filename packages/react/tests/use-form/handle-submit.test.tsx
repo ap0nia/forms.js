@@ -45,17 +45,28 @@ describe('useForm', () => {
       expect(hook.result.current.control.stores.errors.value.b).toBeUndefined()
     })
 
-    test('triggers and clears errors for group errors object', async () => {
+    test('does not clear errors for non checkbox parent inputs', async () => {
       const hook = renderHook(() =>
         useForm<{
-          checkbox: string[]
+          checkbox: [{ test: string }, { test1: string }]
         }>({
           mode: 'onChange',
           resolver: (data) => {
             return {
               errors: {
-                ...(data.checkbox.every((value) => !value)
-                  ? { checkbox: { type: 'error', message: 'wrong' } }
+                ...(!data.checkbox[0].test || !data.checkbox[1].test1
+                  ? {
+                      checkbox: [
+                        {
+                          ...(!data.checkbox[0].test
+                            ? { test: { type: 'error', message: 'wrong' } }
+                            : {}),
+                          ...(!data.checkbox[1].test1
+                            ? { test1: { type: 'error', message: 'wrong' } }
+                            : {}),
+                        },
+                      ],
+                    }
                   : {}),
               },
               values: {},
@@ -64,41 +75,73 @@ describe('useForm', () => {
         }),
       )
 
-      const createCheckbox = (value: number, index: number) =>
-        render(
-          <input
-            type="checkbox"
-            {...hook.result.current.register(`checkbox.${index}` as const)}
-            value={value}
-          />,
-        )
+      const checkbox = render(
+        <input type={'checkbox'} {...hook.result.current.register(`checkbox.0.test`)} />,
+      )
+      render(<input {...hook.result.current.register(`checkbox.1.test1`)} />)
 
-      const input = createCheckbox(1, 0)
+      const handleSubmit = hook.result.current.handleSubmit()
 
-      fireEvent.click(getByRole(input.container, 'checkbox'))
-      fireEvent.click(getByRole(input.container, 'checkbox'))
+      await handleSubmit()
 
-      await waitFor(() =>
-        expect(hook.result.current.control.stores.errors.value).toEqual({
-          checkbox: { type: 'error', message: 'wrong' },
+      expect(hook.result.current.control.stores.errors.value).toEqual({
+        checkbox: [
+          {
+            test: { type: 'error', message: 'wrong' },
+            test1: { type: 'error', message: 'wrong' },
+          },
+        ],
+      })
+
+      fireEvent.click(getByRole(checkbox.container, 'checkbox'))
+
+      await handleSubmit()
+
+      expect(hook.result.current.control.stores.errors.value).toEqual({
+        checkbox: [
+          {
+            test1: { type: 'error', message: 'wrong' },
+          },
+        ],
+      })
+    })
+
+    test.only('has formState.isValid equals true with defined default values after executing resolver', async () => {
+      const hook = renderHook(() =>
+        useForm({
+          defaultValues: { test: 'Test' },
+          mode: 'onChange',
+          resolver: async (values) => {
+            if (!values.test) {
+              return {
+                values: {},
+                errors: {
+                  test: {
+                    type: 'required',
+                  },
+                },
+              }
+            }
+
+            return {
+              values,
+              errors: {},
+            }
+          },
         }),
       )
 
-      fireEvent.click(getByRole(input.container, 'checkbox'))
+      hook.result.current.formState.isValid
 
-      await waitFor(() => expect(hook.result.current.control.stores.errors.value).toEqual({}))
+      const input = render(<input id="test" {...hook.result.current.register('test')} />)
 
-      fireEvent.click(getByRole(input.container, 'checkbox'))
+      await waitFor(() => expect(hook.result.current.control.state.value.isValid).toBeTruthy())
 
-      await hook.result.current.handleSubmit()()
+      input.unmount()
 
-      expect(hook.result.current.control.stores.errors.value).toEqual({
-        checkbox: { type: 'error', message: 'wrong' },
-      })
+      render(<input id="test" {...hook.result.current.register('test')} />)
 
-      fireEvent.click(getByRole(input.container, 'checkbox'))
-
-      await waitFor(() => expect(hook.result.current.control.stores.errors.value).toEqual({}))
+      expect(hook.result.current.control.state.value.isValid).toBeTruthy()
     })
   })
 })
