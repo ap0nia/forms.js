@@ -99,12 +99,12 @@ describe('control', () => {
 
       const component = render(<input {...hook.result.current.register('test')} />)
 
-      expect(hook.result.current.control._fields.test).toBeDefined()
+      expect(hook.result.current.control._fields['test']).toBeDefined()
 
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control._fields.test).toBeUndefined()
+      expect(hook.result.current.control._fields['test']).toBeUndefined()
     })
 
     test('does not unset field when root keepValues is true', () => {
@@ -117,12 +117,12 @@ describe('control', () => {
 
       const component = render(<input {...hook.result.current.register('test')} />)
 
-      expect(hook.result.current.control._fields.test).toBeDefined()
+      expect(hook.result.current.control._fields['test']).toBeDefined()
 
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control._fields.test).toBeDefined()
+      expect(hook.result.current.control._fields['test']).toBeDefined()
     })
 
     test('unsets error when root keepErrors is undefined or false', () => {
@@ -140,7 +140,7 @@ describe('control', () => {
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeUndefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeUndefined()
     })
 
     test('does not unset error when root keepErrors is true', () => {
@@ -158,7 +158,7 @@ describe('control', () => {
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeDefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeDefined()
     })
 
     test('unsets dirty field when root keepDirty is undefined or false', () => {
@@ -176,7 +176,7 @@ describe('control', () => {
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control.stores.dirtyFields.value.test).toBeUndefined()
+      expect(hook.result.current.control.stores.dirtyFields.value['test']).toBeUndefined()
     })
 
     test('does not unset dirty field when root keepDirty is true', () => {
@@ -194,7 +194,7 @@ describe('control', () => {
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control.stores.dirtyFields.value.test).toBeDefined()
+      expect(hook.result.current.control.stores.dirtyFields.value['test']).toBeDefined()
     })
 
     test('unsets touched field when root keepTouched is undefined or false', () => {
@@ -212,7 +212,7 @@ describe('control', () => {
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control.stores.touchedFields.value.test).toBeUndefined()
+      expect(hook.result.current.control.stores.touchedFields.value['test']).toBeUndefined()
     })
 
     test('does not unset touched field when root keepTouched is true', () => {
@@ -230,7 +230,7 @@ describe('control', () => {
       component.unmount()
       hook.unmount()
 
-      expect(hook.result.current.control.stores.touchedFields.value.test).toBeDefined()
+      expect(hook.result.current.control.stores.touchedFields.value['test']).toBeDefined()
     })
 
     test('unsets relevant store values and notifies once during unmount', () => {

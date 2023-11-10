@@ -20,18 +20,18 @@ describe('control', () => {
 
       fireEvent.input(getByRole(document.body, 'textbox'), { target: { value: '' } })
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeUndefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeUndefined()
 
       await act(hook.result.current.handleSubmit())
 
-      expect(hook.result.current.control.stores.errors.value.test).toEqual(
+      expect(hook.result.current.control.stores.errors.value['test']).toEqual(
         expect.objectContaining({ message: 'required' }),
       )
 
       fireEvent.input(getByRole(document.body, 'textbox'), { target: { value: '' } })
 
       await waitFor(() =>
-        expect(hook.result.current.control.stores.errors.value.test).toEqual(
+        expect(hook.result.current.control.stores.errors.value['test']).toEqual(
           expect.objectContaining({ message: 'required' }),
         ),
       )
@@ -51,12 +51,12 @@ describe('control', () => {
 
       await act(hook.result.current.handleSubmit())
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeUndefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeUndefined()
 
       fireEvent.input(getByRole(input.container, 'textbox'), { target: { value: '' } })
 
       await waitFor(() =>
-        expect(hook.result.current.control.stores.errors.value.test).toBeDefined(),
+        expect(hook.result.current.control.stores.errors.value['test']).toBeDefined(),
       )
     })
 
@@ -73,12 +73,12 @@ describe('control', () => {
 
       fireEvent.input(getByRole(input.container, 'textbox'), { target: { value: '' } })
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeUndefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeUndefined()
 
       fireEvent.blur(getByRole(input.container, 'textbox'))
 
       await waitFor(() =>
-        expect(hook.result.current.control.stores.errors.value.test).toBeDefined(),
+        expect(hook.result.current.control.stores.errors.value['test']).toBeDefined(),
       )
     })
 
@@ -93,7 +93,7 @@ describe('control', () => {
 
       await act(hook.result.current.handleSubmit())
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeDefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeDefined()
     })
 
     test('does not add errors after blur event if validation mode is onChange', async () => {
@@ -109,7 +109,7 @@ describe('control', () => {
 
       // Ensure that the error is never added after blur event.
       await expectWaitForError(() =>
-        expect(hook.result.current.control.stores.errors.value.test).toBeDefined(),
+        expect(hook.result.current.control.stores.errors.value['test']).toBeDefined(),
       )
     })
 
@@ -125,7 +125,7 @@ describe('control', () => {
       fireEvent.blur(getByRole(input.container, 'textbox'))
 
       await waitFor(() =>
-        expect(hook.result.current.control.stores.errors.value.test).toBeDefined(),
+        expect(hook.result.current.control.stores.errors.value['test']).toBeDefined(),
       )
     })
 
@@ -140,7 +140,7 @@ describe('control', () => {
 
       await act(hook.result.current.handleSubmit())
 
-      expect(hook.result.current.control.stores.errors.value.test).toBeDefined()
+      expect(hook.result.current.control.stores.errors.value['test']).toBeDefined()
     })
 
     test('does not add error after change event if validation mode is onBlur', async () => {
@@ -154,7 +154,7 @@ describe('control', () => {
 
       // Ensure that the error is never added after change event.
       await expectWaitForError(() =>
-        expect(hook.result.current.control.stores.errors.value.test).toBeDefined(),
+        expect(hook.result.current.control.stores.errors.value['test']).toBeDefined(),
       )
     })
 

@@ -4,10 +4,7 @@
     "types": ["vitest/globals"],
 
     "jsx": "react-jsx",
-    "outDir": "dist",
-
-    "noUncheckedIndexedAccess": false,
-    "noPropertyAccessFromIndexSignature": false
+    "outDir": "dist"
   },
   "exclude": ["coverage", "dist"]
 }
