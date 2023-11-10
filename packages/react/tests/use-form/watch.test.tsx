@@ -2,6 +2,7 @@ import { act, fireEvent, getByRole, render, renderHook } from '@testing-library/
 import { describe } from 'vitest'
 
 import { useForm } from '../../src/use-form'
+import { expectWaitForError } from '../expect-wait-for-error'
 
 describe('control', () => {
   describe('watch', () => {
@@ -33,7 +34,10 @@ describe('control', () => {
         fireEvent.input(getByRole(input.container, 'textbox'), { target: { value: 'test' } }),
       )
 
-      // Renders once to change the values, and once more at the end of handling the change.
+      expectWaitForError(() => expect(fn).toHaveBeenCalledTimes(3))
+
+      // Renders once synchronously at the beginning of "handleChange" to change the values,
+      // and once more at the end to update the component again.
       expect(fn).toHaveBeenCalledTimes(2)
     })
 
@@ -51,6 +55,8 @@ describe('control', () => {
       await act(() =>
         fireEvent.input(getByRole(input.container, 'textbox'), { target: { value: 'test' } }),
       )
+
+      expectWaitForError(() => expect(fn).toHaveBeenCalledTimes(2))
 
       // Only renders once to change the values.
       // None of the subsequent store changes are being listened to, i.e. "errors", "touched", etc.
@@ -72,7 +78,30 @@ describe('control', () => {
         fireEvent.input(getByRole(input.container, 'textbox'), { target: { value: 'test' } }),
       )
 
-      expect(fn).not.toHaveBeenCalled()
+      expectWaitForError(() => expect(fn).toHaveBeenCalled())
+    })
+
+    test('re-renders if any field in an watched array field changes', async () => {
+      const hook = renderHook(() => useForm<{ test: string[] }>())
+
+      hook.result.current.watch('test')
+
+      const fn = vi.fn()
+
+      hook.result.current.control.state.subscribe(fn, undefined, false)
+
+      const input = render(<input {...hook.result.current.register('test.0')} />)
+      render(<input {...hook.result.current.register('test.1')} />)
+      render(<input {...hook.result.current.register('test.2')} />)
+
+      fireEvent.input(getByRole(input.container, 'textbox'), {
+        target: {
+          value: 'test',
+        },
+      })
+
+      await expectWaitForError(() => expect(fn).toHaveBeenCalledTimes(2))
+      expect(fn).toHaveBeenCalledTimes(1)
     })
   })
 })

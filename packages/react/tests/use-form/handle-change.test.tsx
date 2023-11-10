@@ -222,7 +222,7 @@ describe('control', () => {
       )
     })
 
-    test.only('validates form after input and change events after the field has been touched once when validationMode is onTouched', async () => {
+    test('validates form after input and change events after the field has been touched once when validationMode is onTouched', async () => {
       const hook = renderHook(() =>
         useForm<{
           test: string
