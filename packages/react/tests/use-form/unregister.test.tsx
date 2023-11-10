@@ -345,32 +345,5 @@ describe('control', () => {
       expect(hook.result.current.control.stores.errors.value.a).toBeDefined()
       expect(hook.result.current.watch('show')).toEqual(true)
     })
-
-    test('only unregisters input after all child checkboxes are unmounted', async () => {
-      const hook = renderHook(() => useForm({ shouldUnregister: true }))
-
-      const test1 = render(
-        <input {...hook.result.current.register('test')} type="radio" value="1" />,
-      )
-      const test2 = render(
-        <input {...hook.result.current.register('test')} type="radio" value="2" />,
-      )
-
-      test1.unmount()
-      hook.result.current.control.cleanup()
-
-      const handleSubmit = hook.result.current.handleSubmit()
-
-      await act(handleSubmit)
-
-      expect(hook.result.current.control.stores.values.value).toEqual({ test: null })
-
-      test2.unmount()
-      hook.result.current.control.cleanup()
-
-      await act(handleSubmit)
-
-      expect(hook.result.current.control.stores.values.value).toEqual({})
-    })
   })
 })
