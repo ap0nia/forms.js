@@ -134,5 +134,15 @@ describe('useForm', () => {
 
       expect(hook.result.current.control.stores.values.value).toEqual({})
     })
+
+    test('should unsubscribe to all subject when hook unmounts', () => {
+      const hook = renderHook(() => useForm())
+
+      expect(hook.result.current.control.state.writable.subscribers.size).toBeTruthy()
+
+      hook.unmount()
+
+      expect(hook.result.current.control.state.writable.subscribers.size).toBeFalsy()
+    })
   })
 })

@@ -66,5 +66,10 @@ describe('useForm', () => {
         names: ['test.sub', 'test1'],
       })
     })
+
+    test('trigger should not throw warn', async () => {
+      const { result } = renderHook(() => useForm<{ test: string }>())
+      await act(async () => expect(await result.current.trigger('test')).toBeTruthy())
+    })
   })
 })

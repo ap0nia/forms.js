@@ -505,57 +505,6 @@ describe('useForm', () => {
     })
   })
 
-  describe('with schema validation', () => {
-    it('should have formState.isValid equals true with defined default values after executing resolver', async () => {
-      const Toggle = () => {
-        const [toggle, setToggle] = React.useState(false)
-
-        const { register, formState } = useForm({
-          defaultValues: { test: 'Test' },
-          mode: 'onChange',
-          resolver: async (values) => {
-            if (!values.test) {
-              return {
-                values: {},
-                errors: {
-                  test: {
-                    type: 'required',
-                  },
-                },
-              }
-            }
-
-            return {
-              values,
-              errors: {},
-            }
-          },
-        })
-
-        return (
-          <>
-            <button onClick={() => setToggle(!toggle)}>Toggle</button>
-            {toggle && <input id="test" {...register('test')} />}
-            <button disabled={!formState.isValid}>Submit</button>
-          </>
-        )
-      }
-
-      render(<Toggle />)
-
-      const toggle = () => fireEvent.click(screen.getByText('Toggle'))
-
-      toggle()
-
-      await waitFor(() => expect(screen.getByText('Submit')).toBeEnabled())
-
-      toggle()
-      toggle()
-
-      expect(screen.getByText('Submit')).toBeEnabled()
-    })
-  })
-
   describe('control', () => {
     it('does not change across re-renders', () => {
       let control
@@ -583,18 +532,6 @@ describe('useForm', () => {
       const secondRenderControl = control
 
       expect(Object.is(firstRenderControl, secondRenderControl)).toBe(true)
-    })
-  })
-
-  describe('when input is not registered', () => {
-    it('trigger should not throw warn', async () => {
-      const { result } = renderHook(() =>
-        useForm<{
-          test: string
-        }>(),
-      )
-
-      await act(async () => expect(await result.current.trigger('test')).toBeTruthy())
     })
   })
 
