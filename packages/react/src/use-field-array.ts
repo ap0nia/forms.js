@@ -1,3 +1,5 @@
+import { deepSet } from '@forms.js/common/utils/deep-set'
+import { safeGet } from '@forms.js/common/utils/safe-get'
 import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@forms.js/core'
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
@@ -65,17 +67,17 @@ export function useFieldArray<
     }
   })
 
-  // useEffect(() => {
-  //   if (!safeGet(control.state.value.values, props.name)) {
-  //     control.stores.values.update(
-  //       (values) => {
-  //         deepSet(values, props.name, [])
-  //         return values
-  //       },
-  //       [props.name],
-  //     )
-  //   }
-  // }, [control, props.shouldUnregister])
+  useEffect(() => {
+    if (!safeGet(control.state.value.values, props.name)) {
+      control.stores.values.update(
+        (values) => {
+          deepSet(values, props.name, [])
+          return values
+        },
+        [props.name],
+      )
+    }
+  }, [control, props.shouldUnregister])
 
   useEffect(() => {
     fieldArray.current.doSomething()

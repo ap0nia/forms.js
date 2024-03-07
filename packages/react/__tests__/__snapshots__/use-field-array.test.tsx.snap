@@ -1,5 +1,46 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`array of array fields > should allow append with deeply nested field array even with flat structure 1`] = `
+[
+  {},
+  {
+    "test": [],
+  },
+  {
+    "test": [
+      {
+        "yourDetails": {
+          "firstName": [
+            "test",
+            "test1",
+          ],
+          "lastName": [
+            "test",
+            "test1",
+          ],
+        },
+      },
+    ],
+  },
+  {
+    "test": [
+      {
+        "yourDetails": {
+          "firstName": [
+            "test",
+            "test1",
+          ],
+          "lastName": [
+            "test",
+            "test1",
+          ],
+        },
+      },
+    ],
+  },
+]
+`;
+
 exports[`should append multiple inputs correctly 1`] = `
 [
   {
