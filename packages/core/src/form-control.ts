@@ -309,7 +309,8 @@ export class FormControl<
     if (nameArray.length > 1) {
       return Object.values(deepFilter({ ...values }, nameArray)) ?? defaultValue
     }
-    const result = safeGet({ ...values }, nameArray[0]) ?? defaultValue
+    const rawResult = safeGet({ ...values }, nameArray[0])
+    const result = rawResult === undefined ? defaultValue : rawResult
     return Array.isArray(name) ? [result] : result
   }
 
