@@ -1,5 +1,3 @@
-import { deepSet } from '@forms.js/common/utils/deep-set'
-import { safeGet } from '@forms.js/common/utils/safe-get'
 import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@forms.js/core'
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
@@ -34,6 +32,7 @@ export function useFieldArray<
     TFieldArrayName
   >,
 ) {
+  const { name } = props
   const context = useFormContext<TValues, TContext, TTransformedValues>()
 
   const control = props.control ?? context.control
@@ -45,7 +44,7 @@ export function useFieldArray<
     }),
   )
 
-  fieldArray.current.name = props.name
+  fieldArray.current.name = name
 
   const subscribe = useCallback(
     (callback: () => void) => fieldArray.current.fields.subscribe(callback, undefined, false),
@@ -62,25 +61,25 @@ export function useFieldArray<
     fieldArray.current.mount()
 
     if (props.rules) {
-      control.register(props.name as any, props.rules)
+      control.register(name as any, props.rules)
     }
   })
 
-  useEffect(() => {
-    if (!safeGet(control.state.value.values, props.name)) {
-      control.stores.values.update(
-        (values) => {
-          deepSet(values, props.name, [])
-          return values
-        },
-        [props.name],
-      )
-    }
-  }, [control, props.shouldUnregister])
+  // useEffect(() => {
+  //   if (!safeGet(control.state.value.values, props.name)) {
+  //     control.stores.values.update(
+  //       (values) => {
+  //         deepSet(values, props.name, [])
+  //         return values
+  //       },
+  //       [props.name],
+  //     )
+  //   }
+  // }, [control, props.shouldUnregister])
 
   useEffect(() => {
     fieldArray.current.doSomething()
-  }, [fields, props.name, props.shouldUnregister])
+  }, [fields, name, control])
 
   useEffect(() => {
     return () => {

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import React from 'react'
+import React, { useState } from 'react'
 import { vi as jest } from 'vitest'
 
 import type { Control } from '../src/control'
@@ -395,11 +395,7 @@ describe('useController', () => {
           <input
             {...field}
             ref={() => {
-              field.ref({
-                focus,
-                setCustomValidity,
-                reportValidity,
-              })
+              field.ref({ focus, setCustomValidity, reportValidity } as any)
             }}
           />
         </div>
@@ -659,10 +655,7 @@ describe('useController', () => {
         name: 'test',
       })
 
-      field.ref({
-        select,
-        focus,
-      })
+      field.ref({ select, focus } as any)
 
       React.useEffect(() => {
         setFocus('test', { shouldSelect: true })
@@ -836,5 +829,175 @@ describe('useController', () => {
       screen.getByText('')
       screen.getByText('disable')
     })
+  })
+
+  it('should disable form input field with disabled prop', async () => {
+    const App = () => {
+      const { control } = useForm()
+      const {
+        field,
+        fieldState: { invalid, isTouched, isDirty },
+      } = useController({
+        name: 'test',
+        control,
+        disabled: true,
+        rules: { required: true },
+      })
+
+      return (
+        <form>
+          <input {...field} />
+          <button>submit</button>
+          {invalid && <p>invalid</p>}
+          {isTouched && <p>isTouched</p>}
+          {isDirty && <p>isDirty</p>}
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('textbox')).toBeDisabled()
+    })
+  })
+
+  it('should not disable form input field with disabled=false', async () => {
+    const App = () => {
+      const { control } = useForm()
+      const {
+        field,
+        fieldState: { invalid, isTouched, isDirty },
+      } = useController({
+        name: 'test',
+        control,
+        disabled: false,
+        rules: { required: true },
+      })
+
+      return (
+        <form>
+          <input {...field} />
+          <button>submit</button>
+          {invalid && <p>invalid</p>}
+          {isTouched && <p>isTouched</p>}
+          {isDirty && <p>isDirty</p>}
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('textbox')).not.toBeDisabled()
+    })
+  })
+
+  it('should pass validation with disabled to set to true', () => {
+    const callback = jest.fn()
+
+    const App = () => {
+      const { handleSubmit, control } = useForm({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+      const { field } = useController({
+        control,
+        rules: {
+          required: true,
+        },
+        name: 'test',
+        disabled: true,
+      })
+
+      return (
+        <form onSubmit={handleSubmit(callback)}>
+          <input {...field} />
+          <button>submit</button>
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button'))
+
+    waitFor(() => {
+      expect(callback).toBeCalled()
+    })
+  })
+
+  it('should not omit form value when disabled is not been presented', async () => {
+    const onSubmit = jest.fn()
+
+    const App = () => {
+      const { handleSubmit, control } = useForm({
+        defaultValues: {
+          test: 'test',
+        },
+      })
+      const [toggle, setToggle] = useState<boolean | undefined>(undefined)
+      const { field } = useController({
+        control,
+        name: 'test',
+        disabled: toggle,
+      })
+
+      return (
+        <form
+          onSubmit={handleSubmit((data) => {
+            onSubmit(data)
+          })}
+        >
+          <input {...field} />
+          <button>submit</button>
+          <button
+            type={'button'}
+            onClick={() => {
+              setToggle((value) => {
+                if (typeof value === 'boolean') {
+                  return false
+                }
+
+                return !value
+              })
+            }}
+          >
+            toggle
+          </button>
+        </form>
+      )
+    }
+
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(onSubmit).toBeCalledWith({
+        test: 'test',
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(onSubmit).toBeCalledWith({
+        test: 'test',
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+
+    await waitFor(() =>
+      expect(onSubmit).toBeCalledWith({
+        test: undefined,
+      }),
+    )
   })
 })

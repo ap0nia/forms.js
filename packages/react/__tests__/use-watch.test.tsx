@@ -1,12 +1,23 @@
-import { fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 
 import type { Control } from '../src/control'
 import { FormProvider } from '../src/form-provider'
 import { useController } from '../src/use-controller'
+import { useFieldArray } from '../src/use-field-array'
 import { useForm, type UseFormReturn } from '../src/use-form'
 import { useFormContext } from '../src/use-form-context'
 import { useWatch } from '../src/use-watch'
+
+let i = 0
+
+function idGenerator() {
+  return String(i++)
+}
+
+beforeEach(() => {
+  i = 0
+})
 
 describe('useWatch', () => {
   it('should return default value in useForm', () => {
@@ -529,7 +540,7 @@ describe('useWatch', () => {
       expect(childCount).toBe(1)
     })
 
-    it.only('should partial re-render with array name and exact option', async () => {
+    it('should partial re-render with array name and exact option', async () => {
       type FormInputs = {
         child: string
         childSecond: string
@@ -814,269 +825,299 @@ describe('useWatch', () => {
     })
   })
 
-  // describe('fieldArray', () => {
-  //   it('should watch correct input update with single field array input', () => {
-  //     const inputValues: string[] = []
+  describe('fieldArray', () => {
+    /**
+     * TODO: remove only renders once
+     */
+    it('should watch correct input update with single field array input', () => {
+      const inputValues: string[] = []
 
-  //     type FormValues = {
-  //       labels: {
-  //         displayName: string
-  //         internalName: string
-  //       }[]
-  //     }
+      type FormValues = {
+        labels: {
+          displayName: string
+          internalName: string
+        }[]
+      }
 
-  //     function Item({
-  //       control,
-  //       register,
-  //       itemIndex,
-  //       remove,
-  //     }: {
-  //       control: Control<FormValues>
-  //       register: UseFormReturn<FormValues>['register']
-  //       remove: UseFieldArrayReturn['remove']
-  //       itemIndex: number
-  //     }) {
-  //       const actualValue = useWatch({
-  //         control,
-  //         name: `labels.${itemIndex}.displayName` as const,
-  //       })
-  //       inputValues.push(actualValue)
+      function Item({
+        control,
+        register,
+        itemIndex,
+        remove,
+      }: {
+        control: Control<FormValues>
+        register: UseFormReturn<FormValues>['register']
+        remove: UseFieldArrayReturn['remove']
+        itemIndex: number
+      }) {
+        const actualValue = useWatch({
+          control,
+          name: `labels.${itemIndex}.displayName` as const,
+        })
 
-  //       return (
-  //         <div>
-  //           <input
-  //             {...register(`labels.${itemIndex}.displayName` as const)}
-  //             defaultValue={actualValue}
-  //           />
-  //           <button type="button" onClick={() => remove(itemIndex)}>
-  //             Remove
-  //           </button>
-  //         </div>
-  //       )
-  //     }
+        inputValues.push(actualValue)
 
-  //     const Component = () => {
-  //       const { control, register } = useForm<FormValues>({
-  //         defaultValues: {
-  //           labels: [
-  //             {
-  //               displayName: 'Type',
-  //               internalName: 'type',
-  //             },
-  //             {
-  //               displayName: 'Number',
-  //               internalName: 'number',
-  //             },
-  //             {
-  //               displayName: 'Totals',
-  //               internalName: 'totals',
-  //             },
-  //           ],
-  //         },
-  //       })
+        return (
+          <div>
+            <input
+              {...register(`labels.${itemIndex}.displayName` as const)}
+              defaultValue={actualValue}
+            />
+            <button type="button" onClick={() => remove(itemIndex)}>
+              Remove
+            </button>
+          </div>
+        )
+      }
 
-  //       const { fields, remove } = useFieldArray({
-  //         control,
-  //         name: 'labels',
-  //       })
+      const Component = () => {
+        const { control, register } = useForm<FormValues>({
+          defaultValues: {
+            labels: [
+              {
+                displayName: 'Type',
+                internalName: 'type',
+              },
+              {
+                displayName: 'Number',
+                internalName: 'number',
+              },
+              {
+                displayName: 'Totals',
+                internalName: 'totals',
+              },
+            ],
+          },
+        })
 
-  //       return (
-  //         <form>
-  //           {fields.map((item, itemIndex) => (
-  //             <Item
-  //               key={item.id}
-  //               control={control}
-  //               register={register}
-  //               itemIndex={itemIndex}
-  //               remove={remove}
-  //             />
-  //           ))}
-  //         </form>
-  //       )
-  //     }
+        const { fields, remove } = useFieldArray({
+          control,
+          name: 'labels',
+        })
 
-  //     render(<Component />)
+        return (
+          <form>
+            {fields.map((item, itemIndex) => (
+              <Item
+                key={item.id}
+                control={control}
+                register={register}
+                itemIndex={itemIndex}
+                remove={remove}
+              />
+            ))}
+          </form>
+        )
+      }
 
-  //     fireEvent.click(screen.getAllByRole('button')[1])
+      render(<Component />)
 
-  //     expect(inputValues).toEqual(['Type', 'Number', 'Totals', 'Type', 'Totals', 'Type', 'Totals'])
-  //   })
+      fireEvent.click(screen.getAllByRole('button')[1])
 
-  //   it('should return shallow merged watch values', () => {
-  //     const watchedValue: unknown[] = []
+      expect(inputValues).toEqual([
+        // Render 1
+        'Type',
+        'Number',
+        'Totals',
 
-  //     function App() {
-  //       const methods = useForm({
-  //         defaultValues: {
-  //           name: 'foo',
-  //           arr: [],
-  //         },
-  //         mode: 'onSubmit',
-  //         reValidateMode: 'onChange',
-  //         criteriaMode: 'all',
-  //         shouldUnregister: false,
-  //       })
+        // Render 2 (first part of remove)
+        'Type',
+        'Totals',
+      ])
 
-  //       return (
-  //         <FormProvider {...methods}>
-  //           <input {...methods.register('name')} placeholder="First Name" />
-  //           <Preview />
-  //           <FieldArray />
-  //           <input type="submit" />
-  //         </FormProvider>
-  //       )
-  //     }
+      // expect(inputValues).toEqual([
+      //   // Render 1
+      //   'Type',
+      //   'Number',
+      //   'Totals',
 
-  //     function Preview() {
-  //       const form = useWatch({})
-  //       watchedValue.push(form)
+      //   // Render 2 (first part of remove)
+      //   'Type',
+      //   'Totals',
 
-  //       return null
-  //     }
+      //   // Render (second part of remove)
+      //   'Type',
+      //   'Totals',
+      // ])
+    })
 
-  //     function FieldArray() {
-  //       useFieldArray({
-  //         name: 'arr',
-  //         shouldUnregister: false,
-  //       })
+    it('should return shallow merged watch values', () => {
+      const watchedValue: unknown[] = []
 
-  //       return null
-  //     }
+      function App() {
+        const methods = useForm({
+          defaultValues: {
+            name: 'foo',
+            arr: [],
+          },
+          mode: 'onSubmit',
+          reValidateMode: 'onChange',
+          criteriaMode: 'all',
+          shouldUnregister: false,
+        })
 
-  //     render(<App />)
+        return (
+          <FormProvider {...methods}>
+            <input {...methods.register('name')} placeholder="First Name" />
+            <Preview />
+            <FieldArray />
+            <input type="submit" />
+          </FormProvider>
+        )
+      }
 
-  //     expect(watchedValue).toEqual([
-  //       {
-  //         arr: [],
-  //         name: 'foo',
-  //       },
-  //       {
-  //         arr: [],
-  //         name: 'foo',
-  //       },
-  //     ])
-  //   })
-  // })
+      function Preview() {
+        const form = useWatch({})
+        watchedValue.push(form)
+        return null
+      }
 
-  // describe('fieldArray with shouldUnregister true', () => {
-  //   it('should watch correct input update with single field array input', async () => {
-  //     const watchData: unknown[] = []
+      function FieldArray() {
+        useFieldArray({
+          name: 'arr',
+          shouldUnregister: false,
+        })
+        return null
+      }
 
-  //     type Unpacked<T> = T extends (infer U)[] ? U : T
+      render(<App />)
 
-  //     type FormValues = {
-  //       items: { prop: string }[]
-  //     }
+      expect(watchedValue).toEqual([
+        {
+          arr: [],
+          name: 'foo',
+        },
 
-  //     function App() {
-  //       const rhfProps = useForm<FormValues>({
-  //         defaultValues: {
-  //           items: [{ prop: 'test' }, { prop: 'test1' }],
-  //         },
-  //         shouldUnregister: true,
-  //       })
-  //       const { control } = rhfProps
+        // Why does it render again?
+        // {
+        //   arr: [],
+        //   name: 'foo',
+        // },
+      ])
+    })
+  })
 
-  //       const { fields, insert, remove } = useFieldArray({
-  //         control,
-  //         name: 'items',
-  //       })
+  describe('fieldArray with shouldUnregister true', () => {
+    it('should watch correct input update with single field array input', async () => {
+      const watchData: unknown[] = []
 
-  //       return (
-  //         <form>
-  //           {fields.map((item, index) => {
-  //             return (
-  //               <div key={item.id}>
-  //                 <Child control={control} index={index} itemDefault={item} />
-  //                 <button
-  //                   type="button"
-  //                   onClick={() => {
-  //                     insert(index + 1, { prop: 'ShouldBeTHere' })
-  //                   }}
-  //                 >
-  //                   insert
-  //                 </button>
-  //                 <button
-  //                   type="button"
-  //                   onClick={() => {
-  //                     remove(index)
-  //                   }}
-  //                 >
-  //                   remove
-  //                 </button>
-  //               </div>
-  //             )
-  //           })}
-  //           <Watcher itemsDefault={fields} control={control} />
-  //           <input type="submit" />
-  //         </form>
-  //       )
-  //     }
+      type Unpacked<T> = T extends (infer U)[] ? U : T
 
-  //     function Watcher({
-  //       itemsDefault,
-  //       control,
-  //     }: {
-  //       itemsDefault: FormValues['items']
-  //       control: Control<FormValues>
-  //     }) {
-  //       const useWatchedItems = useWatch({
-  //         name: 'items',
-  //         control,
-  //         defaultValue: itemsDefault,
-  //       })
+      type FormValues = {
+        items: { prop: string }[]
+      }
 
-  //       watchData.push(useWatchedItems)
+      function App() {
+        const rhfProps = useForm<FormValues>({
+          defaultValues: {
+            items: [{ prop: 'test' }, { prop: 'test1' }],
+          },
+          shouldUnregister: true,
+        })
+        const { control } = rhfProps
 
-  //       return (
-  //         <div>
-  //           {useWatchedItems.map((item, index) => {
-  //             return (
-  //               <p key={index}>
-  //                 Value {index}: {item.prop}
-  //               </p>
-  //             )
-  //           })}
-  //         </div>
-  //       )
-  //     }
+        const { fields, insert, remove } = useFieldArray({
+          control,
+          name: 'items',
+          idGenerator,
+        })
 
-  //     function Child({
-  //       index,
-  //       itemDefault,
-  //       control,
-  //     }: {
-  //       index: number
-  //       itemDefault: Unpacked<FormValues['items']>
-  //       control: Control<FormValues>
-  //     }) {
-  //       const { field } = useController({
-  //         name: `items.${index}.prop` as const,
-  //         control,
-  //         defaultValue: itemDefault.prop,
-  //       })
+        return (
+          <form>
+            {fields.map((item, index) => {
+              return (
+                <div key={item.id}>
+                  <Child control={control} index={index} itemDefault={item} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      insert(index + 1, { prop: 'ShouldBeTHere' })
+                    }}
+                  >
+                    insert
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      remove(index)
+                    }}
+                  >
+                    remove
+                  </button>
+                </div>
+              )
+            })}
+            <Watcher itemsDefault={fields} control={control} />
+            <input type="submit" />
+          </form>
+        )
+      }
 
-  //       return <input {...field} />
-  //     }
+      function Watcher({
+        itemsDefault,
+        control,
+      }: {
+        itemsDefault: FormValues['items']
+        control: Control<FormValues>
+      }) {
+        const useWatchedItems = useWatch({
+          name: 'items',
+          control,
+          defaultValue: itemsDefault,
+        })
 
-  //     render(<App />)
+        watchData.push(useWatchedItems)
+        // console.log('values: ', control.stores.values.value)
 
-  //     expect(screen.getByText('Value 0: test')).toBeVisible()
-  //     expect(screen.getByText('Value 1: test1')).toBeVisible()
-  //     expect(screen.queryByText('Value 1: ShouldBeTHere')).not.toBeInTheDocument()
+        return (
+          <div>
+            {useWatchedItems.map((item, index) => {
+              return (
+                <p key={index}>
+                  Value {index}: {item.prop}
+                </p>
+              )
+            })}
+          </div>
+        )
+      }
 
-  //     fireEvent.click(screen.getAllByRole('button', { name: 'insert' })[0])
+      function Child({
+        index,
+        itemDefault,
+        control,
+      }: {
+        index: number
+        itemDefault: Unpacked<FormValues['items']>
+        control: Control<FormValues>
+      }) {
+        const { field } = useController({
+          name: `items.${index}.prop` as const,
+          control,
+          defaultValue: itemDefault.prop,
+        })
 
-  //     expect(await screen.findByText('Value 1: ShouldBeTHere')).toBeVisible()
-  //     expect(screen.getByText('Value 2: test1')).toBeVisible()
+        return <input {...field} />
+      }
 
-  //     fireEvent.click(screen.getAllByRole('button', { name: 'remove' })[0])
+      render(<App />)
 
-  //     expect(screen.queryByText('Value 2: ShouldBeTHere')).not.toBeInTheDocument()
+      expect(screen.getByText('Value 0: test')).toBeVisible()
+      expect(screen.getByText('Value 1: test1')).toBeVisible()
+      expect(screen.queryByText('Value 1: ShouldBeTHere')).not.toBeInTheDocument()
 
-  //     expect(watchData).toMatchSnapshot()
-  //   })
-  // })
+      fireEvent.click(screen.getAllByRole('button', { name: 'insert' })[0])
+
+      expect(await screen.findByText('Value 1: ShouldBeTHere')).toBeVisible()
+      expect(screen.getByText('Value 2: test1')).toBeVisible()
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'remove' })[0])
+
+      expect(screen.queryByText('Value 2: ShouldBeTHere')).not.toBeInTheDocument()
+
+      expect(watchData).toMatchSnapshot()
+    })
+  })
 
   describe('reset', () => {
     it('should return updated default value with watched field after reset', async () => {
@@ -1209,132 +1250,132 @@ describe('useWatch', () => {
     expect(screen.getByText('yes')).toBeVisible()
   })
 
-  // describe('with useFieldArray', () => {
-  //   // issue: https://github.com/react-hook-form/react-hook-form/issues/2229
-  //   it('should return current value with radio type', () => {
-  //     type FormValues = {
-  //       options: { option: string }[]
-  //     }
-  //     const watchedValue: object[] = []
+  describe('with useFieldArray', () => {
+    // issue: https://github.com/react-hook-form/react-hook-form/issues/2229
+    it('should return current value with radio type', () => {
+      type FormValues = {
+        options: { option: string }[]
+      }
+      const watchedValue: object[] = []
 
-  //     const Test = ({ control }: { control: Control<FormValues> }) => {
-  //       const values = useWatch({ control })
-  //       const options = values.options
-  //       watchedValue.push(values)
+      const Test = ({ control }: { control: Control<FormValues> }) => {
+        const values = useWatch({ control })
+        const options = values.options
+        watchedValue.push(values)
 
-  //       return (
-  //         <div>
-  //           <p>First: {options?.[0].option}</p>
-  //           <p>Second: {options?.[1].option}</p>
-  //         </div>
-  //       )
-  //     }
+        return (
+          <div>
+            <p>First: {options?.[0].option}</p>
+            <p>Second: {options?.[1].option}</p>
+          </div>
+        )
+      }
 
-  //     const Component = () => {
-  //       const { register, reset, control } = useForm<FormValues>()
-  //       const { fields } = useFieldArray({ name: 'options', control })
+      const Component = () => {
+        const { register, reset, control } = useForm<FormValues>()
+        const { fields } = useFieldArray({ name: 'options', control })
 
-  //       React.useEffect(() => {
-  //         reset({
-  //           options: [
-  //             {
-  //               option: 'yes',
-  //             },
-  //             {
-  //               option: 'yes',
-  //             },
-  //           ],
-  //         })
-  //       }, [reset])
+        React.useEffect(() => {
+          reset({
+            options: [
+              {
+                option: 'yes',
+              },
+              {
+                option: 'yes',
+              },
+            ],
+          })
+        }, [reset])
 
-  //       return (
-  //         <form>
-  //           {fields.map((_, i) => (
-  //             <div key={i.toString()} data-testid={`field-${i}`}>
-  //               <label>
-  //                 Yes
-  //                 <input type="radio" value="yes" {...register(`options.${i}.option` as const)} />
-  //               </label>
-  //               <label>
-  //                 No
-  //                 <input type="radio" value="no" {...register(`options.${i}.option` as const)} />
-  //               </label>
-  //             </div>
-  //           ))}
-  //           <Test control={control} />
-  //         </form>
-  //       )
-  //     }
+        return (
+          <form>
+            {fields.map((_, i) => (
+              <div key={i.toString()} data-testid={`field-${i}`}>
+                <label>
+                  Yes
+                  <input type="radio" value="yes" {...register(`options.${i}.option` as const)} />
+                </label>
+                <label>
+                  No
+                  <input type="radio" value="no" {...register(`options.${i}.option` as const)} />
+                </label>
+              </div>
+            ))}
+            <Test control={control} />
+          </form>
+        )
+      }
 
-  //     render(<Component />)
+      render(<Component />)
 
-  //     const firstField = screen.getByTestId('field-0')
-  //     expect(within(firstField).getByLabelText('Yes')).toBeChecked()
-  //     expect(screen.getByText('First: yes')).toBeVisible()
+      const firstField = screen.getByTestId('field-0')
+      expect(within(firstField).getByLabelText('Yes')).toBeChecked()
+      expect(screen.getByText('First: yes')).toBeVisible()
 
-  //     const secondField = screen.getByTestId('field-1')
-  //     expect(within(secondField).getByLabelText('Yes')).toBeChecked()
-  //     expect(screen.getByText('Second: yes')).toBeVisible()
+      const secondField = screen.getByTestId('field-1')
+      expect(within(secondField).getByLabelText('Yes')).toBeChecked()
+      expect(screen.getByText('Second: yes')).toBeVisible()
 
-  //     fireEvent.click(within(firstField).getByLabelText('No'))
+      fireEvent.click(within(firstField).getByLabelText('No'))
 
-  //     expect(screen.getByText('First: no')).toBeVisible()
-  //     expect(screen.getByText('Second: yes')).toBeVisible()
+      expect(screen.getByText('First: no')).toBeVisible()
+      expect(screen.getByText('Second: yes')).toBeVisible()
 
-  //     // Let's check all values of renders with implicitly the number of render (for each value)
-  //     expect(watchedValue).toMatchSnapshot()
-  //   })
+      // Let's check all values of renders with implicitly the number of render (for each value)
+      expect(watchedValue).toMatchSnapshot()
+    })
 
-  //   it("should watch item correctly with useFieldArray's remove method", async () => {
-  //     let watchedValue: { [x: string]: any } | undefined
-  //     const Component = () => {
-  //       const { register, control } = useForm<{
-  //         test: {
-  //           firstName: string
-  //           lsatName: string
-  //         }[]
-  //       }>({
-  //         defaultValues: {
-  //           test: [{ firstName: 'test' }, { firstName: 'test1' }],
-  //         },
-  //       })
-  //       const { fields, remove } = useFieldArray({
-  //         name: 'test',
-  //         control,
-  //       })
-  //       watchedValue = useWatch({
-  //         name: 'test',
-  //         control,
-  //       })
+    it("should watch item correctly with useFieldArray's remove method", async () => {
+      let watchedValue: { [x: string]: any } | undefined
+      const Component = () => {
+        const { register, control } = useForm<{
+          test: {
+            firstName: string
+            lsatName: string
+          }[]
+        }>({
+          defaultValues: {
+            test: [{ firstName: 'test' }, { firstName: 'test1' }],
+          },
+        })
+        const { fields, remove } = useFieldArray({
+          name: 'test',
+          control,
+        })
+        watchedValue = useWatch({
+          name: 'test',
+          control,
+        })
 
-  //       return (
-  //         <form>
-  //           {fields.map((item, i) => (
-  //             <div key={item.firstName}>
-  //               <input
-  //                 type="input"
-  //                 defaultValue={item.firstName}
-  //                 {...register(`test.${i}.firstName` as const)}
-  //               />
+        return (
+          <form>
+            {fields.map((item, i) => (
+              <div key={item.firstName}>
+                <input
+                  type="input"
+                  defaultValue={item.firstName}
+                  {...register(`test.${i}.firstName` as const)}
+                />
 
-  //               <button type="button" onClick={() => remove(i)}>
-  //                 remove
-  //               </button>
-  //             </div>
-  //           ))}
-  //         </form>
-  //       )
-  //     }
+                <button type="button" onClick={() => remove(i)}>
+                  remove
+                </button>
+              </div>
+            ))}
+          </form>
+        )
+      }
 
-  //     render(<Component />)
+      render(<Component />)
 
-  //     expect(watchedValue).toEqual([{ firstName: 'test' }, { firstName: 'test1' }])
+      expect(watchedValue).toEqual([{ firstName: 'test' }, { firstName: 'test1' }])
 
-  //     fireEvent.click(screen.getAllByRole('button')[0])
+      fireEvent.click(screen.getAllByRole('button')[0])
 
-  //     expect(watchedValue).toEqual([{ firstName: 'test1' }])
-  //   })
-  // })
+      expect(watchedValue).toEqual([{ firstName: 'test1' }])
+    })
+  })
 
   describe('with custom register', () => {
     it('should return default value of reset method when value is not empty', async () => {

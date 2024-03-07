@@ -1776,7 +1776,7 @@ describe('handleChangeRef', () => {
       })
     })
 
-    it.skip('should disable the entire form inputs', async () => {
+    it('should disable the entire form inputs', async () => {
       function App() {
         const { register } = useForm({
           disabled: true,
@@ -1802,7 +1802,7 @@ describe('handleChangeRef', () => {
       })
     })
 
-    it.skip('should be able to disable the entire form', async () => {
+    it('should be able to disable the entire form', async () => {
       const App = () => {
         const [disabled, setDisabled] = useState(false)
         const { register, handleSubmit } = useForm({

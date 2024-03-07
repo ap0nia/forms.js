@@ -10,6 +10,7 @@ import { describe, it, expect, vi as jest } from 'vitest'
 
 import { Controller } from '../src/controller'
 import type { ControllerRenderProps } from '../src/use-controller'
+import { useFieldArray } from '../src/use-field-array'
 import { useForm } from '../src/use-form'
 
 function Input<TFieldValues extends Record<string, any>>({
@@ -463,105 +464,105 @@ describe('Controller', () => {
     expect(onInvalid).toBeCalledTimes(1)
   })
 
-  // it('should not set initial state from unmount state when input is part of field array', () => {
-  //   const Component = () => {
-  //     const { control } = useForm<{
-  //       test: { value: string }[]
-  //     }>()
-  //     const { fields, append, remove } = useFieldArray({
-  //       name: 'test',
-  //       control,
-  //     })
+  it('should not set initial state from unmount state when input is part of field array', () => {
+    const Component = () => {
+      const { control } = useForm<{
+        test: { value: string }[]
+      }>()
+      const { fields, append, remove } = useFieldArray({
+        name: 'test',
+        control,
+      })
 
-  //     return (
-  //       <form>
-  //         {fields.map((field, i) => (
-  //           <Controller
-  //             key={field.id}
-  //             defaultValue={field.value}
-  //             name={`test.${i}.value` as const}
-  //             render={({ field }) => <input {...field} />}
-  //             control={control}
-  //           />
-  //         ))}
-  //         <button type="button" onClick={() => append({ value: 'test' })}>
-  //           append
-  //         </button>
-  //         <button type="button" onClick={() => remove(0)}>
-  //           remove
-  //         </button>
-  //       </form>
-  //     )
-  //   }
+      return (
+        <form>
+          {fields.map((field, i) => (
+            <Controller
+              key={field.id}
+              defaultValue={field.value}
+              name={`test.${i}.value` as const}
+              render={({ field }) => <input {...field} />}
+              control={control}
+            />
+          ))}
+          <button type="button" onClick={() => append({ value: 'test' })}>
+            append
+          </button>
+          <button type="button" onClick={() => remove(0)}>
+            remove
+          </button>
+        </form>
+      )
+    }
 
-  //   render(<Component />)
+    render(<Component />)
 
-  //   fireEvent.click(screen.getByRole('button', { name: /append/i }))
+    fireEvent.click(screen.getByRole('button', { name: /append/i }))
 
-  //   fireEvent.input(screen.getByRole('textbox'), { target: { value: 'test' } })
+    fireEvent.input(screen.getByRole('textbox'), { target: { value: 'test' } })
 
-  //   fireEvent.click(screen.getByRole('button', { name: /remove/i }))
+    fireEvent.click(screen.getByRole('button', { name: /remove/i }))
 
-  //   fireEvent.click(screen.getByRole('button', { name: /append/i }))
+    fireEvent.click(screen.getByRole('button', { name: /append/i }))
 
-  //   expect(screen.getByRole('textbox')).toHaveValue('test')
-  // })
+    expect(screen.getByRole('textbox')).toHaveValue('test')
+  })
 
-  // it('should not assign default value when field is removed with useFieldArray', () => {
-  //   const Component = () => {
-  //     const { control } = useForm()
-  //     const { fields, append, remove } = useFieldArray({
-  //       control,
-  //       name: 'test',
-  //     })
+  it('should not assign default value when field is removed with useFieldArray', () => {
+    const Component = () => {
+      const { control } = useForm()
+      const { fields, append, remove } = useFieldArray({
+        control,
+        name: 'test',
+      })
 
-  //     return (
-  //       <form>
-  //         {fields.map((field, i) => (
-  //           <div key={field.id}>
-  //             <Controller
-  //               render={({ field }) => <input {...field} />}
-  //               name={`test.${i}.value`}
-  //               defaultValue={''}
-  //               control={control}
-  //             />
-  //             <button type="button" onClick={() => remove(i)}>
-  //               remove{i}
-  //             </button>
-  //           </div>
-  //         ))}
-  //         <button type="button" onClick={() => append({ value: '' })}>
-  //           append
-  //         </button>
-  //       </form>
-  //     )
-  //   }
+      return (
+        <form>
+          {fields.map((field, i) => (
+            <div key={field.id}>
+              <Controller
+                render={({ field }) => <input {...field} />}
+                name={`test.${i}.value`}
+                defaultValue={''}
+                control={control}
+              />
+              <button type="button" onClick={() => remove(i)}>
+                remove{i}
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => append({ value: '' })}>
+            append
+          </button>
+        </form>
+      )
+    }
 
-  //   render(<Component />)
+    render(<Component />)
 
-  //   fireEvent.click(screen.getByRole('button', { name: /append/i }))
-  //   fireEvent.click(screen.getByRole('button', { name: /append/i }))
-  //   fireEvent.click(screen.getByRole('button', { name: /append/i }))
+    fireEvent.click(screen.getByRole('button', { name: /append/i }))
+    fireEvent.click(screen.getByRole('button', { name: /append/i }))
+    fireEvent.click(screen.getByRole('button', { name: /append/i }))
 
-  //   const inputs = screen.getAllByRole('textbox')
+    const inputs = screen.getAllByRole('textbox')
 
-  //   fireEvent.input(inputs[0], {
-  //     target: { value: '1' },
-  //   })
+    fireEvent.input(inputs[0], {
+      target: { value: '1' },
+    })
 
-  //   fireEvent.input(inputs[1], {
-  //     target: { value: '2' },
-  //   })
+    fireEvent.input(inputs[1], {
+      target: { value: '2' },
+    })
 
-  //   fireEvent.input(inputs[2], {
-  //     target: { value: '3' },
-  //   })
+    fireEvent.input(inputs[2], {
+      target: { value: '3' },
+    })
 
-  //   fireEvent.click(screen.getByRole('button', { name: /remove1/i }))
+    fireEvent.click(screen.getByRole('button', { name: /remove1/i }))
 
-  //   expect(screen.getAllByRole('textbox')[0]).toHaveValue('1')
-  //   expect(screen.getAllByRole('textbox')[1]).toHaveValue('3')
-  // })
+    expect(screen.getAllByRole('textbox')[0]).toHaveValue('1')
+    expect(screen.getAllByRole('textbox')[1]).toHaveValue('3')
+  })
 
   it('should validate input when input is touched and with onTouched mode', async () => {
     let currentErrors: any = {}
@@ -1493,5 +1494,52 @@ describe('Controller', () => {
     })
 
     expect(screen.getByRole('textbox')).toHaveValue('b')
+  })
+
+  it('should respect disabled state set on the input element', () => {
+    const Component = () => {
+      const { control } = useForm()
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field }) => <input disabled {...field} />}
+          control={control}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    expect(screen.getByRole('textbox')).toBeDisabled()
+  })
+
+  it('should respect disabled state set on the Controller component', () => {
+    const Component = () => {
+      const { control } = useForm()
+
+      const [disabled, setDisabled] = React.useState(true)
+
+      return (
+        <>
+          <Controller
+            defaultValue=""
+            name="test"
+            disabled={disabled}
+            render={({ field }) => <input {...field} />}
+            control={control}
+          />
+          <button onClick={() => setDisabled(false)}>disable</button>
+        </>
+      )
+    }
+
+    render(<Component />)
+
+    expect(screen.getByRole('textbox')).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(screen.getByRole('textbox')).toBeEnabled()
   })
 })

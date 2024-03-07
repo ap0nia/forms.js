@@ -274,7 +274,7 @@ export class FieldArray<
 
     const updatedFieldArrayValues = [...valuesArray, ...this.getControlFieldArrayValues()]
 
-    this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
+    this.focus = getFocusFieldName(this.name, 0, options)
 
     this.ids = [...valuesArray.map(this.idGenerator.bind(this)), ...this.ids]
 
@@ -318,8 +318,6 @@ export class FieldArray<
       },
       [this.name],
     )
-
-    this.action.set(true)
 
     this.value.set(updatedFieldArrayValues as any)
 

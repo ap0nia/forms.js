@@ -4,7 +4,7 @@ import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { deepSet } from '@forms.js/common/utils/deep-set'
 import { deepUnset } from '@forms.js/common/utils/deep-unset'
 import { isBrowser } from '@forms.js/common/utils/is-browser'
-import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { isEmptyObject, isObject } from '@forms.js/common/utils/is-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Nullish } from '@forms.js/common/utils/null'
 import { safeGet, safeGetMultiple } from '@forms.js/common/utils/safe-get'
@@ -18,6 +18,7 @@ import { getCurrentFieldValue } from './logic/fields/get-current-field-value'
 import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
+import { iterateFieldsByAction } from './logic/fields/iterate-fields-by-action'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { elementIsLive } from './logic/html/element-is-live'
 import { isHTMLElement } from './logic/html/is-html-element'
@@ -305,9 +306,11 @@ export class FormControl<
       ? { [name]: defaultValue }
       : defaultValue
 
-    return nameArray.length > 1
-      ? deepFilter({ ...values }, nameArray)
-      : safeGet({ ...values }, nameArray[0])
+    if (nameArray.length > 1) {
+      return Object.values(deepFilter({ ...values }, nameArray)) ?? defaultValue
+    }
+    const result = safeGet({ ...values }, nameArray[0]) ?? defaultValue
+    return Array.isArray(name) ? [result] : result
   }
 
   //--------------------------------------------------------------------------------------
@@ -1275,6 +1278,42 @@ export class FormControl<
 
   cleanup(): void {
     this.removeUnmounted()
+  }
+
+  handleDisabled(disabled?: boolean): void {
+    for (const key of Object.keys(this.fields)) {
+      const field = safeGet(this.fields, key)
+
+      if (field == null) {
+        continue
+      }
+
+      const { _f, ...currentField } = field
+
+      if (_f) {
+        if (_f.refs && _f.refs[0]) {
+          this.handleDisabledAction(_f.refs[0], key, disabled)
+        } else if (_f.ref) {
+          this.handleDisabledAction(_f.ref, key, disabled)
+        } else {
+          iterateFieldsByAction(currentField, (ref, name) =>
+            this.handleDisabledAction(ref, name, disabled),
+          )
+        }
+      } else if (isObject(currentField)) {
+        iterateFieldsByAction(currentField, (ref, name) =>
+          this.handleDisabledAction(ref, name, disabled),
+        )
+      }
+    }
+  }
+
+  handleDisabledAction(ref: HTMLElement, name: string, disabled?: boolean): void {
+    const inputRef = ref as HTMLInputElement
+    const currentField = safeGet(this.fields, name)
+    const requiredDisabledState =
+      disabled || (typeof currentField?._f.disabled === 'boolean' && currentField._f.disabled)
+    inputRef.disabled = requiredDisabledState
   }
 
   removeUnmounted(): void {

@@ -268,7 +268,7 @@ describe('remove', () => {
     })
   })
 
-  it.skip('should remove values from formState.touchedFields', () => {
+  it('should remove values from formState.touchedFields', () => {
     let touched: any
 
     const Component = () => {
@@ -573,7 +573,10 @@ describe('remove', () => {
     expect(screen.queryByTestId('nested-error')).not.toBeInTheDocument()
   })
 
-  it.skip('should trigger reRender when user is watching the all field array', () => {
+  /**
+   * TODO: changed rendering logic.
+   */
+  it('should trigger reRender when user is watching the all field array', () => {
     const watched: any[] = []
     const Component = () => {
       const { register, watch, control } = useForm<{
@@ -612,13 +615,24 @@ describe('remove', () => {
       {}, // first render
       { test: [] }, // render inside useEffect in useFieldArray
       { test: [{ value: '' }] }, // render inside append method
-      { test: [{ value: '' }] }, // render inside useEffect in useFieldArray
+      { test: [{ value: '' }] }, // render inside registerField from register function
       { test: [] }, // render inside remove method
-      { test: [] }, // render inside useEffect in useFieldArray
     ])
+
+    // expect(watched).toEqual([
+    //   {}, // first render
+    //   { test: [] }, // render inside useEffect in useFieldArray
+    //   { test: [{ value: '' }] }, // render inside append method
+    //   { test: [{ value: '' }] }, // render inside useEffect in useFieldArray
+    //   { test: [] }, // render inside remove method
+    //   { test: [] }, // render inside useEffect in useFieldArray
+    // ])
   })
 
-  it.skip('should return watched value with watch API', async () => {
+  /**
+   * TODO: changed rendering logic.
+   */
+  it('should return watched value with watch API', async () => {
     const renderedItems: any = []
     const Component = () => {
       const { watch, register, control } = useForm<{
@@ -676,12 +690,17 @@ describe('remove', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /remove/i }))
 
-    await waitFor(() =>
-      expect(renderedItems).toEqual([
-        [{ value: '111' }, { value: '222' }],
-        [{ value: '111' }, { value: '222' }],
-      ]),
-    )
+    /**
+     * Removing only fires one re-render.
+     */
+    await waitFor(() => expect(renderedItems).toEqual([[{ value: '111' }, { value: '222' }]]))
+
+    // await waitFor(() =>
+    //   expect(renderedItems).toEqual([
+    //     [{ value: '111' }, { value: '222' }],
+    //     [{ value: '111' }, { value: '222' }],
+    //   ]),
+    // )
   })
 
   it('should remove dirtyFields fields with nested field inputs', () => {
@@ -989,8 +1008,12 @@ describe('remove', () => {
     })
   })
 
-  it.skip('should remove correct value with async reset', async () => {
-    jest.useFakeTimers()
+  it('should remove correct value with async reset', async () => {
+    /**
+     * @see https://github.com/testing-library/react-testing-library/issues/1198#issuecomment-1492513736
+     * @see https://github.com/testing-library/react-testing-library/issues/1197
+     */
+    jest.useFakeTimers({ shouldAdvanceTime: true })
 
     let output = {}
 
@@ -1052,7 +1075,7 @@ describe('remove', () => {
 
     render(<App />)
 
-    actComponent(async () => {
+    await actComponent(async () => {
       await jest.advanceTimersByTimeAsync(2000)
     })
 

@@ -114,7 +114,7 @@ describe('prepend', () => {
     },
   )
 
-  it.skip('should set prepended values to formState.touchedFields', () => {
+  it('should set prepended values to formState.touchedFields', () => {
     let touched: any
 
     const Component = () => {
@@ -293,12 +293,12 @@ describe('prepend', () => {
     await waitFor(() =>
       expect(renderedItems).toEqual([
         [{ value: 'test' }, { value: '111' }, { value: '222' }],
-        // [{ value: 'test' }, { value: '111' }, { value: '222' }],
+        [{ value: 'test' }, { value: '111' }, { value: '222' }],
       ]),
     )
   })
 
-  it.skip('should focus if shouldFocus is true', () => {
+  it('should focus if shouldFocus is true', () => {
     const Component = () => {
       const { register, control } = useForm<{
         test: { value: string }[]

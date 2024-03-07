@@ -36,6 +36,8 @@ export function useForm<
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
 >(props?: ControlOptions<TValues, TContext>): UseFormReturn<TValues, TContext, TTransformedValues> {
+  const { disabled, values } = props ?? {}
+
   const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>(new Control(props))
 
   const control = formControlRef.current
@@ -69,16 +71,20 @@ export function useForm<
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (props?.values && !deepEqual(props.values, control.state.value.values)) {
-      control.reset(props.values, control.options.resetOptions)
+    if (values && !deepEqual(values, control.state.value.values)) {
+      control.reset(values, control.options.resetOptions)
     } else {
       control.resetDefaultValues()
     }
-  }, [props?.values, control])
+  }, [values, control])
 
   useEffect(() => {
     control.cleanup()
   })
+
+  useEffect(() => {
+    control.handleDisabled(disabled)
+  }, [disabled])
 
   useEffect(() => {
     control.mount()

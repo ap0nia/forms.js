@@ -46,9 +46,9 @@ export function useWatch<
     }
   }, [control, state])
 
-  if (props?.name == null) {
-    return control.watch()
-  }
+  // if (props?.name == null) {
+  //   return control.watch()
+  // }
 
-  return control.getWatchOutput(props.name as any, props.defaultValue)
+  return control.getWatchOutput(props?.name as any, props?.defaultValue)
 }

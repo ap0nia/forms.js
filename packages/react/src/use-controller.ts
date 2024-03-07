@@ -68,22 +68,23 @@ export function useController<
 >(
   props: UseControllerProps<TValues, TParsedForm, TName>,
 ): UseControllerReturn<TValues, TParsedForm, TName> {
+  const { name, disabled, shouldUnregister, rules } = props
+  const action = 'action'
+
   const context = useFormContext<TValues>()
 
   const control = props.control ?? context.control
 
-  const formState = useSubscribe({ control: control, name: props.name })
+  const formState = useSubscribe({ control: control, name })
 
   // Always subscribe to values.
   formState.values
 
-  const value: any = control.getValues(props.name) ?? props.defaultValue
+  const value: any = control.getValues(name) ?? props.defaultValue
 
-  const registerProps = useRef(control.register(props.name, { ...props.rules, value }))
+  const registerProps = useRef(control.register(name, { ...rules, value }))
 
-  registerProps.current = control.register(props.name, props.rules)
-
-  const isArrayField = useMemo(() => control.names.array.has(props.name), [control, props.name])
+  registerProps.current = control.register(name, rules)
 
   const fieldState = useMemo(() => {
     return Object.defineProperties(
@@ -92,29 +93,29 @@ export function useController<
         invalid: {
           enumerable: true,
           get: () => {
-            const invalid = !!safeGet(formState.errors, props.name)
+            const invalid = !!safeGet(formState.errors, name)
             return invalid
           },
         },
         isDirty: {
           enumerable: true,
-          get: () => !!safeGet(formState.dirtyFields, props.name),
+          get: () => !!safeGet(formState.dirtyFields, name),
         },
         isTouched: {
           enumerable: true,
-          get: () => !!safeGet(formState.touchedFields, props.name),
+          get: () => !!safeGet(formState.touchedFields, name),
         },
         error: {
           enumerable: true,
-          get: () => safeGet(formState.errors, props.name),
+          get: () => safeGet(formState.errors, name),
         },
       },
     ) as ControllerFieldState
   }, [formState, props.name])
 
-  const disabled = useMemo(
-    () => props.disabled || control.state.value.disabled,
-    [props.disabled, control],
+  const fieldIsDisabled = useMemo(
+    () => props.disabled || control.state.value.disabled || formState.disabled,
+    [disabled, control, formState],
   )
 
   const onChange = useCallback(
@@ -129,7 +130,7 @@ export function useController<
         },
       } as any)
     },
-    [registerProps.current, props.name],
+    [registerProps.current, name],
   )
 
   const onBlur = useCallback(async () => {
@@ -137,12 +138,12 @@ export function useController<
       nativeEvent: {
         type: INPUT_EVENTS.BLUR,
         target: {
-          name: props.name,
-          value: control.getValues(props.name),
+          name,
+          value: control.getValues(name),
         },
       },
     } as any)
-  }, [control, registerProps.current, props.name])
+  }, [control, registerProps.current, name])
 
   const ref = useCallback(
     (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
@@ -157,7 +158,7 @@ export function useController<
         }
       }
     },
-    [control, props.name],
+    [control, name],
   )
 
   useEffect(() => {
@@ -171,38 +172,42 @@ export function useController<
       }
     }
 
-    updateMounted(props.name, true)
+    updateMounted(name, true)
 
     if (shouldUnregisterField) {
       const value = structuredClone(safeGet(control.options.defaultValues, props.name))
 
       deepSet(control.state.value.defaultValues, props.name, value)
 
-      if (safeGet(control.state.value.values, props.name)) {
+      if (safeGet(control.state.value.values, props.name) == null) {
         deepSet(control.state.value.values, props.name, value)
       }
     }
 
     return () => {
-      if (isArrayField ? shouldUnregisterField : shouldUnregisterField) {
-        control.unregister(props.name)
+      const isArrayField = control.names.array.has(
+        name.substring(0, name.search(/\.\d+(\.|$)/)) || name,
+      )
+
+      if (isArrayField ? shouldUnregisterField && !action : shouldUnregisterField) {
+        control.unregister(name)
       } else {
-        updateMounted(props.name, false)
+        updateMounted(name, false)
       }
     }
-  }, [control, isArrayField, props.name, props.shouldUnregister])
+  }, [control, name, shouldUnregister])
 
   useEffect(() => {
-    if (safeGet(control.fields, props.name)) {
+    if (safeGet(control.fields, name)) {
       control.updateDisabledField({ fields: control.fields, ...props })
     }
-  }, [control, props.name, props.disabled])
+  }, [control, name, disabled])
 
   return {
     field: {
       name: props.name,
       value,
-      ...(typeof disabled === 'boolean' && { disabled }),
+      ...(typeof fieldIsDisabled === 'boolean' && { disabled: fieldIsDisabled }),
       onChange,
       onBlur,
       ref,
