@@ -1,6 +1,6 @@
 import { isBrowser } from './is-browser'
 
-export function isHtmlElement(value: unknown): value is HTMLElement {
+export function isHTMLElement(value: unknown): value is HTMLElement {
   if (!isBrowser) {
     return false
   }
