@@ -1,8 +1,12 @@
 import { isObject } from './is-object'
 
-export function get<T>(object: T, path?: string, defaultValue?: unknown): any {
+export function get<T>(object: T, path?: PropertyKey, defaultValue?: unknown): any {
   if (!path || !isObject(object)) {
     return defaultValue
+  }
+
+  if (typeof path === 'number' || typeof path === 'symbol') {
+    return object[path as keyof {}]
   }
 
   const result = path
