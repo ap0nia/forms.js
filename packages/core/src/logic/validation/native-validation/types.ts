@@ -2,6 +2,7 @@ import type { Nullish } from '@forms.js/common/utils/null'
 
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field } from '../../../types/fields'
+import type { ValidateResult } from '../../../types/validation'
 
 /**
  * All native validators accept a context object to perform their validation.
@@ -52,6 +53,11 @@ export type NativeValidationContext = {
    * i.e. Using the {@link HTMLInputElement.setCustomValidity} DOM API.
    */
   shouldSetCustomValidity?: boolean
+
+  /**
+   * Helper function...
+   */
+  appendErrorsCurry: (type: string, message: ValidateResult) => {}
 }
 
 /**

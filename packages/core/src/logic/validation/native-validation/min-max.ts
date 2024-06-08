@@ -8,8 +8,15 @@ import { parseValidationRule } from '../../validation/parse-validation-rule'
 import type { NativeValidationFunction } from './types'
 
 export const nativeValidateMinMax: NativeValidationFunction = (context, next) => {
-  const { field, errors, inputRef, inputValue, validateAllFieldCriteria, shouldSetCustomValidity } =
-    context
+  const {
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+    appendErrorsCurry,
+  } = context
 
   const { name, ref } = field._f
 
@@ -39,13 +46,14 @@ export const nativeValidateMinMax: NativeValidationFunction = (context, next) =>
     type: validationType,
     message,
     ref,
-    ...(validateAllFieldCriteria && {
-      ...errors[name],
-      types: {
-        ...errors[name]?.types,
-        [validationType]: message || true,
-      },
-    }),
+    ...appendErrorsCurry(validationType, message),
+    // ...(validateAllFieldCriteria && {
+    //   ...errors[name],
+    //   types: {
+    //     ...errors[name]?.types,
+    //     [validationType]: message || true,
+    //   },
+    // }),
   }
 
   if (!validateAllFieldCriteria) {

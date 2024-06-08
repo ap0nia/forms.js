@@ -6,8 +6,15 @@ import { parseValidationRule } from '../../validation/parse-validation-rule'
 import type { NativeValidationFunction } from './types'
 
 export const nativeValidatePattern: NativeValidationFunction = (context, next) => {
-  const { field, errors, inputRef, inputValue, validateAllFieldCriteria, shouldSetCustomValidity } =
-    context
+  const {
+    field,
+    errors,
+    inputRef,
+    inputValue,
+    validateAllFieldCriteria,
+    shouldSetCustomValidity,
+    appendErrorsCurry,
+  } = context
 
   const { name, ref } = field._f
 
@@ -27,13 +34,14 @@ export const nativeValidatePattern: NativeValidationFunction = (context, next) =
     type: INPUT_VALIDATION_RULE.pattern,
     message,
     ref,
-    ...(validateAllFieldCriteria && {
-      ...errors[name],
-      types: {
-        ...errors[name]?.types,
-        [INPUT_VALIDATION_RULE.pattern]: message || true,
-      },
-    }),
+    ...appendErrorsCurry(INPUT_VALIDATION_RULE.pattern, message),
+    // ...(validateAllFieldCriteria && {
+    //   ...errors[name],
+    //   types: {
+    //     ...errors[name]?.types,
+    //     [INPUT_VALIDATION_RULE.pattern]: message || true,
+    //   },
+    // }),
   }
 
   if (!validateAllFieldCriteria) {

@@ -57,6 +57,7 @@ export const asyncNativeValidateValidate: NativeValidationFunction = async (cont
     formValues,
     validateAllFieldCriteria,
     shouldSetCustomValidity,
+    appendErrorsCurry,
   } = context
 
   const { name, validate } = field._f
@@ -72,13 +73,14 @@ export const asyncNativeValidateValidate: NativeValidationFunction = async (cont
     if (validateError) {
       errors[name] = {
         ...validateError,
-        ...(validateAllFieldCriteria && {
-          ...errors[name],
-          types: {
-            ...errors[name]?.types,
-            [INPUT_VALIDATION_RULE.validate]: validateError.message || true,
-          },
-        }),
+        ...appendErrorsCurry(INPUT_VALIDATION_RULE.validate, validateError.message),
+        // ...(validateAllFieldCriteria && {
+        //   ...errors[name],
+        //   types: {
+        //     ...errors[name]?.types,
+        //     [INPUT_VALIDATION_RULE.validate]: validateError.message || true,
+        //   },
+        // }),
       }
 
       if (!validateAllFieldCriteria) {

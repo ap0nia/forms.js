@@ -6,6 +6,7 @@ import { notNullish } from '@forms.js/common/utils/null'
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field, FieldRecord } from '../../../types/fields'
 import { setCustomValidity } from '../../html/set-custom-validity'
+import { appendErrors } from '../append-errors'
 
 import { nativeValidateMinMax } from './min-max'
 import { nativeValidateMinMaxLength } from './min-max-length'
@@ -120,7 +121,7 @@ export async function nativeValidateFields(
 export async function nativeValidateSingleField(
   field: Field,
   formValues: any,
-  validateAllFieldCriteria?: boolean,
+  validateAllFieldCriteria: boolean = false,
   shouldUseNativeValidation?: boolean,
   isFieldArray?: boolean,
 ): Promise<FieldErrorRecord> {
@@ -136,6 +137,8 @@ export async function nativeValidateSingleField(
 
   const shouldSetCustomValidity = Boolean(shouldUseNativeValidation && inputRef.reportValidity)
 
+  const appendErrorsCurry = appendErrors.bind(null, field._f.name, validateAllFieldCriteria, errors)
+
   const context: NativeValidationContext = {
     field,
     formValues,
@@ -145,6 +148,7 @@ export async function nativeValidateSingleField(
     shouldSetCustomValidity,
     isFieldArray,
     errors,
+    appendErrorsCurry,
   }
 
   /**
