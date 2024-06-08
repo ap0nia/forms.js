@@ -15,6 +15,9 @@ export const dummyRef = {} as HTMLInputElement
 
 /**
  * Given an element to register to a field, merge the element with the existing field.
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/f74d93d322025fd4df98321f113669bde23290f0/src/logic/createFormControl.ts#L1008
+ *
  * @param name The name of the field.
  * @param field The field to merge with.
  * @param defaultValues The default values of the form. Exists to satisfy an edge case lol.
