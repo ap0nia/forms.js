@@ -191,3 +191,5 @@ function createNativeValidatorSequencer(
   }
   return nativeValidatorSequencer
 }
+
+export default nativeValidateSingleField
