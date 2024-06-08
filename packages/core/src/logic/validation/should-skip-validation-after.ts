@@ -7,7 +7,7 @@ import type {
 /**
  * Whether to skip validation after some event.
  *
- * @see https://github.com/react-hook-form/react-hook-form/blob/1d0503b46cfe0589b188c4c0d9fa75f247271cf7/src/logic/skipValidation.ts
+ * @param submissionValidationMode simpler, all-in-one interface for representing (re) validation mode details.
  */
 export function shouldSkipValidationAfter(
   eventType: 'blur' | 'change',
@@ -15,39 +15,28 @@ export function shouldSkipValidationAfter(
   isSubmitted?: boolean,
   submissionValidationMode?: SubmissionValidationMode,
 ): boolean {
-  const { beforeSubmission, afterSubmission } = submissionValidationMode ?? {}
+  const isBlurEvent = eventType === 'blur'
 
-  const validateOnAllEvents = beforeSubmission?.all
-
-  if (validateOnAllEvents) {
-    return false
+  const revalidationMode: RevalidationModeFlags = {
+    isOnBlur: Boolean(submissionValidationMode?.afterSubmission.onBlur),
+    isOnChange: Boolean(submissionValidationMode?.afterSubmission.onChange),
   }
 
-  const validateOnTouchEvents = !isSubmitted && beforeSubmission?.onTouched
-
-  if (validateOnTouchEvents) {
-    return !(isTouched || eventType === 'blur')
+  const validationMode: ValidationModeFlags = {
+    isOnChange: Boolean(submissionValidationMode?.beforeSubmission.onChange),
+    isOnBlur: Boolean(submissionValidationMode?.beforeSubmission.onBlur),
+    isOnAll: Boolean(submissionValidationMode?.beforeSubmission.all),
+    isOnTouch: Boolean(submissionValidationMode?.beforeSubmission.onTouched),
+    isOnSubmit: Boolean(submissionValidationMode?.beforeSubmission.onSubmit),
   }
 
-  const validateOnBlurEvents = isSubmitted ? afterSubmission?.onBlur : beforeSubmission?.onBlur
-
-  if (validateOnBlurEvents) {
-    return eventType !== 'blur'
-  }
-
-  const validateOnChangeEvents = isSubmitted
-    ? afterSubmission?.onChange
-    : beforeSubmission?.onChange
-
-  if (validateOnChangeEvents) {
-    return eventType !== 'change'
-  }
-
-  return true
+  return skipValidation(isBlurEvent, isTouched, isSubmitted, revalidationMode, validationMode)
 }
 
 /**
- * react-hook-form compatible version of this function.
+ * Original function signature.
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/1d0503b46cfe0589b188c4c0d9fa75f247271cf7/src/logic/skipValidation.ts
  */
 export function skipValidation(
   isBlurEvent?: boolean,
