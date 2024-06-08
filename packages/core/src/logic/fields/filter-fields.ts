@@ -12,7 +12,10 @@ import type { getResolverOptions } from './get-resolver-options'
  * for filtering out relevant fields. It does not transform any existing resolver options,
  * and leaves the responsibility of constructing that object to the parent scope.
  */
-export function filterFields(names: string[], fields: FieldRecord): Record<string, FieldReference> {
+export function filterFields(
+  names: Set<string> | string[],
+  fields: FieldRecord,
+): Record<string, FieldReference> {
   const filteredFields: Record<string, FieldReference> = {}
 
   for (const name of names) {
