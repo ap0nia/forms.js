@@ -1,4 +1,4 @@
-import { describe, it, test, expect } from 'vitest'
+import { describe, test, expect } from 'vitest'
 
 import { isFileInput, getFileValue } from '../../../src/logic/html/file'
 
@@ -23,13 +23,5 @@ describe('getFileValue', () => {
     const fileInput = document.createElement('input')
 
     expect(getFileValue(fileInput)).toEqual(fileInput.files)
-  })
-})
-
-describe('react-hook-form', () => {
-  describe('isFileInput', () => {
-    it('should return true when type is file', () => {
-      expect(isFileInput({ name: 'test', type: 'file' })).toBeTruthy()
-    })
   })
 })
