@@ -27,7 +27,7 @@ export const nativeValidateValidate: NativeValidationFunction = (context, next) 
 /**
  * Converts a {@link ValidateResult} to a {@link FieldError}.
  */
-export function parseValidationResult(
+export function getValidateError(
   result: ValidateResult,
   ref: FieldElement,
   type = 'validate',
@@ -67,7 +67,7 @@ export const asyncNativeValidateValidate: NativeValidationFunction = async (cont
   if (typeof validate === 'function') {
     const result = await validate(inputValue, formValues)
 
-    const validateError = parseValidationResult(result, inputRef)
+    const validateError = getValidateError(result, inputRef)
 
     if (validateError) {
       errors[name] = {
@@ -99,7 +99,7 @@ export const asyncNativeValidateValidate: NativeValidationFunction = async (cont
   for (const key in field._f.validate) {
     const currentValidateResult = await validate?.[key]?.(inputValue, formValues)
 
-    const validateError = parseValidationResult(currentValidateResult, inputRef, key)
+    const validateError = getValidateError(currentValidateResult, inputRef, key)
 
     if (validateError) {
       validationResult = {
