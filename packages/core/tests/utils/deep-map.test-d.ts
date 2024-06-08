@@ -67,21 +67,21 @@ describe('DeepMap', () => {
      */
     test('handles edge cases', () => {
       type MyType = {
-        1: (...args: any[]) => any
-        2: Set<any>
-        3: Date
-        4: BigInt
-        5: Map<any, any>
-        6: any[]
+        a: (...args: any[]) => any
+        b: Set<any>
+        c: Date
+        d: BigInt
+        e: Map<any, any>
+        f: any[]
       }
 
       type ExpectedType = {
-        1: boolean
-        2: boolean
-        3: boolean
-        4: boolean
-        5: boolean
-        6: boolean[]
+        a: boolean
+        b: boolean
+        c: boolean
+        d: boolean
+        e: boolean
+        f: boolean[]
       }
 
       expectTypeOf<DeepMap<MyType, boolean>>().toEqualTypeOf<ExpectedType>()
