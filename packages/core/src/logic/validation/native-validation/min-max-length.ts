@@ -14,7 +14,6 @@ export const nativeValidateMinMaxLength: NativeValidationFunction = (context, ne
     isFieldArray,
     validateAllFieldCriteria,
     shouldSetCustomValidity,
-    appendErrorsCurry,
   } = context
 
   const { name, ref } = field._f
@@ -57,14 +56,13 @@ export const nativeValidateMinMaxLength: NativeValidationFunction = (context, ne
     type: validationType,
     message,
     ref,
-    ...appendErrorsCurry(validationType, message),
-    // ...(validateAllFieldCriteria && {
-    //   ...errors[name],
-    //   types: {
-    //     ...errors[name]?.types,
-    //     [validationType]: message || true,
-    //   },
-    // }),
+    ...(validateAllFieldCriteria && {
+      ...errors[name],
+      types: {
+        ...errors[name]?.types,
+        [validationType]: message || true,
+      },
+    }),
   }
 
   if (!validateAllFieldCriteria) {

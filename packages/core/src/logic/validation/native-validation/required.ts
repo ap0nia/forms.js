@@ -17,7 +17,6 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
     isFieldArray,
     validateAllFieldCriteria,
     shouldSetCustomValidity,
-    appendErrorsCurry,
   } = context
 
   const { name, required } = field._f
@@ -40,14 +39,13 @@ export const nativeValidateRequired: NativeValidationFunction = (context, next) 
     type: INPUT_VALIDATION_RULE.required,
     message,
     ref: inputRef,
-    ...appendErrorsCurry(INPUT_VALIDATION_RULE.required, message),
-    // ...(validateAllFieldCriteria && {
-    //   ...errors[name],
-    //   types: {
-    //     ...errors[name]?.types,
-    //     [INPUT_VALIDATION_RULE.required]: message || true,
-    //   },
-    // }),
+    ...(validateAllFieldCriteria && {
+      ...errors[name],
+      types: {
+        ...errors[name]?.types,
+        [INPUT_VALIDATION_RULE.required]: message || true,
+      },
+    }),
   }
 
   if (!validateAllFieldCriteria) {
