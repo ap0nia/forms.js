@@ -81,7 +81,7 @@ describe('DeepMap', () => {
         3: boolean
         4: boolean
         5: boolean
-        6: boolean
+        6: boolean[]
       }
 
       expectTypeOf<DeepMap<MyType, boolean>>().toEqualTypeOf<ExpectedType>()
