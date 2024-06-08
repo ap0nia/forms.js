@@ -49,3 +49,5 @@ export function lookupError<T extends Record<string, any> = Record<string, any>>
 
   return { name }
 }
+
+export default lookupError
