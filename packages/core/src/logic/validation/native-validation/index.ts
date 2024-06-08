@@ -157,7 +157,13 @@ export async function nativeValidateSingleField(
    */
   const next = noop
 
-  await nativeValidatorSequencer(context, next)
+  const result = nativeValidatorSequencer(context, next)
+
+  // Promises are lazily created, so only await if needed.
+
+  if (result instanceof Promise) {
+    await result
+  }
 
   const isValid = !errors[field._f.name]
 

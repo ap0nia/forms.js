@@ -37,6 +37,11 @@ describe('nativelyValidateFields', async () => {
   })
 })
 
+/**
+ * Should be equivalent to the official react-hook-form tests for validation.
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/logic/validateField.test.tsx#L54
+ */
 describe('nativelyValidateFields', async () => {
   test('is valid when nothing to validate', async () => {
     const fields: FieldRecord = {}
