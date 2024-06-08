@@ -1,7 +1,7 @@
 import { get } from '@forms.js/common/utils/get'
 
 import type { FieldError, FieldErrors } from '../../types/errors'
-import type { FieldRecord } from '../../types/fields'
+import type { FieldLikeRecord } from '../../types/fields'
 
 export type FoundError = {
   error?: FieldError
@@ -17,7 +17,7 @@ export type FoundError = {
  */
 export function lookupError<T extends Record<string, any> = Record<string, any>>(
   errors: FieldErrors<T>,
-  fields: FieldRecord,
+  fields: FieldLikeRecord,
   name: string,
 ): FoundError {
   const error = get(errors, name)

@@ -146,3 +146,26 @@ export type CustomElement<T extends Record<string, any>> = Partial<HTMLElement> 
    */
   focus?: Noop
 }
+
+/**
+ * Special type that allows `ref` to be an empty object.
+ *
+ * Used to strongly type `fields` parameter in `lookupError` .
+ */
+export type FieldLikeRecord = Partial<{
+  [K: string]: (FieldLike | FieldLikeRecord) & (FieldLike | { _f?: never })
+}>
+
+/**
+ * An object that's roughly like a field.
+ */
+export type FieldLike = {
+  _f: FieldRefenceLike
+}
+
+/**
+ * Properties in the ref are optional.
+ */
+export type FieldRefenceLike = Partial<Omit<FieldReference, 'ref'>> & {
+  ref?: Partial<FieldElement>
+}
