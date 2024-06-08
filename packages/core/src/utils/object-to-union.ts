@@ -79,25 +79,27 @@ export type ObjectToUnion<
 > = IsAny<T> extends true
   ? any
   : T extends NonRecordNonPrimitives
-  ? Record<Join<TPath>, T>
+  ? T
   : TPath['length'] extends TDepth
-  ? Record<Join<TPath>, T>
+  ? T
   :
       | {
           [K in keyof T]: IsAny<T[K]> extends true
             ? Record<Join<[...TPath, K]>, T[K]>
-            : T[K] extends any[]
-            ? Record<Join<[...TPath, K]>, T[K]>
             : T[K] extends (infer U)[]
-            ?
-                | Record<Join<[...TPath, K]>, T[K]>
-                | Record<Join<[...TPath, K, number]>, T[K]>
-                | (U extends Record<string, any>
-                    ? U extends NonRecordNonPrimitives
-                      ? never
-                      : ObjectToUnion<U, [...TPath, K, number]>
-                    : never)
-            : T[K] extends Record<string, any>
+            ? IsAny<U> extends true
+              ? Record<Join<[...TPath, K]>, T[K]>
+              :
+                  | Record<Join<[...TPath, K]>, T[K]>
+                  | Record<Join<[...TPath, K, number]>, U>
+                  | (U extends Record<PropertyKey, any>
+                      ? U extends NonRecordNonPrimitives
+                        ? never
+                        : ObjectToUnion<U, [...TPath, K, number]>
+                      : never)
+            : T[K] extends NonRecordNonPrimitives
+            ? Record<Join<[...TPath, K]>, T[K]>
+            : T[K] extends Record<PropertyKey, any>
             ? ObjectToUnion<T[K], [...TPath, K]>
             : Record<Join<[...TPath, K]>, T[K]>
         }[keyof T]
