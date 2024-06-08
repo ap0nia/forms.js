@@ -69,12 +69,15 @@ export type FieldReference = {
 } & RegisterOptions<any, any>
 
 /**
+ * An HTML element that can be registered as a field element.
+ */
+export type HTMLFieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+
+/**
  * A field element is any element that can be registered as a valid form component.
  */
 export type FieldElement<T extends Record<string, any> = Record<string, any>> =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement
+  | HTMLFieldElement
   | CustomElement<T>
 
 declare const $NestedValue: unique symbol
