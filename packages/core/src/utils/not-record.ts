@@ -5,6 +5,8 @@ export type NonRecordNonPrimitives =
   | BigInt
   | Blob
   | Date
+  | File
+  | FileList
   | Function
   | Map<any, any>
   | Set<any>
