@@ -31,14 +31,22 @@ export const INPUT_EVENTS = {
   CHANGE: 'change',
 } as const
 
+export const MAX_INPUT_VALIDATION_RULE = {
+  max: 'max',
+  maxLength: 'maxLength',
+} as const
+
+export const MIN_INPUT_VALIDATION_RULE = {
+  min: 'min',
+  minLength: 'minLength',
+} as const
+
 /**
  * Supported native validation constraints.
  */
 export const INPUT_VALIDATION_RULE = {
-  max: 'max',
-  min: 'min',
-  maxLength: 'maxLength',
-  minLength: 'minLength',
+  ...MAX_INPUT_VALIDATION_RULE,
+  ...MIN_INPUT_VALIDATION_RULE,
   pattern: 'pattern',
   required: 'required',
   validate: 'validate',
@@ -95,6 +103,10 @@ export type SubmissionValidationMode = {
 export type InputEvent = typeof INPUT_EVENTS
 
 export type InputValidationRule = typeof INPUT_VALIDATION_RULE
+
+export type MaxInputValidationRule = typeof MAX_INPUT_VALIDATION_RULE
+
+export type MinInputValidationRule = typeof MIN_INPUT_VALIDATION_RULE
 
 export type RevalidationEvent = typeof REVALIDATION_EVENTS
 
