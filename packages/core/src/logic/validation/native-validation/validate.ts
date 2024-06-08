@@ -1,4 +1,4 @@
-import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
 import { isObject } from '@forms.js/common/utils/is-object'
 
 import { INPUT_VALIDATION_RULE } from '../../../constants'
