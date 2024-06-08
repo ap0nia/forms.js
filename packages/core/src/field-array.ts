@@ -1,6 +1,5 @@
-import type { NestedObjectArrays } from '../utils/nested-object-arrays'
-
-import type { ParseForm, FlattenFormValues } from './parse'
+import type { ParseForm, FlattenFormValues } from './types/parse'
+import type { NestedObjectArrays } from './utils/nested-object-arrays'
 
 /**
  * Helper type to filter the field names of a form for only ones that are.
