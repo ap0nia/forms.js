@@ -75,7 +75,7 @@ export type SubmissionValidationMode = {
   /**
    * When to validate after submitting a form.
    */
-  afterSubmission: { [K in keyof ValidationEvent]: boolean }
+  afterSubmission: { [K in keyof RevalidationEvent]: boolean }
 }
 
 export type RevalidationModeFlags = {
