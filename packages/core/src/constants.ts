@@ -63,6 +63,8 @@ export const CRITERIA_MODE = {
 
 /**
  * When to validate the form data based on the submission status.
+ *
+ * Alternative interface to {@link RevalidationModeFlags} and {@link ValidationModeFlags}
  */
 export type SubmissionValidationMode = {
   /**
@@ -74,6 +76,17 @@ export type SubmissionValidationMode = {
    * When to validate after submitting a form.
    */
   afterSubmission: { [K in keyof ValidationEvent]: boolean }
+}
+
+export type RevalidationModeFlags = {
+  isOnBlur: boolean
+  isOnChange: boolean
+}
+
+export type ValidationModeFlags = RevalidationModeFlags & {
+  isOnSubmit: boolean
+  isOnAll: boolean
+  isOnTouch: boolean
 }
 
 export type InputEvent = typeof INPUT_EVENTS
