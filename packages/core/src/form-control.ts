@@ -1,16 +1,51 @@
-import type {
-  CriteriaMode,
-  RevalidationEvent,
-  SubmissionValidationMode,
-  ValidationEvent,
+import { Batchable, Writable } from '@forms.js/common/store'
+import { deepEqual } from '@forms.js/common/utils/deep-equal'
+import { deepFilter } from '@forms.js/common/utils/deep-filter'
+import { set } from '@forms.js/common/utils/set'
+import { unset } from '@forms.js/common/utils/unset'
+import { isBrowser } from '@forms.js/common/utils/is-browser'
+import { isObject } from '@forms.js/common/utils/is-object'
+import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
+import { isPrimitive } from '@forms.js/common/utils/is-primitive'
+import type { Nullish } from '@forms.js/common/utils/null'
+import { get, getMultiple } from '@forms.js/common/utils/get'
+import { stringToPath } from '@forms.js/common/utils/string-to-path'
+
+import {
+  VALIDATION_EVENTS,
+  type CriteriaMode,
+  type RevalidationEvent,
+  type SubmissionValidationMode,
+  type ValidationEvent,
 } from './constants'
+
+import { lookupError } from './logic/errors/lookup-error'
+import { filterFields } from './logic/fields/filter-fields'
+import { focusFieldBy } from './logic/fields/focus-field-by'
+import { getFieldEventValue } from './logic/fields/get-field-event-value'
+import { getDirtyFields } from './logic/fields/get-dirty-fields'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
+import { iterateFieldsByAction } from './logic/fields/iterate-fields-by-action'
+import { updateFieldReference } from './logic/fields/update-field-reference'
+import { elementIsLive } from './logic/html/element-is-live'
+import { isHTMLElement } from './logic/html/is-html-element'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
+import { getValidationModes } from './logic/validation/get-validation-modes'
+import { nativeValidateFields } from './logic/validation/native-validation'
+import type { NativeValidationResult } from './logic/validation/native-validation/types'
+import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
+
 import type { FieldErrors } from './types/errors'
-import type { Field, FieldRecord } from './types/fields'
+import type { HTMLFieldElement, Field, FieldRecord } from './types/fields'
 import type { ParseForm } from './types/parse'
 import type { Resolver } from './types/resolver'
+
 import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
+import type { KeysToProperties } from './utils/keys-to-properties'
+import type { LiteralUnion } from './utils/literal-union'
 
 export type FormControlState<T = Record<string, any>> = {
   isDirty: boolean
@@ -128,3 +163,20 @@ export type SubmitErrorHandler<T = Record<string, any>> = (
   errors: FieldErrors<T>,
   event?: Partial<Event>,
 ) => unknown
+
+export const defaultFormControlOptions: FormControlOptions = {
+  /**
+   * The form values are validated for the first time after submission.
+   */
+  mode: VALIDATION_EVENTS.onSubmit,
+
+  /**
+   * After the form values are validated for the first time, they're validated on every change.
+   */
+  reValidateMode: VALIDATION_EVENTS.onChange,
+
+  /**
+   * If an error is found during validation, the first field with an error is focused.
+   */
+  shouldFocusError: true,
+}

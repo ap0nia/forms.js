@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 
 import type { ValidationMode } from '../../../src/constants'
-import { getValidationMode } from '../../../src/logic/validation/get-validation-modes'
+import { getValidationModes } from '../../../src/logic/validation/get-validation-modes'
 
 describe('getValidationMode', () => {
   test('onSubmit', () => {
@@ -13,6 +13,6 @@ describe('getValidationMode', () => {
       onTouched: false,
     }
 
-    expect(getValidationMode('onSubmit')).toEqual(expectedResult)
+    expect(getValidationModes('onSubmit')).toEqual(expectedResult)
   })
 })

@@ -5,7 +5,7 @@ import { VALIDATION_EVENTS, type ValidationEvent, type ValidationMode } from '..
  *
  * Just makes comparisons easier for subsequent branching logic, i.e. for specific event handling.
  */
-export function getValidationMode(mode?: ValidationEvent[keyof ValidationEvent]): ValidationMode {
+export function getValidationModes(mode?: ValidationEvent[keyof ValidationEvent]): ValidationMode {
   return {
     onSubmit: !mode || mode === VALIDATION_EVENTS.onSubmit,
     onBlur: mode === VALIDATION_EVENTS.onBlur,
