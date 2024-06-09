@@ -36,7 +36,6 @@ describe('get', () => {
     }
     expect(get(test, '')).toEqual(undefined)
     expect(get(test, undefined)).toEqual(undefined)
-    // @ts-expect-error Type of path does not allow null, confirm that runtime can handle null.
     expect(get(test, null)).toEqual(undefined)
   })
 })
