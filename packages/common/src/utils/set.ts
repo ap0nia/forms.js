@@ -2,40 +2,39 @@ import { isKey } from './is-key'
 import { isObject } from './is-object'
 import { stringToPath } from './string-to-path'
 
-export function set(object: Record<string, any>, path: PropertyKey, value?: unknown) {
+/**
+ * Given a dot-concatenated string path, deeply set a property, filling in any missing objects along the way.
+ */
+export function set<T>(object: unknown, path: PropertyKey, value?: unknown): T {
+  if (object == null) {
+    return value as any
+  }
+
   if (typeof path === 'number' || typeof path === 'symbol') {
-    object[path as keyof {}] = value
-    return object
+    object[path as never] = value as never
+    return object[path as never] as T
   }
 
-  let index = -1
-  const tempPath = isKey(path) ? [path] : stringToPath(path)
-  const length = tempPath.length
-  const lastIndex = length - 1
+  const keyArray = isKey(path) ? [path] : stringToPath(path)
 
-  while (++index < length) {
-    const key = tempPath[index]
+  const lastIndex = keyArray.length - 1
 
-    if (key == null) {
-      continue
+  const lastKey = keyArray[lastIndex]
+
+  const result = keyArray.reduce((currentResult, currentKey, index) => {
+    if (index === lastIndex) {
+      currentResult[currentKey as never] = value as never
+      return currentResult
     }
 
-    let newValue = value
+    const currentValueIsNotObject = !isObject(currentResult[currentKey as never])
 
-    if (index !== lastIndex) {
-      const objValue = object[key]
-      newValue =
-        isObject(objValue) || Array.isArray(objValue)
-          ? objValue
-          : !isNaN(+(tempPath[index + 1] ?? ''))
-          ? []
-          : {}
+    if (currentValueIsNotObject || currentResult[currentKey as never] == null) {
+      currentResult[currentKey as never] = (isNaN(keyArray[index + 1] as any) ? {} : []) as never
     }
 
-    object[key] = newValue
+    return currentResult[currentKey as never]
+  }, object)
 
-    object = object[key]
-  }
-
-  return object
+  return result[lastKey as never] as T
 }
