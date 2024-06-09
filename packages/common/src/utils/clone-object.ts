@@ -3,6 +3,9 @@ import { isObject } from './is-object'
 import { isPlainObject } from './is-plain-object'
 import { isRawData } from './is-raw-data'
 
+/**
+ * Like {@link structuredClone} but with compatible with non-serializable data types.
+ */
 export function cloneObject<T>(data: T): T {
   if (data instanceof Date) {
     return new Date(data) as T

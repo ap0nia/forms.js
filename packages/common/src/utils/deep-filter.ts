@@ -2,7 +2,7 @@ import { get } from './get'
 import type { Nullish } from './null'
 import { set } from './set'
 
-export function deepFilter(obj: unknown, key?: PropertyKey | PropertyKey[] | Nullish) {
+export function deepFilter(obj: unknown, key?: PropertyKey | PropertyKey[] | Nullish): any {
   if (key == null || obj == null) {
     return obj
   }
