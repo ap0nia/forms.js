@@ -1,6 +1,7 @@
 import { vi, describe, it, expect } from 'vitest'
 
 import { getFieldValue } from '../../src/logic/fields/get-field-value'
+import type { Field } from '../../src/types/fields'
 
 // jest.mock('../../logic/getRadioValue', () => ({
 //   __esModule: true,

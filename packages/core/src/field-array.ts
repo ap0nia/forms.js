@@ -1,4 +1,4 @@
-import type { ParseForm, FlattenFormValues } from './types/parse'
+import type { ParseForm } from './types/parse'
 import type { NestedObjectArrays } from './utils/nested-object-arrays'
 
 /**
@@ -7,10 +7,10 @@ import type { NestedObjectArrays } from './utils/nested-object-arrays'
  *
  * Field names are dot-concatenated properties and are valid HTML field names.
  */
-export type FieldArrayFieldNames<
-  T,
-  TFlattenedValues extends FlattenFormValues<T> = FlattenFormValues<T>,
-> = Extract<keyof NestedObjectArrays<TFlattenedValues>, string>
+export type FieldArrayFieldNames<T, TParsedForm = ParseForm<T>> = Extract<
+  keyof NestedObjectArrays<TParsedForm>,
+  string
+>
 
 /**
  * Parses a form into its flattened keys and values and filters by field values.
@@ -19,9 +19,8 @@ export type FieldArrayFieldNames<
  */
 export type ParseFieldArray<
   T,
-  TFlattenedValues extends FlattenFormValues<T> = FlattenFormValues<T>,
-  TFieldArrayValues extends
-    NestedObjectArrays<TFlattenedValues> = NestedObjectArrays<TFlattenedValues>,
+  TParsedForm extends ParseForm<T> = ParseForm<T>,
+  TFieldArrayValues = NestedObjectArrays<TParsedForm>,
 > = {
   values: TFieldArrayValues
   keys: Extract<keyof TFieldArrayValues, string>
@@ -36,8 +35,9 @@ export type ParseFieldArray<
  * since it doesn't have to re-flatten the form values.
  */
 export type ParseFieldArrayFromParsedForm<
-  T extends ParseForm<any>,
-  TFieldArrayValues extends NestedObjectArrays<T['values']> = NestedObjectArrays<T['values']>,
+  T,
+  TParsedForm extends ParseForm<T>,
+  TFieldArrayValues = NestedObjectArrays<TParsedForm[keyof TParsedForm]>,
 > = {
   values: TFieldArrayValues
   keys: Extract<keyof TFieldArrayValues, string>

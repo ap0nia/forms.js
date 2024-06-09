@@ -76,9 +76,7 @@ export type HTMLFieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAr
 /**
  * A field element is any element that can be registered as a valid form component.
  */
-export type FieldElement<T extends Record<string, any> = Record<string, any>> =
-  | HTMLFieldElement
-  | CustomElement<T>
+export type FieldElement<T = Record<string, any>> = HTMLFieldElement | CustomElement<T>
 
 declare const $NestedValue: unique symbol
 
@@ -96,14 +94,12 @@ export type IsFlatObject<T> = Extract<
   ? true
   : false
 
-export type FieldName<T extends Record<string, any>> = IsFlatObject<T> extends true
-  ? Extract<keyof T, string>
-  : string
+export type FieldName<T> = IsFlatObject<T> extends true ? Extract<keyof T, string> : string
 
 /**
  * A custom element is a component that simulates an HTML element.
  */
-export type CustomElement<T extends Record<string, any>> = Partial<HTMLElement> & {
+export type CustomElement<T> = Partial<HTMLElement> & {
   /**
    * Name of the field.
    */

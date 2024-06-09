@@ -8,10 +8,7 @@ import type { ParseForm } from './parse'
  * A resolver processes the form values and returns a result.
  * i.e. resolving the values/errors of the form.
  */
-export type Resolver<
-  TFieldValues extends Record<string, any> = Record<string, any>,
-  TContext = any,
-> = (
+export type Resolver<TFieldValues = Record<string, any>, TContext = any> = (
   values: TFieldValues,
   context: TContext | undefined,
   options: ResolverOptions<TFieldValues>,
@@ -34,7 +31,7 @@ export interface ResolverOptions<T, TParsedForm extends ParseForm<T> = ParseForm
   /**
    * Names of the fields to parse.
    */
-  names?: TParsedForm['keys'][]
+  names?: (keyof TParsedForm)[]
 
   /**
    * Whether to use native validation by reading the field element.
@@ -45,14 +42,12 @@ export interface ResolverOptions<T, TParsedForm extends ParseForm<T> = ParseForm
 /**
  * A resolver can return a successful result or an error result.
  */
-export type ResolverResult<T extends Record<string, any> = Record<string, any>> =
-  | ResolverSuccess<T>
-  | ResolverError<T>
+export type ResolverResult<T = Record<string, any>> = ResolverSuccess<T> | ResolverError<T>
 
 /**
  * Successful resolver result.
  */
-export type ResolverSuccess<T extends Record<string, any> = Record<string, any>> = {
+export type ResolverSuccess<T = Record<string, any>> = {
   /**
    * Return the form values.
    */
@@ -64,7 +59,7 @@ export type ResolverSuccess<T extends Record<string, any> = Record<string, any>>
   errors?: {}
 }
 
-export type ResolverError<T extends Record<string, any> = Record<string, any>> = {
+export type ResolverError<T = Record<string, any>> = {
   /**
    * Don't return any form values.
    */

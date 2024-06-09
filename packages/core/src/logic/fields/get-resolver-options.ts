@@ -15,7 +15,7 @@ import type { filterFields } from './filter-fields'
  * This function does not calculate anything except for the filtered fields, yet unnecessarily
  * accepts and forwards parameters it does not use.
  */
-export function getResolverOptions<T extends Record<string, any>>(
+export function getResolverOptions<T>(
   fieldsNames: Set<string> | string[],
   _fields: FieldRecord,
   criteriaMode?: CriteriaMode[keyof CriteriaMode],

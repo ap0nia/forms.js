@@ -12,7 +12,7 @@ import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults } from './utils/defaults'
 
-export type FormControlState<T extends Record<string, any> = Record<string, any>> = {
+export type FormControlState<T = Record<string, any>> = {
   isDirty: boolean
   isLoading: boolean
   isSubmitted: boolean
@@ -36,10 +36,7 @@ export type FieldState = {
   error?: FieldErrors[string]
 }
 
-export type FormControlOptions<
-  TValues extends Record<string, any> = Record<string, any>,
-  TContext = any,
-> = {
+export type FormControlOptions<TValues = Record<string, any>, TContext = any> = {
   mode?: ValidationEvent[keyof ValidationEvent]
   reValidateMode?: RevalidationEvent[keyof RevalidationEvent]
   disabled?: boolean
@@ -56,10 +53,10 @@ export type FormControlOptions<
   delayError?: number
 }
 
-export type ResolvedFormControlOptions<
-  TValues extends Record<string, any>,
-  TContext,
-> = FormControlOptions<TValues, TContext> & {
+export type ResolvedFormControlOptions<TValues, TContext> = FormControlOptions<
+  TValues,
+  TContext
+> & {
   shouldDisplayAllAssociatedErrors: boolean
   submissionValidationMode: SubmissionValidationMode
   shouldCaptureDirtyFields: boolean
@@ -113,10 +110,10 @@ export type SetValueResult = {
 }
 
 export type WatchOptions<
-  T extends Record<string, any> = Record<string, any>,
+  T = Record<string, any>,
   TParsedForm extends ParseForm<T> = ParseForm<T>,
 > = {
-  name?: TParsedForm['keys'] | TParsedForm['keys'][]
+  name?: keyof TParsedForm | (keyof TParsedForm)[]
   disabled?: boolean
   exact?: boolean
 }
@@ -127,7 +124,7 @@ export type SubmitHandler<T, TTransformed = T> = TTransformed extends Record<str
   ? (data: TTransformed, event?: Partial<Event>) => unknown
   : (data: T, event?: Partial<Event>) => unknown
 
-export type SubmitErrorHandler<T extends Record<string, any> = Record<string, any>> = (
+export type SubmitErrorHandler<T = Record<string, any>> = (
   errors: FieldErrors<T>,
   event?: Partial<Event>,
 ) => unknown

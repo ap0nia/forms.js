@@ -15,7 +15,7 @@ export type FoundError = {
  *
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/schemaErrorLookup.ts
  */
-export function lookupError<T extends Record<string, any> = Record<string, any>>(
+export function lookupError<T = Record<string, any>>(
   errors: FieldErrors<T>,
   fields: FieldLikeRecord,
   name: string,

@@ -5,10 +5,10 @@ import type { Validate, ValidationRule } from './validation'
  * Options when registering a new field component or element.
  */
 export type RegisterOptions<
-  TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TFieldName extends TParsedForm['keys'] = TParsedForm['keys'],
-  TFieldValue = TParsedForm['values'][TFieldName],
+  TValues = Record<string, any>,
+  TParsedForm = ParseForm<TValues>,
+  TFieldName extends keyof TParsedForm = keyof TParsedForm,
+  TFieldValue = TParsedForm[TFieldName],
 > = {
   /**
    * Native validation, makes the field required.
@@ -74,7 +74,7 @@ export type RegisterOptions<
   /**
    * Dependencies on other form fields.
    */
-  deps?: TParsedForm['keys'] | TParsedForm['keys'][]
+  deps?: keyof TParsedForm | (keyof TParsedForm)[]
 } & (
   | {
       /**

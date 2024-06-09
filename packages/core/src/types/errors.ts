@@ -75,7 +75,7 @@ export type MultipleFieldErrors = {
  *
  * This is the exposed interface for the form's stored errors.
  */
-export type FieldErrors<T extends Record<string, any> = Record<string, any>> = Partial<
+export type FieldErrors<T = Record<string, any>> = Partial<
   FieldErrorsImplementation<DeepRequired<T>>
 > & {
   root?: Record<string, GlobalError> & GlobalError
@@ -84,7 +84,7 @@ export type FieldErrors<T extends Record<string, any> = Record<string, any>> = P
 /**
  * Does the actual mapping of field names to their errors.
  */
-export type FieldErrorsImplementation<T extends Record<string, any> = Record<string, any>> = {
+export type FieldErrorsImplementation<T = Record<string, any>> = {
   [K in keyof T]?: K extends 'root' | `root.${string}`
     ? GlobalError
     : T[K] extends (infer U)[]
