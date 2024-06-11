@@ -3,7 +3,7 @@ import { isObject } from '@forms.js/common/utils/is-object'
 
 import type { FieldElement, FieldRecord } from '../../types/fields'
 
-export type IterateAction = (ref: FieldElement, name: string) => 1 | undefined | void
+export type IterateAction = (element: FieldElement, name: string) => 1 | undefined | void
 
 /**
  * Low-level implementation for iterating over specified form fields and performing an action.

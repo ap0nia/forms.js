@@ -8,16 +8,20 @@ import type { ParseForm } from './parse'
  * A resolver processes the form values and returns a result.
  * i.e. resolving the values/errors of the form.
  */
-export type Resolver<TFieldValues = Record<string, any>, TContext = any> = (
+export type Resolver<
+  TFieldValues = Record<string, any>,
+  TContext = any,
+  TParsedForm = ParseForm<TFieldValues>,
+> = (
   values: TFieldValues,
   context: TContext | undefined,
-  options: ResolverOptions<TFieldValues>,
+  options: ResolverOptions<TFieldValues, TParsedForm>,
 ) => ResolverResult<TFieldValues> | Promise<ResolverResult<TFieldValues>>
 
 /**
  * Resolver options.
  */
-export interface ResolverOptions<T, TParsedForm extends ParseForm<T> = ParseForm<T>> {
+export interface ResolverOptions<T, TParsedForm = ParseForm<T>> {
   /**
    * How to handle encountered errors.
    */

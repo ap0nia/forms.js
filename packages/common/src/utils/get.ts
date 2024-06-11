@@ -49,7 +49,7 @@ export function get<T>(object: T, path?: PropertyKey | Nullish, defaultValue?: u
  */
 export function getMultiple<T = any>(
   obj: NonNullable<unknown>,
-  key?: Nullish | PropertyKey | PropertyKey[] | Readonly<PropertyKey>[],
+  key?: Nullish | PropertyKey | PropertyKey[] | readonly PropertyKey[],
 ): T {
   if (key == null) {
     return obj as T

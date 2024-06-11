@@ -3,7 +3,7 @@ import { isKey } from './is-key'
 import { isObject } from './is-object'
 import { stringToPath } from './string-to-path'
 
-function baseGet(object: any, updatePath: (string | number)[]) {
+function baseGet(object: any, updatePath: PropertyKey[]) {
   const length = updatePath.slice(0, -1).length
   let index = 0
 
@@ -28,7 +28,12 @@ function isEmptyArray(obj: unknown[]) {
   return true
 }
 
-export function unset(object: any, path: string | (string | number)[]) {
+export function unset(object: any, path: PropertyKey | PropertyKey[]) {
+  if (typeof path === 'number' || typeof path === 'symbol') {
+    delete object[path]
+    return object
+  }
+
   const paths = Array.isArray(path) ? path : isKey(path) ? [path] : stringToPath(path)
 
   const childObject = paths.length === 1 ? object : baseGet(object, paths)

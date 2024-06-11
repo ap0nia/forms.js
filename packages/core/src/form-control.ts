@@ -1,49 +1,52 @@
 import { Batchable, Writable } from '@forms.js/common/store'
-
 import { cloneObject } from '@forms.js/common/utils/clone-object'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepFilter } from '@forms.js/common/utils/deep-filter'
-import { set } from '@forms.js/common/utils/set'
-import { unset } from '@forms.js/common/utils/unset'
+import { get, getMultiple } from '@forms.js/common/utils/get'
 import { isBrowser } from '@forms.js/common/utils/is-browser'
 // import { isObject } from '@forms.js/common/utils/is-object'
 import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Nullish } from '@forms.js/common/utils/null'
-import { get, getMultiple } from '@forms.js/common/utils/get'
+import { set } from '@forms.js/common/utils/set'
 // import { stringToPath } from '@forms.js/common/utils/string-to-path'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
+import { unset } from '@forms.js/common/utils/unset'
+
 import {
   VALIDATION_EVENTS,
   type CriteriaMode,
   type RevalidationEvent,
   type SubmissionValidationMode,
   type ValidationEvent,
+  INPUT_EVENTS,
 } from './constants'
-// import { lookupError } from './logic/errors/lookup-error'
+import { lookupError } from './logic/errors/lookup-error'
 import { filterFields } from './logic/fields/filter-fields'
 import { focusFieldBy } from './logic/fields/focus-field-by'
-// import { getFieldEventValue } from './logic/fields/get-field-event-value'
 import { getDirtyFields } from './logic/fields/get-dirty-fields'
-import { /* getFieldValue, */ getFieldValueAs } from './logic/fields/get-field-value'
-// import { hasValidation } from './logic/fields/has-validation'
+import { getFieldEventValue } from './logic/fields/get-field-event-value'
+import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
+import { hasValidation } from './logic/fields/has-validation'
 // import { iterateFieldsByAction } from './logic/fields/iterate-fields-by-action'
+import iterateFieldsByAction from './logic/fields/iterate-fields-by-action'
 import { updateFieldReference } from './logic/fields/update-field-reference'
-// import { elementIsLive } from './logic/html/element-is-live'
+import { elementIsLive } from './logic/html/element-is-live'
 import { isHTMLElement } from './logic/html/is-html-element'
-// import { mergeElementWithField } from './logic/html/merge-element-with-field'
+import { mergeElementWithField } from './logic/html/merge-element-with-field'
 import { getValidationModes } from './logic/validation/get-validation-modes'
 import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
-// import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
-import type { FieldErrorRecord, FieldErrors } from './types/errors'
-import type { /* HTMLFieldElement ,*/ Field, FieldRecord } from './types/fields'
+import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
+import type { ErrorOption, FieldError, FieldErrorRecord, FieldErrors } from './types/errors'
+import type { /* HTMLFieldElement ,*/ Field, FieldElement, FieldRecord } from './types/fields'
 import type { ParseForm } from './types/parse'
-import type { Resolver } from './types/resolver'
+import type { RegisterOptions } from './types/register'
+import type { Resolver, ResolverOptions } from './types/resolver'
 import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults, ValueOrDeepPartial } from './utils/defaults'
-// import type { KeysToProperties } from './utils/keys-to-properties'
+import type { KeysToProperties } from './utils/keys-to-properties'
 // import type { LiteralUnion } from './utils/literal-union'
 
 export type FormControlState<T = Record<string, any>> = {
@@ -58,6 +61,7 @@ export type FormControlState<T = Record<string, any>> = {
   submitCount: number
   dirtyFields: Partial<Readonly<DeepMap<T, boolean>>>
   touchedFields: Partial<Readonly<DeepMap<T, boolean>>>
+  validatingFields: Partial<Readonly<DeepMap<T, boolean>>>
   defaultValues: DeepPartial<T>
   errors: FieldErrors<T>
   values: T
@@ -66,11 +70,16 @@ export type FormControlState<T = Record<string, any>> = {
 export type FieldState = {
   invalid: boolean
   isDirty: boolean
-  isTouched: boolean
   error?: FieldErrors[string]
+  isValidating: boolean
+  isTouched: boolean
 }
 
-export type FormControlOptions<TValues = Record<string, any>, TContext = any> = {
+export type FormControlOptions<
+  TValues = Record<string, any>,
+  TContext = any,
+  TParsedForm = ParseForm<TValues>,
+> = {
   mode?: ValidationEvent[keyof ValidationEvent]
   revalidateMode?: RevalidationEvent[keyof RevalidationEvent]
   disabled?: boolean
@@ -78,7 +87,7 @@ export type FormControlOptions<TValues = Record<string, any>, TContext = any> = 
   defaultValues?: Defaults<TValues>
   values?: TValues
   resetOptions?: ResetOptions
-  resolver?: Resolver<TValues, TContext>
+  resolver?: Resolver<TValues, TContext, TParsedForm>
   shouldFocusError?: boolean
   shouldUnregister?: boolean
   shouldUseNativeValidation?: boolean
@@ -87,9 +96,10 @@ export type FormControlOptions<TValues = Record<string, any>, TContext = any> = 
   delayError?: number
 }
 
-export type ResolvedFormControlOptions<TValues, TContext> = FormControlOptions<
+export type ResolvedFormControlOptions<TValues, TContext, TParsedForm> = FormControlOptions<
   TValues,
-  TContext
+  TContext,
+  TParsedForm
 > & {
   shouldDisplayAllAssociatedErrors: boolean
   submissionValidationMode: SubmissionValidationMode
@@ -109,7 +119,6 @@ export type SetFocusOptions = {
 
 export type TriggerOptions = {
   shouldFocus?: boolean
-  shouldSetErrors?: boolean
 }
 
 /**
@@ -131,17 +140,26 @@ export interface ResetOptions extends KeepStateOptions {
   keepSubmitCount?: boolean
 }
 
+export type ResetFieldOptions<T> = {
+  keepDirty?: boolean
+  keepTouched?: boolean
+  keepError?: boolean
+  defaultValue?: T
+}
+
+export type ResetAction<T> = (formValues: T) => T
+
 export interface UnregisterOptions extends KeepStateOptions {
   keepValue?: boolean
   keepDefaultValue?: boolean
   keepError?: boolean
+  keepIsValidating?: boolean
 }
 
 export type SetValueOptions = {
   shouldValidate?: boolean
   shouldDirty?: boolean
   shouldTouch?: boolean
-  quiet?: boolean
 }
 
 export type SetValueResult = {
@@ -189,29 +207,38 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
 
 /**
  * Core API.
+ *
+ * To auto-bind methods, use arrow function syntax.
+ * But do so sparingly, since each arrow function (auto-bound method) will need to be re-allocated per instance.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions#cannot_be_used_as_methods
  */
 export class FormControl<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
-  // TTransformedValues extends Record<string, any> | undefined = undefined,
+  TTransformedValues extends Record<string, any> | undefined = undefined,
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
 > {
   /**
    * Internally resolved options that control the form control's behavior.
    */
-  options: ResolvedFormControlOptions<TValues, TContext>
+  options: ResolvedFormControlOptions<TValues, TContext, TParsedForm>
 
   /**
    * State represented as a record of writable stores.
    *
-   * This is not optimized for notifications; it may change multiple times in a function.
+   * This is not optimized for notifications (i.e. renders) because it may notify multiple times in a function.
+   *
+   * This is ideal for directly subscribing to specific state.
    */
   stores: { [K in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[K]> }
 
   /**
    * Buffers updates to {@link stores} until it's flushed.
    *
-   * This is optimized for notifications and generally flushes 1-2 times per function.
+   * This is optimized for notifications (i.e. renders) and generally flushes 1-2 times per function.
+   *
+   * This is ideal for subscribing to the entire form control state.
    */
   state: Batchable<this['stores']>
 
@@ -242,9 +269,16 @@ export class FormControl<
 
   /**
    * Callbacks that are invoked specifically when {@link setValue} or {@link reset} is called.
+   *
+   * Used by field arrays to directly bypass subscribing to state.
    */
   valueListeners: ((newValues: TValues) => unknown)[] = []
 
+  /**
+   * Whether the form has been mounted to the DOM.
+   *
+   * The form control does not mount automatically, ensure that the implementation handles this.
+   */
   mounted = false
 
   /**
@@ -252,7 +286,7 @@ export class FormControl<
    */
   timeoutId = 0
 
-  constructor(options?: FormControlOptions<TValues, TContext>) {
+  constructor(options?: FormControlOptions<TValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
     const revalidateMode = options?.revalidateMode ?? defaultFormControlOptions.revalidateMode
 
@@ -293,6 +327,7 @@ export class FormControl<
       isValid: new Writable(false),
       touchedFields: new Writable({}),
       dirtyFields: new Writable({}),
+      validatingFields: new Writable({}),
       defaultValues: new Writable(defaultValues),
       errors: new Writable({}),
       values: new Writable(options?.shouldUnregister ? {} : cloneObject(defaultValues)),
@@ -306,11 +341,478 @@ export class FormControl<
     }
   }
 
-  //--------------------------------------------------------------------------------------
-  // Top-level getters.
-  //--------------------------------------------------------------------------------------
+  debounce = <T extends Function>(callback: T) => {
+    return (timeout: number) => {
+      clearTimeout(this.timeoutId)
+      this.timeoutId = setTimeout(callback, timeout)
+    }
+  }
 
-  getValues<T extends keyof TParsedForm>(fieldNames?: T | Readonly<T>[] | T[]) {
+  /**
+   * Lazily validate the form.
+   */
+  updateValid = async (force?: boolean, name?: string | string[]): Promise<void> => {
+    if (force || this.isTracking('isValid', toStringArray(name))) {
+      const result = await this.validate()
+
+      const fieldNames = toStringArray(name)
+
+      this.stores.isValid.set(result.isValid, fieldNames)
+    }
+  }
+
+  updateIsValidating = (names = Array.from(this.names.mount), isValidating?: boolean) => {
+    if (!(this.isTracking('isValidating') || this.isTracking('validatingFields'))) return
+
+    this.state.open()
+
+    this.stores.validatingFields.update((validatingFields) => {
+      names.filter(Boolean).forEach((name) => {
+        if (isValidating) {
+          set(validatingFields, name, isValidating)
+        } else {
+          unset(validatingFields, name)
+        }
+      })
+
+      return validatingFields
+    })
+
+    this.stores.isValidating.set(!isEmptyObject(this.state.value.validatingFields))
+
+    this.state.flush()
+  }
+
+  /**
+   * @todo: UPDATE FIELD ARRAY ?
+   */
+
+  /**
+   */
+  updateErrors = (name: string, error: FieldError) => {
+    this.stores.errors.update((errors) => {
+      set(errors, name, error)
+      return errors
+    })
+  }
+
+  setErrors = (errors: FieldErrors<TValues>) => {
+    this.state.open()
+
+    this.stores.errors.set(errors)
+    this.stores.isValid.set(false)
+
+    this.state.flush()
+  }
+
+  /**
+   * Touch a field.
+   */
+  updateTouchAndDirty = (name: PropertyKey, value?: unknown, options?: SetValueOptions): void => {
+    if (!options?.shouldTouch || options.shouldDirty) {
+      this.updateDirtyField(name, value)
+    }
+
+    if (options?.shouldTouch) {
+      this.updateTouchedField(name)
+    }
+  }
+
+  // shouldRenderByError
+
+  /**
+   * Validate the form.
+   */
+  validate = async (name?: PropertyKey | PropertyKey[] | readonly PropertyKey[] | Nullish) => {
+    const nameArray = toStringArray(name)
+
+    if (this.options.resolver == null) {
+      const validationResult = await this.executeBuiltInValidation(nameArray)
+
+      const isValid = validationResult.valid
+
+      return { validationResult, isValid }
+    }
+
+    const names = nameArray ?? Array.from(this.names.mount)
+
+    const fields = filterFields(names, this.fields)
+
+    const resolverOptions: ResolverOptions<TValues, TParsedForm> = {
+      names: names as (keyof TParsedForm)[],
+      fields,
+      criteriaMode: this.options.criteriaMode,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+    }
+
+    const resolverResult = await this.options.resolver(
+      this.stores.values.value,
+      this.options.context,
+      resolverOptions,
+    )
+
+    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+
+    return { resolverResult, isValid }
+  }
+
+  /**
+   * Natively validate the form control's values.
+   */
+  executeBuiltInValidation = async (
+    names?: string | string[],
+    shouldOnlyCheckValid?: boolean,
+  ): Promise<NativeValidationResult> => {
+    const fields = deepFilter(this.fields, names)
+
+    return nativeValidateFields(fields, this.stores.values.value, {
+      shouldOnlyCheckValid,
+      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
+      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
+      isFieldArrayRoot: (name) => this.names.array.has(name),
+    })
+  }
+
+  removeUnmounted = (): void => {
+    for (const name of this.names.unMount) {
+      const field: Field | undefined = get(this.fields, name)
+
+      if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
+        this.unregister(name as keyof TParsedForm)
+      }
+
+      this.names.unMount.delete(name)
+    }
+  }
+
+  /**
+   * Evaluate whether the current form values are different from the default values.
+   */
+  getDirty = (name?: PropertyKey, data?: any): boolean => {
+    if (name && data) {
+      this.stores.values.update((values) => {
+        set(values, name, data)
+        return values
+      })
+    }
+    return !deepEqual(this.getValues(), this.stores.defaultValues.value)
+  }
+
+  getWatch = (
+    name: string | string[],
+    defaultValue: unknown,
+    nameArray = toStringArray(name) ?? [],
+  ): any => {
+    const values = this.mounted
+      ? this.stores.values.value
+      : defaultValue == null
+      ? this.stores.defaultValues.value
+      : typeof name === 'string'
+      ? { [name]: defaultValue }
+      : defaultValue
+
+    if (nameArray.length > 1) {
+      return Object.values(deepFilter({ ...values }, nameArray)) ?? defaultValue
+    }
+
+    const rawResult = get({ ...values }, nameArray[0])
+    const result = rawResult === undefined ? defaultValue : rawResult
+    return Array.isArray(name) ? [result] : result
+  }
+
+  getFieldArray = <T>(name: string): Partial<T>[] => {
+    const values = this.getValues()
+
+    const result: string[] = get(
+      values,
+      name,
+      this.options.shouldUnregister ? get(this.state.value.defaultValues, name, []) : [],
+    )
+
+    return result.filter(Boolean) as any
+  }
+
+  /**
+   * Attempt to directly set a field's "value" property.
+   */
+  setFieldValue = (name: PropertyKey, value: unknown, options?: SetValueOptions) => {
+    const field: Field | undefined = get(this.fields, name)
+
+    const fieldReference = field?._f
+
+    let fieldValue = value
+
+    if (fieldReference != null) {
+      if (!fieldReference.disabled) {
+        set(this.stores.values.value, name, getFieldValueAs(value, fieldReference))
+      }
+
+      fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
+
+      const mutatedInputType = updateFieldReference(fieldReference, fieldValue)
+
+      // If custom input, notify values subscribers?
+      if (mutatedInputType === 'custom') {
+        this.stores.values.update((v) => ({ ...v }), true)
+      }
+    }
+
+    this.updateTouchAndDirty(name, fieldValue, options)
+
+    if (options?.shouldValidate) {
+      this.trigger(name as keyof TParsedForm)
+    }
+  }
+
+  /**
+   * Set multiple field values, i.e. for a field array.
+   */
+  setValues = (name: PropertyKey, value: any, options?: SetValueOptions) => {
+    this.state.open()
+
+    for (const fieldKey in value) {
+      const fieldValue = value[fieldKey]
+      const fieldName = `${name.toString()}.${fieldKey}`
+      const field: Field | undefined = get(this.fields, fieldName)
+
+      const isFieldArray = this.names.array.has(fieldName)
+      const missingReference = field && !field._f
+      const isDate = fieldValue instanceof Date
+
+      if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
+        this.setValues(fieldName, fieldValue, options)
+      } else {
+        this.setFieldValue(fieldName, fieldValue, options)
+      }
+    }
+
+    this.state.flush()
+  }
+
+  /**
+   * Set a specific field's value.
+   */
+  setValue = <T extends keyof TParsedForm>(
+    name: T,
+    value: TParsedForm[T],
+    options?: SetValueOptions,
+  ): void => {
+    const field: Field | undefined = get(this.fields, name)
+    const isFieldArray = this.names.array.has(name as string)
+    const clonedValue = cloneObject(value)
+
+    this.state.open()
+
+    this.stores.values.update((values) => {
+      set(values, name, clonedValue)
+      return values
+    })
+
+    if (isFieldArray) {
+      this.state.flush()
+      this.state.open()
+
+      if (this.isTracking('isDirty') || (this.isTracking('dirtyFields') && options?.shouldDirty)) {
+        const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
+        this.stores.dirtyFields.set(dirtyFields)
+
+        const isDirty = this.getDirty(name as string, clonedValue)
+        this.stores.isDirty.set(isDirty)
+
+        this.state.flush()
+        this.state.open()
+      }
+    } else {
+      if (field && !field._f && clonedValue != null) {
+        this.setValues(name, clonedValue, options)
+      } else {
+        this.setFieldValue(name, clonedValue, options)
+      }
+    }
+
+    this.stores.values.update((values) => ({ ...values }), [name])
+
+    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
+
+    this.state.flush()
+  }
+
+  /**
+   * Handle a change event.
+   */
+  async onChange(event: Event): Promise<void> {
+    const name = (event.target as HTMLInputElement)?.name
+
+    const field: Field | undefined = get(this.fields, name)
+
+    if (field == null) {
+      return
+    }
+
+    const fieldValue = getFieldEventValue(event, field)
+
+    this.state.open()
+
+    this.stores.values.update(
+      (values) => {
+        set(values, name, fieldValue)
+        return values
+      },
+      [name],
+    )
+
+    const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
+
+    if (isBlurEvent) {
+      field._f.onBlur?.(event)
+    } else {
+      field._f.onChange?.(event)
+    }
+
+    if (isBlurEvent) {
+      this.updateTouchedField(name)
+    } else {
+      this.updateDirtyField(name, fieldValue)
+    }
+
+    const nothingToValidate =
+      !hasValidation(field._f) &&
+      !this.options.resolver &&
+      !get(this.stores.errors.value, name) &&
+      !field._f.deps
+
+    const shouldSkipValidation =
+      nothingToValidate || this.shouldSkipValidationAfter(name, isBlurEvent)
+
+    if (shouldSkipValidation) {
+      this.updateValid()
+      this.state.flush()
+      return
+    }
+
+    if (!isBlurEvent) {
+      this.state.flush()
+      this.state.open()
+    }
+
+    this.state.transaction(() => {
+      this.stores.isValidating.set(true)
+    })
+
+    const result = await this.validate(name)
+
+    if (result.resolverResult) {
+      const previousError = lookupError(this.stores.errors.value, this.fields, name)
+
+      const currentError = lookupError(
+        result.resolverResult.errors ?? {},
+        this.fields,
+        previousError.name,
+      )
+
+      this.stores.errors.update((errors) => {
+        if (currentError.error) {
+          set(errors, currentError.name, currentError.error)
+        } else {
+          unset(errors, currentError.name)
+        }
+        return errors
+      })
+
+      if (field._f.deps) {
+        await this.trigger(field._f.deps as any)
+      } else {
+        this.stores.isValid.set(result.isValid, [name])
+      }
+    }
+
+    if (result.validationResult) {
+      const isFieldValueUpdated =
+        Number.isNaN(fieldValue) ||
+        (fieldValue === get(this.stores.values.value, name) ?? fieldValue)
+
+      if (!result.isValid) {
+        const error = result.validationResult.errors[name]
+
+        if (isFieldValueUpdated && !error) {
+          const fullResult = await this.validate()
+
+          if (fullResult.validationResult?.errors) {
+            this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
+          }
+        } else {
+          this.stores.errors.update(
+            (errors) => {
+              set(errors, name, error)
+              return errors
+            },
+            [name],
+          )
+        }
+      } else {
+        this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+      }
+
+      if (isFieldValueUpdated && field._f.deps) {
+        await this.trigger(field._f.deps as any)
+      } else {
+        this.stores.isValid.set(result.isValid, [name])
+      }
+    }
+
+    this.stores.isValidating.set(false, [name])
+
+    this.state.flush()
+  }
+
+  focusInput = (element: FieldElement, name: string) => {
+    if (get(this.state.value.errors, name) && element.focus) {
+      element.focus()
+      return 1
+    }
+    return
+  }
+  /**
+   * Trigger a field.
+   */
+  trigger = async <T extends keyof TParsedForm>(
+    name?: T | T[] | readonly T[],
+    options?: TriggerOptions,
+  ): Promise<boolean> => {
+    const fieldNames = toStringArray(name)
+
+    this.stores.isValidating.set(true, fieldNames)
+
+    this.state.open()
+
+    const result = await this.validate(name)
+
+    if (result.validationResult) {
+      this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+    }
+
+    if (result.resolverResult?.errors) {
+      this.mergeErrors(result.resolverResult.errors)
+    }
+
+    this.stores.isValid.set(result.isValid, fieldNames)
+
+    this.stores.isValidating.set(false, fieldNames)
+
+    if (options?.shouldFocus && !result.isValid) {
+      focusFieldBy(
+        this.fields,
+        (key?: string) => key && get(this.stores.errors.value, key),
+        name ? fieldNames : this.names.mount,
+      )
+    }
+
+    this.state.flush()
+
+    return result.isValid
+  }
+
+  getValues<T extends keyof TParsedForm>(fieldNames?: T | readonly T[] | T[]) {
     const values = {
       ...(this.mounted ? this.state.value.values : this.state.value.defaultValues),
     }
@@ -323,20 +825,490 @@ export class FormControl<
   }
 
   /**
-   * Evaluate whether the current form values are different from the default values.
+   * Get the current state of a field.
    */
-  getDirty(name?: string, data?: any): boolean {
-    if (name && data) {
-      this.stores.values.update((values) => {
-        set(values, name, data)
-        return values
+  getFieldState = (name: string, formState?: FormControlState<TValues>): FieldState => {
+    const errors = formState?.errors ?? this.state.value.errors
+    const dirtyFields = formState?.dirtyFields ?? this.state.value.dirtyFields
+    const validatingFields = formState?.validatingFields ?? this.state.value.validatingFields
+    const touchedFields = formState?.touchedFields ?? this.state.value.touchedFields
+
+    return {
+      invalid: Boolean(get(errors, name)),
+      isDirty: Boolean(get(dirtyFields, name)),
+      error: get(errors, name),
+      isValidating: Boolean(get(validatingFields, name)),
+      isTouched: Boolean(get(touchedFields, name)),
+    }
+  }
+
+  /**
+   * Clear errors on a field.
+   */
+  clearErrors = (name?: string | string[]): void => {
+    if (name == null) {
+      this.stores.errors.set({})
+      return
+    }
+
+    const nameArray = toStringArray(name)
+
+    this.stores.errors.update((errors) => {
+      nameArray?.forEach((name) => unset(this.stores.errors.value, name))
+      return errors
+    }, nameArray)
+  }
+
+  /**
+   * Set an error on a field.
+   */
+  setError = <T extends keyof TParsedForm>(
+    name: T | 'root' | `root.${string}`,
+    error?: ErrorOption,
+    options?: TriggerOptions,
+  ): void => {
+    this.state.open()
+
+    const field: Field | undefined = get(this.fields, name)
+
+    const ref = field?._f.ref
+
+    const fieldNames = toStringArray(name)
+
+    const currentError: FieldError | undefined = get(this.state.value.errors, name)
+
+    // Don't override existing error messages elsewhere in the object tree.
+    const { ref: _ref, message: _message, type: _type, ...currentErrorTree } = currentError ?? {}
+
+    this.stores.errors.update((errors) => {
+      set(errors, name, { currentErrorTree, ...error, ref })
+      return errors
+    }, fieldNames)
+
+    this.stores.isValid.set(false, fieldNames)
+
+    if (options?.shouldFocus) {
+      ref?.focus?.()
+    }
+
+    this.state.flush()
+  }
+
+  /**
+   * Makes {@link state} subscribe to all updates to values for all field names.
+   */
+  watch(): TValues
+
+  /**
+   * Subscribe to all updates to {@link state}.
+   */
+  watch(callback: (data: any, context: { name?: string; type?: string }) => void): () => void
+
+  /**
+   * Makes {@link state} subscribe to all updates to values for a specific field name.
+   */
+  watch<T extends keyof TParsedForm>(
+    name: T,
+    defaultValues?: DeepPartial<TValues>,
+    options?: WatchOptions<TValues>,
+  ): TParsedForm[T]
+
+  /**
+   * Makes {@link state} subscribe to all updates to values for multiple field names.
+   */
+  watch<T extends (keyof TParsedForm)[]>(
+    name: T,
+    defaultValues?: DeepPartial<TParsedForm>,
+    options?: WatchOptions<TValues>,
+  ): KeysToProperties<TParsedForm, T>
+
+  /**
+   * Implementation.
+   *
+   * Although this function can't re-run itself and isn't a subscription,
+   * this works in React because {@link state} will initialize the re-render,
+   * causing the component to re-run this function and evaluate new watched values.
+   */
+  watch(...args: any[]): any {
+    if (typeof args[0] === 'function') {
+      return this.state.subscribe((state, context) => {
+        return args[0](state, context ?? this.options.context)
       })
     }
-    return !deepEqual(this.getValues(), this.stores.defaultValues.value)
+
+    const [name, defaultValue, options] = args
+
+    const nameArray = Array.isArray(name) ? name : name ? [name] : []
+
+    if (nameArray.length > 0) {
+      this.state.track('values', nameArray, options)
+    } else {
+      this.state.keys?.add('values')
+    }
+
+    return this.getWatch(name, defaultValue, nameArray)
+  }
+
+  /**
+   * Unregister a field from the form control.
+   */
+  unregister = <T extends keyof TParsedForm>(
+    name?: T | T[] | readonly T[],
+    options?: UnregisterOptions,
+  ): void => {
+    this.state.open()
+
+    const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
+
+    for (const fieldName of fieldNames) {
+      this.names.mount.delete(fieldName)
+      this.names.array.delete(fieldName)
+
+      if (!options?.keepValue) {
+        unset(this.fields, fieldName)
+
+        this.stores.values.update((values) => {
+          unset(values, fieldName)
+          return values
+        }, fieldNames)
+      }
+
+      if (!options?.keepError) {
+        this.stores.errors.update((errors) => {
+          unset(errors, fieldName)
+          return errors
+        }, fieldNames)
+      }
+
+      if (!options?.keepDirty) {
+        this.stores.dirtyFields.update((dirtyFields) => {
+          unset(dirtyFields, fieldName)
+          return dirtyFields
+        }, fieldNames)
+      }
+
+      if (!options?.keepTouched) {
+        this.stores.touchedFields.update((touchedFields) => {
+          unset(touchedFields, fieldName)
+          return touchedFields
+        }, fieldNames)
+      }
+
+      if (!options?.keepIsValidating) {
+        this.stores.validatingFields.update((validatingFields) => {
+          unset(validatingFields, fieldName)
+          return validatingFields
+        }, fieldNames)
+      }
+
+      if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
+        this.stores.defaultValues.update((defaultValues) => {
+          unset(defaultValues, fieldName)
+          return defaultValues
+        }, fieldNames)
+      }
+    }
+
+    if (!options?.keepIsValid) {
+      this.updateValid(undefined, fieldNames)
+    }
+
+    if (!options?.keepDirty) {
+      const isDirty = this.getDirty()
+      this.stores.isDirty.set(isDirty, fieldNames)
+    }
+
+    // Flush the buffer and force an update.
+    this.state.flush(true)
+  }
+
+  /**
+   * Update a field's disabled status.
+   */
+  updateDisabledField(options: UpdateDisabledFieldOptions): void {
+    if (typeof options.disabled !== 'boolean') {
+      return
+    }
+
+    const value = options.disabled
+      ? undefined
+      : get(this.stores.values.value, options.name) ??
+        getFieldValue(options.field?._f ?? get(options.fields, options.name)._f)
+
+    this.stores.values.update(
+      (values) => {
+        set(values, options.name, value)
+        return values
+      },
+      [options.name],
+    )
+
+    this.updateDirtyField(options.name, value)
+  }
+
+  focusError = () => {
+    if (this.options.shouldFocusError) {
+      iterateFieldsByAction(this.fields, this.focusInput, this.names.mount)
+    }
+  }
+
+  disableForm = (disabled?: boolean) => {
+    if (typeof disabled !== 'boolean') return
+
+    this.stores.disabled.set(disabled)
+
+    const disableInput = (element: FieldElement, name: string) => {
+      const field: Field | undefined = get(this.fields, name)
+
+      if (field == null) return
+
+      element.disabled = field._f.disabled || disabled
+
+      if (Array.isArray(field._f.refs)) {
+        field._f.refs.forEach((inputRef) => {
+          inputRef.disabled = field._f.disabled || disabled
+        })
+      }
+    }
+
+    iterateFieldsByAction(this.fields, disableInput, 0, false)
+  }
+
+  /**
+   * Handle a submit event.
+   *
+   * @returns A submission event handler.
+   */
+  handleSubmit = (
+    onValid?: SubmitHandler<TValues, TTransformedValues>,
+    onInvalid?: SubmitErrorHandler<TValues>,
+  ): HandlerCallback => {
+    return async (event) => {
+      event?.preventDefault?.()
+
+      this.state.open()
+
+      this.stores.isSubmitting.set(true)
+
+      const { isValid, resolverResult, validationResult } = await this.validate()
+
+      const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
+
+      this.stores.errors.update((errors) => {
+        unset(errors, 'root')
+        return errors
+      }, true)
+
+      this.mergeErrors(errors)
+
+      if (isValid) {
+        const data = structuredClone(resolverResult?.values ?? this.stores.values.value) as any
+        await onValid?.(data, event)
+      } else {
+        await onInvalid?.(errors, event)
+        this.focusError()
+        setTimeout(this.focusError.bind(this))
+      }
+
+      this.stores.isSubmitted.set(true, true)
+      this.stores.isSubmitting.set(false, true)
+      this.stores.isSubmitSuccessful.set(isEmptyObject(this.stores.errors.value), true)
+      this.stores.submitCount.update((count) => count + 1, true)
+
+      this.state.flush()
+    }
+  }
+
+  resetField = <T extends keyof TParsedForm>(
+    name: T,
+    options?: ResetFieldOptions<TParsedForm[T]>,
+  ) => {
+    const field: Field | undefined = get(this.fields, name)
+
+    if (field == null) return
+
+    this.state.open()
+
+    if (options?.defaultValue == null) {
+      const defaultFieldValue = get(this.state.value.defaultValues, name)
+      const clonedDefaultFieldValue = cloneObject(defaultFieldValue)
+      this.setValue(name, clonedDefaultFieldValue)
+    } else {
+      this.setValue(name, options?.defaultValue)
+      this.stores.defaultValues.update((defaultValues) => {
+        const clonedDefaultValue = cloneObject(options.defaultValue)
+        set(defaultValues, name, clonedDefaultValue)
+        return defaultValues
+      })
+    }
+
+    if (!options?.keepTouched) {
+      this.stores.touchedFields.update((touchedFields) => {
+        unset(touchedFields, name)
+        return touchedFields
+      })
+    }
+
+    if (!options?.keepDirty) {
+      this.stores.dirtyFields.update((dirtyFields) => {
+        unset(dirtyFields, name)
+        return dirtyFields
+      })
+
+      const isDirty = options?.defaultValue
+        ? this.getDirty(name, cloneObject(get(this.state.value.defaultValues, name)))
+        : this.getDirty()
+
+      this.stores.isDirty.set(isDirty)
+    }
+
+    if (!options?.keepError) {
+      this.stores.errors.update((errors) => {
+        unset(errors, name)
+        return errors
+      })
+
+      if (this.isTracking('isValid')) {
+        this.updateValid()
+      }
+    }
+
+    this.state.flush()
+  }
+
+  /**
+   * Reset the form control.
+   */
+  reset = (formValues?: Defaults<TValues>, options?: ResetOptions): void => {
+    this.state.open()
+
+    const updatedValues = formValues ? cloneObject(formValues) : this.stores.defaultValues.value
+    const cloneUpdatedValues = cloneObject(updatedValues)
+    const isEmptyResetValues = isEmptyObject(formValues)
+    const values = isEmptyResetValues ? this.stores.defaultValues.value : cloneUpdatedValues
+
+    if (!options?.keepDefaultValues) {
+      this.resolveDefaultValues(formValues)
+    }
+
+    if (!options?.keepValues) {
+      if (options?.keepDirtyValues) {
+        this.mergeDirtyValues(values)
+      } else {
+        if (isBrowser && formValues == null) {
+          this.resetFormElement()
+        }
+        this.fields = {}
+      }
+
+      const newValues = this.options.shouldUnregister
+        ? options?.keepDefaultValues
+          ? cloneObject(this.stores.defaultValues.value)
+          : {}
+        : cloneObject(values)
+
+      // Passing in `true` should do a flush automatically?
+      this.stores.values.set(newValues as TValues, true)
+
+      // this.state.flush()
+      // this.state.open()
+    }
+
+    this.names = {
+      mount: new Set(),
+      unMount: new Set(),
+      array: new Set(),
+    }
+
+    this.mounted =
+      !this.state.value.isValid ||
+      Boolean(options?.keepIsValid) ||
+      Boolean(options?.keepDirtyValues)
+
+    // What is _state.watch, and do I need to update it?
+    // _state.watch = Boolean(this.options.shouldUnregister)
+
+    if (!options?.keepSubmitCount) {
+      this.stores.submitCount.set(0)
+    }
+
+    if (isEmptyResetValues) {
+      this.stores.isDirty.set(false)
+    } else if (!options?.keepDirty) {
+      const isDirty = Boolean(
+        options?.keepDefaultValues && !deepEqual(formValues, this.state.value.defaultValues),
+      )
+      this.stores.isDirty.set(isDirty)
+    }
+
+    if (!options?.keepIsSubmitted) {
+      this.stores.isSubmitted.set(false)
+    }
+
+    if (isEmptyResetValues) {
+      this.stores.dirtyFields.set({})
+    } else if (options?.keepDirtyValues) {
+      if (options?.keepDefaultValues && this.state.value.values) {
+        const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
+        this.stores.dirtyFields.set(dirtyFields)
+      }
+    } else if (options?.keepDefaultValues && formValues) {
+      const dirtyFields = getDirtyFields(this.state.value.defaultValues, formValues)
+      this.stores.dirtyFields.set(dirtyFields)
+    } else if (!options?.keepDirty) {
+      this.stores.dirtyFields.set({})
+    }
+
+    if (!options?.keepTouched) {
+      this.stores.touchedFields.set({})
+    }
+
+    if (!options?.keepErrors) {
+      this.stores.errors.set({})
+    }
+
+    if (!options?.keepIsSubmitSuccessful) {
+      this.stores.isSubmitSuccessful.set(false)
+    }
+
+    this.stores.isSubmitting.set(false)
+
+    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
+
+    this.state.flush(true)
+  }
+
+  /**
+   * Focus on an element registered in the form.
+   */
+  setFocus = <T extends keyof TParsedForm>(name: T, options?: SetFocusOptions) => {
+    const field: Field | undefined = get(this.fields, name)
+
+    if (field?._f == null) return
+
+    const fieldRef = field?._f.refs ? field?._f.refs[0] : field?._f.ref
+
+    if (fieldRef == null) return
+
+    fieldRef.focus?.()
+
+    if (options?.shouldSelect && 'select' in fieldRef) {
+      fieldRef?.select?.()
+    }
+  }
+
+  /**
+   * @returns void | Promise<void> depending on the defaultValues provided.
+   */
+  resetDefaultValues = () => {
+    if (this.options.defaultValues != null) {
+      this.reset(this.options.defaultValues)
+      this.stores.isLoading.set(false)
+    }
   }
 
   //--------------------------------------------------------------------------------------
-  // Setup.
+  // Custom methods (not part of react-hook-form).
   //--------------------------------------------------------------------------------------
 
   /**
@@ -389,379 +1361,29 @@ export class FormControl<
     this.state.flush()
   }
 
-  //--------------------------------------------------------------------------------------
-  // Interactions.
-  //--------------------------------------------------------------------------------------
-
   /**
-   * Focus on an element registered in the form.
+   * Whether the form control is currently tracking a specific state property.
+   *
+   * {@link state} does not trigger updates for untracked properties.
    */
-  setFocus<T extends keyof TParsedForm>(name: T, options?: SetFocusOptions) {
-    const field: Field | undefined = get(this.fields, name)
-
-    if (field?._f == null) return
-
-    const fieldRef = field?._f.refs ? field?._f.refs[0] : field?._f.ref
-
-    if (fieldRef == null) return
-
-    fieldRef.focus?.()
-
-    if (options?.shouldSelect && 'select' in fieldRef) {
-      fieldRef?.select?.()
-    }
+  isTracking(key: keyof typeof this.stores, name?: PropertyKey[]): boolean {
+    return (
+      this.state.isTracking(key, name) ||
+      this.state.childIsTracking(key, name) ||
+      this.stores[key].subscribers.size > 1
+    )
   }
 
   /**
-   * Reset the form control.
+   * Whether the form control should skip validation after a specific event.
    */
-  reset(
-    formValues?: Defaults<TValues> extends TValues ? TValues : Defaults<TValues>,
-    options?: ResetOptions,
-  ): void {
-    this.state.open()
-
-    const updatedValues = formValues ? cloneObject(formValues) : this.stores.defaultValues.value
-
-    const isEmptyResetValues = isEmptyObject(formValues)
-
-    const cloneUpdatedValues = cloneObject(updatedValues)
-
-    const values = isEmptyResetValues ? this.stores.defaultValues.value : cloneUpdatedValues
-
-    if (!options?.keepDefaultValues) {
-      this.stores.defaultValues.set(updatedValues as DeepPartial<TValues>)
-    }
-
-    if (!options?.keepValues) {
-      if (options?.keepDirtyValues) {
-        this.setDirtyValues(values)
-      } else {
-        if (isBrowser && formValues == null) {
-          this.resetFormElement()
-        }
-        this.fields = {}
-      }
-
-      const newValues = this.options.shouldUnregister
-        ? options?.keepDefaultValues
-          ? cloneObject(this.stores.defaultValues.value)
-          : {}
-        : cloneObject(values)
-
-      this.stores.values.set(newValues as TValues, true)
-    }
-
-    this.names = {
-      mount: new Set(),
-      unMount: new Set(),
-      array: new Set(),
-    }
-
-    this.mounted =
-      !this.state.value.isValid ||
-      Boolean(options?.keepIsValid) ||
-      Boolean(options?.keepDirtyValues)
-
-    if (!options?.keepSubmitCount) {
-      this.stores.submitCount.set(0)
-    }
-
-    // What is _state.watch, and do I need to update it?
-
-    if (!options?.keepDirty) {
-      const isDirty = isEmptyResetValues
-        ? false
-        : options?.keepDirty
-        ? undefined
-        : Boolean(
-            options?.keepDefaultValues &&
-              !deepEqual(this.state.value.values, this.state.value.defaultValues),
-          )
-
-      if (isDirty != null) {
-        this.stores.isDirty.set(isDirty)
-      }
-    }
-
-    if (!options?.keepIsSubmitted) {
-      this.stores.isSubmitted.set(false)
-    }
-
-    if (options?.keepDirtyValues) {
-      if (options?.keepDefaultValues && this.state.value.values) {
-        const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
-        this.stores.dirtyFields.set(dirtyFields)
-      }
-    } else if (options?.keepDefaultValues && this.state.value.values) {
-      const dirtyFields = getDirtyFields(this.state.value.defaultValues, formValues)
-      this.stores.dirtyFields.set(dirtyFields)
-    } else {
-      this.stores.dirtyFields.set({})
-    }
-
-    if (!options?.keepTouched) {
-      this.stores.touchedFields.set({})
-    }
-
-    if (!options?.keepErrors) {
-      this.stores.errors.set({})
-    }
-
-    if (!options?.keepIsSubmitSuccessful) {
-      this.stores.isSubmitSuccessful.set(false)
-    }
-
-    this.stores.isSubmitting.set(false)
-
-    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
-
-    this.state.flush(true)
-  }
-
-  /**
-   * Resets the nearest {@link HTMLFormElement}.
-   */
-  resetFormElement(): void {
-    for (const name of this.names.mount) {
-      const field: Field | undefined = get(this.fields, name)
-
-      if (field?._f == null) continue
-
-      const fieldReference = Array.isArray(field._f.refs) ? field._f.refs[0] : field._f.ref
-
-      if (!isHTMLElement(fieldReference)) continue
-
-      const form = fieldReference.closest('form')
-
-      if (form) {
-        form.reset()
-        break
-      }
-    }
-  }
-
-  /**
-   * Updates the form's values based on its dirty fields.
-   */
-  setDirtyValues(values: unknown): void {
-    for (const fieldName of this.names.mount) {
-      if (get(this.stores.dirtyFields.value, fieldName)) {
-        set(values, fieldName, get(this.stores.values.value, fieldName))
-      } else {
-        this.setValue(fieldName as any, get(values, fieldName))
-      }
-    }
-  }
-
-  /**
-   * Set a specific field's value.
-   */
-  setValue<T extends keyof TParsedForm>(
-    name: Extract<T, string>,
-    value: TParsedForm[T],
-    options?: SetValueOptions,
-  ): void {
-    const field: Field | undefined = get(this.fields, name)
-    const isFieldArray = this.names.array.has(name)
-    const clonedValue = cloneObject(value)
-
-    this.state.open()
-
-    this.stores.values.update((values) => {
-      set(values, name, clonedValue)
-      return values
-    })
-
-    if (isFieldArray) {
-      this.state.flush()
-      this.state.open()
-
-      if (this.isTracking('isDirty') || (this.isTracking('dirtyFields') && options?.shouldDirty)) {
-        const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
-        this.stores.dirtyFields.set(dirtyFields)
-
-        const isDirty = this.getDirty(name, clonedValue)
-        this.stores.isDirty.set(isDirty)
-
-        this.state.flush()
-        this.state.open()
-      }
-    } else {
-      if (field && !field._f && clonedValue != null) {
-        this.setValues(name, clonedValue, { quiet: true, ...options })
-      } else {
-        this.setFieldValue(name, clonedValue, options)
-      }
-    }
-
-    this.stores.values.update((values) => ({ ...values }), [name])
-
-    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
-
-    this.state.flush()
-  }
-
-  /**
-   * Set multiple field values, i.e. for a field array.
-   */
-  setValues(name: string, value: any, options?: SetValueOptions) {
-    this.state.open()
-
-    for (const fieldKey in value) {
-      const fieldValue = value[fieldKey]
-      const fieldName = `${name}.${fieldKey}`
-      const field: Field | undefined = get(this.fields, fieldName)
-
-      const isFieldArray = this.names.array.has(fieldName)
-      const missingReference = field && !field._f
-      const isDate = fieldValue instanceof Date
-
-      if ((isFieldArray || !isPrimitive(fieldValue) || missingReference) && !isDate) {
-        this.setValues(fieldName, fieldValue, options)
-      } else {
-        this.setFieldValue(fieldName, fieldValue, options)
-      }
-    }
-
-    this.state.flush()
-  }
-
-  /**
-   * Attempt to directly set a field's "value" property.
-   */
-  setFieldValue(name: string, value: unknown, options?: SetValueOptions) {
-    const field: Field | undefined = get(this.fields, name)
-
-    const fieldReference = field?._f
-
-    if (fieldReference == null) {
-      this.touch(name, value, options)
-      return
-    }
-
-    const fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
-
-    updateFieldReference(fieldReference, fieldValue)
-
-    if (!fieldReference.disabled) {
-      set(this.stores.values.value, name, getFieldValueAs(value, fieldReference))
-    }
-
-    this.touch(name, fieldValue, options)
-
-    if (options?.shouldValidate) {
-      this.trigger(name as any, { shouldSetErrors: true })
-    }
-  }
-
-  /**
-   * Touch a field.
-   */
-  touch(name: string, value?: unknown, options?: SetValueOptions): void {
-    if (!options?.shouldTouch || options.shouldDirty) {
-      this.updateDirtyField(name, value)
-    }
-
-    if (options?.shouldTouch) {
-      this.updateTouchedField(name)
-    }
-  }
-
-  /**
-   * Update a field's "touched" property.
-   */
-  updateTouchedField(name: string): boolean {
-    const previousIsTouched = get(this.stores.touchedFields.value, name)
-
-    if (!previousIsTouched) {
-      this.stores.touchedFields.update(
-        (touchedFields) => {
-          set(touchedFields, name, true)
-          return touchedFields
-        },
-        [name],
-      )
-    }
-
-    return !previousIsTouched
-  }
-
-  /**
-   * Update a field's dirty status.
-   */
-  updateDirtyField(name: string, value?: unknown): boolean {
-    const defaultValue = get(this.stores.defaultValues.value, name)
-
-    const currentIsDirty = !deepEqual(defaultValue, value)
-
-    const previousIsDirty = Boolean(get(this.stores.dirtyFields.value, name))
-
-    if (previousIsDirty && !currentIsDirty) {
-      this.stores.dirtyFields.update(
-        (dirtyFields) => {
-          unset(dirtyFields, name)
-          return dirtyFields
-        },
-        [name],
-      )
-    }
-
-    if (!previousIsDirty && currentIsDirty) {
-      this.stores.dirtyFields.update(
-        (dirtyFields) => {
-          set(dirtyFields, name, true)
-          return dirtyFields
-        },
-        [name],
-      )
-    }
-
-    if (this.isTracking('isDirty', [name])) {
-      this.stores.isDirty.set(this.getDirty(), [name])
-    }
-
-    return currentIsDirty !== previousIsDirty
-  }
-
-  /**
-   * Trigger a field.
-   */
-  async trigger<T extends keyof TParsedForm>(
-    name?: T | T[] | readonly T[],
-    options?: TriggerOptions,
-  ): Promise<boolean> {
-    const fieldNames = toStringArray(name)
-
-    this.stores.isValidating.set(true, fieldNames)
-
-    this.state.open()
-
-    const result = await this.validate(name as any)
-
-    if (result.validationResult) {
-      this.mergeErrors(result.validationResult.errors, result.validationResult.names)
-    }
-
-    if (result.resolverResult?.errors) {
-      this.mergeErrors(result.resolverResult.errors)
-    }
-
-    this.stores.isValid.set(result.isValid, fieldNames)
-
-    this.stores.isValidating.set(false, fieldNames)
-
-    if (options?.shouldFocus && !result.isValid) {
-      focusFieldBy(
-        this.fields,
-        (key?: string) => key && get(this.stores.errors.value, key),
-        name ? fieldNames : this.names.mount,
-      )
-    }
-
-    this.state.flush()
-
-    return result.isValid
+  shouldSkipValidationAfter(name: string, isBlurEvent?: boolean): boolean {
+    return shouldSkipValidationAfter(
+      isBlurEvent ? 'blur' : 'change',
+      get(this.stores.touchedFields.value, name),
+      this.stores.isSubmitted.value,
+      this.options.submissionValidationMode,
+    )
   }
 
   /**
@@ -798,79 +1420,187 @@ export class FormControl<
   }
 
   /**
-   * Validate the form.
-   */
-  async validate(name?: string | string[] | Nullish) {
-    const nameArray = toStringArray(name)
-
-    if (this.options.resolver == null) {
-      const validationResult = await this.nativeValidate(nameArray)
-
-      const isValid = validationResult.valid
-
-      return { validationResult, isValid }
-    }
-
-    const names = nameArray ?? Array.from(this.names.mount)
-
-    const fields = filterFields(names, this.fields)
-
-    const resolverResult = await this.options.resolver(
-      this.stores.values.value,
-      this.options.context,
-      {
-        names: names as any,
-        fields,
-        criteriaMode: this.options.criteriaMode,
-        shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-      },
-    )
-
-    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
-
-    return { resolverResult, isValid }
-  }
-
-  /**
-   * Natively validate the form control's values.
-   */
-  async nativeValidate(
-    names?: string | string[],
-    shouldOnlyCheckValid?: boolean,
-  ): Promise<NativeValidationResult> {
-    const fields = deepFilter(this.fields, names)
-
-    const validationResult = await nativeValidateFields(fields, this.stores.values.value, {
-      shouldOnlyCheckValid,
-      shouldUseNativeValidation: this.options.shouldUseNativeValidation,
-      shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
-      isFieldArrayRoot: (name) => this.names.array.has(name),
-    })
-
-    return validationResult
-  }
-
-  //--------------------------------------------------------------------------------------
-  // Utilities.
-  //--------------------------------------------------------------------------------------
-
-  /**
-   * Whether the form control is currently tracking a specific state property.
+   * Update a field's dirty status.
    *
-   * {@link state} does not trigger updates for untracked properties.
+   * @return Whether the field's dirty status changed.
    */
-  isTracking(key: keyof typeof this.stores, name?: string[]): boolean {
-    return (
-      this.state.isTracking(key, name) ||
-      this.state.childIsTracking(key, name) ||
-      this.stores[key].subscribers.size > 1
-    )
+  updateDirtyField(name: PropertyKey, value?: unknown): boolean {
+    const field: Field | undefined = get(this.fields, name)
+
+    const isDisabled = Boolean(field?._f.disabled)
+
+    const defaultValue = get(this.stores.defaultValues.value, name)
+
+    const currentIsDirty = !deepEqual(defaultValue, value)
+
+    const previousIsDirty = Boolean(!isDisabled && get(this.stores.dirtyFields.value, name))
+
+    if (this.isTracking('isDirty', [name])) {
+      this.stores.isDirty.set(this.getDirty(), [name])
+    }
+
+    if (previousIsDirty && !currentIsDirty) {
+      this.stores.dirtyFields.update(
+        (dirtyFields) => {
+          unset(dirtyFields, name)
+          return dirtyFields
+        },
+        [name],
+      )
+    }
+
+    if (!previousIsDirty && currentIsDirty) {
+      this.stores.dirtyFields.update(
+        (dirtyFields) => {
+          set(dirtyFields, name, true)
+          return dirtyFields
+        },
+        [name],
+      )
+    }
+
+    return currentIsDirty !== previousIsDirty
   }
 
-  debounce<T extends Function>(callback: T) {
-    return (timeout: number) => {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = setTimeout(callback, timeout)
+  /**
+   * Update a field's "touched" property.
+   */
+  updateTouchedField(name: PropertyKey): boolean {
+    const previousIsTouched = get(this.stores.touchedFields.value, name)
+
+    if (!previousIsTouched) {
+      this.stores.touchedFields.update(
+        (touchedFields) => {
+          set(touchedFields, name, true)
+          return touchedFields
+        },
+        [name],
+      )
     }
+
+    return !previousIsTouched
+  }
+
+  /**
+   * For every mounted field:
+   * If it's dirty, update the provided values with the field's value from the form control.
+   * Else, update the form control's value from the provided values.
+   */
+  mergeDirtyValues(values: unknown): void {
+    for (const fieldName of this.names.mount) {
+      const fieldIsDirty = get(this.stores.dirtyFields.value, fieldName)
+
+      if (fieldIsDirty) {
+        const dirtyFieldValue = get(this.stores.values.value, fieldName)
+        set(values, fieldName, dirtyFieldValue)
+      } else {
+        const updatedFieldValue = get(values, fieldName)
+        this.setValue(fieldName as keyof TParsedForm, updatedFieldValue)
+      }
+    }
+  }
+
+  /**
+   * Resets the nearest {@link HTMLFormElement}.
+   */
+  resetFormElement(): void {
+    for (const name of this.names.mount) {
+      const field: Field | undefined = get(this.fields, name)
+
+      if (field?._f == null) {
+        continue
+      }
+
+      const fieldReference = Array.isArray(field._f.refs) ? field._f.refs[0] : field._f.ref
+
+      if (!isHTMLElement(fieldReference)) {
+        continue
+      }
+
+      const form = fieldReference.closest('form')
+
+      if (form) {
+        form.reset()
+        break
+      }
+    }
+  }
+
+  /**
+   * Register a field with the form control.
+   */
+  registerField<T extends keyof TParsedForm>(
+    name: Extract<T, string>,
+    options?: RegisterOptions<TValues, T>,
+  ) {
+    this.state.open()
+
+    const existingField: Field | undefined = get(this.fields, name)
+
+    const field: Field = {
+      ...existingField,
+      _f: {
+        ...(existingField?._f ?? { ref: { name } }),
+        name,
+        mount: true,
+        ...options,
+      } as any,
+    }
+
+    set(this.fields, name, field)
+
+    this.names.mount.add(name)
+
+    if (existingField) {
+      this.updateDisabledField({ field, disabled: options?.disabled, name })
+    } else {
+      const defaultValue =
+        get(this.stores.values.value, name) ??
+        options?.value ??
+        get(this.stores.defaultValues.value, name)
+
+      this.stores.values.update((values) => {
+        set(values, name, defaultValue)
+        return values
+      })
+    }
+
+    this.state.close()
+
+    return field
+  }
+  /**
+   * Register an element with the form control.
+   */
+  registerElement<T extends keyof TParsedForm>(
+    name: Extract<T, string>,
+    element: HTMLInputElement,
+    options?: RegisterOptions<TValues, T>,
+  ): void {
+    this.state.open()
+
+    const field = this.registerField(name, options)
+
+    const fieldNames = toStringArray(name)
+
+    const newField = mergeElementWithField(name, field, element)
+
+    const defaultValue =
+      get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
+
+    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+      this.stores.values.update((values) => {
+        set(values, name, getFieldValue(newField._f))
+        return values
+      })
+    } else {
+      updateFieldReference(newField._f, defaultValue)
+    }
+
+    set(this.fields, name, newField)
+
+    this.updateValid(undefined, fieldNames)
+
+    this.state.close()
   }
 }

@@ -246,14 +246,14 @@ export class Batchable<
   /**
    * Whether any child is tracking the given key and context.
    */
-  childIsTracking(key: string, name?: string[] | boolean): boolean {
+  childIsTracking(key: string, name?: PropertyKey[] | boolean): boolean {
     return Array.from(this.children).some((child) => child.isTracking(key, name))
   }
 
   /**
    * Whether the given key and context are being tracked by this store.
    */
-  isTracking(key: string, name?: string | string[] | boolean): boolean {
+  isTracking(key: string, name?: PropertyKey | PropertyKey[] | boolean): boolean {
     if (this.all === true) {
       return true
     }
@@ -272,7 +272,7 @@ export class Batchable<
 
     const nameAndContextAreTracked = nameArray.some((n) => {
       return this.contexts[key]?.some((trackedContext) => {
-        return trackedContext.exact
+        return trackedContext.exact || typeof n === 'number' || typeof n === 'symbol'
           ? n === trackedContext.value
           : n.includes(trackedContext.value) || trackedContext.value.includes(n)
       })
