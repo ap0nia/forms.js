@@ -25,7 +25,7 @@ export const dummyRef = {} as HTMLInputElement
  * @returns The merged field.
  */
 export function mergeElementWithField(
-  name: string,
+  name: PropertyKey,
   field: Field | undefined,
   element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
   defaultValues?: unknown,
@@ -49,7 +49,7 @@ export function mergeElementWithField(
     return {
       _f: {
         ...field?._f,
-        name,
+        name: name.toString(),
         ref,
       },
     }
@@ -57,9 +57,9 @@ export function mergeElementWithField(
 
   const newField = {
     _f: {
-      name,
+      name: name.toString(),
       ref: {
-        name,
+        name: name.toString(),
         type: ref.type,
       },
       refs: [...refs.filter(elementIsLive), ref],

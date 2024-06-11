@@ -103,7 +103,7 @@ export type ResolvedFormControlOptions<TValues, TContext, TParsedForm> = FormCon
 }
 
 export type UpdateDisabledFieldOptions = {
-  name: string
+  name: PropertyKey
   disabled?: boolean
   field?: Field
   fields?: FieldRecord
@@ -1566,10 +1566,7 @@ export class FormControl<
   /**
    * Register a field with the form control.
    */
-  registerField<T extends keyof TParsedForm>(
-    name: Extract<T, string>,
-    options?: RegisterOptions<TValues, T>,
-  ) {
+  registerField<T extends keyof TParsedForm>(name: T, options?: RegisterOptions<TValues, T>) {
     this.state.open()
 
     const existingField: Field | undefined = get(this.fields, name)
@@ -1586,7 +1583,7 @@ export class FormControl<
 
     set(this.fields, name, field)
 
-    this.names.mount.add(name)
+    this.names.mount.add(name.toString())
 
     if (existingField) {
       this.updateDisabledField({ field, disabled: options?.disabled, name })
@@ -1610,7 +1607,7 @@ export class FormControl<
    * Register an element with the form control.
    */
   registerElement<T extends keyof TParsedForm>(
-    name: Extract<T, string>,
+    name: T,
     element: HTMLFieldElement,
     options?: RegisterOptions<TValues, T>,
   ): void {

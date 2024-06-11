@@ -35,7 +35,7 @@ export type TrackedContext = {
   /**
    * The value of the context. e.g. the name of a form field that changed.
    */
-  value: string
+  value: PropertyKey
 
   /**
    * Whether the context must match exactly or if it can be a subset of the context or vice versa.
@@ -272,7 +272,9 @@ export class Batchable<
 
     const nameAndContextAreTracked = nameArray.some((n) => {
       return this.contexts[key]?.some((trackedContext) => {
-        return trackedContext.exact || typeof n === 'number' || typeof n === 'symbol'
+        return trackedContext.exact ||
+          typeof n !== 'string' ||
+          typeof trackedContext.value !== 'string'
           ? n === trackedContext.value
           : n.includes(trackedContext.value) || trackedContext.value.includes(n)
       })
@@ -298,7 +300,11 @@ export class Batchable<
   /**
    * Track a specific context of a store.
    */
-  track(key: keyof TStores, name?: string | string[], options?: Partial<TrackedContext>): void {
+  track(
+    key: keyof TStores,
+    name?: PropertyKey | PropertyKey[],
+    options?: Partial<TrackedContext>,
+  ): void {
     if (name == null) {
       this.keys.add(key)
       return
@@ -330,7 +336,7 @@ export class Batchable<
    * Track a specific context of all stores.
    */
   createTrackingProxy(
-    name?: string | string[],
+    name?: PropertyKey | PropertyKey[],
     options?: Partial<TrackedContext>,
     filter = true,
   ): TValues {
