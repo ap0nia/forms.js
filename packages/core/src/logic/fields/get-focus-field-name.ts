@@ -16,12 +16,13 @@ export type ShouldFocusOptions = {
 }
 
 export function getFocusFieldName(
-  name: string,
+  name: PropertyKey,
   index: number,
   options: ShouldFocusOptions = {},
 ): string {
   return options.shouldFocus || options.shouldFocus == null
-    ? options.focusName || `${name}.${options.focusIndex == null ? index : options.focusIndex}.`
+    ? options.focusName ||
+        `${name.toString()}.${options.focusIndex == null ? index : options.focusIndex}.`
     : ''
 }
 
