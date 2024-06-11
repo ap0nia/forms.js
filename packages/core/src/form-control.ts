@@ -4,12 +4,10 @@ import { deepEqual } from '@forms.js/common/utils/deep-equal'
 import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { get, getMultiple } from '@forms.js/common/utils/get'
 import { isBrowser } from '@forms.js/common/utils/is-browser'
-// import { isObject } from '@forms.js/common/utils/is-object'
 import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Nullish } from '@forms.js/common/utils/null'
 import { set } from '@forms.js/common/utils/set'
-// import { stringToPath } from '@forms.js/common/utils/string-to-path'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { unset } from '@forms.js/common/utils/unset'
 
@@ -28,7 +26,6 @@ import { getDirtyFields } from './logic/fields/get-dirty-fields'
 import { getFieldEventValue } from './logic/fields/get-field-event-value'
 import { getFieldValue, getFieldValueAs } from './logic/fields/get-field-value'
 import { hasValidation } from './logic/fields/has-validation'
-// import { iterateFieldsByAction } from './logic/fields/iterate-fields-by-action'
 import iterateFieldsByAction from './logic/fields/iterate-fields-by-action'
 import { updateFieldReference } from './logic/fields/update-field-reference'
 import { elementIsLive } from './logic/html/element-is-live'
@@ -39,7 +36,7 @@ import { nativeValidateFields } from './logic/validation/native-validation'
 import type { NativeValidationResult } from './logic/validation/native-validation/types'
 import { shouldSkipValidationAfter } from './logic/validation/should-skip-validation-after'
 import type { ErrorOption, FieldError, FieldErrorRecord, FieldErrors } from './types/errors'
-import type { /* HTMLFieldElement ,*/ Field, FieldElement, FieldRecord } from './types/fields'
+import type { HTMLFieldElement, Field, FieldElement, FieldRecord } from './types/fields'
 import type { ParseForm } from './types/parse'
 import type { RegisterOptions } from './types/register'
 import type { Resolver, ResolverOptions } from './types/resolver'
@@ -47,7 +44,6 @@ import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults, ValueOrDeepPartial } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
-// import type { LiteralUnion } from './utils/literal-union'
 
 export type FormControlState<T = Record<string, any>> = {
   isDirty: boolean
@@ -284,7 +280,9 @@ export class FormControl<
   /**
    * Internal timeoutId for debouncing.
    */
-  timeoutId = 0
+  timer = 0
+
+  delayErrorCallback?: (wait: number) => void
 
   constructor(options?: FormControlOptions<TValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
@@ -343,8 +341,8 @@ export class FormControl<
 
   debounce = <T extends Function>(callback: T) => {
     return (timeout: number) => {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = setTimeout(callback, timeout)
+      clearTimeout(this.timer)
+      this.timer = setTimeout(callback, timeout)
     }
   }
 
@@ -407,18 +405,68 @@ export class FormControl<
 
   /**
    * Touch a field.
+   *
+   * @returns Whether the field was modified.
    */
-  updateTouchAndDirty = (name: PropertyKey, value?: unknown, options?: SetValueOptions): void => {
+  updateTouchAndDirty = (
+    name: PropertyKey,
+    value?: unknown,
+    options?: SetValueOptions,
+  ): boolean => {
+    let result = false
+
     if (!options?.shouldTouch || options.shouldDirty) {
-      this.updateDirtyField(name, value)
+      result ||= this.updateDirtyField(name, value)
     }
 
     if (options?.shouldTouch) {
-      this.updateTouchedField(name)
+      result ||= this.updateTouchedField(name)
     }
+
+    return result
   }
 
-  // shouldRenderByError
+  shouldRenderByError = (
+    name: string,
+    isValid?: boolean,
+    error?: FieldError,
+    modified?: boolean,
+  ) => {
+    this.state.open()
+
+    const previousFieldError = get(this.state.value.errors, name)
+
+    const shouldUpdateValid =
+      this.isTracking('isValid') &&
+      typeof isValid === 'boolean' &&
+      this.state.value.isValid !== isValid
+
+    if (this.options.delayError && error) {
+      this.delayErrorCallback = this.debounce(() => this.updateErrors(name, error))
+      this.delayErrorCallback(this.options.delayError)
+    } else {
+      clearTimeout(this.timer)
+      this.delayErrorCallback = undefined
+      this.stores.errors.update((errors) => {
+        if (error) {
+          set(errors, name, error)
+        } else {
+          unset(errors, name)
+        }
+        return errors
+      })
+    }
+
+    const hasError = error ? !deepEqual(previousFieldError, error) : previousFieldError
+
+    if (hasError || !modified || shouldUpdateValid) {
+      if (typeof isValid === 'boolean') {
+        this.stores.isValid.set(isValid)
+      }
+    }
+
+    this.state.flush()
+  }
 
   /**
    * Validate the form.
@@ -1574,7 +1622,7 @@ export class FormControl<
    */
   registerElement<T extends keyof TParsedForm>(
     name: Extract<T, string>,
-    element: HTMLInputElement,
+    element: HTMLFieldElement,
     options?: RegisterOptions<TValues, T>,
   ): void {
     this.state.open()
