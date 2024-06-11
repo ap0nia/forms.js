@@ -349,7 +349,7 @@ export class FormControl<
   /**
    * Lazily validate the form.
    */
-  updateValid = async (force?: boolean, name?: string | string[]): Promise<void> => {
+  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
     if (force || this.isTracking('isValid', toStringArray(name))) {
       const result = await this.validate()
 
@@ -359,7 +359,7 @@ export class FormControl<
     }
   }
 
-  updateIsValidating = (names = Array.from(this.names.mount), isValidating?: boolean) => {
+  updateIsValidating(names = Array.from(this.names.mount), isValidating?: boolean) {
     if (!(this.isTracking('isValidating') || this.isTracking('validatingFields'))) return
 
     this.state.open()
@@ -387,14 +387,14 @@ export class FormControl<
 
   /**
    */
-  updateErrors = (name: string, error: FieldError) => {
+  updateErrors(name: string, error: FieldError) {
     this.stores.errors.update((errors) => {
       set(errors, name, error)
       return errors
     })
   }
 
-  setErrors = (errors: FieldErrors<TValues>) => {
+  setErrors(errors: FieldErrors<TValues>) {
     this.state.open()
 
     this.stores.errors.set(errors)
@@ -408,11 +408,7 @@ export class FormControl<
    *
    * @returns Whether the field was modified.
    */
-  updateTouchAndDirty = (
-    name: PropertyKey,
-    value?: unknown,
-    options?: SetValueOptions,
-  ): boolean => {
+  updateTouchAndDirty(name: PropertyKey, value?: unknown, options?: SetValueOptions): boolean {
     let result = false
 
     if (!options?.shouldTouch || options.shouldDirty) {
@@ -426,12 +422,7 @@ export class FormControl<
     return result
   }
 
-  shouldRenderByError = (
-    name: string,
-    isValid?: boolean,
-    error?: FieldError,
-    modified?: boolean,
-  ) => {
+  shouldRenderByError(name: string, isValid?: boolean, error?: FieldError, modified?: boolean) {
     this.state.open()
 
     const previousFieldError = get(this.state.value.errors, name)
@@ -471,7 +462,7 @@ export class FormControl<
   /**
    * Validate the form.
    */
-  validate = async (name?: PropertyKey | PropertyKey[] | readonly PropertyKey[] | Nullish) => {
+  async validate(name?: PropertyKey | PropertyKey[] | readonly PropertyKey[] | Nullish) {
     const nameArray = toStringArray(name)
 
     if (this.options.resolver == null) {
@@ -507,10 +498,10 @@ export class FormControl<
   /**
    * Natively validate the form control's values.
    */
-  executeBuiltInValidation = async (
+  async executeBuiltInValidation(
     names?: string | string[],
     shouldOnlyCheckValid?: boolean,
-  ): Promise<NativeValidationResult> => {
+  ): Promise<NativeValidationResult> {
     const fields = deepFilter(this.fields, names)
 
     return nativeValidateFields(fields, this.stores.values.value, {
@@ -521,7 +512,7 @@ export class FormControl<
     })
   }
 
-  removeUnmounted = (): void => {
+  removeUnmounted(): void {
     for (const name of this.names.unMount) {
       const field: Field | undefined = get(this.fields, name)
 
@@ -536,7 +527,7 @@ export class FormControl<
   /**
    * Evaluate whether the current form values are different from the default values.
    */
-  getDirty = (name?: PropertyKey, data?: any): boolean => {
+  getDirty(name?: PropertyKey, data?: any): boolean {
     if (name && data) {
       this.stores.values.update((values) => {
         set(values, name, data)
@@ -546,11 +537,11 @@ export class FormControl<
     return !deepEqual(this.getValues(), this.stores.defaultValues.value)
   }
 
-  getWatch = (
+  getWatch(
     name: string | string[],
     defaultValue: unknown,
     nameArray = toStringArray(name) ?? [],
-  ): any => {
+  ): any {
     const values = this.mounted
       ? this.stores.values.value
       : defaultValue == null
@@ -568,7 +559,7 @@ export class FormControl<
     return Array.isArray(name) ? [result] : result
   }
 
-  getFieldArray = <T>(name: string): Partial<T>[] => {
+  getFieldArray<T>(name: string): Partial<T>[] {
     const values = this.getValues()
 
     const result: string[] = get(
@@ -583,7 +574,7 @@ export class FormControl<
   /**
    * Attempt to directly set a field's "value" property.
    */
-  setFieldValue = (name: PropertyKey, value: unknown, options?: SetValueOptions) => {
+  setFieldValue(name: PropertyKey, value: unknown, options?: SetValueOptions) {
     const field: Field | undefined = get(this.fields, name)
 
     const fieldReference = field?._f
@@ -615,7 +606,7 @@ export class FormControl<
   /**
    * Set multiple field values, i.e. for a field array.
    */
-  setValues = (name: PropertyKey, value: any, options?: SetValueOptions) => {
+  setValues(name: PropertyKey, value: any, options?: SetValueOptions) {
     this.state.open()
 
     for (const fieldKey in value) {
@@ -640,11 +631,11 @@ export class FormControl<
   /**
    * Set a specific field's value.
    */
-  setValue = <T extends keyof TParsedForm>(
+  setValue<T extends keyof TParsedForm>(
     name: T,
     value: TParsedForm[T],
     options?: SetValueOptions,
-  ): void => {
+  ): void {
     const field: Field | undefined = get(this.fields, name)
     const isFieldArray = this.names.array.has(name as string)
     const clonedValue = cloneObject(value)
@@ -820,13 +811,14 @@ export class FormControl<
     }
     return
   }
+
   /**
    * Trigger a field.
    */
-  trigger = async <T extends keyof TParsedForm>(
+  async trigger<T extends keyof TParsedForm>(
     name?: T | T[] | readonly T[],
     options?: TriggerOptions,
-  ): Promise<boolean> => {
+  ): Promise<boolean> {
     const fieldNames = toStringArray(name)
 
     this.stores.isValidating.set(true, fieldNames)
@@ -875,7 +867,7 @@ export class FormControl<
   /**
    * Get the current state of a field.
    */
-  getFieldState = (name: string, formState?: FormControlState<TValues>): FieldState => {
+  getFieldState(name: string, formState?: FormControlState<TValues>): FieldState {
     const errors = formState?.errors ?? this.state.value.errors
     const dirtyFields = formState?.dirtyFields ?? this.state.value.dirtyFields
     const validatingFields = formState?.validatingFields ?? this.state.value.validatingFields
@@ -893,7 +885,7 @@ export class FormControl<
   /**
    * Clear errors on a field.
    */
-  clearErrors = (name?: string | string[]): void => {
+  clearErrors(name?: string | string[]): void {
     if (name == null) {
       this.stores.errors.set({})
       return
@@ -910,11 +902,11 @@ export class FormControl<
   /**
    * Set an error on a field.
    */
-  setError = <T extends keyof TParsedForm>(
+  setError<T extends keyof TParsedForm>(
     name: T | 'root' | `root.${string}`,
     error?: ErrorOption,
     options?: TriggerOptions,
-  ): void => {
+  ): void {
     this.state.open()
 
     const field: Field | undefined = get(this.fields, name)
@@ -1000,10 +992,10 @@ export class FormControl<
   /**
    * Unregister a field from the form control.
    */
-  unregister = <T extends keyof TParsedForm>(
+  unregister<T extends keyof TParsedForm>(
     name?: T | T[] | readonly T[],
     options?: UnregisterOptions,
-  ): void => {
+  ): void {
     this.state.open()
 
     const fieldNames = toStringArray(name) ?? Array.from(this.names.mount)
@@ -1100,7 +1092,7 @@ export class FormControl<
     }
   }
 
-  disableForm = (disabled?: boolean) => {
+  disableForm(disabled?: boolean) {
     if (typeof disabled !== 'boolean') return
 
     this.stores.disabled.set(disabled)
@@ -1127,10 +1119,10 @@ export class FormControl<
    *
    * @returns A submission event handler.
    */
-  handleSubmit = (
+  handleSubmit(
     onValid?: SubmitHandler<TValues, TTransformedValues>,
     onInvalid?: SubmitErrorHandler<TValues>,
-  ): HandlerCallback => {
+  ): HandlerCallback {
     return async (event) => {
       event?.preventDefault?.()
 
@@ -1167,10 +1159,7 @@ export class FormControl<
     }
   }
 
-  resetField = <T extends keyof TParsedForm>(
-    name: T,
-    options?: ResetFieldOptions<TParsedForm[T]>,
-  ) => {
+  resetField<T extends keyof TParsedForm>(name: T, options?: ResetFieldOptions<TParsedForm[T]>) {
     const field: Field | undefined = get(this.fields, name)
 
     if (field == null) return
@@ -1227,7 +1216,7 @@ export class FormControl<
   /**
    * Reset the form control.
    */
-  reset = (formValues?: Defaults<TValues>, options?: ResetOptions): void => {
+  reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
     this.state.open()
 
     const updatedValues = formValues ? cloneObject(formValues) : this.stores.defaultValues.value
@@ -1329,7 +1318,7 @@ export class FormControl<
   /**
    * Focus on an element registered in the form.
    */
-  setFocus = <T extends keyof TParsedForm>(name: T, options?: SetFocusOptions) => {
+  setFocus<T extends keyof TParsedForm>(name: T, options?: SetFocusOptions) {
     const field: Field | undefined = get(this.fields, name)
 
     if (field?._f == null) return
@@ -1348,7 +1337,7 @@ export class FormControl<
   /**
    * @returns void | Promise<void> depending on the defaultValues provided.
    */
-  resetDefaultValues = () => {
+  resetDefaultValues() {
     if (this.options.defaultValues != null) {
       this.reset(this.options.defaultValues)
       this.stores.isLoading.set(false)
