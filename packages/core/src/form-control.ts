@@ -5,6 +5,7 @@ import { deepFilter } from '@forms.js/common/utils/deep-filter'
 import { get, getMultiple } from '@forms.js/common/utils/get'
 import { isBrowser } from '@forms.js/common/utils/is-browser'
 import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
+import { isObject } from '@forms.js/common/utils/is-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
 import type { Nullish } from '@forms.js/common/utils/null'
 import { set } from '@forms.js/common/utils/set'
@@ -1636,5 +1637,57 @@ export class FormControl<
     this.updateValid(undefined, fieldNames)
 
     this.state.close()
+  }
+
+  handleDisabled(disabled?: boolean): void {
+    for (const key of Object.keys(this.fields)) {
+      const field = get(this.fields, key)
+
+      if (field == null) {
+        continue
+      }
+
+      const { _f, ...currentField } = field
+
+      if (_f) {
+        if (_f.refs && _f.refs[0]) {
+          this.handleDisabledAction(_f.refs[0], key, disabled)
+        } else if (_f.ref) {
+          this.handleDisabledAction(_f.ref, key, disabled)
+        } else {
+          iterateFieldsByAction(currentField, (ref, name) =>
+            this.handleDisabledAction(ref, name, disabled),
+          )
+        }
+      } else if (isObject(currentField)) {
+        iterateFieldsByAction(currentField, (ref, name) =>
+          this.handleDisabledAction(ref, name, disabled),
+        )
+      }
+    }
+  }
+
+  handleDisabledAction(ref: FieldElement, name: string, disabled?: boolean): void {
+    const inputRef = ref as HTMLInputElement
+
+    const currentField = get(this.fields, name)
+
+    const requiredDisabledState =
+      disabled || (typeof currentField?._f.disabled === 'boolean' && currentField._f.disabled)
+
+    inputRef.disabled = requiredDisabledState
+  }
+
+  mount(): void {
+    this.mounted = true
+  }
+
+  unmount(): void {
+    this.cleanup()
+    this.mounted = false
+  }
+
+  cleanup(): void {
+    this.removeUnmounted()
   }
 }
