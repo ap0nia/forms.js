@@ -6,7 +6,6 @@ import '@forms.js/core/utils/union-to-intersection'
 import { get } from '@forms.js/common/utils/get'
 import { set } from '@forms.js/common/utils/set'
 import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@forms.js/core'
-
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'
@@ -55,12 +54,15 @@ export function useFieldArray<
     fieldArray.current.mount()
 
     if (props.rules) {
-      control.register(name as any, props.rules)
+      control.register(name, props.rules)
     }
   })
 
   useEffect(() => {
-    const currentFieldArrayValue = get(control.state.value.values, name)
+    /**
+     * Read the current value from `stores`, not from `state`!
+     */
+    const currentFieldArrayValue = get(control.stores.values.value, name)
 
     if (!currentFieldArrayValue) {
       control.stores.values.update(

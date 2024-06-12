@@ -38,8 +38,10 @@ export function useForm<
   TValues extends Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
->(props?: ControlOptions<TValues, TContext>): UseFormReturn<TValues, TContext, TTransformedValues> {
-  const { disabled, errors, shouldUnregister, values } = props ?? {}
+>(
+  props: ControlOptions<TValues, TContext> = {},
+): UseFormReturn<TValues, TContext, TTransformedValues> {
+  const { disabled, errors, shouldUnregister, values } = props
 
   const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>(new Control(props))
 

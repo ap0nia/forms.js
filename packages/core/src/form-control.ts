@@ -213,15 +213,15 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions#cannot_be_used_as_methods
  */
 export class FormControl<
-  TValues extends Record<string, any> = Record<string, any>,
+  TFieldValues extends Record<string, any> = Record<string, any>,
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
+  TParsedForm extends ParseForm<TFieldValues> = ParseForm<TFieldValues>,
 > {
   /**
    * Internally resolved options that control the form control's behavior.
    */
-  options: ResolvedFormControlOptions<TValues, TContext, TParsedForm>
+  options: ResolvedFormControlOptions<TFieldValues, TContext, TParsedForm>
 
   /**
    * State represented as a record of writable stores.
@@ -230,7 +230,9 @@ export class FormControl<
    *
    * This is ideal for directly subscribing to specific state.
    */
-  stores: { [K in keyof FormControlState<TValues>]: Writable<FormControlState<TValues>[K]> }
+  stores: {
+    [K in keyof FormControlState<TFieldValues>]: Writable<FormControlState<TFieldValues>[K]>
+  }
 
   /**
    * Buffers updates to {@link stores} until it's flushed.
@@ -271,7 +273,7 @@ export class FormControl<
    *
    * Used by field arrays to directly bypass subscribing to state.
    */
-  valueListeners: ((newValues: TValues) => unknown)[] = []
+  valueListeners: ((newValues: TFieldValues) => unknown)[] = []
 
   /**
    * Whether the form has been mounted to the DOM.
@@ -287,7 +289,7 @@ export class FormControl<
 
   delayErrorCallback?: (wait: number) => void
 
-  constructor(options?: FormControlOptions<TValues, TContext, TParsedForm>) {
+  constructor(options?: FormControlOptions<TFieldValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
     const revalidateMode = options?.reValidateMode ?? defaultFormControlOptions.reValidateMode
 
@@ -397,7 +399,7 @@ export class FormControl<
     })
   }
 
-  setErrors(errors: FieldErrors<TValues>) {
+  setErrors(errors: FieldErrors<TFieldValues>) {
     this.state.open()
 
     this.stores.errors.set(errors)
@@ -480,7 +482,7 @@ export class FormControl<
 
     const fields = filterFields(names, this.fields)
 
-    const resolverOptions: ResolverOptions<TValues, TParsedForm> = {
+    const resolverOptions: ResolverOptions<TFieldValues, TParsedForm> = {
       names: names as (keyof TParsedForm)[],
       fields,
       criteriaMode: this.options.criteriaMode,
@@ -542,7 +544,7 @@ export class FormControl<
 
   getWatch(
     name?: string | string[],
-    defaultValue?: DeepPartial<TValues>,
+    defaultValue?: DeepPartial<TFieldValues>,
     // isMounted?: boolean,
     isGlobal?: boolean,
   ): any {
@@ -913,7 +915,7 @@ export class FormControl<
   /**
    * Get the current state of a field.
    */
-  getFieldState(name: string, formState?: FormControlState<TValues>): FieldState {
+  getFieldState(name: string, formState?: FormControlState<TFieldValues>): FieldState {
     const errors = formState?.errors ?? this.state.value.errors
     const dirtyFields = formState?.dirtyFields ?? this.state.value.dirtyFields
     const validatingFields = formState?.validatingFields ?? this.state.value.validatingFields
@@ -957,7 +959,7 @@ export class FormControl<
 
     const field: Field | undefined = get(this.fields, name)
 
-    const ref = field?._f.ref
+    const ref = field?._f?.ref
 
     const fieldNames = toStringArray(name)
 
@@ -983,7 +985,7 @@ export class FormControl<
   /**
    * Makes {@link state} subscribe to all updates to values for all field names.
    */
-  watch(): TValues
+  watch(): TFieldValues
 
   /**
    * Subscribe to all updates to {@link state}.
@@ -995,7 +997,7 @@ export class FormControl<
    */
   watch<T extends keyof TParsedForm>(
     name: T,
-    defaultValues?: DeepPartial<TValues>, // options?: WatchOptions<TValues>,
+    defaultValues?: DeepPartial<TFieldValues>, // options?: WatchOptions<TValues>,
   ): TParsedForm[T]
 
   /**
@@ -1156,8 +1158,8 @@ export class FormControl<
    * @returns A submission event handler.
    */
   handleSubmit(
-    onValid?: SubmitHandler<TValues, TTransformedValues>,
-    onInvalid?: SubmitErrorHandler<TValues>,
+    onValid?: SubmitHandler<TFieldValues, TTransformedValues>,
+    onInvalid?: SubmitErrorHandler<TFieldValues>,
   ): HandlerCallback {
     return async (event) => {
       event?.preventDefault?.()
@@ -1179,7 +1181,7 @@ export class FormControl<
       this.mergeErrors(errors)
 
       if (isValid) {
-        const data = structuredClone(resolverResult?.values ?? this.stores.values.value) as any
+        const data = cloneObject(resolverResult?.values ?? this.stores.values.value) as any
         await onValid?.(data, event)
       } else {
         await onInvalid?.(errors, event)
@@ -1253,7 +1255,7 @@ export class FormControl<
   /**
    * Reset the form control.
    */
-  reset(formValues?: Defaults<TValues>, options?: ResetOptions): void {
+  reset(formValues?: Defaults<TFieldValues>, options?: ResetOptions): void {
     this.state.open()
 
     const updatedValues = formValues ? cloneObject(formValues) : this.stores.defaultValues.value
@@ -1282,7 +1284,7 @@ export class FormControl<
         : cloneObject(values)
 
       // Passing in `true` should do a flush automatically?
-      this.stores.values.set(newValues as TValues, true)
+      this.stores.values.set(newValues as TFieldValues, true)
 
       // this.state.flush()
       // this.state.open()
@@ -1375,7 +1377,7 @@ export class FormControl<
    * @returns void | Promise<void> depending on the defaultValues provided.
    */
   resetDefaultValues() {
-    if (this.options.defaultValues != null) {
+    if (typeof this.options.defaultValues === 'function') {
       this.reset(this.options.defaultValues)
     }
   }
@@ -1389,7 +1391,10 @@ export class FormControl<
    *
    * Can be synchronous or asynchronous depending on the default values provided.
    */
-  resolveDefaultValues(defaults?: Defaults<TValues>, resetValues?: boolean): void | Promise<void> {
+  resolveDefaultValues(
+    defaults?: Defaults<TFieldValues>,
+    resetValues?: boolean,
+  ): void | Promise<void> {
     const resolvingDefaultValues = typeof defaults === 'function' ? defaults() : defaults
 
     if (resolvingDefaultValues == null) {
@@ -1403,22 +1408,21 @@ export class FormControl<
     this.stores.isLoading.set(isPromise)
 
     if (isPromise) {
-      resolvingDefaultValues.then((resolvedDefaultValues = {} as any) => {
+      return resolvingDefaultValues.then((resolvedDefaultValues = {} as any) => {
         this.finalizeResolveDefaultValues(resolvedDefaultValues, resetValues)
       })
-      return
     }
 
     const resolvedDefaultValues = resolvingDefaultValues ?? {}
 
-    this.finalizeResolveDefaultValues(resolvedDefaultValues, resetValues)
+    return this.finalizeResolveDefaultValues(resolvedDefaultValues, resetValues)
   }
 
   /**
    * Always finalize the resolution of default values synchronously.
    */
   finalizeResolveDefaultValues(
-    resolvedDefaultValues: ValueOrDeepPartial<TValues>,
+    resolvedDefaultValues: ValueOrDeepPartial<TFieldValues>,
     resetValues?: boolean,
   ) {
     this.state.open()
@@ -1464,7 +1468,7 @@ export class FormControl<
   /**
    * Merge provided errors the form state's existing errors.
    */
-  mergeErrors(errors: FieldErrors<TValues> | FieldErrorRecord, names?: string[]): void {
+  mergeErrors(errors: FieldErrors<TFieldValues> | FieldErrorRecord, names?: string[]): void {
     const namesToMerge = names ?? Object.keys(errors)
 
     this.stores.errors.update((currentErrors) => {
@@ -1604,9 +1608,9 @@ export class FormControl<
   /**
    * Register a field with the form control.
    */
-  registerField<T extends keyof TParsedForm>(
+  registerField<T extends keyof ParseForm<TFieldValues>>(
     name: T,
-    options?: RegisterOptions<TValues, TParsedForm, T>,
+    options?: RegisterOptions<TFieldValues, T>,
   ) {
     this.state.open()
 
@@ -1648,10 +1652,10 @@ export class FormControl<
   /**
    * Register an element with the form control.
    */
-  registerElement<T extends keyof TParsedForm>(
+  registerElement<T extends keyof ParseForm<TFieldValues>>(
     name: T,
     element: HTMLFieldElement,
-    options?: RegisterOptions<TValues, TParsedForm, T>,
+    options?: RegisterOptions<TFieldValues, T>,
   ): void {
     this.state.open()
 
@@ -1735,9 +1739,9 @@ export class FormControl<
   /**
    * Unregister an element from the form control.
    */
-  unregisterField<T extends keyof TParsedForm>(
+  unregisterField<T extends keyof ParseForm<TFieldValues>>(
     name: LiteralUnion<T, string>,
-    options?: RegisterOptions<TValues, TParsedForm, T>,
+    options?: RegisterOptions<TFieldValues, T>,
   ): void {
     const field: Field | undefined = get(this.fields, name)
 

@@ -41,8 +41,8 @@ export type FieldArrayOptions<
 
   rules?: {
     validate?:
-    | Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>
-    | Record<string, Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>>
+      | Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>
+      | Record<string, Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>>
   } & Pick<RegisterOptions<TFieldValues>, 'maxLength' | 'minLength' | 'required'>
 
   generateId?: () => string
@@ -103,7 +103,7 @@ export class FieldArray<
   idGenerator: () => string
 
   constructor(public options: FieldArrayOptions<TFieldValues, TFieldArrayName, TKeyName>) {
-    this.name = options.name as any
+    this.name = options.name
 
     this.control = options.control
 
@@ -131,6 +131,7 @@ export class FieldArray<
 
       this.control.valueListeners.push(() => {
         const newFields: any = Array.from(this.getFieldArray()).map((v, i) => {
+          // NOTE: do NOT nullish coalesce this. Force generate a new number...
           this.ids[i] = this.idGenerator()
           return { ...(v ?? undefined), id: this.ids[i] }
         })
@@ -573,7 +574,7 @@ export class FieldArray<
 
       const errorChanged = existingError
         ? (!error && existingError.type) ||
-        (error && (existingError.type !== error.type || existingError.message !== error.message))
+          (error && (existingError.type !== error.type || existingError.message !== error.message))
         : error && error.type
 
       if (errorChanged) {
