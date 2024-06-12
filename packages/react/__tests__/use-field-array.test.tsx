@@ -15,7 +15,7 @@ import { Controller } from '../src/controller'
 import { FormProvider } from '../src/form-provider'
 import type { UseFormRegister } from '../src/types'
 import { useFieldArray } from '../src/use-field-array'
-import { useForm } from '../src/use-form'
+import { useForm, type UseFormReturn } from '../src/use-form'
 import { useFormState } from '../src/use-form-state'
 
 let i = 0
@@ -1376,7 +1376,7 @@ describe('useFieldArray', () => {
       }: {
         arrayIndex: number
         register: UseFormReturn<FormValues>['register']
-        arrayField: Partial<FieldValues>
+        arrayField: Partial<Record<string, any>>
         control: Control<FormValues>
       }) => {
         const { fields, append, remove } = useFieldArray<FormValues>({
@@ -3488,7 +3488,7 @@ describe('useFieldArray', () => {
     }: {
       arrayIndex: number
       register: UseFormReturn<FormValues>['register']
-      arrayField: Partial<FieldValues>
+      arrayField: Partial<Record<string, any>>
       control: Control<FormValues>
     }) => {
       const { fields, append } = useFieldArray({
@@ -3840,6 +3840,7 @@ describe('useFieldArray', () => {
         const [toggle, setToggle] = useState(false)
         const { control, watch } = methods
         array = watch('array')
+        control.register
 
         return (
           <>

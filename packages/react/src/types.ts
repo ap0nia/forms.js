@@ -1,11 +1,10 @@
 import type { ParseForm, RegisterOptions } from '@forms.js/core'
 
-export type UseFormRegister<
-  TValues extends Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-> = <TFieldName extends keyof TParsedForm = keyof TParsedForm>(
+export type UseFormRegister<TValues extends Record<string, any>> = <
+  TFieldName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+>(
   name: TFieldName,
-  options?: RegisterOptions<TValues, TParsedForm, TFieldName>,
+  options?: RegisterOptions<TValues, TFieldName>,
 ) => UseFormRegisterReturn<TFieldName>
 
 export type UseFormRegisterReturn<TFieldName extends PropertyKey = string> = {

@@ -1,25 +1,14 @@
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
-import type { ParseForm } from '@forms.js/core'
+import type { FormControlState } from '@forms.js/core'
 import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
 
 import { Control, type ControlOptions } from './control'
 
-export type UseFormReturn<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TControl extends Control<TValues, TContext, TTransformedValues, TParsedForm> = Control<
-    TValues,
-    TContext,
-    TTransformedValues,
-    TParsedForm
-  >,
-> = {
-  control: TControl
-  formState: TControl['state']['value']
+export type UseFormReturn<TFieldValues extends Record<string, any>, TContext = any> = {
+  control: Control<TFieldValues, TContext>
+  formState: FormControlState<TFieldValues>
 } & Pick<
-  TControl,
+  Control<TFieldValues, TContext>,
   | 'register'
   | 'handleSubmit'
   | 'unregister'
@@ -34,20 +23,16 @@ export type UseFormReturn<
   | 'trigger'
 >
 
-export function useForm<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
->(
+export function useForm<TValues extends Record<string, any>, TContext = any>(
   props: ControlOptions<TValues, TContext> = {},
-): UseFormReturn<TValues, TContext, TTransformedValues> {
+): UseFormReturn<TValues, TContext> {
   const { disabled, errors, shouldUnregister, values } = props
 
-  const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>(new Control(props))
+  const formControlRef = useRef<Control<TValues, TContext>>(new Control(props))
 
   const control = formControlRef.current
 
-  const form = useRef<UseFormReturn<TValues, TContext, TTransformedValues>>({
+  const form = useRef<UseFormReturn<TValues, TContext>>({
     control: control,
     register: control.register.bind(control),
     handleSubmit: control.handleSubmit.bind(control),
@@ -77,7 +62,7 @@ export function useForm<
 
   useEffect(() => {
     if (values && !deepEqual(values, control.state.value.values)) {
-      control.reset(values, control.options.resetOptions)
+      control.reset(values as any, control.options.resetOptions)
     } else {
       control.resetDefaultValues()
     }

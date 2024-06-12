@@ -19,16 +19,14 @@ export type { FormControlOptions as ControlOptions }
 export class Control<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-> extends FormControl<TValues, TContext, TTransformedValues, TParsedForm> {
-  constructor(options?: FormControlOptions<TValues, TContext, TParsedForm>) {
+> extends FormControl<TValues, TContext> {
+  constructor(options?: FormControlOptions<TValues, TContext>) {
     super(options)
   }
 
-  register<T extends keyof TParsedForm>(
+  register<T extends keyof ParseForm<TValues>>(
     name: T,
-    options?: RegisterOptions<TValues, TParsedForm, T>,
+    options?: RegisterOptions<TValues, T>,
   ): ReactRegisterProps<T> {
     this.registerField(name, options)
 
