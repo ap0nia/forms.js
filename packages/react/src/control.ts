@@ -36,8 +36,10 @@ export class Control<
       return await this.onChange(event.nativeEvent)
     }
 
+    const disabled = options?.disabled ?? this.options.disabled
+
     const props = {
-      ...(typeof options?.disabled === 'boolean' && { disabled: options.disabled }),
+      ...(typeof disabled === 'boolean' && { disabled }),
       ...(this.options.progressive && {
         required: !!options?.required,
         min: getRuleValue(options?.min),

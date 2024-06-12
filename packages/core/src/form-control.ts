@@ -754,8 +754,22 @@ export class FormControl<
       this.state.open()
     }
 
+    const nameArray = toStringArray(name)
+
     this.state.transaction(() => {
-      this.stores.isValidating.set(true)
+      this.stores.validatingFields.update(
+        (validatingFields) => {
+          nameArray?.forEach((name) => {
+            set(validatingFields, name, true)
+          })
+          return validatingFields
+        },
+        [name],
+      )
+
+      const isValidating = !isEmptyObject(this.state.value.validatingFields)
+
+      this.stores.isValidating.set(isValidating, [name])
     })
 
     const result = await this.validate(name)
@@ -819,7 +833,19 @@ export class FormControl<
       }
     }
 
-    this.stores.isValidating.set(false, [name])
+    this.stores.validatingFields.update(
+      (validatingFields) => {
+        nameArray?.forEach((name) => {
+          unset(validatingFields, name)
+        })
+        return validatingFields
+      },
+      [name],
+    )
+
+    const isValidating = !isEmptyObject(this.state.value.validatingFields)
+
+    this.stores.isValidating.set(isValidating, [name])
 
     this.state.flush()
   }
@@ -1351,7 +1377,6 @@ export class FormControl<
   resetDefaultValues() {
     if (this.options.defaultValues != null) {
       this.reset(this.options.defaultValues)
-      this.stores.isLoading.set(false)
     }
   }
 
@@ -1403,7 +1428,7 @@ export class FormControl<
     this.stores.defaultValues.set(defaultValues)
 
     if (resetValues) {
-      this.stores.values.set(defaultValues)
+      this.stores.values.set(defaultValues, true)
     }
 
     this.stores.isLoading.set(false)
@@ -1602,7 +1627,8 @@ export class FormControl<
     this.names.mount.add(name.toString())
 
     if (existingField) {
-      this.updateDisabledField({ field, disabled: options?.disabled, name })
+      const disabled = options?.disabled ?? this.options.disabled
+      this.updateDisabledField({ field, disabled, name })
     } else {
       const defaultValue =
         get(this.stores.values.value, name) ??

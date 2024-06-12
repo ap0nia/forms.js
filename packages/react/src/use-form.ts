@@ -88,8 +88,8 @@ export function useForm<
   }, [errors, control])
 
   useEffect(() => {
-    control.handleDisabled(disabled)
-  }, [disabled])
+    control.disableForm(disabled)
+  }, [control, disabled])
 
   useEffect(() => {
     if (!control.mounted) {

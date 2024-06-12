@@ -346,7 +346,7 @@ export class Batchable<
       Object.defineProperty(proxy, key, {
         get: () => {
           this.track(key, name, options)
-          return filter
+          return filter && typeof this.writable.value[key] === 'object'
             ? deepFilter(this.writable.value[key as keyof TValues], name)
             : this.writable.value[key as keyof TValues]
         },

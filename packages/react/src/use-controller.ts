@@ -106,12 +106,9 @@ export function useController<
         },
       },
     ) as ControllerFieldState
-  }, [formState, props.name])
+  }, [formState, name])
 
-  const fieldIsDisabled = useMemo(
-    () => props.disabled || control.state.value.disabled || formState.disabled,
-    [disabled, control, formState],
-  )
+  const fieldIsDisabled = disabled || formState.disabled
 
   const onChange = useCallback(
     async (event: any) => {
