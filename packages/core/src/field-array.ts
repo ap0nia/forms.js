@@ -27,25 +27,25 @@ import type { NestedObjectArrays } from './utils/nested-object-arrays'
 export type ParseFieldArray<T, TParsedForm = ParseForm<T>> = NestedObjectArrays<TParsedForm>
 
 export type FieldArrayOptions<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedFieldArray = ParseFieldArray<TValues>,
-  TFieldArrayName extends keyof TParsedFieldArray = keyof TParsedFieldArray,
+  TFieldValues extends Record<string, any>,
+  TFieldArrayName extends keyof ParseFieldArray<TFieldValues> = keyof ParseFieldArray<TFieldValues>,
+  TKeyName extends string = 'id',
 > = {
   name: TFieldArrayName
 
-  control: FormControl<TValues, TContext, TTransformedValues>
+  keyName?: TKeyName
+
+  control: FormControl<TFieldValues>
 
   shouldUnregister?: boolean
 
   rules?: {
     validate?:
-      | Validate<FieldArray<TValues, TFieldArrayName>[], TValues>
-      | Record<string, Validate<FieldArray<TValues, TFieldArrayName>[], TValues>>
-  } & Pick<RegisterOptions<TValues>, 'maxLength' | 'minLength' | 'required'>
+    | Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>
+    | Record<string, Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>>
+  } & Pick<RegisterOptions<TFieldValues>, 'maxLength' | 'minLength' | 'required'>
 
-  idGenerator?: () => string
+  generateId?: () => string
 }
 
 /**
@@ -69,13 +69,11 @@ export type FieldArrayMethodProps = {
 }
 
 export class FieldArray<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedFieldArray extends ParseFieldArray<TValues> = ParseFieldArray<TValues>,
-  TFieldArrayName extends keyof TParsedFieldArray = keyof TParsedFieldArray,
-  TFieldArrayValue extends
-    TParsedFieldArray[keyof TParsedFieldArray] = TParsedFieldArray[TFieldArrayName],
+  TFieldValues extends Record<string, any>,
+  TFieldArrayName extends keyof ParseFieldArray<TFieldValues> = keyof ParseFieldArray<TFieldValues>,
+  TKeyName extends string = 'id',
+  TParsedFieldArray extends ParseFieldArray<TFieldValues> = ParseFieldArray<TFieldValues>,
+  TFieldArrayValue extends TParsedFieldArray[TFieldArrayName] = TParsedFieldArray[TFieldArrayName],
 > {
   ids: string[] = []
 
@@ -87,7 +85,7 @@ export class FieldArray<
   /**
    * Props for each field in the field array.
    */
-  fields: Writable<{ [K in keyof TFieldArrayValue]: TFieldArrayValue[K] & { id: string } }>
+  fields: Writable<(TFieldArrayValue[number] & Record<TKeyName, string>)[]>
 
   /**
    */
@@ -100,19 +98,11 @@ export class FieldArray<
 
   name: TFieldArrayName
 
-  control: FormControl<TValues, TContext, TTransformedValues>
+  control: FormControl<TFieldValues, any, any>
 
   idGenerator: () => string
 
-  constructor(
-    public options: FieldArrayOptions<
-      TValues,
-      TContext,
-      TTransformedValues,
-      TParsedFieldArray,
-      TFieldArrayName
-    >,
-  ) {
+  constructor(public options: FieldArrayOptions<TFieldValues, TFieldArrayName, TKeyName>) {
     this.name = options.name as any
 
     this.control = options.control
@@ -121,7 +111,7 @@ export class FieldArray<
 
     this.value = new Writable(Array.from(currentValue) as any)
 
-    this.idGenerator = options.idGenerator ?? generateId
+    this.idGenerator = options.generateId ?? generateId
 
     this.fields = new Writable(this.getFieldArray(), (set) => {
       const unsubscribe = this.value.subscribe(
@@ -583,7 +573,7 @@ export class FieldArray<
 
       const errorChanged = existingError
         ? (!error && existingError.type) ||
-          (error && (existingError.type !== error.type || existingError.message !== error.message))
+        (error && (existingError.type !== error.type || existingError.message !== error.message))
         : error && error.type
 
       if (errorChanged) {

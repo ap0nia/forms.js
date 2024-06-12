@@ -11,20 +11,9 @@ import {
   waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react'
+
 import React, { useState } from 'react'
 import { vi as jest } from 'vitest'
-
-// import {
-//   Control,
-//   FieldErrors,
-//   FieldValues,
-//   FormState,
-//   RegisterOptions,
-//   UseFormGetFieldState,
-//   UseFormRegister,
-//   UseFormReturn,
-//   UseFormUnregister,
-// } from '../types';
 
 import { useFieldArray, useForm, Control, Controller, type UseFormReturn } from '../src'
 import { VALIDATION_MODE } from '../src/constants'
@@ -1676,8 +1665,8 @@ describe('useForm', () => {
   it('should update isValidating form and field states correctly', async () => {
     jest.useFakeTimers()
 
-    let formState = {} as FormState<FieldValues>
-    let getFieldState = {} as UseFormGetFieldState<FieldValues>
+    let formState = {} as FormState<Record<string, any>>
+    let getFieldState = {} as UseFormGetFieldState<Record<string, any>>
     const App = () => {
       const [stateValidation, setStateValidation] = React.useState(false)
       const {
@@ -1760,8 +1749,8 @@ describe('useForm', () => {
   it('should correctly handle multiple async validation triggers', async () => {
     jest.useFakeTimers()
 
-    let formState = {} as FormState<FieldValues>
-    let getFieldState = {} as UseFormGetFieldState<FieldValues>
+    let formState = {} as FormState<Record<string, any>>
+    let getFieldState = {} as UseFormGetFieldState<Record<string, any>>
     const App = () => {
       const [stateValidation, setStateValidation] = React.useState(false)
       const {
@@ -1838,8 +1827,8 @@ describe('useForm', () => {
   it('should update isValidating to true when using with resolver', async () => {
     jest.useFakeTimers()
 
-    let formState = {} as FormState<FieldValues>
-    let getFieldState = {} as UseFormGetFieldState<FieldValues>
+    let formState = {} as FormState<Record<string, any>>
+    let getFieldState = {} as UseFormGetFieldState<Record<string, any>>
     const App = () => {
       const {
         register,
@@ -1911,8 +1900,8 @@ describe('useForm', () => {
 
   it('should remove field from validatingFields on unregister', async () => {
     jest.useFakeTimers()
-    let unregister: UseFormUnregister<FieldValues>
-    let formState = {} as FormState<FieldValues>
+    let unregister: UseFormUnregister<Record<string, any>>
+    let formState = {} as FormState<Record<string, any>>
     const App = () => {
       const {
         register,

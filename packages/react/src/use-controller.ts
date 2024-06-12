@@ -3,7 +3,7 @@ import { set } from '@forms.js/common/utils/set'
 import { INPUT_EVENTS, type ParseForm } from '@forms.js/core'
 import type { Field, FormControlState, RegisterOptions } from '@forms.js/core'
 import { getEventValue } from '@forms.js/core/html/get-event-value'
-import { useRef, useCallback, useEffect, useMemo } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 
 import type { Control } from './control'
 import type { ControllerFieldState } from './controller'
@@ -81,51 +81,46 @@ export function useController<
 
   registerProps.current = control.register(name, rules)
 
-  const fieldState = useMemo(() => {
-    return Object.defineProperties(
-      {},
-      {
-        invalid: {
-          enumerable: true,
-          get: () => {
-            const invalid = !!get(formState.errors, name)
-            return invalid
-          },
-        },
-        isDirty: {
-          enumerable: true,
-          get: () => !!get(formState.dirtyFields, name),
-        },
-        isTouched: {
-          enumerable: true,
-          get: () => !!get(formState.touchedFields, name),
-        },
-        error: {
-          enumerable: true,
-          get: () => get(formState.errors, name),
+  const fieldState = Object.defineProperties(
+    {},
+    {
+      invalid: {
+        enumerable: true,
+        get: () => {
+          const invalid = !!get(formState.errors, name)
+          return invalid
         },
       },
-    ) as ControllerFieldState
-  }, [formState, name])
+      isDirty: {
+        enumerable: true,
+        get: () => !!get(formState.dirtyFields, name),
+      },
+      isTouched: {
+        enumerable: true,
+        get: () => !!get(formState.touchedFields, name),
+      },
+      error: {
+        enumerable: true,
+        get: () => get(formState.errors, name),
+      },
+    },
+  ) as ControllerFieldState
 
   const fieldIsDisabled = disabled || formState.disabled
 
-  const onChange = useCallback(
-    async (event: any) => {
-      return await registerProps.current.onChange({
-        nativeEvent: {
-          type: INPUT_EVENTS.CHANGE,
-          target: {
-            name: props.name,
-            value: getEventValue(event),
-          },
+  const onChange = async (event: any) => {
+    return await registerProps.current.onChange({
+      nativeEvent: {
+        type: INPUT_EVENTS.CHANGE,
+        target: {
+          name: props.name,
+          value: getEventValue(event),
         },
-      } as any)
-    },
-    [registerProps.current, name],
-  )
+      },
+    } as any)
+  }
 
-  const onBlur = useCallback(async () => {
+  const onBlur = async () => {
     return await registerProps.current.onBlur({
       nativeEvent: {
         type: INPUT_EVENTS.BLUR,
@@ -135,7 +130,7 @@ export function useController<
         },
       },
     } as any)
-  }, [control, registerProps.current, name])
+  }
 
   const ref = useCallback(
     (instance: HTMLInputElement | HTMLTextAreaElement | null) => {

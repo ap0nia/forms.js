@@ -1,47 +1,38 @@
+import '@forms.js/core/utils/nested-object-arrays'
+import '@forms.js/core/utils/object-to-union'
+import '@forms.js/core/utils/prettify'
+import '@forms.js/core/utils/union-to-intersection'
+
 import { get } from '@forms.js/common/utils/get'
 import { set } from '@forms.js/common/utils/set'
 import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@forms.js/core'
+
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'
 import { useFormContext } from './use-form-context'
 
 export type UseFieldArrayProps<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedFieldArray extends ParseFieldArray<TValues> = ParseFieldArray<TValues>,
-  TFieldArrayName extends keyof TParsedFieldArray = keyof TParsedFieldArray,
-> = Omit<
-  FieldArrayOptions<TValues, TContext, TTransformedValues, TParsedFieldArray, TFieldArrayName>,
-  'control'
-> & {
-  control?: Control<TValues, TContext, TTransformedValues>
+  TFieldValues extends Record<string, any>,
+  TFieldArrayName extends keyof ParseFieldArray<TFieldValues> = keyof ParseFieldArray<TFieldValues>,
+  TKeyName extends string = 'id',
+> = Omit<FieldArrayOptions<TFieldValues, TFieldArrayName, TKeyName>, 'control'> & {
+  control?: Control<TFieldValues>
 }
 
 export function useFieldArray<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedFieldArray extends ParseFieldArray<TValues> = ParseFieldArray<TValues>,
-  TFieldArrayName extends keyof TParsedFieldArray = keyof TParsedFieldArray,
->(
-  props: UseFieldArrayProps<
-    TValues,
-    TContext,
-    TTransformedValues,
-    TParsedFieldArray,
-    TFieldArrayName
-  >,
-) {
+  TFieldValues extends Record<string, any>,
+  TFieldArrayName extends keyof ParseFieldArray<TFieldValues> = keyof ParseFieldArray<TFieldValues>,
+  TKeyName extends string = 'id',
+>(props: UseFieldArrayProps<TFieldValues, TFieldArrayName, TKeyName>) {
   const { name, shouldUnregister } = props
 
-  const context = useFormContext<TValues, TContext, TTransformedValues>()
+  const context = useFormContext<TFieldValues>()
 
-  const control = props.control ?? context.control
+  const control = props.control ?? context?.control
 
   const fieldArray = useRef(
-    new FieldArray<TValues, TContext, TTransformedValues, TParsedFieldArray, TFieldArrayName>({
+    new FieldArray<TFieldValues, TFieldArrayName, TKeyName>({
       ...props,
       control,
     }),
@@ -51,7 +42,7 @@ export function useFieldArray<
 
   const subscribe = useCallback(
     (callback: () => void) => fieldArray.current.fields.subscribe(callback, undefined, false),
-    [fieldArray.current, props.name],
+    [fieldArray.current, name],
   )
 
   const getSnapshot = useCallback(() => fieldArray.current.fields.value, [fieldArray.current])
@@ -69,18 +60,23 @@ export function useFieldArray<
   })
 
   useEffect(() => {
-    if (!get(control.state.value.values, props.name)) {
+    const currentFieldArrayValue = get(control.state.value.values, name)
+
+    if (!currentFieldArrayValue) {
       control.stores.values.update(
-        (values: any) => {
-          set(values, props.name, [])
+        (values) => {
+          set(values, name, [])
           return values
         },
-        [props.name],
+        [name],
       )
     }
-  }, [control, shouldUnregister])
+  }, [control, name, shouldUnregister])
 
   useEffect(() => {
+    /**
+     * @todo name this a lifecycle hook...
+     */
     fieldArray.current.doSomething()
   }, [fields, name, control])
 

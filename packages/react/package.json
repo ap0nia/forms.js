@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run __tests__/use-field-array"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",

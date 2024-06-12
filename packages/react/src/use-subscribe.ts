@@ -22,6 +22,8 @@ export function useSubscribe<
   TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
   TName extends keyof TParsedForm = keyof TParsedForm,
 >(props: UseSubscribeProps<TValues, TParsedForm, TName>) {
+  const { name } = props
+
   const context = useFormContext<TValues>()
 
   const control = props.control ?? context.control
@@ -30,7 +32,7 @@ export function useSubscribe<
 
   state.keys?.add(props.name)
 
-  const proxy = useMemo(() => state.createTrackingProxy(props.name, { exact: true }), [props.name])
+  const proxy = useMemo(() => state.createTrackingProxy(name, { exact: true }), [name])
 
   const subscribe = useCallback(
     (callback: () => void) => state.subscribe(callback, undefined, false),
