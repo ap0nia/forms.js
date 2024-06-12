@@ -5,7 +5,7 @@ import type { DeepPartial } from './deep-partial'
  */
 export type Defaults<T> = DefaultValues<T> | (() => DefaultValues<T>)
 
-export type DefaultValues<T> = ValueOrDeepPartial<T> | Promise<ValueOrDeepPartial<T>>
+export type DefaultValues<T> = DeepPartial<T> | Promise<DeepPartial<T>>
 
 /**
  * The value or a deeply optional version of the value are allowed as defaults.
