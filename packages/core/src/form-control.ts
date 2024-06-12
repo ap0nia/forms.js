@@ -45,6 +45,7 @@ import type { DeepMap } from './utils/deep-map'
 import type { DeepPartial } from './utils/deep-partial'
 import type { Defaults, ValueOrDeepPartial } from './utils/defaults'
 import type { KeysToProperties } from './utils/keys-to-properties'
+import type { LiteralUnion } from './utils/literal-union'
 
 export type FormControlState<T = Record<string, any>> = {
   isDirty: boolean
@@ -78,11 +79,12 @@ export type FormControlOptions<
   TParsedForm = ParseForm<TValues>,
 > = {
   mode?: ValidationEvent[keyof ValidationEvent]
-  revalidateMode?: RevalidationEvent[keyof RevalidationEvent]
+  reValidateMode?: RevalidationEvent[keyof RevalidationEvent]
   disabled?: boolean
   context?: TContext
   defaultValues?: Defaults<TValues>
   values?: TValues
+  errors?: FieldErrors<TValues>
   resetOptions?: ResetOptions
   resolver?: Resolver<TValues, TContext, TParsedForm>
   shouldFocusError?: boolean
@@ -194,7 +196,7 @@ export const defaultFormControlOptions: FormControlOptions<any, any> = {
   /**
    * After the form values are validated for the first time, they're validated on every change.
    */
-  revalidateMode: VALIDATION_EVENTS.onChange,
+  reValidateMode: VALIDATION_EVENTS.onChange,
 
   /**
    * If an error is found during validation, the first field with an error is focused.
@@ -287,14 +289,14 @@ export class FormControl<
 
   constructor(options?: FormControlOptions<TValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
-    const revalidateMode = options?.revalidateMode ?? defaultFormControlOptions.revalidateMode
+    const revalidateMode = options?.reValidateMode ?? defaultFormControlOptions.reValidateMode
 
     /**
      * Merge the default options and derive additional configuration options for the form.
      */
     this.options = {
       mode,
-      revalidateMode,
+      reValidateMode: revalidateMode,
       shouldFocusError: defaultFormControlOptions.shouldFocusError,
       shouldDisplayAllAssociatedErrors: options?.criteriaMode === VALIDATION_EVENTS.all,
       submissionValidationMode: {
@@ -539,10 +541,21 @@ export class FormControl<
   }
 
   getWatch(
-    name: string | string[],
-    defaultValue: unknown,
-    nameArray = toStringArray(name) ?? [],
+    name?: string | string[],
+    defaultValue?: DeepPartial<TValues>,
+    // isMounted?: boolean,
+    isGlobal?: boolean,
   ): any {
+    const nameArray = toStringArray(name) ?? []
+
+    if (isGlobal) {
+      if (nameArray.length > 0) {
+        this.state.track('values', nameArray)
+      } else {
+        this.state.track('values')
+      }
+    }
+
     const values = this.mounted
       ? this.stores.values.value
       : defaultValue == null
@@ -551,13 +564,19 @@ export class FormControl<
       ? { [name]: defaultValue }
       : defaultValue
 
-    if (nameArray.length > 1) {
-      return Object.values(deepFilter({ ...values }, nameArray)) ?? defaultValue
+    switch (nameArray.length) {
+      case 0: {
+        return values
+      }
+      case 1: {
+        const rawResult = get({ ...values }, nameArray[0])
+        const result = rawResult === undefined ? defaultValue : rawResult
+        return Array.isArray(name) ? [result] : result
+      }
+      default: {
+        return Object.values(deepFilter({ ...values }, nameArray)) ?? defaultValue
+      }
     }
-
-    const rawResult = get({ ...values }, nameArray[0])
-    const result = rawResult === undefined ? defaultValue : rawResult
-    return Array.isArray(name) ? [result] : result
   }
 
   getFieldArray<T>(name: string): Partial<T>[] {
@@ -681,13 +700,13 @@ export class FormControl<
    * Handle a change event.
    */
   async onChange(event: Event): Promise<void> {
+    this.mounted = true
+
     const name = (event.target as HTMLInputElement)?.name
 
     const field: Field | undefined = get(this.fields, name)
 
-    if (field == null) {
-      return
-    }
+    if (field == null) return
 
     const fieldValue = getFieldEventValue(event, field)
 
@@ -950,8 +969,7 @@ export class FormControl<
    */
   watch<T extends keyof TParsedForm>(
     name: T,
-    defaultValues?: DeepPartial<TValues>,
-    options?: WatchOptions<TValues>,
+    defaultValues?: DeepPartial<TValues>, // options?: WatchOptions<TValues>,
   ): TParsedForm[T]
 
   /**
@@ -959,8 +977,7 @@ export class FormControl<
    */
   watch<T extends (keyof TParsedForm)[]>(
     name: T,
-    defaultValues?: DeepPartial<TParsedForm>,
-    options?: WatchOptions<TValues>,
+    defaultValues?: DeepPartial<TParsedForm>, // options?: WatchOptions<TValues>,
   ): KeysToProperties<TParsedForm, T>
 
   /**
@@ -977,17 +994,9 @@ export class FormControl<
       })
     }
 
-    const [name, defaultValue, options] = args
+    const [name, defaultValue] = args
 
-    const nameArray = Array.isArray(name) ? name : name ? [name] : []
-
-    if (nameArray.length > 0) {
-      this.state.track('values', nameArray, options)
-    } else {
-      this.state.keys?.add('values')
-    }
-
-    return this.getWatch(name, defaultValue, nameArray)
+    return this.getWatch(name, defaultValue, true)
   }
 
   /**
@@ -1126,6 +1135,7 @@ export class FormControl<
   ): HandlerCallback {
     return async (event) => {
       event?.preventDefault?.()
+      // event?.persist?.()
 
       this.state.open()
 
@@ -1388,10 +1398,12 @@ export class FormControl<
   ) {
     this.state.open()
 
-    this.stores.defaultValues.set(resolvedDefaultValues as any)
+    const defaultValues: any = cloneObject(resolvedDefaultValues)
+
+    this.stores.defaultValues.set(defaultValues)
 
     if (resetValues) {
-      this.stores.values.set(cloneObject(resolvedDefaultValues) as TValues)
+      this.stores.values.set(defaultValues)
     }
 
     this.stores.isLoading.set(false)
@@ -1567,7 +1579,10 @@ export class FormControl<
   /**
    * Register a field with the form control.
    */
-  registerField<T extends keyof TParsedForm>(name: T, options?: RegisterOptions<TValues, T>) {
+  registerField<T extends keyof TParsedForm>(
+    name: T,
+    options?: RegisterOptions<TValues, TParsedForm, T>,
+  ) {
     this.state.open()
 
     const existingField: Field | undefined = get(this.fields, name)
@@ -1610,7 +1625,7 @@ export class FormControl<
   registerElement<T extends keyof TParsedForm>(
     name: T,
     element: HTMLFieldElement,
-    options?: RegisterOptions<TValues, T>,
+    options?: RegisterOptions<TValues, TParsedForm, T>,
   ): void {
     this.state.open()
 
@@ -1689,5 +1704,25 @@ export class FormControl<
 
   cleanup(): void {
     this.removeUnmounted()
+  }
+
+  /**
+   * Unregister an element from the form control.
+   */
+  unregisterField<T extends keyof TParsedForm>(
+    name: LiteralUnion<T, string>,
+    options?: RegisterOptions<TValues, TParsedForm, T>,
+  ): void {
+    const field: Field | undefined = get(this.fields, name)
+
+    if (field?._f) {
+      field._f.mount = false
+    }
+
+    const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+
+    if (shouldUnregister && !this.names.array.has(name.toString())) {
+      this.names.unMount.add(name.toString())
+    }
   }
 }

@@ -27,9 +27,9 @@ export function set<T>(object: unknown, path: PropertyKey, value?: unknown): T {
       return currentResult
     }
 
-    const currentValueIsNotObject = !isObject(currentResult[currentKey as never])
+    const current = currentResult[currentKey as never]
 
-    if (currentValueIsNotObject || currentResult[currentKey as never] == null) {
+    if (current == null || (!isObject(current) && !Array.isArray(current))) {
       currentResult[currentKey as never] = (isNaN(keyArray[index + 1] as any) ? {} : []) as never
     }
 

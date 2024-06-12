@@ -98,7 +98,7 @@ export class FieldArray<
    */
   action = new Writable(false)
 
-  name: Extract<TFieldArrayName, string>
+  name: TFieldArrayName
 
   control: FormControl<TValues, TContext, TTransformedValues>
 
@@ -628,7 +628,7 @@ export class FieldArray<
   }
 
   mount() {
-    this.control.names.array.add(this.name)
+    this.control.names.array.add(this.name.toString())
   }
 
   unmount() {

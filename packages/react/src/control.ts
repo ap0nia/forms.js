@@ -6,9 +6,9 @@ import {
 } from '@forms.js/core'
 import { getRuleValue } from '@forms.js/core/validation/get-rule-value'
 
-export type ReactRegisterProps = {
+export type ReactRegisterProps<TFieldName> = {
   disabled?: boolean
-  name: string
+  name: TFieldName
   onBlur: (event: React.ChangeEvent) => Promise<void>
   onChange: (event: React.ChangeEvent) => Promise<void>
   ref: (instance: HTMLElement | null) => void
@@ -28,8 +28,8 @@ export class Control<
 
   register<T extends keyof TParsedForm>(
     name: T,
-    options?: RegisterOptions<TValues, T>,
-  ): ReactRegisterProps {
+    options?: RegisterOptions<TValues, TParsedForm, T>,
+  ): ReactRegisterProps<T> {
     this.registerField(name, options)
 
     const onChange = async (event: React.ChangeEvent) => {
@@ -46,14 +46,14 @@ export class Control<
         maxLength: getRuleValue(options?.maxLength) as number,
         pattern: getRuleValue(options?.pattern) as string,
       }),
-      name: name.toString(),
+      name,
       onBlur: onChange,
       onChange,
       ref: (instance: HTMLElement | null) => {
         if (instance) {
           this.registerElement(name, instance as HTMLInputElement)
         } else {
-          this.unregister(name)
+          this.unregisterField(name)
         }
       },
     }

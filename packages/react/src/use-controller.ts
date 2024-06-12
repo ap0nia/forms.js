@@ -1,27 +1,21 @@
 import { get } from '@forms.js/common/utils/get'
 import { set } from '@forms.js/common/utils/set'
 import { INPUT_EVENTS, type ParseForm } from '@forms.js/core'
-import type { Field, FieldError, FormControlState, RegisterOptions } from '@forms.js/core'
+import type { Field, FormControlState, RegisterOptions } from '@forms.js/core'
 import { getEventValue } from '@forms.js/core/html/get-event-value'
 import { useRef, useCallback, useEffect, useMemo } from 'react'
 
 import type { Control } from './control'
+import type { ControllerFieldState } from './controller'
 import { useFormContext } from './use-form-context'
 import { useSubscribe } from './use-subscribe'
 
-export type ControllerFieldState = {
-  invalid: boolean
-  isTouched: boolean
-  isDirty: boolean
-  error?: FieldError
-}
-
 export type UseControllerRules<
   TValues = Record<string, any>,
-  TParsedForm = ParseForm<TValues>,
-  TName = keyof TParsedForm,
+  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
+  TName extends keyof TParsedForm = keyof TParsedForm,
 > = Omit<
-  RegisterOptions<TValues, TName>,
+  RegisterOptions<TValues, TParsedForm, TName>,
   'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
 >
 
@@ -73,9 +67,8 @@ export function useController<
   const action = 'action'
 
   const context = useFormContext<TValues, any, any, TParsedForm>()
-  context.control
 
-  const control = props.control ?? context.control
+  const control = props.control ?? context?.control
 
   const formState = useSubscribe({ control, name })
 

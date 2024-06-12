@@ -61,6 +61,8 @@ export const CRITERIA_MODE = {
   all: 'all',
 }
 
+export const VALIDATION_MODE = VALIDATION_EVENTS
+
 /**
  * When to validate the form data based on the submission status.
  *

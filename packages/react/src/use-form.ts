@@ -39,7 +39,7 @@ export function useForm<
   TContext = any,
   TTransformedValues extends Record<string, any> | undefined = undefined,
 >(props?: ControlOptions<TValues, TContext>): UseFormReturn<TValues, TContext, TTransformedValues> {
-  const { disabled, values } = props ?? {}
+  const { disabled, errors, shouldUnregister, values } = props ?? {}
 
   const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>(new Control(props))
 
@@ -82,20 +82,31 @@ export function useForm<
   }, [values, control])
 
   useEffect(() => {
-    control.cleanup()
-  })
+    if (errors) {
+      control.setErrors(errors)
+    }
+  }, [errors, control])
 
   useEffect(() => {
     control.handleDisabled(disabled)
   }, [disabled])
 
   useEffect(() => {
-    control.mount()
-
-    return () => {
-      control.unmount()
+    if (!control.mounted) {
+      control.updateValid()
+      control.mounted = true
     }
-  }, [control])
+    control.removeUnmounted()
+  })
+
+  useEffect(() => {
+    if (shouldUnregister) {
+      /**
+       * @todo: Notify subscribers, but without changing the actual value?
+       */
+      // control.stores.values.set(control.getWatch())
+    }
+  }, [shouldUnregister, control])
 
   return form.current
 }

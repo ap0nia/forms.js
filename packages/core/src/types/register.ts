@@ -6,7 +6,7 @@ import type { Validate, ValidationRule } from './validation'
  */
 export type RegisterOptions<
   TValues = Record<string, any>,
-  TParsedForm = ParseForm<TValues>,
+  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
   TFieldName extends keyof TParsedForm = keyof TParsedForm,
   TFieldValue = TParsedForm[TFieldName],
 > = {
