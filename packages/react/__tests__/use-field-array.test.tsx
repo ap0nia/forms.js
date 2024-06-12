@@ -21,7 +21,6 @@ import { useFormState } from '../src/use-form-state'
 let i = 0
 
 function generateId() {
-  // console.log('huh', i)
   return String(i++)
 }
 
