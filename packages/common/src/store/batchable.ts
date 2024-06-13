@@ -282,7 +282,7 @@ export class Batchable<
             typeof n !== 'string' ||
             typeof trackedContext.value !== 'string'
             ? n === trackedContext.value
-            : n.includes(trackedContext.value) || trackedContext.value.includes(n)
+            : trackedContext.value.includes(n)
         })
       })
     })
