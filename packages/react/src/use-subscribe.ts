@@ -14,13 +14,18 @@ export type UseSubscribeProps<
 > = {
   name: TName
   control?: Control<TValues>
+
+  /**
+   * Whether to listen to an exact match for the field name.
+   */
+  exact?: boolean | 'name' | 'context'
 }
 
 export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
   TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 >(props: UseSubscribeProps<TValues, TName>) {
-  const { name } = props
+  const { name, exact } = props
 
   const context = useFormContext<TValues>()
 
@@ -30,7 +35,9 @@ export function useSubscribe<
 
   state.keys?.add(props.name)
 
-  const proxy = useMemo(() => state.createTrackingProxy(name, { exact: true }), [name])
+  const proxy = useMemo(() => {
+    return state.createTrackingProxy(name, { exact })
+  }, [name])
 
   const subscribe = useCallback(
     (callback: () => void) => state.subscribe(callback, undefined, false),

@@ -46,7 +46,7 @@ describe('useController', () => {
    * Re-renders after `onBlur` because `touchedFields` -> `isTouched` changed.
    * Total of 3 times.
    */
-  it.skip('should only subscribe to formState at each useController level', async () => {
+  it('should only subscribe to formState at each useController level', async () => {
     const renderCounter = [0, 0]
     type FormValues = {
       test: string

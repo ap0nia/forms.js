@@ -67,7 +67,7 @@ export function useController<
 
   const control = props.control ?? context?.control
 
-  const formState = useSubscribe({ control, name })
+  const formState = useSubscribe({ control, name, exact: 'context' })
 
   // Always subscribe to values.
   formState.values

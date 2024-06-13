@@ -38,9 +38,13 @@ export type TrackedContext = {
   value: PropertyKey
 
   /**
-   * Whether the context must match exactly or if it can be a subset of the context or vice versa.
+   * Whether the context must match exactly or loosely.
+   *
+   * true => either the name includes the context or vice versa.
+   * 'name' => the name has to include the context.
+   * 'context' => the context has to include the name.
    */
-  exact?: boolean
+  exact?: boolean | 'name' | 'context'
 }
 
 /**
@@ -50,6 +54,26 @@ export class Batchable<
   TStores extends Record<string, Writable<any, any>>,
   TValues extends StoresValues<TStores> = StoresValues<TStores>,
 > {
+  static matches(trackedContext: TrackedContext, name: PropertyKey) {
+    const { exact, value } = trackedContext
+
+    if (typeof name !== 'string' || typeof value !== 'string' || exact == true) {
+      return name === trackedContext.value
+    }
+
+    switch (exact) {
+      case 'name': {
+        return name.includes(value)
+      }
+      case 'context': {
+        return value.includes(name)
+      }
+      default: {
+        return value.includes(name) || name.includes(value)
+      }
+    }
+  }
+
   /**
    * Stores to batch updates from.
    */
@@ -276,13 +300,9 @@ export class Batchable<
     const nameArray = Array.isArray(name) ? name : [name]
 
     const nameAndContextAreTracked = keyArray.some((key) => {
-      return nameArray.some((n) => {
+      return nameArray.some((name) => {
         return this.contexts[key]?.some((trackedContext) => {
-          return trackedContext.exact ||
-            typeof n !== 'string' ||
-            typeof trackedContext.value !== 'string'
-            ? n === trackedContext.value
-            : trackedContext.value.includes(n)
+          return Batchable.matches(trackedContext, name)
         })
       })
     })
