@@ -15,8 +15,10 @@ export type UseFormStateProps<
 }
 
 export function useFormState<TFieldValues extends Record<string, any>>(
-  props?: UseFormStateProps<TFieldValues>,
+  props: UseFormStateProps<TFieldValues> = {},
 ): FormControlState<TFieldValues> {
+  const { disabled, name, exact } = props
+
   const context = useFormContext<TFieldValues>()
 
   const control = props?.control ?? context.control
@@ -24,15 +26,15 @@ export function useFormState<TFieldValues extends Record<string, any>>(
   const state = useMemo(() => control.state.clone(), [control])
 
   const proxy = useMemo(
-    () => state.createTrackingProxy(props?.name, props, false),
-    [state, props?.name, props?.disabled, props?.exact],
+    () => state.createTrackingProxy(name, { exact }, false),
+    [state, name, disabled, exact],
   )
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return state.subscribe(() => !props?.disabled && callback(), undefined, false)
+      return state.subscribe(() => !disabled && callback(), undefined, false)
     },
-    [state, props?.disabled],
+    [state, disabled],
   )
 
   const getSnapshot = useCallback(() => state.value, [state])
@@ -42,7 +44,7 @@ export function useFormState<TFieldValues extends Record<string, any>>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (state.proxy.isValid) {
+    if (state.isTracking('isValid')) {
       control.updateValid(true)
     }
 

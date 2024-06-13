@@ -270,7 +270,7 @@ export class Batchable<
   /**
    * Whether any child is tracking the given key and context.
    */
-  childIsTracking(key: string, name?: PropertyKey[] | boolean): boolean {
+  childIsTracking(key: string, name?: PropertyKey | PropertyKey[] | boolean): boolean {
     return Array.from(this.children).some((child) => child.isTracking(key, name))
   }
 

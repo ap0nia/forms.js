@@ -758,28 +758,24 @@ export class FormControl<
       return
     }
 
-    if (!isBlurEvent) {
-      this.state.flush()
-      this.state.open()
-    }
-
     const nameArray = toStringArray(name)
 
-    this.state.transaction(() => {
-      this.stores.validatingFields.update(
-        (validatingFields) => {
-          nameArray?.forEach((name) => {
-            set(validatingFields, name, true)
-          })
-          return validatingFields
-        },
-        [name],
-      )
+    this.stores.validatingFields.update(
+      (validatingFields) => {
+        nameArray?.forEach((name) => {
+          set(validatingFields, name, true)
+        })
+        return validatingFields
+      },
+      [name],
+    )
 
-      const isValidating = !isEmptyObject(this.state.value.validatingFields)
+    const currentIsValidating = !isEmptyObject(this.state.value.validatingFields)
 
-      this.stores.isValidating.set(isValidating, [name])
-    })
+    this.stores.isValidating.set(currentIsValidating, [name])
+
+    this.state.flush()
+    this.state.open()
 
     const result = await this.validate(name)
 
@@ -1452,7 +1448,7 @@ export class FormControl<
    *
    * {@link state} does not trigger updates for untracked properties.
    */
-  isTracking(key: keyof typeof this.stores, name?: PropertyKey[]): boolean {
+  isTracking(key: keyof typeof this.stores, name?: PropertyKey | PropertyKey[]): boolean {
     return this.state.isTracking(key, name) || this.state.childIsTracking(key, name)
   }
 
