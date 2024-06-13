@@ -125,6 +125,9 @@ importers:
       use-sync-external-store:
         specifier: ^1.2.0
         version: 1.2.0(react@18.2.0)
+      whatwg-fetch:
+        specifier: ^3.6.20
+        version: 3.6.20
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.3.3
@@ -147,6 +150,9 @@ importers:
       '@types/use-sync-external-store':
         specifier: ^0.0.4
         version: 0.0.4
+      '@types/whatwg-fetch':
+        specifier: ^0.0.33
+        version: 0.0.33
       msw:
         specifier: ^1.3.2
         version: 1.3.2(typescript@5.1.6)
@@ -1617,6 +1623,26 @@ packages:
       }
     dev: true
 
+  /@types/whatwg-fetch@0.0.33:
+    resolution:
+      {
+        integrity: sha512-XSWTlUwpjUyLiDu50HhtpUyhvt7QND1ANfyFfiw/TH63GC1ngZMl2rgxuH5SQKfPjMoKRXv94r7crWnJ3mg5tA==,
+      }
+    deprecated: fetch types are now provided by '--lib dom'
+    dependencies:
+      '@types/whatwg-streams': 3.2.1
+    dev: true
+
+  /@types/whatwg-streams@3.2.1:
+    resolution:
+      {
+        integrity: sha512-Syv05sRL25b8cC8tqgXSQgLZZmqGq2GO+NafrtHbjPJccP6gWBXmHvo2Trw3AWXQ4QLIkVuOB7uStCuhzswyiw==,
+      }
+    deprecated: This is a stub types definition. whatwg-streams provides its own type definitions, so you do not need this installed.
+    dependencies:
+      whatwg-streams: 0.1.1
+    dev: true
+
   /@typescript-eslint/eslint-plugin@6.2.0(@typescript-eslint/parser@6.2.0)(eslint@8.46.0)(typescript@5.1.6):
     resolution:
       {
@@ -2272,6 +2298,13 @@ packages:
       buffer: 5.7.1
       inherits: 2.0.4
       readable-stream: 3.6.2
+    dev: true
+
+  /bluebird@1.0.8:
+    resolution:
+      {
+        integrity: sha512-e8rlJcByuxPdMiiwU3lGtENflMtUncAblzSlN7rBAZ9ygb75D/rng3Xt5FbZpYqVCzK+sFHVIMht4G6fbfUfbA==,
+      }
     dev: true
 
   /brace-expansion@1.1.11:
@@ -2990,6 +3023,13 @@ packages:
       type-detect: 4.0.8
     dev: true
 
+  /deep-equal@0.1.2:
+    resolution:
+      {
+        integrity: sha512-rUCt39nKM7s6qUyYgp/reJmtXjgkOS/JbLO24DioMZaBNkD3b7C7cD3zJjSyjclEElNTpetAIRD6fMIbBIbX1Q==,
+      }
+    dev: true
+
   /deep-equal@2.2.3:
     resolution:
       {
@@ -3066,6 +3106,13 @@ packages:
       define-data-property: 1.1.4
       has-property-descriptors: 1.0.2
       object-keys: 1.1.1
+    dev: true
+
+  /defined@0.0.0:
+    resolution:
+      {
+        integrity: sha512-zpqiCT8bODLu3QSmLLic8xJnYWBFjOSu/fBCm189oAiTtPq/PSanNACKZDS7kgSyCJY7P+IcODzlIogBK/9RBg==,
+      }
     dev: true
 
   /delayed-stream@1.0.0:
@@ -5190,6 +5237,13 @@ packages:
       graceful-fs: 4.2.11
     dev: true
 
+  /jsonify@0.0.1:
+    resolution:
+      {
+        integrity: sha512-2/Ki0GcmuqSrgFyelQq9M05y7PS0mEwuIzrf3f1fPqkVDVRvZrPZtVSMHxdgo8Aq0sxAOb/cr2aqqA3LeWHVPg==,
+      }
+    dev: true
+
   /jsonparse@1.3.1:
     resolution:
       {
@@ -6749,6 +6803,15 @@ packages:
       signal-exit: 3.0.7
     dev: true
 
+  /resumer@0.0.0:
+    resolution:
+      {
+        integrity: sha512-Fn9X8rX8yYF4m81rZCK/5VmrmsSbqS/i3rDLl6ZZHAXgC2nTAx3dhwG8q8odP/RmdLa2YrybDJaAMg+X1ajY3w==,
+      }
+    dependencies:
+      through: 2.3.8
+    dev: true
+
   /reusify@1.0.4:
     resolution:
       {
@@ -7424,6 +7487,21 @@ packages:
         integrity: sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ==,
       }
     engines: { node: '>=6' }
+    dev: true
+
+  /tape@2.3.3:
+    resolution:
+      {
+        integrity: sha512-V3tQqlti/JJm577hhDdoCOw1xl4aPcDjTY6PesnFjWDcUYzB6fz39ETXFQuPr9piaoHPfc65sjAehTgbfXOvxQ==,
+      }
+    hasBin: true
+    dependencies:
+      deep-equal: 0.1.2
+      defined: 0.0.0
+      inherits: 2.0.4
+      jsonify: 0.0.1
+      resumer: 0.0.0
+      through: 2.3.8
     dev: true
 
   /term-size@2.2.1:
@@ -8271,12 +8349,29 @@ packages:
       iconv-lite: 0.6.3
     dev: true
 
+  /whatwg-fetch@3.6.20:
+    resolution:
+      {
+        integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==,
+      }
+    dev: false
+
   /whatwg-mimetype@3.0.0:
     resolution:
       {
         integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==,
       }
     engines: { node: '>=12' }
+    dev: true
+
+  /whatwg-streams@0.1.1:
+    resolution:
+      {
+        integrity: sha512-+UIxdkkbcbhhmcDJIdgVtGTJ7sxV81MY1K++LIWufM8BnIXek3andXURjVs8rV8h2MEFLQbH6YPPZOZATIkZiw==,
+      }
+    dependencies:
+      bluebird: 1.0.8
+      tape: 2.3.3
     dev: true
 
   /whatwg-url@12.0.1:
