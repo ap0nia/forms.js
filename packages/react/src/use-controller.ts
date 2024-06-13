@@ -1,3 +1,4 @@
+import { cloneObject } from '@forms.js/common/utils/clone-object'
 import { get } from '@forms.js/common/utils/get'
 import { set } from '@forms.js/common/utils/set'
 import { INPUT_EVENTS, type ParseForm } from '@forms.js/core'
@@ -131,9 +132,11 @@ export function useController<
 
   const ref = useCallback(
     (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
+      if (instance == null) return
+
       const field = get(control.fields, props.name)
 
-      if (field && instance) {
+      if (field) {
         field._f.ref = {
           focus: () => instance.focus(),
           select: () => instance.select(),
@@ -159,7 +162,7 @@ export function useController<
     updateMounted(name, true)
 
     if (shouldUnregisterField) {
-      const value = structuredClone(get(control.options.defaultValues, props.name))
+      const value = cloneObject(get(control.options.defaultValues, props.name))
 
       set(control.state.value.defaultValues, props.name, value)
 

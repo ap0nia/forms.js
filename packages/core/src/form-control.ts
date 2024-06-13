@@ -718,20 +718,23 @@ export class FormControl<
 
     this.state.open()
 
-    this.stores.values.update(
-      (values) => {
-        set(values, name, fieldValue)
-        return values
-      },
-      [name],
-    )
-
     const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
 
     if (isBlurEvent) {
       field._f.onBlur?.(event)
+      this.delayErrorCallback?.(0)
     } else {
       field._f.onChange?.(event)
+    }
+
+    if (!isBlurEvent) {
+      this.stores.values.update(
+        (values) => {
+          set(values, name, fieldValue)
+          return values
+        },
+        [name],
+      )
     }
 
     if (isBlurEvent) {
@@ -1450,11 +1453,7 @@ export class FormControl<
    * {@link state} does not trigger updates for untracked properties.
    */
   isTracking(key: keyof typeof this.stores, name?: PropertyKey[]): boolean {
-    return (
-      this.state.isTracking(key, name) ||
-      this.state.childIsTracking(key, name) ||
-      this.stores[key].subscribers.size > 1
-    )
+    return this.state.isTracking(key, name) || this.state.childIsTracking(key, name)
   }
 
   /**
@@ -1639,8 +1638,8 @@ export class FormControl<
       this.updateDisabledField({ field, disabled, name })
     } else {
       const defaultValue =
-        get(this.stores.values.value, name) ??
         options?.value ??
+        get(this.stores.values.value, name) ??
         get(this.stores.defaultValues.value, name)
 
       this.stores.values.update((values) => {
