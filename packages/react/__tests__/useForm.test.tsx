@@ -11,7 +11,6 @@ import {
   waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react'
-
 import React, { useState } from 'react'
 import { vi as jest } from 'vitest'
 
