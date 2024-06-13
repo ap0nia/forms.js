@@ -57,7 +57,10 @@ export function useController<
 >(props: UseControllerProps<TValues, TName>): UseControllerReturn<TValues, TName> {
   const { name, disabled, shouldUnregister, rules } = props
 
-  const action = 'action'
+  /**
+   * @todo Needs to be on FormControl.action ?
+   */
+  const action = false
 
   const context = useFormContext<TValues>()
 
@@ -79,22 +82,23 @@ export function useController<
     {
       invalid: {
         enumerable: true,
-        get: () => {
-          const invalid = !!get(formState.errors, name)
-          return invalid
-        },
+        get: () => Boolean(get(formState.errors, name)),
       },
       isDirty: {
         enumerable: true,
-        get: () => !!get(formState.dirtyFields, name),
+        get: () => Boolean(get(formState.dirtyFields, name)),
       },
       isTouched: {
         enumerable: true,
-        get: () => !!get(formState.touchedFields, name),
+        get: () => Boolean(get(formState.touchedFields, name)),
       },
       error: {
         enumerable: true,
         get: () => get(formState.errors, name),
+      },
+      isValidating: {
+        enumerable: true,
+        get: () => !!get(formState.validatingFields, name),
       },
     },
   ) as ControllerFieldState
@@ -142,7 +146,7 @@ export function useController<
   )
 
   useEffect(() => {
-    const shouldUnregisterField = control.options.shouldUnregister || props.shouldUnregister
+    const shouldUnregisterField = props.shouldUnregister || control.options.shouldUnregister
 
     const updateMounted = (name: PropertyKey, value: boolean) => {
       const field: Field | undefined = get(control.fields, name)
@@ -189,7 +193,7 @@ export function useController<
     field: {
       name: props.name,
       value,
-      ...(typeof fieldIsDisabled === 'boolean' && { disabled: fieldIsDisabled }),
+      ...(fieldIsDisabled && { disabled: fieldIsDisabled }),
       onChange,
       onBlur,
       ref,

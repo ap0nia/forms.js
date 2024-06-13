@@ -7,6 +7,7 @@ export type ControllerFieldState = {
   isTouched: boolean
   isDirty: boolean
   error?: FieldError
+  isValidating: boolean
 }
 
 export type ControllerRenderFunction<

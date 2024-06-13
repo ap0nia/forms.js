@@ -545,7 +545,7 @@ export class FormControl<
   }
 
   getWatch(
-    name?: string | string[],
+    name?: PropertyKey | PropertyKey[],
     defaultValue?: DeepPartial<TFieldValues>,
     // isMounted?: boolean,
     isGlobal?: boolean,
@@ -906,7 +906,7 @@ export class FormControl<
 
   getValues<T extends keyof TParsedForm>(fieldNames?: T | readonly T[] | T[]) {
     const values = {
-      ...(this.mounted ? this.state.value.values : this.state.value.defaultValues),
+      ...(this.mounted ? this.stores.values.value : this.stores.defaultValues.value),
     }
 
     return fieldNames == null
