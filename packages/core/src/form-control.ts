@@ -334,7 +334,7 @@ export class FormControl<
       dirtyFields: new Writable({}),
       validatingFields: new Writable({}),
       defaultValues: new Writable(defaultValues),
-      errors: new Writable({}),
+      errors: new Writable(options?.errors ?? {}),
       values: new Writable(options?.shouldUnregister ? {} : cloneObject(defaultValues)),
       disabled: new Writable(Boolean(options?.disabled)),
     }
