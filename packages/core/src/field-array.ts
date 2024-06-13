@@ -205,7 +205,7 @@ export class FieldArray<
     if (
       shouldUpdateFieldsAndState &&
       Array.isArray(touchedFields) &&
-      this.control.state.isTracking('touchedFields')
+      this.control.state.isTracking('touchedFields', this.name)
     ) {
       const newTouchedFields = mutateArray(touchedFields)
 
@@ -220,14 +220,14 @@ export class FieldArray<
       }
     }
 
-    if (this.control.state.isTracking('dirtyFields')) {
+    if (this.control.isTracking('dirtyFields', this.name)) {
       this.control.stores.dirtyFields.set(
         getDirtyFields(this.control.stores.defaultValues.value, this.control.stores.values.value),
         [this.name],
       )
     }
 
-    this.control.stores.isDirty.set(this.control.getDirty())
+    this.control.stores.isDirty.set(this.control.getDirty(), this.name)
 
     this.control.state.flush()
   }
