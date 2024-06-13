@@ -523,6 +523,8 @@ export class FormControl<
     for (const name of this.names.unMount) {
       const field: Field | undefined = get(this.fields, name)
 
+      if (field == null) continue
+
       if (field?._f.refs ? !field._f.refs.some(elementIsLive) : !elementIsLive(field?._f.ref)) {
         this.unregister(name as keyof TParsedForm)
       }
@@ -1611,42 +1613,42 @@ export class FormControl<
     name: T,
     options?: RegisterOptions<TFieldValues, T>,
   ) {
-    this.state.open()
+    // this.state.open()
 
-    const existingField: Field | undefined = get(this.fields, name)
+    // const existingField: Field | undefined = get(this.fields, name)
 
-    const field: Field = {
-      ...existingField,
-      _f: {
-        ...(existingField?._f ?? { ref: { name } }),
-        name,
-        mount: true,
-        ...options,
-      } as any,
-    }
+    // const field: Field = {
+    //   ...existingField,
+    //   _f: {
+    //     ...(existingField?._f ?? { ref: { name } }),
+    //     name,
+    //     mount: true,
+    //     ...options,
+    //   } as any,
+    // }
 
-    set(this.fields, name, field)
+    // set(this.fields, name, field)
 
-    this.names.mount.add(name.toString())
+    // this.names.mount.add(name.toString())
 
-    if (existingField) {
-      const disabled = options?.disabled ?? this.options.disabled
-      this.updateDisabledField({ field, disabled, name })
-    } else {
-      const defaultValue =
-        options?.value ??
-        get(this.stores.values.value, name) ??
-        get(this.stores.defaultValues.value, name)
+    // if (existingField) {
+    //   const disabled = options?.disabled ?? this.options.disabled
+    //   this.updateDisabledField({ field, disabled, name })
+    // } else {
+    //   const defaultValue =
+    //     options?.value ??
+    //     get(this.stores.values.value, name) ??
+    //     get(this.stores.defaultValues.value, name)
 
-      this.stores.values.update((values) => {
-        set(values, name, defaultValue)
-        return values
-      })
-    }
+    //   this.stores.values.update((values) => {
+    //     set(values, name, defaultValue)
+    //     return values
+    //   }, name)
+    // }
 
-    this.state.close()
+    // this.state.close()
 
-    return field
+    // return field
   }
   /**
    * Register an element with the form control.
@@ -1656,31 +1658,31 @@ export class FormControl<
     element: HTMLFieldElement,
     options?: RegisterOptions<TFieldValues, T>,
   ): void {
-    this.state.open()
+    // this.state.open()
 
-    const field = this.registerField(name, options)
+    // const field = this.registerField(name, options)
 
-    const fieldNames = toStringArray(name)
+    // const fieldNames = toStringArray(name)
 
-    const newField = mergeElementWithField(name, field, element)
+    // const newField = mergeElementWithField(name, field, element)
 
-    const defaultValue =
-      get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
+    // const defaultValue =
+    //   get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
 
-    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
-      this.stores.values.update((values) => {
-        set(values, name, getFieldValue(newField._f))
-        return values
-      })
-    } else {
-      updateFieldReference(newField._f, defaultValue)
-    }
+    // if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+    //   this.stores.values.update((values) => {
+    //     set(values, name, getFieldValue(newField._f))
+    //     return values
+    //   })
+    // } else {
+    //   updateFieldReference(newField._f, defaultValue)
+    // }
 
-    set(this.fields, name, newField)
+    // set(this.fields, name, newField)
 
-    this.updateValid(undefined, fieldNames)
+    // this.updateValid(undefined, fieldNames)
 
-    this.state.close()
+    // this.state.close()
   }
 
   handleDisabled(disabled?: boolean): void {
