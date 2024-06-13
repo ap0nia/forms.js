@@ -12,33 +12,30 @@ import { useSubscribe } from './use-subscribe'
 
 export type UseControllerRules<
   TValues = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = Omit<
-  RegisterOptions<TValues, TParsedForm, TName>,
+  RegisterOptions<TValues, TName>,
   'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
 >
 
 export type UseControllerProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
   name: TName
-  rules?: UseControllerRules<TValues, TParsedForm, TName>
+  rules?: UseControllerRules<TValues, TName>
   shouldUnregister?: boolean
-  defaultValue?: TParsedForm[TName]
-  control?: Control<TValues, any, any, TParsedForm>
+  defaultValue?: ParseForm<TValues>[TName]
+  control?: Control<TValues>
   disabled?: boolean
 }
 
 export type ControllerRenderProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
   name: TName
-  value: TParsedForm[TName]
+  value: ParseForm<TValues>[TName]
   disabled?: boolean
   onChange: (...event: any[]) => void
   onBlur: () => void
@@ -47,26 +44,22 @@ export type ControllerRenderProps<
 
 export type UseControllerReturn<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
-  field: ControllerRenderProps<TValues, TParsedForm, TName>
+  field: ControllerRenderProps<TValues, TName>
   fieldState: ControllerFieldState
   formState: FormControlState<TValues>
 }
 
 export function useController<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
->(
-  props: UseControllerProps<TValues, TParsedForm, TName>,
-): UseControllerReturn<TValues, TParsedForm, TName> {
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+>(props: UseControllerProps<TValues, TName>): UseControllerReturn<TValues, TName> {
   const { name, disabled, shouldUnregister, rules } = props
 
   const action = 'action'
 
-  const context = useFormContext<TValues, any, any, TParsedForm>()
+  const context = useFormContext<TValues>()
 
   const control = props.control ?? context?.control
 

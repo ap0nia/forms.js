@@ -4,20 +4,7 @@ exports[`useFieldArray > array of array fields > should allow append with deeply
 [
   {},
   {
-    "test": [
-      {
-        "yourDetails": {
-          "firstName": [
-            "test",
-            "test1",
-          ],
-          "lastName": [
-            "test",
-            "test1",
-          ],
-        },
-      },
-    ],
+    "test": [],
   },
   {
     "test": [

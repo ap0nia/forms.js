@@ -81,15 +81,19 @@ export type FieldErrors<T = Record<string, any>> = Partial<
   root?: Record<string, GlobalError> & GlobalError
 }
 
+export type BrowserNativeObject = Date | FileList | File
+
 /**
  * Does the actual mapping of field names to their errors.
  */
 export type FieldErrorsImplementation<T = Record<string, any>> = {
-  [K in keyof T]?: K extends 'root' | `root.${string}`
+  [K in keyof T]?: T[K] extends BrowserNativeObject | Blob
+    ? FieldError
+    : K extends 'root' | `root.${string}`
     ? GlobalError
-    : T[K] extends (infer U)[]
-    ? FieldError | { [k in keyof U]?: FieldError }[]
-    : T[K] extends object
+    : // : T[K] extends (infer U)[]
+    // ? FieldError | { [k in keyof U]?: FieldError }[]
+    T[K] extends object
     ? DeepMerge<FieldError, FieldErrorsImplementation<T[K]>>
     : FieldError
 }

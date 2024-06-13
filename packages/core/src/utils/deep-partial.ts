@@ -33,5 +33,9 @@ export type DeepPartial<T> = IsAny<T> extends true
   : T extends NonRecordNonPrimitives
   ? T
   : T extends Record<PropertyKey, any>
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  ? {
+      [K in keyof T]?: ExtractObjects<T[K]> extends never ? T[K] : DeepPartial<T[K]>
+    }
   : T
+
+export type ExtractObjects<T> = T extends infer U ? (U extends object ? U : never) : never

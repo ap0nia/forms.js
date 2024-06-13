@@ -5,9 +5,9 @@ import type { Validate, ValidationRule } from './validation'
  * Options when registering a new field component or element.
  */
 export type RegisterOptions<
-  TValues = Record<string, any>,
-  TFieldName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
-  TFieldValue = ParseForm<TValues>[TFieldName],
+  TFieldValues = Record<string, any>,
+  TFieldName extends keyof ParseForm<TFieldValues> = keyof ParseForm<TFieldValues>,
+  TFieldValue = ParseForm<TFieldValues>[TFieldName],
 > = {
   /**
    * Native validation, makes the field required.
@@ -38,7 +38,9 @@ export type RegisterOptions<
    * This implementation is different because it flattens the object,
    * and then accesses the value at some key in the flattened object.
    */
-  validate?: Validate<TFieldValue, TValues> | Record<string, Validate<TFieldValue, TValues>>
+  validate?:
+    | Validate<ParseForm<TFieldValues>[TFieldName], TFieldValues>
+    | Record<string, Validate<ParseForm<TFieldValues>[TFieldName], TFieldValues>>
 
   /**
    * The value of the field.
@@ -73,7 +75,7 @@ export type RegisterOptions<
   /**
    * Dependencies on other form fields.
    */
-  deps?: keyof ParseForm<TValues> | (keyof ParseForm<TValues>)[]
+  deps?: string | string[]
 } & (
   | {
       /**

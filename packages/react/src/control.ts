@@ -24,6 +24,13 @@ export class Control<
     super(options)
   }
 
+  /**
+   * Compatibility accessor for react-hook-form.
+   */
+  get _fields() {
+    return this.fields
+  }
+
   register<T extends keyof ParseForm<TValues>>(
     name: T,
     options?: RegisterOptions<TValues, T>,

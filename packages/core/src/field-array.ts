@@ -41,8 +41,8 @@ export type FieldArrayOptions<
 
   rules?: {
     validate?:
-      | Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>
-      | Record<string, Validate<FieldArray<TFieldValues, TFieldArrayName>[], TFieldValues>>
+      | Validate<ParseForm<TFieldValues>[TFieldArrayName], TFieldValues>
+      | Record<string, Validate<ParseForm<TFieldValues>[TFieldArrayName], TFieldValues>>
   } & Pick<RegisterOptions<TFieldValues>, 'maxLength' | 'minLength' | 'required'>
 
   generateId?: () => string
@@ -511,7 +511,7 @@ export class FieldArray<
   /**
    * @todo What this for? I think it's for a lifecycle event in React.
    */
-  doSomething() {
+  synchronize() {
     this.control.state.open()
 
     this.validate()

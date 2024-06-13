@@ -11,24 +11,17 @@ export type ControllerFieldState = {
 
 export type ControllerRenderFunction<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm = ParseForm<TValues>,
-  TKey extends keyof TParsedForm = keyof TParsedForm,
-> = (props: UseControllerReturn<TValues, TParsedForm, TKey>) => React.ReactElement
+  TKey extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+> = (props: UseControllerReturn<TValues, TKey>) => React.ReactElement
 
 export type ControllerProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TKey extends keyof TParsedForm = keyof TParsedForm,
-> = { render: ControllerRenderFunction<TValues, TParsedForm, TKey> } & UseControllerProps<
-  TValues,
-  TParsedForm,
-  TKey
->
+  TKey extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+> = { render: ControllerRenderFunction<TValues, TKey> } & UseControllerProps<TValues, TKey>
 
 export function Controller<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TKey extends keyof TParsedForm = keyof TParsedForm,
->(props: ControllerProps<TValues, TParsedForm, TKey>): React.ReactElement {
+  TKey extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+>(props: ControllerProps<TValues, TKey>): React.ReactElement {
   return props.render(useController(props))
 }

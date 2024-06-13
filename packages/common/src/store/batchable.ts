@@ -253,30 +253,37 @@ export class Batchable<
   /**
    * Whether the given key and context are being tracked by this store.
    */
-  isTracking(key: string, name?: PropertyKey | PropertyKey[] | boolean): boolean {
+  isTracking(
+    key: keyof TStores | (keyof TStores)[],
+    name?: PropertyKey | PropertyKey[] | boolean,
+  ): boolean {
     if (this.all === true) {
       return true
     }
 
-    const rootIsTracking = this.keys.has(key)
+    const keyArray = Array.isArray(key) ? key : [key]
+
+    const rootIsTracking = keyArray.some((key) => this.keys.has(key))
 
     if (rootIsTracking || name == null) {
       return rootIsTracking
     }
 
     if (typeof name === 'boolean') {
-      return name && this.contexts[key] != null
+      return name && keyArray.some((key) => this.contexts[key] != null)
     }
 
     const nameArray = Array.isArray(name) ? name : [name]
 
-    const nameAndContextAreTracked = nameArray.some((n) => {
-      return this.contexts[key]?.some((trackedContext) => {
-        return trackedContext.exact ||
-          typeof n !== 'string' ||
-          typeof trackedContext.value !== 'string'
-          ? n === trackedContext.value
-          : n.includes(trackedContext.value) || trackedContext.value.includes(n)
+    const nameAndContextAreTracked = keyArray.some((key) => {
+      return nameArray.some((n) => {
+        return this.contexts[key]?.some((trackedContext) => {
+          return trackedContext.exact ||
+            typeof n !== 'string' ||
+            typeof trackedContext.value !== 'string'
+            ? n === trackedContext.value
+            : n.includes(trackedContext.value) || trackedContext.value.includes(n)
+        })
       })
     })
 

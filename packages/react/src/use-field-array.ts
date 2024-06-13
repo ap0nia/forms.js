@@ -24,7 +24,7 @@ export function useFieldArray<
   TFieldArrayName extends keyof ParseFieldArray<TFieldValues> = keyof ParseFieldArray<TFieldValues>,
   TKeyName extends string = 'id',
 >(props: UseFieldArrayProps<TFieldValues, TFieldArrayName, TKeyName>) {
-  const { name, shouldUnregister } = props
+  const { name, shouldUnregister, keyName } = props
 
   const context = useFormContext<TFieldValues>()
 
@@ -66,31 +66,26 @@ export function useFieldArray<
 
     if (!currentFieldArrayValue) {
       control.stores.values.update(
-        (values) => {
+        (values: any) => {
           set(values, name, [])
           return values
         },
         [name],
       )
     }
-  }, [control, name, shouldUnregister])
 
-  useEffect(() => {
-    /**
-     * @todo name this a lifecycle hook...
-     */
-    fieldArray.current.doSomething()
-  }, [fields, name, control])
-
-  useEffect(() => {
     return () => {
       fieldArray.current.unmount()
 
       if (props.shouldUnregister || control.options.shouldUnregister) {
-        control.unregister(props.name as any)
+        control.unregister(props.name)
       }
     }
-  }, [fieldArray.current])
+  }, [control, keyName, name, shouldUnregister])
+
+  useEffect(() => {
+    fieldArray.current.synchronize()
+  }, [fields, name, control])
 
   const fieldArrayMethods = useMemo(() => {
     return {

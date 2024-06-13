@@ -10,18 +10,16 @@ import { useFormContext } from './use-form-context'
 
 export type UseSubscribeProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
   name: TName
-  control?: Control<TValues, any, any, TParsedForm>
+  control?: Control<TValues>
 }
 
 export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends keyof TParsedForm = keyof TParsedForm,
->(props: UseSubscribeProps<TValues, TParsedForm, TName>) {
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+>(props: UseSubscribeProps<TValues, TName>) {
   const { name } = props
 
   const context = useFormContext<TValues>()

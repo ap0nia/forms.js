@@ -2425,6 +2425,9 @@ describe('useFieldArray', () => {
     expect(watchedValue).toMatchSnapshot()
   })
 
+  /**
+   * My implementation does not re-render twice after the final click.
+   */
   it.skip('should update field array defaultValues when invoke setValue', async () => {
     type FormValues = {
       names: {
@@ -2539,7 +2542,7 @@ describe('useFieldArray', () => {
     ])
   })
 
-  it.skip('should unregister field array when shouldUnregister set to true', () => {
+  it('should unregister field array when shouldUnregister set to true', () => {
     type FormValues = {
       test: {
         value: string
@@ -2929,7 +2932,7 @@ describe('useFieldArray', () => {
     expect((screen.getAllByRole('textbox')[6] as HTMLInputElement).value).toEqual('1sub-new')
   })
 
-  it.skip('should update field array correctly with async invocation', async () => {
+  it('should update field array correctly with async invocation', async () => {
     type FormValues = {
       items: { id: string; name: string }[]
     }

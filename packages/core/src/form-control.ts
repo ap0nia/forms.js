@@ -241,7 +241,9 @@ export class FormControl<
    *
    * This is ideal for subscribing to the entire form control state.
    */
-  state: Batchable<this['stores']>
+  state: Batchable<{
+    [K in keyof FormControlState<TFieldValues>]: Writable<FormControlState<TFieldValues>[K]>
+  }>
 
   /**
    * Registered fields.
@@ -551,7 +553,7 @@ export class FormControl<
     const nameArray = toStringArray(name) ?? []
 
     if (isGlobal) {
-      if (nameArray.length > 0) {
+      if (nameArray.length) {
         this.state.track('values', nameArray)
       } else {
         this.state.track('values')
@@ -566,17 +568,19 @@ export class FormControl<
       ? { [name]: defaultValue }
       : defaultValue
 
+    const valuesCopy = { ...values }
+
     switch (nameArray.length) {
       case 0: {
-        return values
+        return valuesCopy
       }
       case 1: {
-        const rawResult = get({ ...values }, nameArray[0])
+        const rawResult = get(valuesCopy, nameArray[0])
         const result = rawResult === undefined ? defaultValue : rawResult
         return Array.isArray(name) ? [result] : result
       }
       default: {
-        return Object.values(deepFilter({ ...values }, nameArray)) ?? defaultValue
+        return Object.values(deepFilter(valuesCopy, nameArray)) ?? defaultValue
       }
     }
   }
@@ -1329,7 +1333,7 @@ export class FormControl<
         this.stores.dirtyFields.set(dirtyFields)
       }
     } else if (options?.keepDefaultValues && formValues) {
-      const dirtyFields = getDirtyFields(this.state.value.defaultValues, formValues)
+      const dirtyFields = getDirtyFields(this.state.value.defaultValues, formValues as any)
       this.stores.dirtyFields.set(dirtyFields)
     } else if (!options?.keepDirty) {
       this.stores.dirtyFields.set({})
