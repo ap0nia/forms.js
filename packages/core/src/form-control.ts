@@ -366,6 +366,10 @@ export class FormControl<
     }
   }
 
+  get _defaultValues() {
+    return this.stores.defaultValues.value
+  }
+
   /**
    * Lazily validate the form.
    */
@@ -1337,13 +1341,13 @@ export class FormControl<
     }
 
     this.names = {
-      mount: new Set(),
+      mount: options?.keepDirtyValues ? this.names.mount : new Set(),
       unMount: new Set(),
       array: new Set(),
     }
 
     this.mounted =
-      !this.state.value.isValid ||
+      !this.isTracking('isValid') ||
       Boolean(options?.keepIsValid) ||
       Boolean(options?.keepDirtyValues)
 
@@ -1358,7 +1362,7 @@ export class FormControl<
       this.stores.isDirty.set(false)
     } else if (!options?.keepDirty) {
       const isDirty = Boolean(
-        options?.keepDefaultValues && !deepEqual(formValues, this.state.value.defaultValues),
+        options?.keepDefaultValues && !deepEqual(formValues, this.stores.defaultValues.value),
       )
       this.stores.isDirty.set(isDirty)
     }

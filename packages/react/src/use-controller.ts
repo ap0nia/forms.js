@@ -10,6 +10,7 @@ import type { Control } from './control'
 import type { ControllerFieldState } from './controller'
 import { useFormContext } from './use-form-context'
 import { useSubscribe } from './use-subscribe'
+import { useWatch } from './use-watch'
 
 export type UseControllerRules<
   TValues = Record<string, any>,
@@ -64,10 +65,16 @@ export function useController<
 
   const formState = useSubscribe({ control, name, exact: 'context' })
 
-  // Always subscribe to values.
-  formState.values
-
-  const value = control.getValues(name) ?? props.defaultValue
+  const value = useWatch({
+    control,
+    name,
+    defaultValue: get(
+      control.stores.values.value,
+      name,
+      get(control._defaultValues, name, props.defaultValue),
+    ),
+    exact: true,
+  })
 
   const registerProps = useRef(control.register(name, { ...rules, value }))
 

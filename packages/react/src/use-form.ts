@@ -63,7 +63,14 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (values && !deepEqual(values, control.state.value.values)) {
+    if (control.isTracking('isDirty')) {
+      const isDirty = control.getDirty()
+      control.stores.isDirty.set(isDirty)
+    }
+  }, [control, control.state.value.isDirty])
+
+  useEffect(() => {
+    if (values && !deepEqual(values, control.stores.values.value)) {
       control.reset(values as any, control.options.resetOptions)
     } else {
       control.resetDefaultValues()

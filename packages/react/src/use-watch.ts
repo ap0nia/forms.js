@@ -40,9 +40,5 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
     }
   }, [control, state])
 
-  // if (props?.name == null) {
-  //   return control.watch()
-  // }
-
   return control.getWatch(props?.name, props?.defaultValue)
 }
