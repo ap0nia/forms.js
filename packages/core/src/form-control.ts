@@ -685,7 +685,7 @@ export class FormControl<
         const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
         this.stores.dirtyFields.set(dirtyFields)
 
-        const isDirty = this.getDirty(name as string, clonedValue)
+        const isDirty = this.getDirty(name, clonedValue)
         this.stores.isDirty.set(isDirty)
 
         this.state.flush()
@@ -1002,17 +1002,14 @@ export class FormControl<
   /**
    * Makes {@link state} subscribe to all updates to values for a specific field name.
    */
-  watch<T extends keyof TParsedForm>(
-    name: T,
-    defaultValues?: DeepPartial<TFieldValues>, // options?: WatchOptions<TValues>,
-  ): TParsedForm[T]
+  watch<T extends keyof TParsedForm>(name: T, defaultValues?: TParsedForm[T]): TParsedForm[T]
 
   /**
    * Makes {@link state} subscribe to all updates to values for multiple field names.
    */
   watch<T extends (keyof TParsedForm)[]>(
     name: T,
-    defaultValues?: DeepPartial<TParsedForm>, // options?: WatchOptions<TValues>,
+    defaultValues?: KeysToProperties<TParsedForm, T>,
   ): KeysToProperties<TParsedForm, T>
 
   /**
@@ -1110,25 +1107,21 @@ export class FormControl<
   /**
    * Update a field's disabled status.
    */
-  updateDisabledField(options: UpdateDisabledFieldOptions): void {
-    if (typeof options.disabled !== 'boolean') {
-      return
-    }
+  updateDisabledField(options: UpdateDisabledFieldOptions): boolean {
+    if (typeof options.disabled !== 'boolean') return false
 
     const value = options.disabled
       ? undefined
       : get(this.stores.values.value, options.name) ??
-        getFieldValue(options.field?._f ?? get(options.fields, options.name)._f)
+        getFieldValue(options.field?._f ?? get(options.fields, options.name)._f) ??
+        get(this.stores.defaultValues.value, options.name)
 
-    this.stores.values.update(
-      (values) => {
-        set(values, options.name, value)
-        return values
-      },
-      [options.name],
-    )
+    this.stores.values.update((values) => {
+      set(values, options.name, value)
+      return values
+    }, options.name)
 
-    this.updateDirtyField(options.name, value)
+    return this.updateDirtyField(options.name, value)
   }
 
   focusError = () => {
@@ -1172,9 +1165,9 @@ export class FormControl<
       event?.preventDefault?.()
       // event?.persist?.()
 
-      this.state.open()
-
       this.stores.isSubmitting.set(true)
+
+      this.state.open()
 
       const { resolverResult, validationResult } = await this.validate()
 
@@ -1515,28 +1508,23 @@ export class FormControl<
 
     const previousIsDirty = Boolean(!isDisabled && get(this.stores.dirtyFields.value, name))
 
-    if (this.isTracking('isDirty', [name])) {
-      this.stores.isDirty.set(this.getDirty(), [name])
+    if (this.isTracking('isDirty', name)) {
+      const isDirty = this.getDirty()
+      this.stores.isDirty.set(isDirty, name)
     }
 
     if (previousIsDirty && !currentIsDirty) {
-      this.stores.dirtyFields.update(
-        (dirtyFields) => {
-          unset(dirtyFields, name)
-          return dirtyFields
-        },
-        [name],
-      )
+      this.stores.dirtyFields.update((dirtyFields) => {
+        unset(dirtyFields, name)
+        return dirtyFields
+      }, name)
     }
 
     if (!previousIsDirty && currentIsDirty) {
-      this.stores.dirtyFields.update(
-        (dirtyFields) => {
-          set(dirtyFields, name, true)
-          return dirtyFields
-        },
-        [name],
-      )
+      this.stores.dirtyFields.update((dirtyFields) => {
+        set(dirtyFields, name, true)
+        return dirtyFields
+      }, name)
     }
 
     return currentIsDirty !== previousIsDirty
@@ -1549,13 +1537,10 @@ export class FormControl<
     const previousIsTouched = get(this.stores.touchedFields.value, name)
 
     if (!previousIsTouched) {
-      this.stores.touchedFields.update(
-        (touchedFields) => {
-          set(touchedFields, name, true)
-          return touchedFields
-        },
-        [name],
-      )
+      this.stores.touchedFields.update((touchedFields) => {
+        set(touchedFields, name, true)
+        return touchedFields
+      }, name)
     }
 
     return !previousIsTouched
@@ -1633,7 +1618,10 @@ export class FormControl<
 
     if (existingField) {
       const disabled = options?.disabled ?? this.options.disabled
-      this.updateDisabledField({ field, disabled, name })
+      const result = this.updateDisabledField({ field, disabled, name })
+      if (result) {
+        this.state.flush()
+      }
     } else {
       const defaultValue =
         options?.value ??
@@ -1644,6 +1632,10 @@ export class FormControl<
         set(values, name, defaultValue)
         return values
       }, name)
+
+      if (this.mounted) {
+        this.updateValid()
+      }
     }
 
     this.state.close()
