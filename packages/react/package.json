@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run useFieldArray/insert"
+    "test": "vitest run useFieldArray/move"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",
