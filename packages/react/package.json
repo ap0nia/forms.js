@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run resetField"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",
