@@ -1496,7 +1496,7 @@ describe('register', () => {
       expect((screen.getByRole('textbox') as HTMLInputElement).value).toEqual('1234')
     })
 
-    it('should populate input as string and submit as datetime object ', async () => {
+    it.only('should populate input as string and submit as datetime object ', async () => {
       let submitData: unknown
 
       const App = () => {

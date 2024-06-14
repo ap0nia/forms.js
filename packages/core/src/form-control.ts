@@ -1697,10 +1697,8 @@ export class FormControl<
         return values
       }, name)
     } else {
-      this.stores.values.update((values) => {
-        set(values, name, getFieldValueAs(defaultValue, newField._f))
-        return values
-      }, name)
+      // Set it without updating...
+      set(this.stores.values.value, name, getFieldValueAs(defaultValue, newField._f))
       updateFieldReference(newField._f, defaultValue)
     }
 
