@@ -57,6 +57,7 @@ export function mergeElementWithField(
 
   const newField = {
     _f: {
+      ...field?._f,
       name: name.toString(),
       ref: {
         name: name.toString(),

@@ -103,9 +103,7 @@ export async function nativeValidateFields(
       }
     }
 
-    if (isEmptyObject(nestedField)) {
-      continue
-    }
+    if (isEmptyObject(nestedField)) continue
 
     const subResult = await nativeValidateFields(nestedField, values, options)
 
