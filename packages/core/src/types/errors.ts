@@ -91,9 +91,7 @@ export type FieldErrorsImplementation<T = Record<string, any>> = {
     ? FieldError
     : K extends 'root' | `root.${string}`
     ? GlobalError
-    : // : T[K] extends (infer U)[]
-    // ? FieldError | { [k in keyof U]?: FieldError }[]
-    T[K] extends object
+    : T[K] extends object
     ? DeepMerge<FieldError, FieldErrorsImplementation<T[K]>>
     : FieldError
 }

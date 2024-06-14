@@ -70,7 +70,7 @@ export type FormControlState<T = Record<string, any>> = {
 export type FieldState = {
   invalid: boolean
   isDirty: boolean
-  error?: FieldErrors[string]
+  error?: FieldError
   isValidating: boolean
   isTouched: boolean
 }
