@@ -921,7 +921,8 @@ export class FormControl<
       this.mergeErrors(result.resolverResult.errors)
     }
 
-    this.stores.isValid.set(result.isValid, fieldNames)
+    // `true` context will match will all field names.
+    this.stores.isValid.set(result.isValid, true)
 
     this.stores.isValidating.set(false, fieldNames)
 

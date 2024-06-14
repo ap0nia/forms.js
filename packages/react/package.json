@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run useForm/reset"
+    "test": "vitest run "
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",
