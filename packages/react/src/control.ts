@@ -38,7 +38,7 @@ export class Control<
     this.registerField(name, options)
 
     const onChange = async (event: React.ChangeEvent) => {
-      return await this.onChange(event.nativeEvent)
+      return await this.onChange(event.nativeEvent, event)
     }
 
     const disabled = options?.disabled ?? this.options.disabled

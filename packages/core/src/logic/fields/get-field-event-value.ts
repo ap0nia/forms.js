@@ -8,7 +8,7 @@ import { getFieldValue } from './get-field-value'
  *
  * Fallsback to the value of the actual field if the event is irrelevant.
  */
-export function getFieldEventValue(event: Event, field: Field): any {
+export function getFieldEventValue(event: { target: any; type?: any }, field: Field): any {
   return event.target && 'type' in event.target && event.target.type
     ? getFieldValue(field._f)
     : getEventValue(event)

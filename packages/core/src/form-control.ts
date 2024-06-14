@@ -714,8 +714,11 @@ export class FormControl<
 
   /**
    * Handle a change event.
+   *
+   * @param event The actual HTML input event. e.g. React.ChangeEvent.nativeEvent.
+   * @param original Escape hatch for the "original" event, i.e. React's synthetic event.
    */
-  async onChange(event: Event): Promise<void> {
+  async onChange(event: { target: any; type?: any }, original?: any): Promise<void> {
     this.mounted = true
 
     const name = (event.target as HTMLInputElement)?.name
@@ -731,20 +734,20 @@ export class FormControl<
     const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
 
     if (isBlurEvent) {
-      field._f.onBlur?.(event)
+      field._f.onBlur?.(original ?? event)
 
       this.delayErrorCallback?.(0)
 
       this.updateTouchedField(name)
     } else {
-      field._f.onChange?.(event)
-
       this.stores.values.update((values) => {
         set(values, name, fieldValue)
         return values
       }, name)
 
       this.updateDirtyField(name, fieldValue)
+
+      field._f.onChange?.(original ?? event)
     }
 
     const nothingToValidate =
@@ -799,9 +802,9 @@ export class FormControl<
       })
 
       if (field._f.deps) {
-        await this.trigger(field._f.deps as any)
+        await this.trigger(field._f.deps as keyof TParsedForm)
       } else {
-        this.stores.isValid.set(result.isValid, [name])
+        this.stores.isValid.set(result.isValid, name)
       }
     }
 
@@ -892,8 +895,15 @@ export class FormControl<
       this.mergeErrors(result.validationResult.errors, result.validationResult.names)
     }
 
-    if (result.resolverResult?.errors) {
+    if (result.resolverResult?.errors && !isEmptyObject(result.resolverResult?.errors)) {
       this.mergeErrors(result.resolverResult.errors)
+    } else {
+      this.stores.errors.update((errors) => {
+        fieldNames?.forEach((name) => {
+          unset(errors, name)
+        })
+        return errors
+      })
     }
 
     this.stores.isValid.set(result.isValid, fieldNames)
@@ -1685,8 +1695,12 @@ export class FormControl<
       this.stores.values.update((values) => {
         set(values, name, getFieldValue(newField._f))
         return values
-      })
+      }, name)
     } else {
+      this.stores.values.update((values) => {
+        set(values, name, getFieldValueAs(defaultValue, newField._f))
+        return values
+      }, name)
       updateFieldReference(newField._f, defaultValue)
     }
 

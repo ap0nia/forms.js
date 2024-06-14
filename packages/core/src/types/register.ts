@@ -60,12 +60,12 @@ export type RegisterOptions<
   /**
    * Callback for the input's 'change' event.
    */
-  onChange?: (event: Event) => void
+  onChange?: (event: any) => void
 
   /**
    * Callback for the input's 'blur' event.
    */
-  onBlur?: (event: Event) => void
+  onBlur?: (event: any) => void
 
   /**
    * Whether the field is disabled.
