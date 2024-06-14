@@ -145,8 +145,8 @@ describe('resolver', () => {
     )
   })
 
-  it.skip('should avoid the problem of race condition', async () => {
-    jest.useFakeTimers()
+  it('should avoid the problem of race condition', async () => {
+    jest.useFakeTimers({ shouldAdvanceTime: true })
 
     const test = jest.fn()
     let errorsObject = {}

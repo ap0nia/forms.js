@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run resolver"
+    "test": "vitest run"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",

@@ -801,22 +801,26 @@ export class FormControl<
     const result = await this.validate(name)
 
     if (result.resolverResult) {
-      const previousError = lookupError(this.stores.errors.value, this.fields, name)
+      const isFieldValueUpdated = this.isFieldValueUpdated(name, fieldValue)
 
-      const currentError = lookupError(
-        result.resolverResult.errors ?? {},
-        this.fields,
-        previousError.name,
-      )
+      if (isFieldValueUpdated) {
+        const previousError = lookupError(this.stores.errors.value, this.fields, name)
 
-      this.stores.errors.update((errors) => {
-        if (currentError.error) {
-          set(errors, currentError.name, currentError.error)
-        } else {
-          unset(errors, currentError.name)
-        }
-        return errors
-      })
+        const currentError = lookupError(
+          result.resolverResult.errors ?? {},
+          this.fields,
+          previousError.name,
+        )
+
+        this.stores.errors.update((errors) => {
+          if (currentError.error) {
+            set(errors, currentError.name, currentError.error)
+          } else {
+            unset(errors, currentError.name)
+          }
+          return errors
+        })
+      }
 
       if (field._f.deps) {
         await this.trigger(field._f.deps as keyof TParsedForm)
@@ -826,12 +830,10 @@ export class FormControl<
     }
 
     if (result.validationResult) {
-      const isFieldValueUpdated =
-        Number.isNaN(fieldValue) ||
-        (fieldValue === get(this.stores.values.value, name) ?? fieldValue)
-
       if (!result.isValid) {
         const error = result.validationResult.errors[name]
+
+        const isFieldValueUpdated = this.isFieldValueUpdated(name, fieldValue)
 
         if (isFieldValueUpdated && !error) {
           const fullResult = await this.validate()
@@ -863,6 +865,8 @@ export class FormControl<
       } else {
         this.mergeErrors(result.validationResult.errors, result.validationResult.names)
       }
+
+      const isFieldValueUpdated = this.isFieldValueUpdated(name, fieldValue)
 
       if (isFieldValueUpdated && field._f.deps) {
         await this.trigger(field._f.deps as any)
@@ -1814,5 +1818,15 @@ export class FormControl<
     if (shouldUnregister && !isFieldArrayInProgress) {
       this.names.unMount.add(name.toString())
     }
+  }
+
+  /**
+   * Check this before updating the errors value after a validation.
+   * Will prevent race conditions.
+   */
+  isFieldValueUpdated(name?: PropertyKey, fieldValue?: any) {
+    return (
+      Number.isNaN(fieldValue) || fieldValue === get(this.stores.values.value, name, fieldValue)
+    )
   }
 }
