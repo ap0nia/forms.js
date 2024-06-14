@@ -976,7 +976,7 @@ export class FormControl<
     const { ref: _ref, message: _message, type: _type, ...currentErrorTree } = currentError ?? {}
 
     this.stores.errors.update((errors) => {
-      set(errors, name, { currentErrorTree, ...error, ref })
+      set(errors, name, { ...currentErrorTree, ...error, ref })
       return errors
     }, fieldNames)
 
