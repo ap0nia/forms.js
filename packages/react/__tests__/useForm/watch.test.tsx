@@ -1,6 +1,5 @@
 import { noop } from '@forms.js/common/utils/noop'
-import { fireEvent, render, screen } from '@testing-library/react'
-import { act, renderHook } from '@testing-library/react-hooks'
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import React from 'react'
 
 import { Controller } from '../../src/controller'

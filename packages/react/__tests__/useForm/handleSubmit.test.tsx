@@ -1,6 +1,5 @@
 import { noop } from '@forms.js/common/utils/noop'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { act, renderHook } from '@testing-library/react-hooks'
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi as jest } from 'vitest'
 
