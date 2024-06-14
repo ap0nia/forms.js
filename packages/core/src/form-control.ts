@@ -1181,7 +1181,9 @@ export class FormControl<
       event?.preventDefault?.()
       // event?.persist?.()
 
-      this.stores.isSubmitting.set(true)
+      this.state.transaction(() => {
+        this.stores.isSubmitting.set(true)
+      })
 
       this.state.open()
 
@@ -1691,7 +1693,7 @@ export class FormControl<
     const defaultValue =
       get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
 
-    if (defaultValue == null || (newField._f.ref as HTMLInputElement)?.defaultChecked) {
+    if (defaultValue == null || (element as HTMLInputElement)?.defaultChecked) {
       this.stores.values.update((values) => {
         set(values, name, getFieldValue(newField._f))
         return values
