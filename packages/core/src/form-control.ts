@@ -291,6 +291,8 @@ export class FormControl<
 
   delayErrorCallback?: (wait: number) => void
 
+  action = new Writable(false)
+
   constructor(options?: FormControlOptions<TFieldValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
     const revalidateMode = options?.reValidateMode ?? defaultFormControlOptions.reValidateMode
@@ -1751,8 +1753,9 @@ export class FormControl<
     }
 
     const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+    const isFieldArrayInProgress = this.names.array.has(name.toString()) && this.action.value
 
-    if (shouldUnregister && !this.names.array.has(name.toString())) {
+    if (shouldUnregister && !isFieldArrayInProgress) {
       this.names.unMount.add(name.toString())
     }
   }

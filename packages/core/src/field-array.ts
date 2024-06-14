@@ -249,6 +249,7 @@ export class FieldArray<
     this.ids.push(...valuesArray.map(this.idGenerator.bind(this)))
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -285,6 +286,7 @@ export class FieldArray<
     this.ids = [...valuesArray.map(this.idGenerator.bind(this)), ...this.ids]
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -316,6 +318,7 @@ export class FieldArray<
     this.ids = this.ids.filter((_, i) => !indexArray?.includes(i))
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -358,6 +361,7 @@ export class FieldArray<
     this.ids.splice(index, 0, ...valuesArray.map(this.idGenerator.bind(this)))
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -389,6 +393,7 @@ export class FieldArray<
     updatedFieldArrayValues[right] = leftValue
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -429,6 +434,7 @@ export class FieldArray<
     updatedValues.splice(to, 0, updatedValues.splice(from, 1)[0])
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -460,6 +466,7 @@ export class FieldArray<
     updatedFieldArrayValues[index] = value
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update((currentValues) => {
       set(currentValues, this.name, updatedFieldArrayValues)
@@ -494,6 +501,7 @@ export class FieldArray<
     this.ids = valuesArray.map(this.idGenerator.bind(this))
 
     this.action.set(true)
+    this.control.action.set(true)
 
     this.control.stores.values.update(
       (currentValues) => {
@@ -512,7 +520,13 @@ export class FieldArray<
    * @todo What this for? I think it's for a lifecycle event in React.
    */
   synchronize() {
+    this.control.action.set(false)
+
     this.control.state.open()
+
+    this.control.stores.values.update((values) => {
+      return { ...values }
+    }, this.name)
 
     this.validate()
 
@@ -542,9 +556,7 @@ export class FieldArray<
       !getValidationModes(this.control.options.mode).onSubmit ||
       this.control.stores.isSubmitted.value
 
-    if (!this.action.value || !submitted) {
-      return
-    }
+    if (!this.action.value || !submitted) return
 
     if (this.control.options.resolver) {
       const fieldsToValidate: Record<string, FieldReference> = {}

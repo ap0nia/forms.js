@@ -38,11 +38,34 @@ exports[`useFieldArray > array of array fields > should allow append with deeply
       },
     ],
   },
+  {
+    "test": [
+      {
+        "yourDetails": {
+          "firstName": [
+            "test",
+            "test1",
+          ],
+          "lastName": [
+            "test",
+            "test1",
+          ],
+        },
+      },
+    ],
+  },
 ]
 `;
 
 exports[`useFieldArray > should append multiple inputs correctly 1`] = `
 [
+  {
+    "test": [
+      {
+        "value": "data",
+      },
+    ],
+  },
   {
     "test": [
       {
@@ -91,8 +114,44 @@ exports[`useFieldArray > should custom register append, prepend and insert input
   ],
   [
     {
+      "test": "append",
+      "test1": "append",
+      "test2": [],
+    },
+  ],
+  [
+    {
       "test": "prepend",
       "test1": "prepend",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "append",
+      "test2": [],
+    },
+  ],
+  [
+    {
+      "test": "prepend",
+      "test1": "prepend",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "append",
+      "test2": [],
+    },
+  ],
+  [
+    {
+      "test": "prepend",
+      "test1": "prepend",
+      "test2": [],
+    },
+    {
+      "test": "insert",
+      "test1": "insert",
       "test2": [],
     },
     {
@@ -147,6 +206,111 @@ exports[`useFieldArray > should custom register append, prepend and insert input
   [
     {
       "test": "prepend",
+      "test1": "prepend",
+      "test2": [],
+    },
+    {
+      "test": "insert",
+      "test1": "insert",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "append",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "",
+      "test2": [
+        {
+          "test": "test",
+        },
+      ],
+    },
+  ],
+  [
+    {
+      "test": "prepend",
+      "test1": "",
+      "test2": [
+        {
+          "test": "test",
+        },
+      ],
+    },
+    {
+      "test": "prepend",
+      "test1": "prepend",
+      "test2": [],
+    },
+    {
+      "test": "insert",
+      "test1": "insert",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "append",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "",
+      "test2": [
+        {
+          "test": "test",
+        },
+      ],
+    },
+  ],
+  [
+    {
+      "test": "prepend",
+      "test1": "",
+      "test2": [
+        {
+          "test": "test",
+        },
+      ],
+    },
+    {
+      "test": "prepend",
+      "test1": "prepend",
+      "test2": [],
+    },
+    {
+      "test": "insert",
+      "test1": "insert",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "append",
+      "test2": [],
+    },
+    {
+      "test": "append",
+      "test1": "",
+      "test2": [
+        {
+          "test": "test",
+        },
+      ],
+    },
+  ],
+  [
+    {
+      "test": "prepend",
+      "test1": "",
+      "test2": [
+        {
+          "test": "test",
+        },
+      ],
+    },
+    {
+      "test": "insert",
       "test1": "",
       "test2": [
         {
