@@ -291,6 +291,11 @@ export class FormControl<
 
   delayErrorCallback?: (wait: number) => void
 
+  /**
+   * Used by field arrays.
+   */
+  action = new Writable(false)
+
   constructor(options?: FormControlOptions<TFieldValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
     const revalidateMode = options?.reValidateMode ?? defaultFormControlOptions.reValidateMode
@@ -565,10 +570,10 @@ export class FormControl<
     const values = this.mounted
       ? this.stores.values.value
       : defaultValue == null
-      ? this.stores.defaultValues.value
-      : typeof name === 'string'
-      ? { [name]: defaultValue }
-      : defaultValue
+        ? this.stores.defaultValues.value
+        : typeof name === 'string'
+          ? { [name]: defaultValue }
+          : defaultValue
 
     const valuesCopy = { ...values }
 
@@ -913,8 +918,8 @@ export class FormControl<
     return fieldNames == null
       ? values
       : typeof fieldNames === 'string'
-      ? get(values, fieldNames)
-      : getMultiple(values, fieldNames)
+        ? get(values, fieldNames)
+        : getMultiple(values, fieldNames)
   }
 
   /**
@@ -1116,7 +1121,7 @@ export class FormControl<
     const value = options.disabled
       ? undefined
       : get(this.stores.values.value, options.name) ??
-        getFieldValue(options.field?._f ?? get(options.fields, options.name)._f)
+      getFieldValue(options.field?._f ?? get(options.fields, options.name)._f)
 
     this.stores.values.update(
       (values) => {
@@ -1587,15 +1592,11 @@ export class FormControl<
     for (const name of this.names.mount) {
       const field: Field | undefined = get(this.fields, name)
 
-      if (field?._f == null) {
-        continue
-      }
+      if (field?._f == null) continue
 
       const fieldReference = Array.isArray(field._f.refs) ? field._f.refs[0] : field._f.ref
 
-      if (!isHTMLElement(fieldReference)) {
-        continue
-      }
+      if (!isHTMLElement(fieldReference)) continue
 
       const form = fieldReference.closest('form')
 
@@ -1662,9 +1663,9 @@ export class FormControl<
 
     const field = this.registerField(name, options)
 
-    const fieldNames = toStringArray(name)
-
     const newField = mergeElementWithField(name, field, element)
+
+    set(this.fields, name, newField)
 
     const defaultValue =
       get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
@@ -1678,9 +1679,10 @@ export class FormControl<
       updateFieldReference(newField._f, defaultValue)
     }
 
-    set(this.fields, name, newField)
-
-    this.updateValid(undefined, fieldNames)
+    if (this.mounted) {
+      const fieldNames = toStringArray(name)
+      this.updateValid(undefined, fieldNames)
+    }
 
     this.state.close()
   }
@@ -1751,8 +1753,9 @@ export class FormControl<
     }
 
     const shouldUnregister = this.options.shouldUnregister || options?.shouldUnregister
+    const fieldArrayInProgress = this.names.array.has(name.toString()) // && this.action.value
 
-    if (shouldUnregister && !this.names.array.has(name.toString())) {
+    if (shouldUnregister && !fieldArrayInProgress) {
       this.names.unMount.add(name.toString())
     }
   }

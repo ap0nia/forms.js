@@ -58,11 +58,6 @@ export function useController<
 >(props: UseControllerProps<TValues, TName>): UseControllerReturn<TValues, TName> {
   const { name, disabled, shouldUnregister, rules } = props
 
-  /**
-   * @todo Needs to be on FormControl.action ?
-   */
-  const action = false
-
   const context = useFormContext<TValues>()
 
   const control = props.control ?? context?.control
@@ -178,7 +173,7 @@ export function useController<
         nameString.substring(0, nameString.search(/\.\d+(\.|$)/)) || nameString,
       )
 
-      if (isArrayField ? shouldUnregisterField && !action : shouldUnregisterField) {
+      if (isArrayField ? shouldUnregisterField && !control.action.value : shouldUnregisterField) {
         control.unregister(name)
       } else {
         updateMounted(name, false)

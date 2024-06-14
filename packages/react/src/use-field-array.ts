@@ -6,7 +6,7 @@ import '@forms.js/core/utils/union-to-intersection'
 import { get } from '@forms.js/common/utils/get'
 import { set } from '@forms.js/common/utils/set'
 import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@forms.js/core'
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'
 import { useFormContext } from './use-form-context'
@@ -65,13 +65,10 @@ export function useFieldArray<
     const currentFieldArrayValue = get(control.stores.values.value, name)
 
     if (!currentFieldArrayValue) {
-      control.stores.values.update(
-        (values: any) => {
-          set(values, name, [])
-          return values
-        },
-        [name],
-      )
+      control.stores.values.update((values: any) => {
+        set(values, name, [])
+        return values
+      }, name)
     }
 
     return () => {
@@ -87,18 +84,16 @@ export function useFieldArray<
     fieldArray.current.synchronize()
   }, [fields, name, control])
 
-  const fieldArrayMethods = useMemo(() => {
-    return {
-      swap: fieldArray.current.swap.bind(fieldArray.current),
-      move: fieldArray.current.move.bind(fieldArray.current),
-      prepend: fieldArray.current.prepend.bind(fieldArray.current),
-      append: fieldArray.current.append.bind(fieldArray.current),
-      remove: fieldArray.current.remove.bind(fieldArray.current),
-      insert: fieldArray.current.insert.bind(fieldArray.current),
-      update: fieldArray.current.update.bind(fieldArray.current),
-      replace: fieldArray.current.replace.bind(fieldArray.current),
-    }
-  }, [fieldArray.current])
+  const fieldArrayMethods = {
+    swap: fieldArray.current.swap.bind(fieldArray.current),
+    move: fieldArray.current.move.bind(fieldArray.current),
+    prepend: fieldArray.current.prepend.bind(fieldArray.current),
+    append: fieldArray.current.append.bind(fieldArray.current),
+    remove: fieldArray.current.remove.bind(fieldArray.current),
+    insert: fieldArray.current.insert.bind(fieldArray.current),
+    update: fieldArray.current.update.bind(fieldArray.current),
+    replace: fieldArray.current.replace.bind(fieldArray.current),
+  }
 
   return { fields, ...fieldArrayMethods, fieldArray: fieldArray.current }
 }

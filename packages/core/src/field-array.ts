@@ -41,8 +41,8 @@ export type FieldArrayOptions<
 
   rules?: {
     validate?:
-      | Validate<ParseForm<TFieldValues>[TFieldArrayName], TFieldValues>
-      | Record<string, Validate<ParseForm<TFieldValues>[TFieldArrayName], TFieldValues>>
+    | Validate<ParseForm<TFieldValues>[TFieldArrayName], TFieldValues>
+    | Record<string, Validate<ParseForm<TFieldValues>[TFieldArrayName], TFieldValues>>
   } & Pick<RegisterOptions<TFieldValues>, 'maxLength' | 'minLength' | 'required'>
 
   generateId?: () => string
@@ -182,22 +182,19 @@ export class FieldArray<
     if (shouldUpdateFieldsAndState && Array.isArray(errors)) {
       const newErrors = mutateArray(errors)
 
-      this.control.stores.errors.update(
-        (currentErrors) => {
-          if (shouldSetValues) {
-            set(currentErrors, this.name, newErrors)
-          }
+      this.control.stores.errors.update((currentErrors) => {
+        if (shouldSetValues) {
+          set(currentErrors, this.name, newErrors)
+        }
 
-          const existingErrors: FieldError[] | undefined = get(currentErrors, this.name)
+        const existingErrors: FieldError[] | undefined = get(currentErrors, this.name)
 
-          if (!Array.isArray(existingErrors) || !existingErrors.filter(Boolean).length) {
-            unset(currentErrors, this.name)
-          }
+        if (!Array.isArray(existingErrors) || !existingErrors.filter(Boolean).length) {
+          unset(currentErrors, this.name)
+        }
 
-          return currentErrors
-        },
-        [this.name],
-      )
+        return currentErrors
+      }, this.name)
     }
 
     const touchedFields = get(this.control.stores.touchedFields.value, this.name)
@@ -210,20 +207,17 @@ export class FieldArray<
       const newTouchedFields = mutateArray(touchedFields)
 
       if (shouldSetValues) {
-        this.control.stores.touchedFields.update(
-          (currentTouchedFields) => {
-            set(currentTouchedFields, this.name, newTouchedFields)
-            return currentTouchedFields
-          },
-          [this.name],
-        )
+        this.control.stores.touchedFields.update((currentTouchedFields) => {
+          set(currentTouchedFields, this.name, newTouchedFields)
+          return currentTouchedFields
+        }, this.name)
       }
     }
 
     if (this.control.isTracking('dirtyFields', this.name)) {
       this.control.stores.dirtyFields.set(
         getDirtyFields(this.control.stores.defaultValues.value, this.control.stores.values.value),
-        [this.name],
+        this.name,
       )
     }
 
@@ -359,13 +353,10 @@ export class FieldArray<
 
     this.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedFieldArrayValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    }, this.name)
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -512,9 +503,16 @@ export class FieldArray<
    * @todo What this for? I think it's for a lifecycle event in React.
    */
   synchronize() {
+    this.control.action.set(true)
+
     this.control.state.open()
 
     this.validate()
+
+    // Hmm...
+    this.control.stores.values.update((values) => {
+      return { ...values }
+    }, this.name)
 
     const focus = this.focus
 
@@ -542,9 +540,7 @@ export class FieldArray<
       !getValidationModes(this.control.options.mode).onSubmit ||
       this.control.stores.isSubmitted.value
 
-    if (!this.action.value || !submitted) {
-      return
-    }
+    if (!this.action.value || !submitted) return
 
     if (this.control.options.resolver) {
       const fieldsToValidate: Record<string, FieldReference> = {}
@@ -561,7 +557,7 @@ export class FieldArray<
         this.control.stores.values.value,
         this.control.options.context,
         {
-          names: [this.name] as any,
+          names: [this.name],
           fields: fieldsToValidate,
           criteriaMode: this.control.options.criteriaMode,
           shouldUseNativeValidation: this.control.options.shouldUseNativeValidation,
@@ -574,7 +570,7 @@ export class FieldArray<
 
       const errorChanged = existingError
         ? (!error && existingError.type) ||
-          (error && (existingError.type !== error.type || existingError.message !== error.message))
+        (error && (existingError.type !== error.type || existingError.message !== error.message))
         : error && error.type
 
       if (errorChanged) {
@@ -624,7 +620,7 @@ export class FieldArray<
 
   unmount() {
     if (this.control.options.shouldUnregister || this.options.shouldUnregister) {
-      this.control.unregister(this.name as any)
+      this.control.unregister(this.name)
     }
   }
 
