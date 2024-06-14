@@ -221,6 +221,7 @@ export class Batchable<
     } else {
       this.depth--
     }
+
     this.children.forEach((child) => child.close())
   }
 
@@ -312,8 +313,17 @@ export class Batchable<
 
   /**
    * Run a function and flush the buffer after it completes.
+   *
+   * IMPORTANT
+   *
+   * Changed keys in the buffer will remain there until the next flush.
+   * If you need to perform a surgical update with a completely fresh buffer, use a transaction!
    */
   transaction(fn: () => unknown): void {
+    const originalBuffer = [...this.buffer]
+
+    this.buffer = []
+
     this.open()
 
     fn()
@@ -322,6 +332,8 @@ export class Batchable<
      * After a transaction, force an update if the buffer contains relevant updates.
      */
     this.flush(this.keyChangedInBuffer())
+
+    this.buffer = originalBuffer
   }
 
   /**
