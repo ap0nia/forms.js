@@ -357,6 +357,10 @@ export class FormControl<
     }
   }
 
+  get _formState() {
+    return this.state.value
+  }
+
   /**
    * Lazily validate the form.
    */
@@ -1178,25 +1182,39 @@ export class FormControl<
       this.stores.errors.update((errors) => {
         unset(errors, 'root')
         return errors
-      }, true)
+      })
 
       this.mergeErrors(errors, validationResult?.names)
 
-      if (isEmptyObject(this.stores.errors.value)) {
-        const data = cloneObject(resolverResult?.values ?? this.stores.values.value) as any
-        await onValid?.(data, event)
-      } else {
+      let validCallbackError = undefined
+
+      const isValid = isEmptyObject(this.stores.errors.value)
+
+      try {
+        if (isValid) {
+          const data = cloneObject(resolverResult?.values ?? this.stores.values.value) as any
+          await onValid?.(data, event)
+        }
+      } catch (e) {
+        validCallbackError = e
+      }
+
+      if (!isValid) {
         await onInvalid?.(errors, event)
         this.focusError()
         setTimeout(this.focusError.bind(this))
       }
 
-      this.stores.isSubmitted.set(true, true)
-      this.stores.isSubmitting.set(false, true)
-      this.stores.isSubmitSuccessful.set(isEmptyObject(this.stores.errors.value), true)
-      this.stores.submitCount.update((count) => count + 1, true)
+      this.stores.isSubmitted.set(true)
+      this.stores.isSubmitting.set(false)
+      this.stores.isSubmitSuccessful.set(isValid && !validCallbackError)
+      this.stores.submitCount.update((count) => count + 1)
 
       this.state.flush()
+
+      if (validCallbackError) {
+        throw validCallbackError
+      }
     }
   }
 
