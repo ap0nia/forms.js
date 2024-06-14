@@ -39,7 +39,7 @@ export function updateFieldReference(reference: FieldReference, value: any) {
 }
 
 export function updateCheckboxElements(checkboxes: HTMLInputElement[], value: string | string[]) {
-  if (checkboxes.length === 0) {
+  if (checkboxes.length === 0 || value.length === 0) {
     return
   }
 
