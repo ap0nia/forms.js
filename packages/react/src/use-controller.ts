@@ -4,7 +4,7 @@ import { set } from '@forms.js/common/utils/set'
 import { INPUT_EVENTS, type ParseForm } from '@forms.js/core'
 import type { Field, FormControlState, RegisterOptions } from '@forms.js/core'
 import { getEventValue } from '@forms.js/core/html/get-event-value'
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 
 import type { Control } from './control'
 import type { ControllerFieldState } from './controller'
@@ -40,7 +40,7 @@ export type ControllerRenderProps<
   disabled?: boolean
   onChange: (...event: any[]) => void
   onBlur: () => void
-  ref: (instance: HTMLInputElement | null) => void
+  ref: (instance: HTMLElement | null) => void
 }
 
 export type UseControllerReturn<
@@ -125,23 +125,22 @@ export function useController<
     } as any)
   }
 
-  const ref = useCallback(
-    (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
-      if (instance == null) return
+  const ref = (instance: HTMLElement | null) => {
+    if (instance == null) return
 
-      const field = get(control.fields, props.name)
+    const element = instance as HTMLInputElement | HTMLTextAreaElement
 
-      if (field) {
-        field._f.ref = {
-          focus: () => instance.focus(),
-          select: () => instance.select(),
-          setCustomValidity: (message: string) => instance.setCustomValidity(message),
-          reportValidity: () => instance.reportValidity(),
-        }
+    const field = get(control.fields, props.name)
+
+    if (field) {
+      field._f.ref = {
+        focus: () => element.focus(),
+        select: () => element.select(),
+        setCustomValidity: (message: string) => element.setCustomValidity(message),
+        reportValidity: () => element.reportValidity(),
       }
-    },
-    [control, name],
-  )
+    }
+  }
 
   useEffect(() => {
     const shouldUnregisterField = props.shouldUnregister || control.options.shouldUnregister
@@ -189,7 +188,7 @@ export function useController<
 
   return {
     field: {
-      name: props.name,
+      name,
       value,
       ...(fieldIsDisabled && { disabled: fieldIsDisabled }),
       onChange,

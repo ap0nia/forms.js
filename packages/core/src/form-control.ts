@@ -1,3 +1,5 @@
+import { clearTimeout } from 'timers'
+
 import { Batchable, Writable } from '@forms.js/common/store'
 import { cloneObject } from '@forms.js/common/utils/clone-object'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
@@ -726,24 +728,18 @@ export class FormControl<
 
     if (isBlurEvent) {
       field._f.onBlur?.(event)
+
       this.delayErrorCallback?.(0)
-    } else {
-      field._f.onChange?.(event)
-    }
 
-    if (!isBlurEvent) {
-      this.stores.values.update(
-        (values) => {
-          set(values, name, fieldValue)
-          return values
-        },
-        [name],
-      )
-    }
-
-    if (isBlurEvent) {
       this.updateTouchedField(name)
     } else {
+      field._f.onChange?.(event)
+
+      this.stores.values.update((values) => {
+        set(values, name, fieldValue)
+        return values
+      }, name)
+
       this.updateDirtyField(name, fieldValue)
     }
 
@@ -764,15 +760,12 @@ export class FormControl<
 
     const nameArray = toStringArray(name)
 
-    this.stores.validatingFields.update(
-      (validatingFields) => {
-        nameArray?.forEach((name) => {
-          set(validatingFields, name, true)
-        })
-        return validatingFields
-      },
-      [name],
-    )
+    this.stores.validatingFields.update((validatingFields) => {
+      nameArray?.forEach((name) => {
+        set(validatingFields, name, true)
+      })
+      return validatingFields
+    }, name)
 
     const currentIsValidating = !isEmptyObject(this.state.value.validatingFields)
 
@@ -823,13 +816,25 @@ export class FormControl<
             this.mergeErrors(fullResult.validationResult.errors, fullResult.validationResult.names)
           }
         } else {
-          this.stores.errors.update(
-            (errors) => {
+          if (this.options.delayError) {
+            this.delayErrorCallback = this.debounce(() => {
+              this.stores.errors.update((errors) => {
+                set(errors, name, error)
+                return errors
+              }, name)
+            })
+
+            this.delayErrorCallback(this.options.delayError)
+          } else {
+            clearTimeout(this.timer)
+
+            this.delayErrorCallback = undefined
+
+            this.stores.errors.update((errors) => {
               set(errors, name, error)
               return errors
-            },
-            [name],
-          )
+            }, name)
+          }
         }
       } else {
         this.mergeErrors(result.validationResult.errors, result.validationResult.names)
@@ -842,19 +847,16 @@ export class FormControl<
       }
     }
 
-    this.stores.validatingFields.update(
-      (validatingFields) => {
-        nameArray?.forEach((name) => {
-          unset(validatingFields, name)
-        })
-        return validatingFields
-      },
-      [name],
-    )
+    this.stores.validatingFields.update((validatingFields) => {
+      nameArray?.forEach((name) => {
+        unset(validatingFields, name)
+      })
+      return validatingFields
+    }, name)
 
     const isValidating = !isEmptyObject(this.state.value.validatingFields)
 
-    this.stores.isValidating.set(isValidating, [name])
+    this.stores.isValidating.set(isValidating, name)
 
     this.state.flush()
   }
