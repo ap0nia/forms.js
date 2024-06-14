@@ -97,7 +97,13 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
       control.updateValid()
       control.mounted = true
     }
+
     control.removeUnmounted()
+
+    if (control.needsFlush) {
+      control.needsFlush = false
+      control.state.flush()
+    }
   })
 
   useEffect(() => {

@@ -294,6 +294,11 @@ export class FormControl<
 
   action = new Writable(false)
 
+  /**
+   * After resetting with `shouldUnregister: true`, the control needs one additional flush.
+   */
+  needsFlush = false
+
   constructor(options?: FormControlOptions<TFieldValues, TContext, TParsedForm>) {
     const mode = options?.mode ?? defaultFormControlOptions.mode
     const revalidateMode = options?.reValidateMode ?? defaultFormControlOptions.reValidateMode
@@ -1039,7 +1044,9 @@ export class FormControl<
   /**
    * Subscribe to all updates to {@link state}.
    */
-  watch(callback: (data: any, context: { name?: string; type?: string }) => void): () => void
+  watch(callback: (data: any, context: { name?: string; type?: string }) => void): {
+    unsubscribe: () => void
+  }
 
   /**
    * Makes {@link state} subscribe to all updates to values for a specific field name.
@@ -1063,9 +1070,24 @@ export class FormControl<
    */
   watch(...args: any[]): any {
     if (typeof args[0] === 'function') {
-      return this.state.subscribe((state, context) => {
-        return args[0](state, context ?? this.options.context)
-      })
+      const child = this.state.clone()
+
+      child.track('values')
+
+      const unsubscribeChild = child.subscribe(
+        (state, context) => {
+          return args[0]({ ...state.values }, context ?? this.options.context)
+        },
+        undefined,
+        false,
+      )
+
+      const unsubscribe = () => {
+        unsubscribeChild()
+        this.state.children.delete(child)
+      }
+
+      return { unsubscribe }
     }
 
     const [name, defaultValue] = args
@@ -1352,9 +1374,6 @@ export class FormControl<
 
       // Passing in `true` should do a flush automatically?
       this.stores.values.set(newValues as TFieldValues, true)
-
-      // this.state.flush()
-      // this.state.open()
     }
 
     this.names = {
@@ -1368,8 +1387,7 @@ export class FormControl<
       Boolean(options?.keepIsValid) ||
       Boolean(options?.keepDirtyValues)
 
-    // What is _state.watch, and do I need to update it?
-    // _state.watch = Boolean(this.options.shouldUnregister)
+    this.needsFlush = Boolean(this.options.shouldUnregister)
 
     if (!options?.keepSubmitCount) {
       this.stores.submitCount.set(0)
