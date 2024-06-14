@@ -517,7 +517,9 @@ export class FormControl<
       resolverOptions,
     )
 
-    const isValid = resolverResult.errors == null || isEmptyObject(resolverResult.errors)
+    const isValid = name
+      ? !nameArray.some((name) => get(resolverResult.errors, name))
+      : isEmptyObject(resolverResult.errors)
 
     return { resolverResult, isValid }
   }
@@ -902,21 +904,21 @@ export class FormControl<
 
     this.state.open()
 
-    const result = await this.validate(name)
+    const result = await this.validate(fieldNames)
 
     if (result.validationResult) {
       this.mergeErrors(result.validationResult.errors, result.validationResult.names)
     }
 
-    if (result.resolverResult?.errors && !isEmptyObject(result.resolverResult?.errors)) {
-      this.mergeErrors(result.resolverResult.errors)
-    } else {
+    if (result.isValid) {
       this.stores.errors.update((errors) => {
         fieldNames?.forEach((name) => {
           unset(errors, name)
         })
         return errors
       })
+    } else if (result.resolverResult?.errors && !isEmptyObject(result.resolverResult?.errors)) {
+      this.mergeErrors(result.resolverResult.errors)
     }
 
     this.stores.isValid.set(result.isValid, fieldNames)
