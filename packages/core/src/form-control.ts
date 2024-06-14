@@ -1176,7 +1176,7 @@ export class FormControl<
 
       this.stores.isSubmitting.set(true)
 
-      const { isValid, resolverResult, validationResult } = await this.validate()
+      const { resolverResult, validationResult } = await this.validate()
 
       const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
 
@@ -1185,9 +1185,9 @@ export class FormControl<
         return errors
       }, true)
 
-      this.mergeErrors(errors)
+      this.mergeErrors(errors, validationResult?.names)
 
-      if (isValid) {
+      if (isEmptyObject(this.stores.errors.value)) {
         const data = cloneObject(resolverResult?.values ?? this.stores.values.value) as any
         await onValid?.(data, event)
       } else {
@@ -1475,18 +1475,16 @@ export class FormControl<
     const namesToMerge = names ?? Object.keys(errors)
 
     this.stores.errors.update((currentErrors) => {
-      const newErrors = names?.length ? currentErrors : {}
-
       namesToMerge.forEach((name) => {
         const fieldError = get(errors, name)
 
         if (fieldError == null) {
-          unset(newErrors, name)
+          unset(currentErrors, name)
           return
         }
 
         if (!this.names.array.has(name)) {
-          set(newErrors, name, fieldError)
+          set(currentErrors, name, fieldError)
           return
         }
 
@@ -1494,10 +1492,10 @@ export class FormControl<
 
         set(fieldArrayErrors, 'root', errors[name])
 
-        set(newErrors, name, fieldArrayErrors)
+        set(currentErrors, name, fieldArrayErrors)
       })
 
-      return newErrors
+      return currentErrors
     }, namesToMerge)
   }
 
