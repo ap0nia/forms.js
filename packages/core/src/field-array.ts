@@ -100,7 +100,7 @@ export class FieldArray<
 
   control: FormControl<TFieldValues, any, any>
 
-  idGenerator: () => string
+  generateId: () => string
 
   constructor(public options: FieldArrayOptions<TFieldValues, TFieldArrayName, TKeyName>) {
     this.name = options.name
@@ -111,7 +111,7 @@ export class FieldArray<
 
     this.value = new Writable(Array.from(currentValue) as any)
 
-    this.idGenerator = options.generateId ?? generateId
+    this.generateId = options.generateId ?? generateId
 
     this.fields = new Writable(this.getFieldArray(), (set) => {
       const unsubscribe = this.value.subscribe(
@@ -119,7 +119,7 @@ export class FieldArray<
           if (value == null) return
 
           const newFields: any = Array.from(value as any).map((v, i) => {
-            this.ids[i] ??= this.idGenerator()
+            this.ids[i] ??= this.generateId()
             return { ...(v ?? undefined), id: this.ids[i] }
           })
 
@@ -132,7 +132,7 @@ export class FieldArray<
       this.control.valueListeners.push(() => {
         const newFields: any = Array.from(this.getFieldArray()).map((v, i) => {
           // NOTE: do NOT nullish coalesce this. Force generate a new number...
-          this.ids[i] = this.idGenerator()
+          this.ids[i] = this.generateId()
           return { ...(v ?? undefined), id: this.ids[i] }
         })
         set(newFields)
@@ -246,7 +246,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, updatedFieldArrayValues.length - 1, options)
 
-    this.ids.push(...valuesArray.map(this.idGenerator.bind(this)))
+    this.ids.push(...valuesArray.map(this.generateId.bind(this)))
 
     this.action.set(true)
     this.control.action.set(true)
@@ -283,7 +283,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, 0, options)
 
-    this.ids = [...valuesArray.map(this.idGenerator.bind(this)), ...this.ids]
+    this.ids = [...valuesArray.map(this.generateId.bind(this)), ...this.ids]
 
     this.action.set(true)
     this.control.action.set(true)
@@ -358,7 +358,7 @@ export class FieldArray<
 
     this.focus = getFocusFieldName(this.name, index, options)
 
-    this.ids.splice(index, 0, ...valuesArray.map(this.idGenerator.bind(this)))
+    this.ids.splice(index, 0, ...valuesArray.map(this.generateId.bind(this)))
 
     this.action.set(true)
     this.control.action.set(true)
@@ -403,8 +403,8 @@ export class FieldArray<
       [this.name],
     )
 
-    const leftId = this.ids[left] ?? this.idGenerator()
-    const rightId = this.ids[right] ?? this.idGenerator()
+    const leftId = this.ids[left] ?? this.generateId()
+    const rightId = this.ids[right] ?? this.generateId()
 
     this.ids[left] = rightId
     this.ids[right] = leftId
@@ -444,8 +444,8 @@ export class FieldArray<
       [this.name],
     )
 
-    this.ids[to] ??= this.idGenerator()
-    this.ids.splice(to, 0, this.ids.splice(from, 1)[0] ?? this.idGenerator())
+    this.ids[to] ??= this.generateId()
+    this.ids.splice(to, 0, this.ids.splice(from, 1)[0] ?? this.generateId())
 
     this.value.set(updatedValues as any)
 
@@ -474,7 +474,7 @@ export class FieldArray<
     })
 
     this.ids = [...updatedFieldArrayValues].map((item, i) =>
-      !item || i === index ? this.idGenerator() : this.ids[i] ?? this.idGenerator(),
+      !item || i === index ? this.generateId() : this.ids[i] ?? this.generateId(),
     )
 
     this.value.set(updatedFieldArrayValues as any)
@@ -498,7 +498,7 @@ export class FieldArray<
 
     const valuesArray = (Array.isArray(valueClone) ? valueClone : [valueClone]).filter(Boolean)
 
-    this.ids = valuesArray.map(this.idGenerator.bind(this))
+    this.ids = valuesArray.map(this.generateId.bind(this))
 
     this.action.set(true)
     this.control.action.set(true)
@@ -656,7 +656,7 @@ export class FieldArray<
     const value: any[] = valueFromControl ?? fallbackValue
 
     const fieldArray: any = value.map((v, i) => {
-      const id = this.ids[i] ?? v?.id ?? this.idGenerator()
+      const id = this.ids[i] ?? v?.id ?? this.generateId()
 
       this.ids[i] = id
 
