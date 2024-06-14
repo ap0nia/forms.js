@@ -435,12 +435,14 @@ export class FormControl<
   updateTouchAndDirty(name: PropertyKey, value?: unknown, options?: SetValueOptions): boolean {
     let result = false
 
-    if (!options?.shouldTouch || options.shouldDirty) {
-      result ||= this.updateDirtyField(name, value)
+    if (options?.shouldDirty) {
+      const updateDirtyResult = this.updateDirtyField(name, value)
+      result ||= updateDirtyResult
     }
 
     if (options?.shouldTouch) {
-      result ||= this.updateTouchedField(name)
+      const updateTouchedResult = this.updateTouchedField(name)
+      result ||= updateTouchedResult
     }
 
     return result
@@ -517,7 +519,7 @@ export class FormControl<
       resolverOptions,
     )
 
-    const isValid = name
+    const isValid = nameArray
       ? !nameArray.some((name) => get(resolverResult.errors, name))
       : isEmptyObject(resolverResult.errors)
 
@@ -704,10 +706,10 @@ export class FormControl<
 
       if (this.isTracking('isDirty') || (this.isTracking('dirtyFields') && options?.shouldDirty)) {
         const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
-        this.stores.dirtyFields.set(dirtyFields)
+        this.stores.dirtyFields.set(dirtyFields, name)
 
         const isDirty = this.getDirty(name, clonedValue)
-        this.stores.isDirty.set(isDirty)
+        this.stores.isDirty.set(isDirty, name)
 
         this.state.flush()
         this.state.open()
@@ -720,7 +722,7 @@ export class FormControl<
       }
     }
 
-    this.stores.values.update((values) => ({ ...values }), [name])
+    this.stores.values.update((values) => ({ ...values }), name)
 
     this.valueListeners.forEach((listener) => listener(this.stores.values.value))
 
@@ -900,11 +902,15 @@ export class FormControl<
   ): Promise<boolean> {
     const fieldNames = toStringArray(name)
 
-    this.stores.isValidating.set(true, fieldNames)
-
-    this.state.open()
+    this.stores.isValidating.set(true, true)
 
     const result = await this.validate(fieldNames)
+
+    if (result.isValid || this.stores.isValid.value) {
+      this.updateValid()
+    }
+
+    this.state.open()
 
     if (result.validationResult) {
       this.mergeErrors(result.validationResult.errors, result.validationResult.names)
