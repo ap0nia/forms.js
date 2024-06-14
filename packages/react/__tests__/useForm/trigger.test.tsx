@@ -837,6 +837,8 @@ describe('trigger', () => {
 
   /**
    * Batching issue with useExternalSyncStore causes `updateValid` to run twice...
+   *
+   * @see https://github.com/facebook/react/issues/25191
    */
   it.skip('should skip additional validation when input validation already failed', async () => {
     let count = 0

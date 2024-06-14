@@ -218,14 +218,7 @@ describe('useWatch', () => {
     expect(submitData).toEqual({})
   })
 
-  /**
-   * It should trigger at least times. Once initially, and once each for the three interactions.
-   *
-   * But the `onChange` does not trigger, so it only re-renders three times.
-   *
-   * Not sure how to get five re-renders.
-   */
-  it.skip('should return defaultValue with shouldUnregister set to true and keepDefaultValues', () => {
+  it('should return defaultValue with shouldUnregister set to true and keepDefaultValues', () => {
     const output: unknown[] = []
 
     function App() {

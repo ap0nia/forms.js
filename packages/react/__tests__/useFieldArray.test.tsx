@@ -2425,10 +2425,7 @@ describe('useFieldArray', () => {
     expect(watchedValue).toMatchSnapshot()
   })
 
-  /**
-   * My implementation does not re-render twice after the final click.
-   */
-  it.skip('should update field array defaultValues when invoke setValue', async () => {
+  it('should update field array defaultValues when invoke setValue', async () => {
     type FormValues = {
       names: {
         name: string
