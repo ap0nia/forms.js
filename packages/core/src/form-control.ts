@@ -360,6 +360,12 @@ export class FormControl<
     return this.state.value
   }
 
+  get _state() {
+    return {
+      mount: this.mounted,
+    }
+  }
+
   /**
    * Lazily validate the form.
    */

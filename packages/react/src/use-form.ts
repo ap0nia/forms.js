@@ -14,6 +14,7 @@ export type UseFormReturn<TFieldValues extends Record<string, any>, TContext = a
   | 'unregister'
   | 'watch'
   | 'reset'
+  | 'resetField'
   | 'setError'
   | 'clearErrors'
   | 'setValue'
@@ -47,6 +48,7 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
     getValues: control.getValues.bind(control),
     getFieldState: control.getFieldState.bind(control),
     trigger: control.trigger.bind(control),
+    resetField: control.resetField.bind(control),
   })
 
   const subscribe = useCallback(
