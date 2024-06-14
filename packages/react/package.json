@@ -24,7 +24,7 @@
   "keywords": [],
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run useFieldArray/append"
   },
   "dependencies": {
     "@forms.js/common": "workspace:^",
