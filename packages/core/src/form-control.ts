@@ -1223,7 +1223,11 @@ export class FormControl<
         return errors
       })
 
-      this.mergeErrors(errors, validationResult?.names)
+      if (validationResult) {
+        this.mergeErrors(errors, validationResult?.names)
+      } else {
+        this.stores.errors.set(resolverResult.errors ?? {})
+      }
 
       let validCallbackError = undefined
 

@@ -33,6 +33,11 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
 
   const control = formControlRef.current
 
+  control.options = {
+    ...control.options,
+    ...props,
+  }
+
   const form = useRef<UseFormReturn<TValues, TContext>>({
     control: control,
     register: control.register.bind(control),
