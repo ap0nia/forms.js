@@ -15,7 +15,9 @@ export function focusFieldBy(
   const focusInput: IterateAction = (ref, name) => {
     if (shouldFocus(name)) {
       ref.focus?.()
+      return 1
     }
+    return
   }
 
   return iterateFieldsByAction(fields, focusInput, fieldNames, abortEarly)
