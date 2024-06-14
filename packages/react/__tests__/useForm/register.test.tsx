@@ -628,7 +628,7 @@ describe('register', () => {
       const watchedData: object[] = []
 
       const Component = () => {
-        const { register, handleSubmit, watch } = useForm<{
+        const { control, register, handleSubmit, watch } = useForm<{
           test?: string
           test1?: string
           test2?: string
@@ -637,6 +637,8 @@ describe('register', () => {
         }>()
 
         watchedData.push(watch())
+
+        console.log('???', control.isTracking('isSubmitting'))
 
         return (
           <form
@@ -656,11 +658,15 @@ describe('register', () => {
 
       render(<Component />)
 
+      console.log('A', watchedData)
       fireEvent.change(screen.getByTestId('input'), {
         target: { value: '1234' },
       })
 
+      console.log('B', watchedData)
       fireEvent.click(screen.getByRole('button'))
+
+      console.log('C', watchedData)
 
       expect(watchedData).toStrictEqual([
         {},
@@ -1496,7 +1502,7 @@ describe('register', () => {
       expect((screen.getByRole('textbox') as HTMLInputElement).value).toEqual('1234')
     })
 
-    it.only('should populate input as string and submit as datetime object ', async () => {
+    it('should populate input as string and submit as datetime object ', async () => {
       let submitData: unknown
 
       const App = () => {

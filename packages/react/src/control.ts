@@ -58,9 +58,9 @@ export class Control<
       onChange,
       ref: (instance: HTMLElement | null) => {
         if (instance) {
-          this.registerElement(name, instance as HTMLInputElement)
+          this.registerElement(name, instance as HTMLInputElement, options)
         } else {
-          this.unregisterField(name)
+          this.unregisterField(name, options)
         }
       },
     }

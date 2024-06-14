@@ -9,7 +9,6 @@ import { isBrowser } from '@forms.js/common/utils/is-browser'
 import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
 import { isObject } from '@forms.js/common/utils/is-object'
 import { isPrimitive } from '@forms.js/common/utils/is-primitive'
-import type { Nullish } from '@forms.js/common/utils/null'
 import { set } from '@forms.js/common/utils/set'
 import { toStringArray } from '@forms.js/common/utils/to-string-array'
 import { unset } from '@forms.js/common/utils/unset'
@@ -477,11 +476,14 @@ export class FormControl<
   /**
    * Validate the form.
    */
-  async validate(name?: PropertyKey | PropertyKey[] | readonly PropertyKey[] | Nullish) {
+  async validate(
+    name?: PropertyKey | PropertyKey[] | readonly PropertyKey[],
+    values = this.stores.values.value,
+  ) {
     const nameArray = toStringArray(name)
 
     if (this.options.resolver == null) {
-      const validationResult = await this.executeBuiltInValidation(nameArray)
+      const validationResult = await this.executeBuiltInValidation(nameArray, undefined, values)
 
       const isValid = validationResult.valid
 
@@ -500,7 +502,7 @@ export class FormControl<
     }
 
     const resolverResult = await this.options.resolver(
-      this.stores.values.value,
+      values,
       this.options.context,
       resolverOptions,
     )
@@ -516,10 +518,11 @@ export class FormControl<
   async executeBuiltInValidation(
     names?: string | string[],
     shouldOnlyCheckValid?: boolean,
+    values = this.stores.values.value,
   ): Promise<NativeValidationResult> {
     const fields = deepFilter(this.fields, names)
 
-    return nativeValidateFields(fields, this.stores.values.value, {
+    return nativeValidateFields(fields, values, {
       shouldOnlyCheckValid,
       shouldUseNativeValidation: this.options.shouldUseNativeValidation,
       shouldDisplayAllAssociatedErrors: this.options.shouldDisplayAllAssociatedErrors,
@@ -1181,13 +1184,18 @@ export class FormControl<
       event?.preventDefault?.()
       // event?.persist?.()
 
+      /**
+       * Clone the object to prevent race conditions from mutations during the submit handling.
+       */
+      const values = cloneObject(this.stores.values.value)
+
       this.state.transaction(() => {
         this.stores.isSubmitting.set(true)
       })
 
       this.state.open()
 
-      const { resolverResult, validationResult } = await this.validate()
+      const { resolverResult, validationResult } = await this.validate(undefined, values)
 
       const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
 
@@ -1204,7 +1212,7 @@ export class FormControl<
 
       try {
         if (isValid) {
-          const data = cloneObject(resolverResult?.values ?? this.stores.values.value) as any
+          const data = cloneObject(resolverResult?.values ?? values) as any
           await onValid?.(data, event)
         }
       } catch (e) {
@@ -1653,6 +1661,7 @@ export class FormControl<
       const result = this.updateDisabledField({ field, disabled, name })
       if (result) {
         this.state.flush()
+        this.state.open()
       }
     } else {
       const defaultValue =
@@ -1688,7 +1697,7 @@ export class FormControl<
 
     const fieldNames = toStringArray(name)
 
-    const newField = mergeElementWithField(name, field, element)
+    const newField = mergeElementWithField(name, field, element, this.stores.defaultValues.value)
 
     const defaultValue =
       get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
