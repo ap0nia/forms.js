@@ -107,7 +107,7 @@ export class FieldArray<
 
     this.control = options.control
 
-    const currentValue = get(this.control.stores.values.value, this.name, [])
+    const currentValue = get(this.control._formValues, this.name, [])
 
     this.value = new Writable(Array.from(currentValue) as any)
 
@@ -145,13 +145,11 @@ export class FieldArray<
   getControlFieldArrayValues(): TFieldArrayValue {
     const controlFieldArrayValues =
       get(
-        this.control.mounted
-          ? this.control.stores.values.value
-          : this.control.stores.defaultValues.value,
+        this.control.mounted ? this.control._formValues : this.control._defaultValues,
         this.name,
       ) ??
       (this.control.options.shouldUnregister
-        ? get(this.control.stores.defaultValues.value, this.name) ?? []
+        ? get(this.control._defaultValues, this.name) ?? []
         : [])
 
     return controlFieldArrayValues as TFieldArrayValue
@@ -177,27 +175,24 @@ export class FieldArray<
       }
     }
 
-    const errors = get(this.control.stores.errors.value, this.name)
+    const errors = get(this.control._formState.errors, this.name)
 
     if (shouldUpdateFieldsAndState && Array.isArray(errors)) {
       const newErrors = mutateArray(errors)
 
-      this.control.stores.errors.update(
-        (currentErrors) => {
-          if (shouldSetValues) {
-            set(currentErrors, this.name, newErrors)
-          }
+      this.control.stores.errors.update((currentErrors) => {
+        if (shouldSetValues) {
+          set(currentErrors, this.name, newErrors)
+        }
 
-          const existingErrors: FieldError[] | undefined = get(currentErrors, this.name)
+        const existingErrors: FieldError[] | undefined = get(currentErrors, this.name)
 
-          if (!Array.isArray(existingErrors) || !existingErrors.filter(Boolean).length) {
-            unset(currentErrors, this.name)
-          }
+        if (!Array.isArray(existingErrors) || !existingErrors.filter(Boolean).length) {
+          unset(currentErrors, this.name)
+        }
 
-          return currentErrors
-        },
-        [this.name],
-      )
+        return currentErrors
+      }, this.name)
     }
 
     const touchedFields = get(this.control.stores.touchedFields.value, this.name)
@@ -205,25 +200,22 @@ export class FieldArray<
     if (
       shouldUpdateFieldsAndState &&
       Array.isArray(touchedFields) &&
-      this.control.state.isTracking('touchedFields', this.name)
+      this.control._proxyFormState.touchedFields
     ) {
       const newTouchedFields = mutateArray(touchedFields)
 
       if (shouldSetValues) {
-        this.control.stores.touchedFields.update(
-          (currentTouchedFields) => {
-            set(currentTouchedFields, this.name, newTouchedFields)
-            return currentTouchedFields
-          },
-          [this.name],
-        )
+        this.control.stores.touchedFields.update((currentTouchedFields) => {
+          set(currentTouchedFields, this.name, newTouchedFields)
+          return currentTouchedFields
+        }, this.name)
       }
     }
 
-    if (this.control.isTracking('dirtyFields', this.name)) {
+    if (this.control._proxyFormState.dirtyFields) {
       this.control.stores.dirtyFields.set(
-        getDirtyFields(this.control.stores.defaultValues.value, this.control.stores.values.value),
-        [this.name],
+        getDirtyFields(this.control._defaultValues, this.control._formValues),
+        this.name,
       )
     }
 
@@ -251,13 +243,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedFieldArrayValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    }, this.name)
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -288,13 +277,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedFieldArrayValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    }, this.name)
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -320,13 +306,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedFieldArrayValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    }, this.name)
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -363,13 +346,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedFieldArrayValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    }, this.name)
 
     this.value.set(updatedFieldArrayValues as any)
 
@@ -395,13 +375,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedFieldArrayValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedFieldArrayValues)
+      return currentValues
+    }, this.name)
 
     const leftId = this.ids[left] ?? this.generateId()
     const rightId = this.ids[right] ?? this.generateId()
@@ -436,13 +413,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, updatedValues)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, updatedValues)
+      return currentValues
+    }, this.name)
 
     this.ids[to] ??= this.generateId()
     this.ids.splice(to, 0, this.ids.splice(from, 1)[0] ?? this.generateId())
@@ -471,7 +445,7 @@ export class FieldArray<
     this.control.stores.values.update((currentValues) => {
       set(currentValues, this.name, updatedFieldArrayValues)
       return currentValues
-    })
+    }, this.name)
 
     this.ids = [...updatedFieldArrayValues].map((item, i) =>
       !item || i === index ? this.generateId() : this.ids[i] ?? this.generateId(),
@@ -503,13 +477,10 @@ export class FieldArray<
     this.action.set(true)
     this.control.action.set(true)
 
-    this.control.stores.values.update(
-      (currentValues) => {
-        set(currentValues, this.name, valuesArray)
-        return currentValues
-      },
-      [this.name],
-    )
+    this.control.stores.values.update((currentValues) => {
+      set(currentValues, this.name, valuesArray)
+      return currentValues
+    }, this.name)
 
     this.value.set(valuesArray as any)
 
@@ -517,7 +488,7 @@ export class FieldArray<
   }
 
   /**
-   * @todo What this for? I think it's for a lifecycle event in React.
+   * React lifecycle event...
    */
   synchronize() {
     this.control.action.set(false)
@@ -553,8 +524,7 @@ export class FieldArray<
 
   async validate(fields = this.control.fields) {
     const submitted =
-      !getValidationModes(this.control.options.mode).onSubmit ||
-      this.control.stores.isSubmitted.value
+      !getValidationModes(this.control.options.mode).onSubmit || this.control._formState.isSubmitted
 
     if (!this.action.value || !submitted) return
 
@@ -570,7 +540,7 @@ export class FieldArray<
       }
 
       const result = await this.control.options.resolver(
-        this.control.stores.values.value,
+        this.control._formValues,
         this.control.options.context,
         {
           names: [this.name] as any,
@@ -582,7 +552,7 @@ export class FieldArray<
 
       const error = get(result.errors, this.name)
 
-      const existingError = get(this.control.stores.errors.value, this.name)
+      const existingError = get(this.control._formState.errors, this.name)
 
       const errorChanged = existingError
         ? (!error && existingError.type) ||
@@ -597,7 +567,7 @@ export class FieldArray<
             unset(currentErrors, this.name)
           }
           return currentErrors
-        })
+        }, this.name)
       }
 
       return
@@ -611,7 +581,7 @@ export class FieldArray<
 
     const result = await nativeValidateSingleField(
       field,
-      this.control.stores.values.value,
+      this.control._formValues,
       this.control.options.criteriaMode === VALIDATION_EVENTS.all,
       this.control.options.shouldUseNativeValidation,
       true,
@@ -626,7 +596,7 @@ export class FieldArray<
         set(currentErrors, this.name, fieldArrayErrors)
 
         return currentErrors
-      })
+      }, this.name)
     }
   }
 
@@ -642,16 +612,13 @@ export class FieldArray<
 
   getFieldArray(): any {
     const valueFromControl = get(
-      this.control.mounted
-        ? this.control.stores.values.value
-        : this.control.stores.defaultValues.value,
+      this.control.mounted ? this.control._formValues : this.control._defaultValues,
       this.name,
     )
 
     const fallbackValue =
-      (this.control.options.shouldUnregister
-        ? get(this.control.stores.defaultValues.value, this.name)
-        : []) ?? []
+      (this.control.options.shouldUnregister ? get(this.control._defaultValues, this.name) : []) ??
+      []
 
     const value: any[] = valueFromControl ?? fallbackValue
 
