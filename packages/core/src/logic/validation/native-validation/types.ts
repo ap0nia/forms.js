@@ -1,4 +1,4 @@
-import type { Nullish } from '@forms.js/common/utils/null'
+import type { Nullish } from '@hookform/common/utils/null'
 
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field } from '../../../types/fields'

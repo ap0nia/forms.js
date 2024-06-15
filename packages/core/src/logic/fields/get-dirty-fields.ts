@@ -1,7 +1,7 @@
-import { deepEqual } from '@forms.js/common/utils/deep-equal'
-import { isObject } from '@forms.js/common/utils/is-object'
-import { isPrimitive } from '@forms.js/common/utils/is-primitive'
-import { objectHasFunction } from '@forms.js/common/utils/object-has-function'
+import { deepEqual } from '@hookform/common/utils/deep-equal'
+import { isObject } from '@hookform/common/utils/is-object'
+import { isPrimitive } from '@hookform/common/utils/is-primitive'
+import { objectHasFunction } from '@hookform/common/utils/object-has-function'
 
 import type { DeepPartial } from '../../utils/deep-partial'
 

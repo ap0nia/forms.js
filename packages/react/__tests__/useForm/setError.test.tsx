@@ -1,4 +1,4 @@
-import type { ErrorOption, FieldError, GlobalError } from '@forms.js/core'
+import type { ErrorOption, FieldError, GlobalError } from '@hookform/core'
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi as jest } from 'vitest'
 

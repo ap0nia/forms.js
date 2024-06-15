@@ -1,4 +1,4 @@
-import { noop } from '@forms.js/common/utils/noop'
+import { noop } from '@hookform/common/utils/noop'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React, { useState } from 'react'
 import { vi as jest, describe, it, expect } from 'vitest'

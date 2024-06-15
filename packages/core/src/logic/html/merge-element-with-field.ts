@@ -1,4 +1,4 @@
-import { get } from '@forms.js/common/utils/get'
+import { get } from '@hookform/common/utils/get'
 
 import type { Field } from '../../types/fields'
 

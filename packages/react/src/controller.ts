@@ -1,4 +1,4 @@
-import type { FieldError, ParseForm } from '@forms.js/core'
+import type { FieldError, ParseForm } from '@hookform/core'
 
 import { useController, type UseControllerProps, type UseControllerReturn } from './use-controller'
 

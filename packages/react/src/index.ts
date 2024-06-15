@@ -1,5 +1,6 @@
+export * from '@hookform/core'
+
 export * from './control'
-export * from './constants'
 export * from './controller'
 export * from './form-provider'
 export * from './use-controller'
@@ -8,3 +9,4 @@ export * from './use-form'
 export * from './use-form-context'
 export * from './use-subscribe'
 export * from './use-watch'
+export * from './types'

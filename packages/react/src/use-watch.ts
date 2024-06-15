@@ -1,4 +1,4 @@
-import type { ParseForm } from '@forms.js/core'
+import type { ParseForm } from '@hookform/core'
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'

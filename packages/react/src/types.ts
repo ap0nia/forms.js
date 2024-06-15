@@ -1,4 +1,4 @@
-import type { ParseForm, RegisterOptions } from '@forms.js/core'
+import type { ParseForm, RegisterOptions } from '@hookform/core'
 
 export type UseFormRegister<TValues extends Record<string, any>> = <
   TFieldName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,

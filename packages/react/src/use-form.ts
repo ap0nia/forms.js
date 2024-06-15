@@ -1,5 +1,5 @@
-import { deepEqual } from '@forms.js/common/utils/deep-equal'
-import type { FormControlState } from '@forms.js/core'
+import { deepEqual } from '@hookform/common/utils/deep-equal'
+import type { FormControlState } from '@hookform/core'
 import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
 
 import { Control, type ControlOptions } from './control'

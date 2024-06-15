@@ -1,11 +1,11 @@
-import '@forms.js/core/utils/nested-object-arrays'
-import '@forms.js/core/utils/object-to-union'
-import '@forms.js/core/utils/prettify'
-import '@forms.js/core/utils/union-to-intersection'
+import '@hookform/core/utils/nested-object-arrays'
+import '@hookform/core/utils/object-to-union'
+import '@hookform/core/utils/prettify'
+import '@hookform/core/utils/union-to-intersection'
 
-import { get } from '@forms.js/common/utils/get'
-import { set } from '@forms.js/common/utils/set'
-import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@forms.js/core'
+import { get } from '@hookform/common/utils/get'
+import { set } from '@hookform/common/utils/set'
+import { FieldArray, type FieldArrayOptions, type ParseFieldArray } from '@hookform/core'
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'

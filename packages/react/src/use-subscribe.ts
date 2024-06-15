@@ -1,8 +1,8 @@
 // For some reason these types aren't portable??
-import '@forms.js/core/utils/deep-partial'
-import '@forms.js/core/utils/deep-map'
+import '@hookform/core/utils/deep-partial'
+import '@hookform/core/utils/deep-map'
 
-import type { ParseForm } from '@forms.js/core'
+import type { ParseForm } from '@hookform/core'
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'

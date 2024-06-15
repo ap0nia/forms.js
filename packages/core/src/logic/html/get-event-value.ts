@@ -1,4 +1,4 @@
-import { isObject } from '@forms.js/common/utils/is-object'
+import { isObject } from '@hookform/common/utils/is-object'
 
 import { isCheckBoxInput } from './checkbox'
 

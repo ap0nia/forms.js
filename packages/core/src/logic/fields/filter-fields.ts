@@ -1,5 +1,5 @@
-import { get } from '@forms.js/common/utils/get'
-import { set } from '@forms.js/common/utils/set'
+import { get } from '@hookform/common/utils/get'
+import { set } from '@hookform/common/utils/set'
 
 import type { Field, FieldRecord, FieldReference } from '../../types/fields'
 

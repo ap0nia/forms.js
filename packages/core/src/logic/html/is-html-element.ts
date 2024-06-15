@@ -1,4 +1,4 @@
-import { isBrowser } from '@forms.js/common/utils/is-browser'
+import { isBrowser } from '@hookform/common/utils/is-browser'
 
 /**
  * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/isHTMLElement.ts

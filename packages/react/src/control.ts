@@ -3,8 +3,8 @@ import {
   type ParseForm,
   type FormControlOptions,
   type RegisterOptions,
-} from '@forms.js/core'
-import { getRuleValue } from '@forms.js/core/validation/get-rule-value'
+} from '@hookform/core'
+import { getRuleValue } from '@hookform/core/validation/get-rule-value'
 
 export type ReactRegisterProps<TFieldName> = {
   disabled?: boolean

@@ -1,1 +1,1 @@
-export * from '@forms.js/core/constants'
+export * from '@hookform/core/constants'

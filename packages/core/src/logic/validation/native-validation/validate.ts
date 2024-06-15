@@ -1,5 +1,5 @@
-import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
-import { isObject } from '@forms.js/common/utils/is-object'
+import { isEmptyObject } from '@hookform/common/utils/is-empty-object'
+import { isObject } from '@hookform/common/utils/is-object'
 
 import { INPUT_VALIDATION_RULE } from '../../../constants'
 import type { FieldError } from '../../../types/errors'

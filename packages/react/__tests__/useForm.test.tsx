@@ -1,6 +1,6 @@
-import { noop } from '@forms.js/common/utils/noop'
-import { sleep } from '@forms.js/common/utils/sleep'
-import type { FieldErrors, RegisterOptions } from '@forms.js/core'
+import { noop } from '@hookform/common/utils/noop'
+import { sleep } from '@hookform/common/utils/sleep'
+import type { FieldErrors, RegisterOptions } from '@hookform/core'
 import {
   act as actComponent,
   act,

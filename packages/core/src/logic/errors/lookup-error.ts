@@ -1,4 +1,4 @@
-import { get } from '@forms.js/common/utils/get'
+import { get } from '@hookform/common/utils/get'
 
 import type { FieldError, FieldErrors } from '../../types/errors'
 import type { FieldLikeRecord } from '../../types/fields'

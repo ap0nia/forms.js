@@ -1,7 +1,7 @@
-import { get } from '@forms.js/common/utils/get'
-import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
-import { noop } from '@forms.js/common/utils/noop'
-import { notNullish } from '@forms.js/common/utils/null'
+import { get } from '@hookform/common/utils/get'
+import { isEmptyObject } from '@hookform/common/utils/is-empty-object'
+import { noop } from '@hookform/common/utils/noop'
+import { notNullish } from '@hookform/common/utils/null'
 
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field, FieldRecord } from '../../../types/fields'

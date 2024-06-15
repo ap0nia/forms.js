@@ -1,5 +1,5 @@
-import { noop } from '@forms.js/common/utils/noop'
-import { sleep } from '@forms.js/common/utils/sleep'
+import { noop } from '@hookform/common/utils/noop'
+import { sleep } from '@hookform/common/utils/sleep'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi as jest } from 'vitest'

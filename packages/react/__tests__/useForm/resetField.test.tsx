@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import React from 'react'
 import { describe, expect, it, vi as jest } from 'vitest'
 
 import { useForm } from '../../src/use-form'

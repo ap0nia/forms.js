@@ -1,4 +1,4 @@
-import type { Noop } from '@forms.js/common/utils/noop'
+import type { Noop } from '@hookform/common/utils/noop'
 
 import type { RegisterOptions } from './register'
 

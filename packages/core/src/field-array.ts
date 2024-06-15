@@ -1,8 +1,8 @@
-import { Writable } from '@forms.js/common/store'
-import { get } from '@forms.js/common/utils/get'
-import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
-import { set } from '@forms.js/common/utils/set'
-import { unset } from '@forms.js/common/utils/unset'
+import { Writable } from '@hookform/common/store'
+import { get } from '@hookform/common/utils/get'
+import { isEmptyObject } from '@hookform/common/utils/is-empty-object'
+import { set } from '@hookform/common/utils/set'
+import { unset } from '@hookform/common/utils/unset'
 
 import { VALIDATION_EVENTS } from './constants'
 import type { FormControl } from './form-control'

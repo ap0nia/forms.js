@@ -1,5 +1,5 @@
-import { noop } from '@forms.js/common/utils/noop'
-import type { ValidateResult } from '@forms.js/core'
+import { noop } from '@hookform/common/utils/noop'
+import type { ValidateResult } from '@hookform/core'
 import {
   act as actComponent,
   fireEvent,

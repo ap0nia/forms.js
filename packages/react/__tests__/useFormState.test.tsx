@@ -1,5 +1,5 @@
-import { deepEqual } from '@forms.js/common/utils/deep-equal'
-import { noop } from '@forms.js/common/utils/noop'
+import { deepEqual } from '@hookform/common/utils/deep-equal'
+import { noop } from '@hookform/common/utils/noop'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it } from 'vitest'

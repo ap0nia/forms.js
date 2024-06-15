@@ -1,5 +1,5 @@
-import { get } from '@forms.js/common/utils/get'
-import { isObject } from '@forms.js/common/utils/is-object'
+import { get } from '@hookform/common/utils/get'
+import { isObject } from '@hookform/common/utils/is-object'
 
 import type { FieldElement, FieldRecord } from '../../types/fields'
 

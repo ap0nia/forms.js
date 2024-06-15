@@ -1,4 +1,4 @@
-import { get } from '@forms.js/common/utils/get'
+import { get } from '@hookform/common/utils/get'
 import React from 'react'
 
 import type { Control } from './control'
