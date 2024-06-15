@@ -1,3 +1,7 @@
+# hookform
+
+> Framework agnostic implementation of React-Hook-Form
+
 <div align="center">
         <a href="https://react-hook-form.com" title="React Hook Form - Simple React forms validation">
             <img src="https://raw.githubusercontent.com/react-hook-form/react-hook-form/master/docs/logo.png" alt="React Hook Form Logo - React hook custom hook for form validation" />
@@ -31,19 +35,19 @@
 
 ### Install
 
-    npm install react-hook-form
+npm install @hookform/react
 
 ### Quickstart
 
 ```jsx
-import { useForm } from 'react-hook-form';
+import { useForm } from '@hookform/react'
 
 function App() {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm()
 
   return (
     <form onSubmit={handleSubmit((data) => console.log(data))}>
@@ -54,7 +58,7 @@ function App() {
       {errors.age && <p>Please enter number for age.</p>}
       <input type="submit" />
     </form>
-  );
+  )
 }
 ```
 
