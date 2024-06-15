@@ -298,8 +298,12 @@ export class FormControl<
    */
   timer = 0
 
+  /**
+   */
   delayErrorCallback?: (wait: number) => void
 
+  /**
+   */
   action = new Writable(false)
 
   /**
@@ -439,10 +443,7 @@ export class FormControl<
     },
   ) as any
 
-  /**
-   * Lazily validate the form.
-   */
-  async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
+  async updateValid(force?: boolean, name?: PropertyKey | PropertyKey[]): Promise<void> {
     if (force || this._proxyFormState.isValid) {
       const result = await this.validate()
 
@@ -466,9 +467,9 @@ export class FormControl<
         }
       })
       return validatingFields
-    })
+    }, names)
 
-    this.stores.isValidating.set(!isEmptyObject(this._formState.validatingFields))
+    this.stores.isValidating.set(!isEmptyObject(this._formState.validatingFields), names)
 
     this.state.flush()
   }
@@ -479,7 +480,7 @@ export class FormControl<
     this.stores.errors.update((errors) => {
       set(errors, name, error)
       return errors
-    })
+    }, name)
   }
 
   setErrors(errors: FieldErrors<TFieldValues>) {
@@ -530,13 +531,13 @@ export class FormControl<
           unset(errors, name)
         }
         return errors
-      })
+      }, name)
     }
 
     const hasError = error ? !deepEqual(previousFieldError, error) : previousFieldError
 
-    if ((hasError || !modified || this.isTracking('isValid')) && typeof isValid === 'boolean') {
-      this.stores.isValid.set(isValid)
+    if ((hasError || !modified || this._proxyFormState.isValid) && typeof isValid === 'boolean') {
+      this.stores.isValid.set(isValid, name)
     }
 
     this.state.flush()
@@ -547,7 +548,7 @@ export class FormControl<
    */
   async validate(
     name?: PropertyKey | PropertyKey[] | readonly PropertyKey[],
-    values = this.stores.values.value,
+    values = this._formValues,
   ) {
     const nameArray = toStringArray(name)
 
@@ -589,7 +590,7 @@ export class FormControl<
   async executeBuiltInValidation(
     names?: string | string[],
     shouldOnlyCheckValid?: boolean,
-    values = this.stores.values.value,
+    values = this._formValues,
   ): Promise<NativeValidationResult> {
     const fields = deepFilter(this.fields, names)
 
@@ -623,7 +624,7 @@ export class FormControl<
       this.stores.values.update((values) => {
         set(values, name, data)
         return values
-      })
+      }, name)
     }
 
     return !deepEqual(this.getValues(), this._defaultValues)
@@ -758,7 +759,10 @@ export class FormControl<
       this.state.flush()
       this.state.open()
 
-      if (this.isTracking('isDirty') || (this.isTracking('dirtyFields') && options?.shouldDirty)) {
+      if (
+        this._proxyFormState.isDirty ||
+        (this._proxyFormState.dirtyFields && options?.shouldDirty)
+      ) {
         const dirtyFields = getDirtyFields(this._defaultValues, this._formValues)
         this.stores.dirtyFields.set(dirtyFields, name)
 
@@ -824,7 +828,7 @@ export class FormControl<
     const nothingToValidate =
       !hasValidation(field._f) &&
       !this.options.resolver &&
-      !get(this.stores.errors.value, name) &&
+      !get(this._formState.errors, name) &&
       !field._f.deps
 
     const shouldSkipValidation =
@@ -858,7 +862,7 @@ export class FormControl<
       const isFieldValueUpdated = this.isFieldValueUpdated(name, fieldValue)
 
       if (isFieldValueUpdated) {
-        const previousError = lookupError(this.stores.errors.value, this.fields, name)
+        const previousError = lookupError(this._formState.errors, this.fields, name)
 
         const currentError = lookupError(
           result.resolverResult.errors ?? {},
@@ -944,7 +948,7 @@ export class FormControl<
   }
 
   focusInput = (element: FieldElement, name: string) => {
-    if (get(this.state.value.errors, name) && element.focus) {
+    if (get(this._formState.errors, name) && element.focus) {
       element.focus()
       return 1
     }
@@ -960,11 +964,11 @@ export class FormControl<
   ): Promise<boolean> {
     const fieldNames = toStringArray(name)
 
-    this.stores.isValidating.set(true, true)
+    this.stores.isValidating.set(true, name)
 
     const result = await this.validate(fieldNames)
 
-    if (result.isValid || this.stores.isValid.value) {
+    if (result.isValid || this._formState.isValid) {
       this.updateValid()
     }
 
@@ -988,12 +992,12 @@ export class FormControl<
     // `true` context will match will all field names.
     this.stores.isValid.set(result.isValid, true)
 
-    this.stores.isValidating.set(false, fieldNames)
+    this.stores.isValidating.set(false, name)
 
     if (options?.shouldFocus && !result.isValid) {
       focusFieldBy(
         this.fields,
-        (key?: string) => key && get(this.stores.errors.value, key),
+        (key?: string) => key && get(this._formState.errors, key),
         name ? fieldNames : this.names.mount,
       )
     }
@@ -1019,10 +1023,10 @@ export class FormControl<
    * Get the current state of a field.
    */
   getFieldState(name: string, formState?: FormControlState<TFieldValues>): FieldState {
-    const errors = formState?.errors ?? this.state.value.errors
-    const dirtyFields = formState?.dirtyFields ?? this.state.value.dirtyFields
-    const validatingFields = formState?.validatingFields ?? this.state.value.validatingFields
-    const touchedFields = formState?.touchedFields ?? this.state.value.touchedFields
+    const errors = formState?.errors ?? this._formState.errors
+    const dirtyFields = formState?.dirtyFields ?? this._formState.dirtyFields
+    const validatingFields = formState?.validatingFields ?? this._formState.validatingFields
+    const touchedFields = formState?.touchedFields ?? this._formState.touchedFields
 
     return {
       invalid: Boolean(get(errors, name)),
@@ -1045,7 +1049,7 @@ export class FormControl<
     const nameArray = toStringArray(name)
 
     this.stores.errors.update((errors) => {
-      nameArray?.forEach((name) => unset(this.stores.errors.value, name))
+      nameArray?.forEach((name) => unset(this._formState.errors, name))
       return errors
     }, nameArray)
   }
@@ -1066,7 +1070,7 @@ export class FormControl<
 
     const fieldNames = toStringArray(name)
 
-    const currentError: FieldError | undefined = get(this.state.value.errors, name)
+    const currentError: FieldError | undefined = get(this._formState.errors, name)
 
     // Don't override existing error messages elsewhere in the object tree.
     const { ref: _ref, message: _message, type: _type, ...currentErrorTree } = currentError ?? {}
@@ -1225,9 +1229,9 @@ export class FormControl<
 
     const value = options.disabled
       ? undefined
-      : get(this.stores.values.value, options.name) ??
+      : get(this._formValues, options.name) ??
         getFieldValue(options.field?._f ?? get(options.fields, options.name)._f) ??
-        get(this.stores.defaultValues.value, options.name)
+        get(this._defaultValues, options.name)
 
     this.stores.values.update((values) => {
       set(values, options.name, value)
@@ -1281,7 +1285,7 @@ export class FormControl<
       /**
        * Clone the object to prevent race conditions from mutations during the submit handling.
        */
-      const values = cloneObject(this.stores.values.value)
+      const values = cloneObject(this._formValues)
 
       this.state.transaction(() => {
         this.stores.isSubmitting.set(true)
@@ -1306,7 +1310,7 @@ export class FormControl<
 
       let validCallbackError = undefined
 
-      const isValid = isEmptyObject(this.stores.errors.value)
+      const isValid = isEmptyObject(this._formState.errors)
 
       try {
         if (isValid) {
@@ -1344,7 +1348,7 @@ export class FormControl<
     this.state.open()
 
     if (options?.defaultValue == null) {
-      const defaultFieldValue = get(this.state.value.defaultValues, name)
+      const defaultFieldValue = get(this._defaultValues, name)
       const clonedDefaultFieldValue = cloneObject(defaultFieldValue)
       this.setValue(name, clonedDefaultFieldValue)
     } else {
@@ -1353,37 +1357,37 @@ export class FormControl<
         const clonedDefaultValue = cloneObject(options.defaultValue)
         set(defaultValues, name, clonedDefaultValue)
         return defaultValues
-      })
+      }, name)
     }
 
     if (!options?.keepTouched) {
       this.stores.touchedFields.update((touchedFields) => {
         unset(touchedFields, name)
         return touchedFields
-      })
+      }, name)
     }
 
     if (!options?.keepDirty) {
       this.stores.dirtyFields.update((dirtyFields) => {
         unset(dirtyFields, name)
         return dirtyFields
-      })
+      }, name)
 
       const isDirty = options?.defaultValue
-        ? this.getDirty(name, cloneObject(get(this.state.value.defaultValues, name)))
+        ? this.getDirty(name, cloneObject(get(this._defaultValues, name)))
         : this.getDirty()
 
-      this.stores.isDirty.set(isDirty)
+      this.stores.isDirty.set(isDirty, name)
     }
 
     if (!options?.keepError) {
       this.stores.errors.update((errors) => {
         unset(errors, name)
         return errors
-      })
+      }, name)
 
-      if (this.isTracking('isValid')) {
-        this.updateValid()
+      if (this._proxyFormState.isValid) {
+        this.updateValid(undefined, name)
       }
     }
 
@@ -1396,10 +1400,10 @@ export class FormControl<
   reset(formValues?: Defaults<TFieldValues>, options?: ResetOptions): void {
     this.state.open()
 
-    const updatedValues = formValues ? cloneObject(formValues) : this.stores.defaultValues.value
+    const updatedValues = formValues ? cloneObject(formValues) : this._defaultValues
     const cloneUpdatedValues = cloneObject(updatedValues)
     const isEmptyResetValues = isEmptyObject(formValues)
-    const values = isEmptyResetValues ? this.stores.defaultValues.value : cloneUpdatedValues
+    const values = isEmptyResetValues ? this._defaultValues : cloneUpdatedValues
 
     if (!options?.keepDefaultValues) {
       this.resolveDefaultValues(formValues)
@@ -1417,12 +1421,11 @@ export class FormControl<
 
       const newValues = this.options.shouldUnregister
         ? options?.keepDefaultValues
-          ? cloneObject(this.stores.defaultValues.value)
+          ? cloneObject(this._defaultValues)
           : {}
         : cloneObject(values)
 
-      // Passing in `true` should do a flush automatically?
-      this.stores.values.set(newValues as TFieldValues, true)
+      this.stores.values.set(newValues as TFieldValues)
     }
 
     this.names = {
@@ -1432,7 +1435,7 @@ export class FormControl<
     }
 
     this.mounted =
-      !this.isTracking('isValid') ||
+      !this._proxyFormState.isValid ||
       Boolean(options?.keepIsValid) ||
       Boolean(options?.keepDirtyValues)
 
@@ -1446,7 +1449,7 @@ export class FormControl<
       this.stores.isDirty.set(false)
     } else if (!options?.keepDirty) {
       const isDirty = Boolean(
-        options?.keepDefaultValues && !deepEqual(formValues, this.stores.defaultValues.value),
+        options?.keepDefaultValues && !deepEqual(formValues, this._defaultValues),
       )
       this.stores.isDirty.set(isDirty)
     }
@@ -1458,12 +1461,12 @@ export class FormControl<
     if (isEmptyResetValues) {
       this.stores.dirtyFields.set({})
     } else if (options?.keepDirtyValues) {
-      if (options?.keepDefaultValues && this.state.value.values) {
-        const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
+      if (options?.keepDefaultValues && this._formValues) {
+        const dirtyFields = getDirtyFields(this._defaultValues, this._formValues)
         this.stores.dirtyFields.set(dirtyFields)
       }
     } else if (options?.keepDefaultValues && formValues) {
-      const dirtyFields = getDirtyFields(this.state.value.defaultValues, formValues as any)
+      const dirtyFields = getDirtyFields(this._defaultValues, formValues as any)
       this.stores.dirtyFields.set(dirtyFields)
     } else if (!options?.keepDirty) {
       this.stores.dirtyFields.set({})
@@ -1483,7 +1486,7 @@ export class FormControl<
 
     this.stores.isSubmitting.set(false)
 
-    this.valueListeners.forEach((listener) => listener(this.stores.values.value))
+    this.valueListeners.forEach((listener) => listener(this._formValues))
 
     this.state.flush(true)
   }
@@ -1589,8 +1592,8 @@ export class FormControl<
   shouldSkipValidationAfter(name: string, isBlurEvent?: boolean): boolean {
     return shouldSkipValidationAfter(
       isBlurEvent ? 'blur' : 'change',
-      get(this.stores.touchedFields.value, name),
-      this.stores.isSubmitted.value,
+      get(this._formState.touchedFields, name),
+      this._formState.isSubmitted,
       this.options.submissionValidationMode,
     )
   }
@@ -1636,13 +1639,13 @@ export class FormControl<
 
     const isDisabled = Boolean(field?._f.disabled)
 
-    const defaultValue = get(this.stores.defaultValues.value, name)
+    const defaultValue = get(this._defaultValues, name)
 
     const currentIsDirty = !deepEqual(defaultValue, value)
 
-    const previousIsDirty = Boolean(!isDisabled && get(this.stores.dirtyFields.value, name))
+    const previousIsDirty = Boolean(!isDisabled && get(this._formState.dirtyFields, name))
 
-    if (this.isTracking('isDirty', name)) {
+    if (this._proxyFormState.isDirty) {
       const isDirty = this.getDirty()
       this.stores.isDirty.set(isDirty, name)
     }
@@ -1668,7 +1671,7 @@ export class FormControl<
    * Update a field's "touched" property.
    */
   updateTouchedField(name: PropertyKey): boolean {
-    const previousIsTouched = get(this.stores.touchedFields.value, name)
+    const previousIsTouched = get(this._formState.touchedFields, name)
 
     if (!previousIsTouched) {
       this.stores.touchedFields.update((touchedFields) => {
@@ -1687,10 +1690,10 @@ export class FormControl<
    */
   mergeDirtyValues(values: unknown): void {
     for (const fieldName of this.names.mount) {
-      const fieldIsDirty = get(this.stores.dirtyFields.value, fieldName)
+      const fieldIsDirty = get(this._formState.dirtyFields, fieldName)
 
       if (fieldIsDirty) {
-        const dirtyFieldValue = get(this.stores.values.value, fieldName)
+        const dirtyFieldValue = get(this._formValues, fieldName)
         set(values, fieldName, dirtyFieldValue)
       } else {
         const updatedFieldValue = get(values, fieldName)
@@ -1759,9 +1762,7 @@ export class FormControl<
       }
     } else {
       const defaultValue =
-        options?.value ??
-        get(this.stores.values.value, name) ??
-        get(this.stores.defaultValues.value, name)
+        options?.value ?? get(this._formValues, name) ?? get(this._defaultValues, name)
 
       this.stores.values.update((values) => {
         set(values, name, defaultValue)
@@ -1791,10 +1792,9 @@ export class FormControl<
 
     const fieldNames = toStringArray(name)
 
-    const newField = mergeElementWithField(name, field, element, this.stores.defaultValues.value)
+    const newField = mergeElementWithField(name, field, element, this._defaultValues)
 
-    const defaultValue =
-      get(this.stores.values.value, name) ?? get(this.stores.defaultValues.value, name)
+    const defaultValue = get(this._formValues, name) ?? get(this._defaultValues, name)
 
     if (defaultValue == null || (element as HTMLInputElement)?.defaultChecked) {
       this.stores.values.update((values) => {
@@ -1803,7 +1803,7 @@ export class FormControl<
       }, name)
     } else {
       // Set it without updating...
-      set(this.stores.values.value, name, getFieldValueAs(defaultValue, newField._f))
+      set(this._formValues, name, getFieldValueAs(defaultValue, newField._f))
       updateFieldReference(newField._f, defaultValue)
     }
 
@@ -1892,8 +1892,6 @@ export class FormControl<
    * Will prevent race conditions.
    */
   isFieldValueUpdated(name?: PropertyKey, fieldValue?: any) {
-    return (
-      Number.isNaN(fieldValue) || fieldValue === get(this.stores.values.value, name, fieldValue)
-    )
+    return Number.isNaN(fieldValue) || fieldValue === get(this._formValues, name, fieldValue)
   }
 }
