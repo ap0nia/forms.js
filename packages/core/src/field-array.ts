@@ -200,7 +200,7 @@ export class FieldArray<
     if (
       shouldUpdateFieldsAndState &&
       Array.isArray(touchedFields) &&
-      this.control._proxyFormState.touchedFields
+      this.control.isTracking('touchedFields', this.name)
     ) {
       const newTouchedFields = mutateArray(touchedFields)
 
@@ -212,7 +212,7 @@ export class FieldArray<
       }
     }
 
-    if (this.control._proxyFormState.dirtyFields) {
+    if (this.control.isTracking('dirtyFields', this.name)) {
       this.control.stores.dirtyFields.set(
         getDirtyFields(this.control._defaultValues, this.control._formValues),
         this.name,

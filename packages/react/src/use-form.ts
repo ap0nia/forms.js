@@ -68,7 +68,7 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (control._proxyFormState.isDirty) {
+    if (control.isTracking('isDirty')) {
       const isDirty = control.getDirty()
       control.stores.isDirty.set(isDirty)
     }

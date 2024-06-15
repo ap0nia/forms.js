@@ -1,5 +1,3 @@
-import { clearTimeout } from 'timers'
-
 import { Batchable, Writable } from '@forms.js/common/store'
 import { cloneObject } from '@forms.js/common/utils/clone-object'
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
@@ -444,7 +442,7 @@ export class FormControl<
   ) as any
 
   async updateValid(force?: boolean, name?: PropertyKey | PropertyKey[]): Promise<void> {
-    if (force || this._proxyFormState.isValid) {
+    if (force || this.isTracking('isValid', name)) {
       const result = await this.validate()
 
       const fieldNames = toStringArray(name)
@@ -454,7 +452,9 @@ export class FormControl<
   }
 
   updateIsValidating(names = Array.from(this.names.mount), isValidating?: boolean) {
-    if (!(this._proxyFormState.isValidating || this._proxyFormState.validatingFields)) return
+    if (!(this.isTracking('isValidating', names) || this.isTracking('validatingFields', names))) {
+      return
+    }
 
     this.state.open()
 
@@ -536,7 +536,10 @@ export class FormControl<
 
     const hasError = error ? !deepEqual(previousFieldError, error) : previousFieldError
 
-    if ((hasError || !modified || this._proxyFormState.isValid) && typeof isValid === 'boolean') {
+    if (
+      (hasError || !modified || this.isTracking('isValid', name)) &&
+      typeof isValid === 'boolean'
+    ) {
       this.stores.isValid.set(isValid, name)
     }
 
@@ -553,7 +556,11 @@ export class FormControl<
     const nameArray = toStringArray(name)
 
     if (this.options.resolver == null) {
+      this.updateIsValidating(nameArray, true)
+
       const validationResult = await this.executeBuiltInValidation(nameArray, undefined, values)
+
+      this.updateIsValidating(nameArray)
 
       const isValid = validationResult.valid
 
@@ -571,11 +578,15 @@ export class FormControl<
       shouldUseNativeValidation: this.options.shouldUseNativeValidation,
     }
 
+    this.updateIsValidating(nameArray, true)
+
     const resolverResult = await this.options.resolver(
       values,
       this.options.context,
       resolverOptions,
     )
+
+    this.updateIsValidating(nameArray)
 
     const isValid = nameArray
       ? !nameArray.some((name) => get(resolverResult.errors, name))
@@ -760,8 +771,8 @@ export class FormControl<
       this.state.open()
 
       if (
-        this._proxyFormState.isDirty ||
-        (this._proxyFormState.dirtyFields && options?.shouldDirty)
+        this.isTracking('isDirty', name) ||
+        (this.isTracking('dirtyFields', name) && options?.shouldDirty)
       ) {
         const dirtyFields = getDirtyFields(this._defaultValues, this._formValues)
         this.stores.dirtyFields.set(dirtyFields, name)
@@ -1386,7 +1397,7 @@ export class FormControl<
         return errors
       }, name)
 
-      if (this._proxyFormState.isValid) {
+      if (this.isTracking('isValid', name)) {
         this.updateValid(undefined, name)
       }
     }
@@ -1435,7 +1446,7 @@ export class FormControl<
     }
 
     this.mounted =
-      !this._proxyFormState.isValid ||
+      !this.isTracking('isValid') ||
       Boolean(options?.keepIsValid) ||
       Boolean(options?.keepDirtyValues)
 
@@ -1645,7 +1656,7 @@ export class FormControl<
 
     const previousIsDirty = Boolean(!isDisabled && get(this._formState.dirtyFields, name))
 
-    if (this._proxyFormState.isDirty) {
+    if (this.isTracking('isDirty', name)) {
       const isDirty = this.getDirty()
       this.stores.isDirty.set(isDirty, name)
     }

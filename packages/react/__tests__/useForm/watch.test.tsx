@@ -205,7 +205,6 @@ describe('watch', () => {
 
       React.useEffect(() => {
         const subscription = watch((data) => {
-          console.log('HERE', data)
           data.test
           data.test1
           output.push(data)

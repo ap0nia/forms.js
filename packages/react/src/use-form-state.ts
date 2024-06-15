@@ -44,7 +44,7 @@ export function useFormState<TFieldValues extends Record<string, any>>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (control._proxyFormState.isValid) {
+    if (control.isTracking('isValid', name)) {
       control.updateValid(true)
     }
 
