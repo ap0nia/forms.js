@@ -232,6 +232,10 @@ export class Batchable<
     this.close()
     this.notify(force)
     this.children.forEach((child) => child.flush(force))
+
+    if (this.depth === 0) {
+      this.buffer = []
+    }
   }
 
   /**
