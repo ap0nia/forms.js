@@ -1,4 +1,7 @@
+// Can not use `import 'cypress'` because webpack issue...
+// @see https://stackoverflow.com/a/67434052
 /// <reference types="cypress" />
+
 // ***********************************************
 // This example commands.ts shows you how to
 // create various custom commands and overwrite
@@ -8,8 +11,7 @@
 // commands please read more here:
 // https://on.cypress.io/custom-commands
 // ***********************************************
-//
-//
+
 // -- This is a parent command --
 // Cypress.Commands.add('login', (email, password) => { ... })
 //
