@@ -1,5 +1,6 @@
 export * from '@hookform/core'
 
+// export * from './constants' // already exported by @hookform/core
 export * from './control'
 export * from './controller'
 export * from './form-provider'
