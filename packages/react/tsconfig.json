@@ -3,6 +3,9 @@
   "compilerOptions": {
     "types": ["vitest/globals"],
 
+    "noEmit": false,
+    "sourceMap": false,
+
     "jsx": "react-jsx",
     "outDir": "dist",
 
