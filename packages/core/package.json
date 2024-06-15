@@ -32,6 +32,12 @@
       "require": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./constants": {
+      "types": "./src/constants.ts",
+      "import": "./src/constants.ts",
+      "require": "./src/constants.ts",
+      "default": "./src/constants.ts"
+    },
     "./html/*": {
       "types": "./src/logic/html/*.ts",
       "import": "./src/logic/html/*.ts",
@@ -53,8 +59,11 @@
   },
   "typesVersions": {
     "*": {
-      "": [
+      ".": [
         "./src/index.ts"
+      ],
+      "constants": [
+        "./src/constants.ts"
       ],
       "html/*": [
         "./src/logic/html/*.ts"

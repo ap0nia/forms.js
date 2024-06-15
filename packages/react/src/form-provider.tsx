@@ -3,22 +3,16 @@ import { createContext, useCallback, useSyncExternalStore } from 'react'
 import type { Control } from './control'
 import type { UseFormReturn } from './use-form'
 
-export type FormProviderProps<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-> = {
+export type FormProviderProps<TValues extends Record<string, any>, TContext = any> = {
   children?: React.ReactNode
-  control: Control<TValues, TContext, TTransformedValues>
-} & Partial<UseFormReturn<TValues, TContext, TTransformedValues>>
+  control: Control<TValues, TContext>
+} & Partial<UseFormReturn<TValues, TContext>>
 
-export const FormContext = createContext<UseFormReturn<any, any, any>>(undefined!)
+export const FormContext = createContext<UseFormReturn<any, any>>(undefined!)
 
-export function FormProvider<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
->(props: FormProviderProps<TValues, TContext, TTransformedValues>) {
+export function FormProvider<TValues extends Record<string, any>, TContext = any>(
+  props: FormProviderProps<TValues, TContext>,
+) {
   const { control, ...rest } = props
 
   const subscribe = useCallback(
@@ -35,7 +29,7 @@ export function FormProvider<
   const value = {
     control,
     ...rest,
-  } as UseFormReturn<TValues, TContext, TTransformedValues>
+  } as UseFormReturn<TValues, TContext>
 
   return <FormContext.Provider value={value}>{props.children}</FormContext.Provider>
 }

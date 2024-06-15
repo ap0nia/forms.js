@@ -1,4 +1,5 @@
 import type { IsAny } from './is-any'
+import type { NonRecordNonPrimitives } from './not-record'
 
 /**
  * Makes all of an object's properties and sub-properties __required__.
@@ -26,6 +27,8 @@ import type { IsAny } from './is-any'
  */
 export type DeepRequired<T> = IsAny<T> extends true
   ? any
+  : T extends NonRecordNonPrimitives
+  ? T
   : T extends Record<PropertyKey, any>
   ? { [K in keyof T]-?: DeepRequired<T[K]> }
   : T

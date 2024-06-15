@@ -73,4 +73,31 @@ describe('DeepPartial', () => {
       expectTypeOf<DeepPartial<MyType>>().toEqualTypeOf<ExpectedType>()
     })
   })
+
+  /**
+   * @see {@type NonRecord} for documentation on edge cases.
+   */
+  describe('handles edge cases', () => {
+    test('all properties in a single depth object are optional', () => {
+      type MyType = {
+        a: (...args: any[]) => any
+        b: Set<any>
+        c: Date
+        d: BigInt
+        e: Map<any, any>
+        f: any[]
+      }
+
+      type ExpectedType = {
+        a?: (...args: any[]) => any
+        b?: Set<any>
+        c?: Date
+        d?: BigInt
+        e?: Map<any, any>
+        f?: any[]
+      }
+
+      expectTypeOf<DeepPartial<MyType>>().toEqualTypeOf<ExpectedType>()
+    })
+  })
 })

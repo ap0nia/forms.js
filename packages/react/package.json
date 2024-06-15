@@ -31,15 +31,18 @@
     "@forms.js/core": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "use-sync-external-store": "^1.2.0"
+    "use-sync-external-store": "^1.2.0",
+    "whatwg-fetch": "^3.6.20"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
     "@testing-library/jest-dom": "^6.1.3",
-    "@testing-library/react": "^14.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/react-hooks": "^8.0.1",
     "@types/react": "^18.2.24",
     "@types/react-dom": "^18.2.8",
     "@types/use-sync-external-store": "^0.0.4",
+    "@types/whatwg-fetch": "^0.0.33",
     "msw": "^1.3.2",
     "typescript": "^5.1.6"
   },

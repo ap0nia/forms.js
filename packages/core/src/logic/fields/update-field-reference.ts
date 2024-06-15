@@ -3,6 +3,11 @@ import { isCheckBoxInput } from '../html/checkbox'
 import { isFileInput } from '../html/file'
 import { isMultipleSelectInput } from '../html/select'
 
+/**
+ * Updates a field reference and returns the type of input it updated.
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/8b3c2b66c6ecd892b8e27f1d761375e77949c69c/src/logic/createFormControl.ts#L513
+ */
 export function updateFieldReference(reference: FieldReference, value: any) {
   if (isMultipleSelectInput(reference.ref)) {
     Array.from(reference.ref.options).forEach((option) => {
@@ -34,7 +39,7 @@ export function updateFieldReference(reference: FieldReference, value: any) {
 }
 
 export function updateCheckboxElements(checkboxes: HTMLInputElement[], value: string | string[]) {
-  if (checkboxes.length === 0) {
+  if (checkboxes.length === 0 || value.length === 0) {
     return
   }
 

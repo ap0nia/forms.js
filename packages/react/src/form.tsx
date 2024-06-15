@@ -1,4 +1,4 @@
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import { get } from '@forms.js/common/utils/get'
 import React from 'react'
 
 import type { Control } from './control'
@@ -109,7 +109,7 @@ function Form<T extends Record<string, any>, U extends Record<string, any> | und
       }
 
       for (const name of control.names.mount) {
-        formData.append(name, safeGet(data, name))
+        formData.append(name, get(data, name))
       }
 
       if (onSubmit) {

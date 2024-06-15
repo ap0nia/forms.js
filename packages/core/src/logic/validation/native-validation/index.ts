@@ -1,7 +1,7 @@
-import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { get } from '@forms.js/common/utils/get'
+import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
 import { noop } from '@forms.js/common/utils/noop'
 import { notNullish } from '@forms.js/common/utils/null'
-import { safeGet } from '@forms.js/common/utils/safe-get'
 
 import type { FieldErrorRecord } from '../../../types/errors'
 import type { Field, FieldRecord } from '../../../types/fields'
@@ -103,9 +103,7 @@ export async function nativeValidateFields(
       }
     }
 
-    if (isEmptyObject(nestedField)) {
-      continue
-    }
+    if (isEmptyObject(nestedField)) continue
 
     const subResult = await nativeValidateFields(nestedField, values, options)
 
@@ -132,7 +130,7 @@ export async function nativeValidateSingleField(
 
   const inputRef = (field._f.refs ? field._f.refs[0] : field._f.ref) as HTMLInputElement
 
-  const inputValue = safeGet(formValues, field._f.name)
+  const inputValue = get(formValues, field._f.name)
 
   const shouldSetCustomValidity = Boolean(shouldUseNativeValidation && inputRef.reportValidity)
 
@@ -157,7 +155,13 @@ export async function nativeValidateSingleField(
    */
   const next = noop
 
-  await nativeValidatorSequencer(context, next)
+  const result = nativeValidatorSequencer(context, next)
+
+  // Promises are lazily created, so only await if needed.
+
+  if (result instanceof Promise) {
+    await result
+  }
 
   const isValid = !errors[field._f.name]
 
@@ -185,3 +189,5 @@ function createNativeValidatorSequencer(
   }
   return nativeValidatorSequencer
 }
+
+export default nativeValidateSingleField

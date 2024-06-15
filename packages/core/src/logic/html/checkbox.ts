@@ -9,10 +9,16 @@ export type CheckboxFieldResult = {
   value: string | string[] | boolean | undefined
 }
 
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/isCheckBoxInput.ts
+ */
 export function isCheckBoxInput(element: FieldElement): element is HTMLInputElement {
   return element.type === 'checkbox'
 }
 
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/getCheckboxValue.ts
+ */
 export function getCheckBoxValue(options?: HTMLInputElement[]): CheckboxFieldResult {
   if (!Array.isArray(options)) {
     return invalidResult

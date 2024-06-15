@@ -5,7 +5,7 @@ import { INPUT_VALIDATION_RULE } from '../../../../src/constants'
 import type { NativeValidationContext } from '../../../../src/logic/validation/native-validation/types'
 import {
   nativeValidateValidate,
-  parseValidationResult,
+  getValidateError,
 } from '../../../../src/logic/validation/native-validation/validate'
 import type { FieldError, FieldErrorRecord } from '../../../../src/types/errors'
 
@@ -243,7 +243,7 @@ describe('parseValidationResult', () => {
   test('string result', () => {
     const ref = document.createElement('input')
 
-    const result = parseValidationResult('error', ref)
+    const result = getValidateError('error', ref)
 
     const expectedResult: FieldError = { type: 'validate', message: 'error', ref }
 
@@ -253,7 +253,7 @@ describe('parseValidationResult', () => {
   test('string array result', () => {
     const ref = document.createElement('input')
 
-    const result = parseValidationResult(['error1', 'error2'], ref)
+    const result = getValidateError(['error1', 'error2'], ref)
 
     const expectedResult: FieldError = { type: 'validate', message: '', ref }
 
@@ -263,7 +263,7 @@ describe('parseValidationResult', () => {
   test('false result', () => {
     const ref = document.createElement('input')
 
-    const result = parseValidationResult(false, ref)
+    const result = getValidateError(false, ref)
 
     const expectedResult: FieldError = { type: 'validate', message: '', ref }
 

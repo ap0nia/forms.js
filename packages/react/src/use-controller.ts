@@ -1,25 +1,20 @@
-import { deepSet } from '@forms.js/common/utils/deep-set'
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import { cloneObject } from '@forms.js/common/utils/clone-object'
+import { get } from '@forms.js/common/utils/get'
+import { set } from '@forms.js/common/utils/set'
 import { INPUT_EVENTS, type ParseForm } from '@forms.js/core'
-import type { Field, FieldError, FormControlState, RegisterOptions } from '@forms.js/core'
+import type { Field, FormControlState, RegisterOptions } from '@forms.js/core'
 import { getEventValue } from '@forms.js/core/html/get-event-value'
-import { useRef, useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useRef, useEffect, useMemo } from 'react'
 
 import type { Control } from './control'
+import type { ControllerFieldState } from './controller'
 import { useFormContext } from './use-form-context'
 import { useSubscribe } from './use-subscribe'
-
-export type ControllerFieldState = {
-  invalid: boolean
-  isTouched: boolean
-  isDirty: boolean
-  error?: FieldError
-}
+import { useWatch } from './use-watch'
 
 export type UseControllerRules<
-  TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends TParsedForm['keys'] = TParsedForm['keys'],
+  TValues = Record<string, any>,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = Omit<
   RegisterOptions<TValues, TName>,
   'valueAsNumber' | 'valueAsDate' | 'setValueAs' | 'disabled'
@@ -27,95 +22,97 @@ export type UseControllerRules<
 
 export type UseControllerProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends TParsedForm['keys'] = TParsedForm['keys'],
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
-  name: Extract<TName, string>
-  rules?: UseControllerRules<TValues, TParsedForm, TName>
+  name: TName
+  rules?: UseControllerRules<TValues, TName>
   shouldUnregister?: boolean
-  defaultValue?: TParsedForm['values'][TName]
+  defaultValue?: ParseForm<TValues>[TName]
   control?: Control<TValues>
   disabled?: boolean
 }
 
 export type ControllerRenderProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends TParsedForm['keys'] = TParsedForm['keys'],
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
   name: TName
-  value: TParsedForm['values'][TName]
+  value: ParseForm<TValues>[TName]
   disabled?: boolean
   onChange: (...event: any[]) => void
   onBlur: () => void
-  ref: (instance: HTMLInputElement | null) => void
+  ref: (instance: HTMLElement | null) => void
 }
 
 export type UseControllerReturn<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends TParsedForm['keys'] = TParsedForm['keys'],
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
-  field: ControllerRenderProps<TValues, TParsedForm, TName>
+  field: ControllerRenderProps<TValues, TName>
   fieldState: ControllerFieldState
   formState: FormControlState<TValues>
 }
 
 export function useController<
   TValues extends Record<string, any> = Record<string, any>,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-  TName extends TParsedForm['keys'] = TParsedForm['keys'],
->(
-  props: UseControllerProps<TValues, TParsedForm, TName>,
-): UseControllerReturn<TValues, TParsedForm, TName> {
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
+>(props: UseControllerProps<TValues, TName>): UseControllerReturn<TValues, TName> {
   const { name, disabled, shouldUnregister, rules } = props
-  const action = 'action'
 
   const context = useFormContext<TValues>()
 
-  const control = props.control ?? context.control
+  const control = props.control ?? context?.control
 
-  const formState = useSubscribe({ control: control, name })
+  const formState = useSubscribe({ control, name, exact: 'context' })
 
-  // Always subscribe to values.
-  formState.values
-
-  const value: any = control.getValues(name) ?? props.defaultValue
+  const value = useWatch({
+    control,
+    name,
+    defaultValue: get(
+      control._formValues,
+      name,
+      get(control._defaultValues, name, props.defaultValue),
+    ),
+    exact: true,
+  })
 
   const registerProps = useRef(control.register(name, { ...rules, value }))
 
   registerProps.current = control.register(name, rules)
 
-  const fieldState = useMemo(() => {
-    return Object.defineProperties(
-      {},
-      {
-        invalid: {
-          enumerable: true,
-          get: () => {
-            const invalid = !!safeGet(formState.errors, name)
-            return invalid
+  const fieldState = useMemo(
+    () =>
+      Object.defineProperties(
+        {},
+        {
+          invalid: {
+            enumerable: true,
+            get: () => Boolean(get(formState.errors, name)),
+          },
+          isDirty: {
+            enumerable: true,
+            get: () => Boolean(get(formState.dirtyFields, name)),
+          },
+          isTouched: {
+            enumerable: true,
+            get: () => Boolean(get(formState.touchedFields, name)),
+          },
+          error: {
+            enumerable: true,
+            get: () => get(formState.errors, name),
+          },
+          isValidating: {
+            enumerable: true,
+            get: () => !!get(formState.validatingFields, name),
           },
         },
-        isDirty: {
-          enumerable: true,
-          get: () => !!safeGet(formState.dirtyFields, name),
-        },
-        isTouched: {
-          enumerable: true,
-          get: () => !!safeGet(formState.touchedFields, name),
-        },
-        error: {
-          enumerable: true,
-          get: () => safeGet(formState.errors, name),
-        },
-      },
-    ) as ControllerFieldState
-  }, [formState, props.name])
+      ) as ControllerFieldState,
+    [formState, name],
+  )
 
   const fieldIsDisabled = useMemo(
-    () => props.disabled || control.state.value.disabled || formState.disabled,
-    [disabled, control, formState],
+    () => disabled || formState.disabled,
+    [disabled, formState.disabled],
   )
 
   const onChange = useCallback(
@@ -124,7 +121,7 @@ export function useController<
         nativeEvent: {
           type: INPUT_EVENTS.CHANGE,
           target: {
-            name: props.name,
+            name,
             value: getEventValue(event),
           },
         },
@@ -143,29 +140,33 @@ export function useController<
         },
       },
     } as any)
-  }, [control, registerProps.current, name])
+  }, [registerProps.current, name])
 
   const ref = useCallback(
-    (instance: HTMLInputElement | HTMLTextAreaElement | null) => {
-      const field = safeGet(control.fields, props.name)
+    (instance: HTMLElement | null) => {
+      if (instance == null) return
 
-      if (field && instance) {
+      const element = instance as HTMLInputElement | HTMLTextAreaElement
+
+      const field = get(control.fields, name)
+
+      if (field) {
         field._f.ref = {
-          focus: () => instance.focus(),
-          select: () => instance.select(),
-          setCustomValidity: (message: string) => instance.setCustomValidity(message),
-          reportValidity: () => instance.reportValidity(),
+          focus: () => element.focus(),
+          select: () => element.select(),
+          setCustomValidity: (message: string) => element.setCustomValidity(message),
+          reportValidity: () => element.reportValidity(),
         }
       }
     },
-    [control, name],
+    [name],
   )
 
   useEffect(() => {
-    const shouldUnregisterField = control.options.shouldUnregister || props.shouldUnregister
+    const shouldUnregisterField = shouldUnregister || control.options.shouldUnregister
 
-    const updateMounted = (name: string, value: boolean) => {
-      const field: Field | undefined = safeGet(control.fields, name)
+    const updateMounted = (name: PropertyKey, value: boolean) => {
+      const field: Field | undefined = get(control.fields, name)
 
       if (field) {
         field._f.mount = value
@@ -175,21 +176,23 @@ export function useController<
     updateMounted(name, true)
 
     if (shouldUnregisterField) {
-      const value = structuredClone(safeGet(control.options.defaultValues, props.name))
+      const value = cloneObject(get(control.options.defaultValues, props.name))
 
-      deepSet(control.state.value.defaultValues, props.name, value)
+      set(control._defaultValues, props.name, value)
 
-      if (safeGet(control.state.value.values, props.name) == null) {
-        deepSet(control.state.value.values, props.name, value)
+      if (get(control._formValues, props.name) == null) {
+        set(control._formValues, props.name, value)
       }
     }
 
     return () => {
+      const nameString = name.toString()
+
       const isArrayField = control.names.array.has(
-        name.substring(0, name.search(/\.\d+(\.|$)/)) || name,
+        nameString.substring(0, nameString.search(/\.\d+(\.|$)/)) || nameString,
       )
 
-      if (isArrayField ? shouldUnregisterField && !action : shouldUnregisterField) {
+      if (isArrayField ? shouldUnregisterField && !control.action.value : shouldUnregisterField) {
         control.unregister(name)
       } else {
         updateMounted(name, false)
@@ -198,16 +201,16 @@ export function useController<
   }, [control, name, shouldUnregister])
 
   useEffect(() => {
-    if (safeGet(control.fields, name)) {
+    if (get(control.fields, name)) {
       control.updateDisabledField({ fields: control.fields, ...props })
     }
   }, [control, name, disabled])
 
   return {
     field: {
-      name: props.name,
+      name,
       value,
-      ...(typeof fieldIsDisabled === 'boolean' && { disabled: fieldIsDisabled }),
+      ...(fieldIsDisabled && { disabled: fieldIsDisabled }),
       onChange,
       onBlur,
       ref,

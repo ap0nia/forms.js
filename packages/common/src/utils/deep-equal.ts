@@ -1,16 +1,7 @@
 import { isObject } from './is-object'
 import { isPrimitive } from './is-primitive'
 
-/**
- * Deeply compare two objects.
- *
- * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/deepEqual.ts
- */
-export function deepEqual(left: unknown, right: unknown): boolean {
-  if (left == null || right == null) {
-    return left === right
-  }
-
+export function deepEqual(left: any, right: any) {
   if (isPrimitive(left) || isPrimitive(right)) {
     return left === right
   }
@@ -20,7 +11,6 @@ export function deepEqual(left: unknown, right: unknown): boolean {
   }
 
   const leftKeys = Object.keys(left)
-
   const rightKeys = Object.keys(right)
 
   if (leftKeys.length !== rightKeys.length) {
@@ -28,34 +18,26 @@ export function deepEqual(left: unknown, right: unknown): boolean {
   }
 
   for (const key of leftKeys) {
+    const val1 = left[key]
+
     if (!rightKeys.includes(key)) {
       return false
     }
 
-    const a: any = left[key as keyof typeof left]
+    if (key !== 'ref') {
+      const val2 = right[key]
 
-    const b: any = right[key as keyof typeof right]
-
-    if (isPrimitive(a) && isPrimitive(b) && a !== b) {
-      return false
-    }
-
-    if ((bothDates(a, b) || bothObjects(a, b) || bothArrays(a, b)) && !deepEqual(a, b)) {
-      return false
+      if (
+        (val1 instanceof Date && val2 instanceof Date) ||
+        (isObject(val1) && isObject(val2)) ||
+        (Array.isArray(val1) && Array.isArray(val2))
+          ? !deepEqual(val1, val2)
+          : val1 !== val2
+      ) {
+        return false
+      }
     }
   }
 
   return true
-}
-
-export function bothDates(val1: unknown, val2: unknown): boolean {
-  return val1 instanceof Date && val2 instanceof Date
-}
-
-export function bothObjects(val1: unknown, val2: unknown): boolean {
-  return isObject(val1) && isObject(val2)
-}
-
-export function bothArrays(val1: unknown, val2: unknown): boolean {
-  return Array.isArray(val1) && Array.isArray(val2)
 }

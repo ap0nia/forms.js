@@ -1,120 +1,89 @@
+import user from '@testing-library/user-event'
 import { describe, test, expect } from 'vitest'
 
-import { deepEqual, bothDates, bothArrays, bothObjects } from '../../src/utils/deep-equal'
+import { cloneObject } from '../../src/utils/clone-object'
 
-describe('deepEqual', () => {
-  test('returns true for matching primitive values', () => {
-    expect(deepEqual(1, 1)).toBeTruthy()
-    expect(deepEqual('1', '1')).toBeTruthy()
-    expect(deepEqual(true, true)).toBeTruthy()
-    expect(deepEqual(null, null)).toBeTruthy()
-    expect(deepEqual(undefined, undefined)).toBeTruthy()
+describe('cloneObject', () => {
+  test('returns new date if passed a date', () => {
+    const date = new Date()
+    const clone = cloneObject(date)
+
+    expect(clone).not.toBe(date)
+    expect(clone).toEqual(date)
   })
 
-  test('returns false for different primitive values', () => {
-    expect(deepEqual(1, 2)).toBeFalsy()
-    expect(deepEqual('1', '2')).toBeFalsy()
-    expect(deepEqual(true, false)).toBeFalsy()
-    expect(deepEqual(null, undefined)).toBeFalsy()
+  test('returns new set if passed a set', () => {
+    const set = new Set([1, 2, 3])
+    const clone = cloneObject(set)
+
+    expect(clone).not.toBe(set)
+    expect(clone).toEqual(set)
   })
 
-  test('returns true for matching top level primitive properties', () => {
-    expect(deepEqual({ a: 1 }, { a: 1 })).toBeTruthy()
-    expect(deepEqual({ a: '1' }, { a: '1' })).toBeTruthy()
-    expect(deepEqual({ a: true }, { a: true })).toBeTruthy()
-    expect(deepEqual({ a: null }, { a: null })).toBeTruthy()
-    expect(deepEqual({ a: undefined }, { a: undefined })).toBeTruthy()
+  test('returns same Blob instance if passed a Blob', () => {
+    const blob = new Blob()
+    const clone = cloneObject(blob)
+
+    expect(clone).toBe(blob)
   })
 
-  test('returns false for different top level primitive properties', () => {
-    expect(deepEqual({ a: 1 }, { a: 2 })).toBeFalsy()
-    expect(deepEqual({ a: '1' }, { a: '2' })).toBeFalsy()
-    expect(deepEqual({ a: true }, { a: false })).toBeFalsy()
-    expect(deepEqual({ a: null }, { a: undefined })).toBeFalsy()
+  test('returns same FileList instance if passed a FileList', () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+
+    user.upload(input, [])
+
+    const fileList = input.files
+
+    const clone = cloneObject(fileList)
+
+    expect(clone).toBe(fileList)
   })
 
-  test('returns true for different date instances with same time', () => {
-    expect(deepEqual(new Date(0), new Date(0))).toBeTruthy()
-  })
-  test('returns false for different date instances different time', () => {
-    expect(deepEqual(new Date(0), new Date(1))).toBeFalsy()
-  })
+  test('returns same FileList instance in nested object', () => {
+    const input = document.createElement('input')
+    input.type = 'file'
 
-  test('returns false for objects with different number of keys', () => {
-    const a = { a: 1 }
-    const b = { a: 1, b: 2 }
+    user.upload(input, [])
 
-    expect(deepEqual(a, b)).toBeFalsy()
-  })
+    const fileList = input.files
 
-  test('returns false for arrays with different number of items', () => {
-    const a = [1]
-    const b = [1, 2]
+    const object = {
+      a: {
+        b: {
+          c: fileList,
+        },
+      },
+    }
 
-    expect(deepEqual(a, b)).toBeFalsy()
-  })
+    const clone = cloneObject(object)
 
-  test('returns false for nested objects with different number of keys', () => {
-    const a = [{ a: 1 }]
-    const b = [{ a: 1, b: 2 }]
-
-    expect(deepEqual(a, b)).toBeFalsy()
-
-    const ab = { a, b }
-
-    expect(deepEqual(a, ab)).toBeFalsy()
+    expect(clone.a.b.c).toBe(object.a.b.c)
   })
 
-  test('returns false for nested objects with same number of different keys', () => {
-    const a = [{ a: 1 }]
-    const b = [{ b: 1 }]
+  test('returns same Blob instance in nested array in object', () => {
+    const blob = new Blob()
 
-    expect(deepEqual(a, b)).toBeFalsy()
+    const object = {
+      a: {
+        b: {
+          c: [blob],
+        },
+      },
+    }
 
-    const ab = { a, b }
+    const clone = cloneObject(object)
 
-    expect(deepEqual(a, ab)).toBeFalsy()
-  })
-})
-
-describe('bothDates', () => {
-  test('returns true for two dates', () => {
-    expect(bothDates(new Date(0), new Date(0))).toBeTruthy()
-  })
-
-  test('returns false for two non-dates', () => {
-    expect(bothDates(0, 0)).toBeFalsy()
+    expect(clone.a.b.c[0]).toBe(object.a.b.c[0])
   })
 
-  test('returns false for one date and one non-date', () => {
-    expect(bothDates(new Date(0), 0)).toBeFalsy()
-  })
-})
+  test('does not recur on HTML elements', () => {
+    const element = document.createElement('div')
 
-describe('bothObjects', () => {
-  test('returns true for two objects', () => {
-    expect(bothObjects({}, {})).toBeTruthy()
-  })
+    const input = { element }
 
-  test('returns false for two non-objects', () => {
-    expect(bothObjects(0, 0)).toBeFalsy()
-  })
+    const clone = cloneObject(input)
 
-  test('returns false for one object and one non-object', () => {
-    expect(bothObjects({}, 0)).toBeFalsy()
-  })
-})
-
-describe('bothArrays', () => {
-  test('returns true for two arrays', () => {
-    expect(bothArrays([], [])).toBeTruthy()
-  })
-
-  test('returns false for two non-arrays', () => {
-    expect(bothArrays(0, 0)).toBeFalsy()
-  })
-
-  test('returns false for one array and one non-array', () => {
-    expect(bothArrays([], 0)).toBeFalsy()
+    expect(clone.element).toBe(input.element)
   })
 })

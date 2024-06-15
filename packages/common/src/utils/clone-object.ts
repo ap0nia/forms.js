@@ -1,8 +1,10 @@
 import { isBrowser } from './is-browser'
-import { isObject, isPlainObject } from './is-object'
+import { isObject } from './is-object'
+import { isPlainObject } from './is-plain-object'
+import { isRawData } from './is-raw-data'
 
 /**
- * Similar to {@link structuredClone}, but compatible with stuff like React nodes.
+ * Like {@link structuredClone} but with compatible with non-serializable data types.
  */
 export function cloneObject<T>(data: T): T {
   if (data instanceof Date) {
@@ -15,25 +17,22 @@ export function cloneObject<T>(data: T): T {
 
   const isArray = Array.isArray(data)
 
-  if (!(isBrowser() && isRawData(data)) && (isArray || isObject(data))) {
-    if (!isArray && !isPlainObject(data)) {
-      return data
-    }
-
-    const copy: any = isArray ? [] : {}
-
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        copy[key] = cloneObject(data[key])
-      }
-    }
-
-    return copy
+  if ((isBrowser && isRawData(data)) || !(isArray || isObject(data))) {
+    return data
   }
 
-  return data
-}
+  if (!isArray && !isPlainObject(data)) {
+    return data
+  }
 
-function isRawData(value: unknown): value is Blob | FileList {
-  return value instanceof Blob || value instanceof FileList
+  const copy: any = isArray ? [] : {}
+
+  for (const key in data) {
+    // eslint-disable-next-line no-prototype-builtins
+    if (data.hasOwnProperty(key)) {
+      copy[key] = cloneObject(data[key])
+    }
+  }
+
+  return copy
 }

@@ -1,4 +1,5 @@
 import type { IsAny } from './is-any'
+import type { NonRecordNonPrimitives } from './not-record'
 
 /**
  * Makes all of an object's properties and sub-properties __optional__.
@@ -29,6 +30,12 @@ import type { IsAny } from './is-any'
  */
 export type DeepPartial<T> = IsAny<T> extends true
   ? any
+  : T extends NonRecordNonPrimitives
+  ? T
   : T extends Record<PropertyKey, any>
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  ? {
+      [K in keyof T]?: ExtractObjects<T[K]> extends never ? T[K] : DeepPartial<T[K]>
+    }
   : T
+
+export type ExtractObjects<T> = T extends infer U ? (U extends object ? U : never) : never

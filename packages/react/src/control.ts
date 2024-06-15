@@ -3,13 +3,12 @@ import {
   type ParseForm,
   type FormControlOptions,
   type RegisterOptions,
-  type UnregisterOptions,
 } from '@forms.js/core'
 import { getRuleValue } from '@forms.js/core/validation/get-rule-value'
 
-export type ReactRegisterProps = {
+export type ReactRegisterProps<TFieldName> = {
   disabled?: boolean
-  name: string
+  name: TFieldName
   onBlur: (event: React.ChangeEvent) => Promise<void>
   onChange: (event: React.ChangeEvent) => Promise<void>
   ref: (instance: HTMLElement | null) => void
@@ -20,27 +19,25 @@ export type { FormControlOptions as ControlOptions }
 export class Control<
   TValues extends Record<string, any> = Record<string, any>,
   TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TParsedForm extends ParseForm<TValues> = ParseForm<TValues>,
-> extends FormControl<TValues, TContext, TTransformedValues, TParsedForm> {
+> extends FormControl<TValues, TContext> {
   constructor(options?: FormControlOptions<TValues, TContext>) {
     super(options)
   }
 
-  get _fields() {
-    return this.fields
-  }
-
-  register<T extends TParsedForm['keys']>(
-    name: Extract<T, string>,
+  register<T extends keyof ParseForm<TValues>>(
+    name: T,
     options?: RegisterOptions<TValues, T>,
-  ): ReactRegisterProps {
+  ): ReactRegisterProps<T> {
     this.registerField(name, options)
 
-    const onChange = this.onChange.bind(this)
+    const onChange = async (event: React.ChangeEvent) => {
+      return await this.onChange(event.nativeEvent, event)
+    }
+
+    const disabled = options?.disabled ?? this.options.disabled
 
     const props = {
-      ...(typeof options?.disabled === 'boolean' && { disabled: options.disabled }),
+      ...(typeof disabled === 'boolean' && { disabled }),
       ...(this.options.progressive && {
         required: !!options?.required,
         min: getRuleValue(options?.min),
@@ -54,21 +51,13 @@ export class Control<
       onChange,
       ref: (instance: HTMLElement | null) => {
         if (instance) {
-          this.registerElement(name, instance as HTMLInputElement)
+          this.registerElement(name, instance as HTMLInputElement, options)
         } else {
-          this.unregisterElement(name)
+          this.unregisterField(name, options)
         }
       },
     }
 
     return props
-  }
-
-  unregister<T extends TParsedForm['keys']>(name?: T | T[], options?: UnregisterOptions): void {
-    this.unregisterField(name, options)
-  }
-
-  async onChange(event: React.ChangeEvent) {
-    return await this.handleChange(event.nativeEvent)
   }
 }

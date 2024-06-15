@@ -56,9 +56,7 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
    * Update the store's value by setting it directly.
    */
   public set(value: T, context?: TContext): void {
-    if (!safeNotEqual(this.value, value)) {
-      return
-    }
+    if (!safeNotEqual(this.value, value)) return
 
     this.value = value
 
@@ -69,9 +67,7 @@ export class Writable<T = any, TContext = unknown> implements Readable<T> {
       Writable.subscriberQueue.push([subscribe, value, context])
     }
 
-    if (!shouldRunQueue) {
-      return
-    }
+    if (!shouldRunQueue) return
 
     for (const [subscribe, value, context] of Writable.subscriberQueue) {
       subscribe(value, context)

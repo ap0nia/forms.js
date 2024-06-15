@@ -6,6 +6,9 @@ import type {
   ValidationValueMessage,
 } from '../../types/validation'
 
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/1d0503b46cfe0589b188c4c0d9fa75f247271cf7/src/logic/getRuleValue.ts
+ */
 export function getRuleValue<T extends ValidationValue>(
   rule?: ValidationRule<T> | ValidationValueMessage<T>,
 ) {

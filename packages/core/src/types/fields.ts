@@ -1,7 +1,5 @@
 import type { Noop } from '@forms.js/common/utils/noop'
-import type { Nullish } from '@forms.js/common/utils/null'
 
-import type { ParseForm } from './form'
 import type { RegisterOptions } from './register'
 
 /**
@@ -71,22 +69,41 @@ export type FieldReference = {
 } & RegisterOptions<any, any>
 
 /**
+ * An HTML element that can be registered as a field element.
+ */
+export type HTMLFieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+
+/**
  * A field element is any element that can be registered as a valid form component.
  */
-export type FieldElement<T = Record<string, any>> =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement
-  | CustomElement<T>
+export type FieldElement<T = Record<string, any>> = HTMLFieldElement | CustomElement<T>
+
+declare const $NestedValue: unique symbol
+
+/**
+ * @deprecated to be removed in the next major version
+ */
+export type NestedValue<TValue extends object = object> = {
+  [$NestedValue]: never
+} & TValue
+
+export type IsFlatObject<T> = Extract<
+  Exclude<T[keyof T], NestedValue | Date | FileList>,
+  any[] | object
+> extends never
+  ? true
+  : false
+
+export type FieldName<T> = IsFlatObject<T> extends true ? Extract<keyof T, string> : string
 
 /**
  * A custom element is a component that simulates an HTML element.
  */
-export type CustomElement<T, TParsedForm extends ParseForm<T> = ParseForm<T>> = {
+export type CustomElement<T> = Partial<HTMLElement> & {
   /**
    * Name of the field.
    */
-  name: TParsedForm['keys'][number]
+  name: FieldName<T>
 
   /**
    * Type of the field to be registered as.
@@ -118,10 +135,33 @@ export type CustomElement<T, TParsedForm extends ParseForm<T> = ParseForm<T>> = 
   /**
    * Files for the field. i.e. for file inputs.
    */
-  files?: FileList | Nullish
+  files?: FileList | null
 
   /**
    * Callback function to focus on the field.
    */
   focus?: Noop
+}
+
+/**
+ * Special type that allows `ref` to be an empty object.
+ *
+ * Used to strongly type `fields` parameter in `lookupError` .
+ */
+export type FieldLikeRecord = Partial<{
+  [K: string]: (FieldLike | FieldLikeRecord) & (FieldLike | { _f?: never })
+}>
+
+/**
+ * An object that's roughly like a field.
+ */
+export type FieldLike = {
+  _f: FieldRefenceLike
+}
+
+/**
+ * Properties in the ref are optional.
+ */
+export type FieldRefenceLike = Partial<Omit<FieldReference, 'ref'>> & {
+  ref?: Partial<FieldElement>
 }

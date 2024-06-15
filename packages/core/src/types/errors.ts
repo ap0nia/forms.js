@@ -75,20 +75,24 @@ export type MultipleFieldErrors = {
  *
  * This is the exposed interface for the form's stored errors.
  */
-export type FieldErrors<T = Record<string, any>> = Partial<FieldErrorsInternal<DeepRequired<T>>> & {
+export type FieldErrors<T = Record<string, any>> = Partial<
+  FieldErrorsImplementation<DeepRequired<T>>
+> & {
   root?: Record<string, GlobalError> & GlobalError
 }
+
+export type BrowserNativeObject = Date | FileList | File
 
 /**
  * Does the actual mapping of field names to their errors.
  */
-export type FieldErrorsInternal<T = Record<string, any>> = {
-  [K in keyof T]?: K extends 'root' | `root.${string}`
+export type FieldErrorsImplementation<T = Record<string, any>> = {
+  [K in keyof T]?: T[K] extends BrowserNativeObject | Blob
+    ? FieldError
+    : K extends 'root' | `root.${string}`
     ? GlobalError
-    : T[K] extends (infer U)[]
-    ? FieldError | { [k in keyof U]?: FieldError }[]
     : T[K] extends object
-    ? DeepMerge<FieldError, FieldErrorsInternal<T[K]>>
+    ? DeepMerge<FieldError, FieldErrorsImplementation<T[K]>>
     : FieldError
 }
 
@@ -106,3 +110,7 @@ export type GlobalError = {
    */
   message?: string
 }
+
+/**
+ */
+export type InternalFieldErrors = Partial<Record<string, FieldError>>

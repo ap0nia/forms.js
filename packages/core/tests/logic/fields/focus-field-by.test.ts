@@ -1,4 +1,4 @@
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import { get } from '@forms.js/common/utils/get'
 import { describe, test, expect, vi } from 'vitest'
 
 import { focusFieldBy } from '../../../src/logic/fields/focus-field-by'
@@ -20,7 +20,7 @@ describe('focusFieldBy', () => {
         },
       },
       (key) =>
-        safeGet(
+        get(
           {
             test: {
               message: 'test',
@@ -54,7 +54,7 @@ describe('focusFieldBy', () => {
         },
       },
       (key) =>
-        safeGet(
+        get(
           {
             test: {
               message: 'test',
@@ -75,7 +75,7 @@ describe('focusFieldBy', () => {
           test: undefined,
         },
         (key) =>
-          safeGet(
+          get(
             {
               test: {
                 message: 'test',
@@ -106,7 +106,7 @@ describe('focusFieldBy', () => {
         },
       },
       (key) =>
-        safeGet(
+        get(
           {
             test: {
               message: 'test',

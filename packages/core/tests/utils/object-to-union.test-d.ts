@@ -76,4 +76,40 @@ describe('ObjectToUnion', () => {
       expectTypeOf<ObjectToUnion<MyType>>().toEqualTypeOf<Expected>()
     })
   })
+
+  /**
+   * @see {@type NonRecord} for documentation on edge cases.
+   */
+  test('handles edge cases', () => {
+    type MyType = {
+      a: (...args: any[]) => any
+      b: Set<any>
+      c: Date
+      d: BigInt
+      e: Map<any, any>
+      f: any[]
+    }
+
+    type ExpectedType =
+      | {
+          a: (...args: any[]) => any
+        }
+      | {
+          b: Set<any>
+        }
+      | {
+          c: Date
+        }
+      | {
+          d: BigInt
+        }
+      | {
+          e: Map<any, any>
+        }
+      | {
+          f: any[]
+        }
+
+    expectTypeOf<ObjectToUnion<MyType>>().toEqualTypeOf<ExpectedType>()
+  })
 })

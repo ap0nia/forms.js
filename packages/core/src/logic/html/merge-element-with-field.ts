@@ -1,4 +1,4 @@
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import { get } from '@forms.js/common/utils/get'
 
 import type { Field } from '../../types/fields'
 
@@ -15,6 +15,9 @@ export const dummyRef = {} as HTMLInputElement
 
 /**
  * Given an element to register to a field, merge the element with the existing field.
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/f74d93d322025fd4df98321f113669bde23290f0/src/logic/createFormControl.ts#L1008
+ *
  * @param name The name of the field.
  * @param field The field to merge with.
  * @param defaultValues The default values of the form. Exists to satisfy an edge case lol.
@@ -22,7 +25,7 @@ export const dummyRef = {} as HTMLInputElement
  * @returns The merged field.
  */
 export function mergeElementWithField(
-  name: string,
+  name: PropertyKey,
   field: Field | undefined,
   element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
   defaultValues?: unknown,
@@ -46,7 +49,7 @@ export function mergeElementWithField(
     return {
       _f: {
         ...field?._f,
-        name,
+        name: name.toString(),
         ref,
       },
     }
@@ -54,9 +57,10 @@ export function mergeElementWithField(
 
   const newField = {
     _f: {
-      name,
+      ...field?._f,
+      name: name.toString(),
       ref: {
-        name,
+        name: name.toString(),
         type: ref.type,
       },
       refs: [...refs.filter(elementIsLive), ref],
@@ -73,7 +77,7 @@ export function mergeElementWithField(
    *
    * @see https://github.com/react-hook-form/react-hook-form/pull/7938
    */
-  if (Array.isArray(safeGet(defaultValues, name))) {
+  if (Array.isArray(get(defaultValues, name))) {
     newField._f.refs.push(dummyRef)
   }
 

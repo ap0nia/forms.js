@@ -1,7 +1,10 @@
+import 'whatwg-fetch'
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { rest, type ResponseComposition, type RestContext } from 'msw'
+import { type ResponseComposition, rest, type RestContext } from 'msw'
 import { setupServer } from 'msw/node'
 import React from 'react'
+import { afterAll, afterEach, beforeAll, describe, it, expect, vi as jest } from 'vitest'
 
 import { Form } from '../src/form'
 import { FormProvider } from '../src/form-provider'
@@ -77,8 +80,8 @@ describe('Form', () => {
   })
 
   it('should handle success request callback', async () => {
-    const onSubmit = vi.fn()
-    const onError = vi.fn()
+    const onSubmit = jest.fn()
+    const onError = jest.fn()
 
     const App = () => {
       const [message, setMessage] = React.useState('')
@@ -126,8 +129,8 @@ describe('Form', () => {
   })
 
   it('should handle error request callback', async () => {
-    const onSubmit = vi.fn()
-    const onSuccess = vi.fn()
+    const onSubmit = jest.fn()
+    const onSuccess = jest.fn()
 
     const App = () => {
       const {
@@ -243,7 +246,7 @@ describe('Form', () => {
   })
 
   it('should support fetcher prop with external request', async () => {
-    const fetcher = vi.fn()
+    const fetcher = jest.fn()
     const App = () => {
       const {
         control,
@@ -275,7 +278,7 @@ describe('Form', () => {
   })
 
   it('should include application/json header with encType supplied', async () => {
-    const onSuccess = vi.fn()
+    const onSuccess = jest.fn()
     const App = () => {
       const {
         control,

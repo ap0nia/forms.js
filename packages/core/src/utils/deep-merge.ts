@@ -7,7 +7,9 @@ import type { IsAny } from './is-any'
  *
  * Ignores top-level any for both left and right.
  *
- * @remarks Makes everything partial.
+ * __Makes everything partial__.
+ *
+ * @todo Maybe use `NonRecordNonPrimitive` to prevent recursions.
  *
  * @example
  *

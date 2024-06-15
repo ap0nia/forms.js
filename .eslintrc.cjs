@@ -10,10 +10,11 @@ const config = {
     project: ['./tsconfig.json'],
     sourceType: 'module',
   },
-  plugins: ['import', '@typescript-eslint'],
+  plugins: ['import', 'jsdoc', '@typescript-eslint'],
   extends: [
     'eslint:recommended',
     'plugin:import/recommended',
+    'plugin:jsdoc/recommended',
     'plugin:import/typescript',
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/eslint-recommended',
@@ -45,10 +46,12 @@ const config = {
   },
   settings: {
     'import/resolver': {
-      typescript: true,
+      typescript: {
+        project: ['tsconfig.json', 'apps/*/tsconfig.json'],
+      },
     },
   },
-  ignorePatterns: ['*.config.*', '*.cjs'],
+  ignorePatterns: ['*.config.*', '*rc.cjs', '*rc.js'],
 }
 
 module.exports = config

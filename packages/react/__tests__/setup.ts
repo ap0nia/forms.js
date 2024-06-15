@@ -1,12 +1,11 @@
 import 'vitest'
 import '@testing-library/jest-dom'
 
-import { beforeEach, afterEach } from 'vitest'
+import { vi, beforeEach, afterEach } from 'vitest'
 
 function setup() {
-  if (typeof document === 'undefined') {
-    return
-  }
+  vi.useRealTimers()
+  if (typeof document === 'undefined') return
   document.body.innerHTML = ''
 }
 

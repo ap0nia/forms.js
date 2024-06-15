@@ -35,12 +35,16 @@ export type TrackedContext = {
   /**
    * The value of the context. e.g. the name of a form field that changed.
    */
-  value: string
+  value: PropertyKey
 
   /**
-   * Whether the context must match exactly or if it can be a subset of the context or vice versa.
+   * Whether the context must match exactly or loosely.
+   *
+   * true => either the name includes the context or vice versa.
+   * 'name' => the name has to include the context.
+   * 'context' => the context has to include the name.
    */
-  exact?: boolean
+  exact?: boolean | 'name' | 'context'
 }
 
 /**
@@ -50,6 +54,26 @@ export class Batchable<
   TStores extends Record<string, Writable<any, any>>,
   TValues extends StoresValues<TStores> = StoresValues<TStores>,
 > {
+  static matches(trackedContext: TrackedContext, name: PropertyKey) {
+    const { exact, value } = trackedContext
+
+    if (typeof name !== 'string' || typeof value !== 'string' || exact == true) {
+      return name === trackedContext.value
+    }
+
+    switch (exact) {
+      case 'name': {
+        return name.includes(value)
+      }
+      case 'context': {
+        return value.includes(name)
+      }
+      default: {
+        return value.includes(name) || name.includes(value)
+      }
+    }
+  }
+
   /**
    * Stores to batch updates from.
    */
@@ -197,6 +221,7 @@ export class Batchable<
     } else {
       this.depth--
     }
+
     this.children.forEach((child) => child.close())
   }
 
@@ -246,35 +271,40 @@ export class Batchable<
   /**
    * Whether any child is tracking the given key and context.
    */
-  childIsTracking(key: string, name?: string[] | boolean): boolean {
+  childIsTracking(key: string, name?: PropertyKey | PropertyKey[] | boolean): boolean {
     return Array.from(this.children).some((child) => child.isTracking(key, name))
   }
 
   /**
    * Whether the given key and context are being tracked by this store.
    */
-  isTracking(key: string, name?: string | string[] | boolean): boolean {
+  isTracking(
+    key: keyof TStores | (keyof TStores)[],
+    name?: PropertyKey | PropertyKey[] | boolean,
+  ): boolean {
     if (this.all === true) {
       return true
     }
 
-    const rootIsTracking = this.keys.has(key)
+    const keyArray = Array.isArray(key) ? key : [key]
+
+    const rootIsTracking = keyArray.some((key) => this.keys.has(key))
 
     if (rootIsTracking || name == null) {
       return rootIsTracking
     }
 
     if (typeof name === 'boolean') {
-      return name && this.contexts[key] != null
+      return name && keyArray.some((key) => this.contexts[key] != null)
     }
 
     const nameArray = Array.isArray(name) ? name : [name]
 
-    const nameAndContextAreTracked = nameArray.some((n) => {
-      return this.contexts[key]?.some((trackedContext) => {
-        return trackedContext.exact
-          ? n === trackedContext.value
-          : n.includes(trackedContext.value) || trackedContext.value.includes(n)
+    const nameAndContextAreTracked = keyArray.some((key) => {
+      return nameArray.some((name) => {
+        return this.contexts[key]?.some((trackedContext) => {
+          return Batchable.matches(trackedContext, name)
+        })
       })
     })
 
@@ -283,8 +313,17 @@ export class Batchable<
 
   /**
    * Run a function and flush the buffer after it completes.
+   *
+   * IMPORTANT
+   *
+   * Changed keys in the buffer will remain there until the next flush.
+   * If you need to perform a surgical update with a completely fresh buffer, use a transaction!
    */
   transaction(fn: () => unknown): void {
+    const originalBuffer = [...this.buffer]
+
+    this.buffer = []
+
     this.open()
 
     fn()
@@ -293,12 +332,18 @@ export class Batchable<
      * After a transaction, force an update if the buffer contains relevant updates.
      */
     this.flush(this.keyChangedInBuffer())
+
+    this.buffer = originalBuffer
   }
 
   /**
    * Track a specific context of a store.
    */
-  track(key: keyof TStores, name?: string | string[], options?: Partial<TrackedContext>): void {
+  track(
+    key: keyof TStores,
+    name?: PropertyKey | PropertyKey[],
+    options?: Partial<TrackedContext>,
+  ): void {
     if (name == null) {
       this.keys.add(key)
       return
@@ -330,7 +375,7 @@ export class Batchable<
    * Track a specific context of all stores.
    */
   createTrackingProxy(
-    name?: string | string[],
+    name?: PropertyKey | PropertyKey[],
     options?: Partial<TrackedContext>,
     filter = true,
   ): TValues {
@@ -340,7 +385,7 @@ export class Batchable<
       Object.defineProperty(proxy, key, {
         get: () => {
           this.track(key, name, options)
-          return filter
+          return filter && typeof this.writable.value[key] === 'object'
             ? deepFilter(this.writable.value[key as keyof TValues], name)
             : this.writable.value[key as keyof TValues]
         },

@@ -61,6 +61,31 @@ describe('DeepMap', () => {
 
       expectTypeOf<DeepMap<MyType, boolean>>().toEqualTypeOf<ExpectedType>()
     })
+
+    /**
+     * @see {@type NonRecord} for documentation on edge cases.
+     */
+    test('handles edge cases', () => {
+      type MyType = {
+        a: (...args: any[]) => any
+        b: Set<any>
+        c: Date
+        d: BigInt
+        e: Map<any, any>
+        f: any[]
+      }
+
+      type ExpectedType = {
+        a: boolean
+        b: boolean
+        c: boolean
+        d: boolean
+        e: boolean
+        f: boolean[]
+      }
+
+      expectTypeOf<DeepMap<MyType, boolean>>().toEqualTypeOf<ExpectedType>()
+    })
   })
 
   describe('correctly processes unexpected types', () => {

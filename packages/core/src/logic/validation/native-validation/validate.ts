@@ -1,4 +1,4 @@
-import { isEmptyObject } from '@forms.js/common/utils/is-object'
+import { isEmptyObject } from '@forms.js/common/utils/is-empty-object'
 import { isObject } from '@forms.js/common/utils/is-object'
 
 import { INPUT_VALIDATION_RULE } from '../../../constants'
@@ -9,7 +9,46 @@ import { setCustomValidity } from '../../html/set-custom-validity'
 
 import type { NativeValidationFunction } from './types'
 
-export const nativeValidateValidate: NativeValidationFunction = async (context, next) => {
+/**
+ * @returns Promise if validation is needed, otherwise synchronous noop.
+ */
+export const nativeValidateValidate: NativeValidationFunction = (context, next) => {
+  const { validate } = context.field._f
+
+  // Nothing to validate.
+
+  if (validate == null || (typeof validate !== 'function' && !isObject(validate))) {
+    return next?.(context)
+  }
+
+  return asyncNativeValidateValidate(context, next)
+}
+
+/**
+ * Converts a {@link ValidateResult} to a {@link FieldError}.
+ */
+export function getValidateError(
+  result: ValidateResult,
+  ref: FieldElement,
+  type = 'validate',
+): FieldError | void {
+  if (
+    typeof result === 'string' ||
+    (Array.isArray(result) && result.every((r) => typeof r === 'string')) ||
+    result === false
+  ) {
+    return {
+      type,
+      message: typeof result === 'string' ? result : '',
+      ref,
+    }
+  }
+}
+
+/**
+ * This should only be run after confirming that `validate` exists.
+ */
+export const asyncNativeValidateValidate: NativeValidationFunction = async (context, next) => {
   const {
     field,
     errors,
@@ -22,16 +61,13 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
 
   const { name, validate } = field._f
 
-  // Nothing to validate.
-  if (validate == null || (typeof validate !== 'function' && !isObject(validate))) {
-    return next?.(context)
-  }
+  // No need for null check...
 
   // Validation function.
   if (typeof validate === 'function') {
     const result = await validate(inputValue, formValues)
 
-    const validateError = parseValidationResult(result, inputRef)
+    const validateError = getValidateError(result, inputRef)
 
     if (validateError) {
       errors[name] = {
@@ -61,9 +97,9 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
   let validationResult = {} as FieldError
 
   for (const key in field._f.validate) {
-    const currentValidateResult = await validate[key]?.(inputValue, formValues)
+    const currentValidateResult = await validate?.[key]?.(inputValue, formValues)
 
-    const validateError = parseValidationResult(currentValidateResult, inputRef, key)
+    const validateError = getValidateError(currentValidateResult, inputRef, key)
 
     if (validateError) {
       validationResult = {
@@ -96,25 +132,4 @@ export const nativeValidateValidate: NativeValidationFunction = async (context, 
   }
 
   return next?.(context)
-}
-
-/**
- * Converts a {@link ValidateResult} to a {@link FieldError}.
- */
-export function parseValidationResult(
-  result: ValidateResult,
-  ref: FieldElement,
-  type = 'validate',
-): FieldError | void {
-  if (
-    typeof result === 'string' ||
-    (Array.isArray(result) && result.every((r) => typeof r === 'string')) ||
-    result === false
-  ) {
-    return {
-      type,
-      message: typeof result === 'string' ? result : '',
-      ref,
-    }
-  }
 }

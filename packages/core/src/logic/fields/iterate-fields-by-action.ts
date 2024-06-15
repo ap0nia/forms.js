@@ -1,16 +1,25 @@
+import { get } from '@forms.js/common/utils/get'
 import { isObject } from '@forms.js/common/utils/is-object'
-import { safeGet } from '@forms.js/common/utils/safe-get'
 
-import type { FieldRecord } from '../../types/fields'
+import type { FieldElement, FieldRecord } from '../../types/fields'
 
+export type IterateAction = (element: FieldElement, name: string) => 1 | undefined | void
+
+/**
+ * Low-level implementation for iterating over specified form fields and performing an action.
+ *
+ * Can be used for focusing on the first input, disabling fields, etc.
+ *
+ * As far as I can tell, @param abortEarly is never actually used...
+ */
 export function iterateFieldsByAction(
   fields: FieldRecord,
-  action: (ref: HTMLElement, name: string) => 1 | undefined | void,
+  action: IterateAction,
   fieldsNames?: Set<string> | string[] | 0,
   abortEarly?: boolean,
 ) {
   for (const key of fieldsNames || Object.keys(fields)) {
-    const field = safeGet(fields, key)
+    const field = get(fields, key)
 
     if (field) {
       const { _f, ...currentField } = field
@@ -20,6 +29,8 @@ export function iterateFieldsByAction(
           break
         } else if (_f.ref && action(_f.ref, _f.name) && !abortEarly) {
           break
+        } else {
+          iterateFieldsByAction(currentField, action)
         }
       } else if (isObject(currentField)) {
         iterateFieldsByAction(currentField, action)
@@ -27,3 +38,5 @@ export function iterateFieldsByAction(
     }
   }
 }
+
+export default iterateFieldsByAction

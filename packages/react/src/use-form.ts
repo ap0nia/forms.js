@@ -1,27 +1,20 @@
 import { deepEqual } from '@forms.js/common/utils/deep-equal'
+import type { FormControlState } from '@forms.js/core'
 import { useRef, useCallback, useSyncExternalStore, useEffect } from 'react'
 
 import { Control, type ControlOptions } from './control'
 
-export type UseFormReturn<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
-  TControl extends Control<TValues, TContext, TTransformedValues> = Control<
-    TValues,
-    TContext,
-    TTransformedValues
-  >,
-> = {
-  control: TControl
-  formState: TControl['state']['value']
+export type UseFormReturn<TFieldValues extends Record<string, any>, TContext = any> = {
+  control: Control<TFieldValues, TContext>
+  formState: FormControlState<TFieldValues>
 } & Pick<
-  TControl,
+  Control<TFieldValues, TContext>,
   | 'register'
   | 'handleSubmit'
   | 'unregister'
   | 'watch'
   | 'reset'
+  | 'resetField'
   | 'setError'
   | 'clearErrors'
   | 'setValue'
@@ -31,18 +24,21 @@ export type UseFormReturn<
   | 'trigger'
 >
 
-export function useForm<
-  TValues extends Record<string, any>,
-  TContext = any,
-  TTransformedValues extends Record<string, any> | undefined = undefined,
->(props?: ControlOptions<TValues, TContext>): UseFormReturn<TValues, TContext, TTransformedValues> {
-  const { disabled, values } = props ?? {}
+export function useForm<TValues extends Record<string, any>, TContext = any>(
+  props: ControlOptions<TValues, TContext> = {},
+): UseFormReturn<TValues, TContext> {
+  const { disabled, errors, values } = props
 
-  const formControlRef = useRef<Control<TValues, TContext, TTransformedValues>>(new Control(props))
+  const formControlRef = useRef<Control<TValues, TContext>>(new Control(props))
 
   const control = formControlRef.current
 
-  const form = useRef<UseFormReturn<TValues, TContext, TTransformedValues>>({
+  control.options = {
+    ...control.options,
+    ...props,
+  }
+
+  const form = useRef<UseFormReturn<TValues, TContext>>({
     control: control,
     register: control.register.bind(control),
     handleSubmit: control.handleSubmit.bind(control),
@@ -57,6 +53,7 @@ export function useForm<
     getValues: control.getValues.bind(control),
     getFieldState: control.getFieldState.bind(control),
     trigger: control.trigger.bind(control),
+    resetField: control.resetField.bind(control),
   })
 
   const subscribe = useCallback(
@@ -71,28 +68,43 @@ export function useForm<
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (values && !deepEqual(values, control.state.value.values)) {
-      control.reset(values, control.options.resetOptions)
+    if (control._proxyFormState.isDirty) {
+      const isDirty = control.getDirty()
+      control.stores.isDirty.set(isDirty)
+    }
+  }, [control, control._formState.isDirty])
+
+  useEffect(() => {
+    if (values && !deepEqual(values, control._formValues)) {
+      control.reset(values as any, control.options.resetOptions)
     } else {
       control.resetDefaultValues()
     }
-  }, [values, control])
+  }, [control, values])
 
   useEffect(() => {
-    control.cleanup()
-  })
-
-  useEffect(() => {
-    control.handleDisabled(disabled)
-  }, [disabled])
-
-  useEffect(() => {
-    control.mount()
-
-    return () => {
-      control.unmount()
+    if (errors) {
+      control.setErrors(errors)
     }
-  }, [control])
+  }, [control, errors])
+
+  useEffect(() => {
+    control.disableForm(disabled)
+  }, [control, disabled])
+
+  useEffect(() => {
+    if (!control.mounted) {
+      control.updateValid()
+      control.mounted = true
+    }
+
+    control.removeUnmounted()
+
+    if (control.needsFlush) {
+      control.needsFlush = false
+      control.state.flush()
+    }
+  })
 
   return form.current
 }

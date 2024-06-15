@@ -1,7 +1,7 @@
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import { get } from '@forms.js/common/utils/get'
 
 import type { FieldError, FieldErrors } from '../../types/errors'
-import type { FieldRecord } from '../../types/fields'
+import type { FieldLikeRecord } from '../../types/fields'
 
 export type FoundError = {
   error?: FieldError
@@ -12,13 +12,15 @@ export type FoundError = {
  * This primarily handles errors nested in arrays.
  *
  * e.g. It removes the index from the name. 'foo.bar[3]' => 'foo.bar'
+ *
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/schemaErrorLookup.ts
  */
 export function lookupError<T = Record<string, any>>(
   errors: FieldErrors<T>,
-  fields: FieldRecord,
+  fields: FieldLikeRecord,
   name: string,
 ): FoundError {
-  const error = safeGet(errors, name)
+  const error = get(errors, name)
 
   if (error || /^\w*$/.test(name)) {
     return { error, name }
@@ -28,8 +30,8 @@ export function lookupError<T = Record<string, any>>(
 
   while (names.length) {
     const fieldName = names.join('.')
-    const field = safeGet(fields, fieldName)
-    const foundError = safeGet(errors, fieldName)
+    const field = get(fields, fieldName)
+    const foundError = get(errors, fieldName)
 
     if (field && !Array.isArray(field) && name !== fieldName) {
       return { name }
@@ -47,3 +49,5 @@ export function lookupError<T = Record<string, any>>(
 
   return { name }
 }
+
+export default lookupError

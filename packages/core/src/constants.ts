@@ -7,14 +7,22 @@ export const INPUT_EVENTS = {
   CHANGE: 'change',
 } as const
 
+export const MAX_INPUT_VALIDATION_RULE = {
+  max: 'max',
+  maxLength: 'maxLength',
+} as const
+
+export const MIN_INPUT_VALIDATION_RULE = {
+  min: 'min',
+  minLength: 'minLength',
+} as const
+
 /**
  * Supported native validation constraints.
  */
 export const INPUT_VALIDATION_RULE = {
-  max: 'max',
-  min: 'min',
-  maxLength: 'maxLength',
-  minLength: 'minLength',
+  ...MAX_INPUT_VALIDATION_RULE,
+  ...MIN_INPUT_VALIDATION_RULE,
   pattern: 'pattern',
   required: 'required',
   validate: 'validate',
@@ -53,8 +61,12 @@ export const CRITERIA_MODE = {
   all: 'all',
 }
 
+export const VALIDATION_MODE = VALIDATION_EVENTS
+
 /**
  * When to validate the form data based on the submission status.
+ *
+ * Alternative interface to {@link RevalidationModeFlags} and {@link ValidationModeFlags}
  */
 export type SubmissionValidationMode = {
   /**
@@ -65,12 +77,27 @@ export type SubmissionValidationMode = {
   /**
    * When to validate after submitting a form.
    */
-  afterSubmission: { [K in keyof ValidationEvent]: boolean }
+  afterSubmission: { [K in keyof RevalidationEvent]: boolean }
+}
+
+export type RevalidationModeFlags = {
+  isOnBlur: boolean
+  isOnChange: boolean
+}
+
+export type ValidationModeFlags = RevalidationModeFlags & {
+  isOnSubmit: boolean
+  isOnAll: boolean
+  isOnTouch: boolean
 }
 
 export type InputEvent = typeof INPUT_EVENTS
 
 export type InputValidationRule = typeof INPUT_VALIDATION_RULE
+
+export type MaxInputValidationRule = typeof MAX_INPUT_VALIDATION_RULE
+
+export type MinInputValidationRule = typeof MIN_INPUT_VALIDATION_RULE
 
 export type RevalidationEvent = typeof REVALIDATION_EVENTS
 

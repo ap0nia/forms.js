@@ -1,4 +1,6 @@
 import type { IsAny } from './is-any'
+import type { Join } from './join'
+import type { NonRecordNonPrimitives } from './not-record'
 
 /**
  * Recursively gets the union of all nested objects.
@@ -68,34 +70,37 @@ import type { IsAny } from './is-any'
  *
  * [TypeScript Playground](https://www.typescriptlang.org/play?#code/C4TwDgpgBAkgzgQQHYgDwBUB8UC8UAMUEAHsBEgCZxQCMUAZFOlAPxTABOArtAFxQAzAIYAbOBABQE0JCgBlTgEskAcyEAjEdDxwlqqAB8oSLgFt1EDoajqA9ra1Ck19YpXLg1kyJHWulCAFlCAopGWgANVEeGAEAOVtgAFFTMFAMIlJyKihdDmUVABooKJEebDxmEjJKagByOtYoBqh+Up4w8GgAKVtlBA4OITQJKCZMmpz-AGskWwB3JABtAF1C0fkIMCEh4FsrauzqPILcZoA6OvWxgCUIOC4RT0Pa3L0VM4b1ivGXnNWNmw7g8nht+FUsq8lsoBJYoAAJCBCCjFc5omFw4HAFaAqC9fqDYaoDZjW73YDXUljORbHZCPYcSlUgAGABIAN7Ax7AAC+HPaEFiCWSqXSXKexRp212+0wfPZSVIQwAxsBUIjkZL3hotHLmSSoJgwVBxcApCQwPtPOEoAB5dQAKwgqvQtgAqkhFLYkBhigBpCAgah-agzOaLVZnVY-eDINBYCZHdjcSRjNhOEBgg1jIzs7NUqBLP1QZRQaaB2wCJgrfixlAYIsrbAh5MdAvtprswtyLjqAMgEvOfFIAZDNBLNHnftwf1NmtMRtQHn59vgxctgAUGKsboAlACOwWWCvD9Yu0se33A4O8X0R4Tx5Pp7PMPP0Ivl6eO7nu73+zfh1HIkJzRZ8oD9YoTHMSw534RVOCEVUgPjRtsE-L8CyMDc3UTV47mVfYKFQE5VGKDNsDYe0nRdd1PW9VA3WKECp0DGdwMgswLA4JtWmMCAADdLF3E8qTXP0VlwnJ8MI4j3jIlAjQwpoqOdYBXQ9L0fXfcSmKfViXxE0l+HPS9-1LQCH1QZiwPE18xIk9D2x5JZyxAStq3zLDpyWOotFUYAAAs6gkltCDYJABLhYzfyvAdzLvZDUGnOzxh5YTpC6KB4JVYBEoTSpJOoLckFhHd9wktgcPBTpZAADTOPMxiEfgSJUDZ1GMg1lX4KCuI2dCKE6qkICGgsBH4OwHCRJADXQ5dlwy2QAE0Go2ZqoC7Dq3nyfRnJxBabQQM4VJojT6Nqo0AHpLtJAA9Y9FugAAhY7HVU9S6J9JarpusZ7okIA)
  *
- * @param Limit allows you to limit the depth of the recursion in order to improve performance.
+ * @param Depth allows you to limit the depth of the recursion in order to improve performance. Set to an arbitrary big number by default.
  */
 export type ObjectToUnion<
   T,
-  Key extends string = '',
-  KeyWithExtension extends string = Key extends '' ? '' : `${Key}.`,
+  TPath extends any[] = [],
+  TDepth extends number = 1000,
 > = IsAny<T> extends true
   ? any
-  : IsIgnoredType<T> extends true
-  ? { [SubKey in Key]: T }
+  : T extends NonRecordNonPrimitives
+  ? T
+  : TPath['length'] extends TDepth
+  ? T
   :
       | {
           [K in keyof T]: IsAny<T[K]> extends true
-            ? { [SubKey in `${KeyWithExtension}${K & string}`]: T[K] }
+            ? Record<Join<[...TPath, K]>, T[K]>
             : T[K] extends (infer U)[]
-            ?
-                | { [SubKey in `${KeyWithExtension}${K & string}`]: T[K] }
-                | { [SubKey in `${KeyWithExtension}${K & string}.${number}`]: U }
-                | (U extends Record<string, any>
-                    ? ObjectToUnion<U, `${KeyWithExtension}${K & string}.${number}`>
-                    : never)
-            : T[K] extends Record<string, any>
-            ? ObjectToUnion<T[K], `${KeyWithExtension}${K & string}`>
-            : { [SubKey in `${KeyWithExtension}${K & string}`]: T[K] }
+            ? IsAny<U> extends true
+              ? Record<Join<[...TPath, K]>, T[K]>
+              :
+                  | Record<Join<[...TPath, K]>, T[K]>
+                  | Record<Join<[...TPath, K, number]>, U>
+                  | (U extends Record<PropertyKey, any>
+                      ? U extends NonRecordNonPrimitives
+                        ? never
+                        : ObjectToUnion<U, [...TPath, K, number]>
+                      : never)
+            : T[K] extends NonRecordNonPrimitives
+            ? Record<Join<[...TPath, K]>, T[K]>
+            : T[K] extends Record<PropertyKey, any>
+            ? ObjectToUnion<T[K], [...TPath, K]>
+            : Record<Join<[...TPath, K]>, T[K]>
         }[keyof T]
-      | (Key extends '' ? never : { [SubKey in Key]: T })
-
-/**
- * Don't recur on certain types.
- */
-export type IsIgnoredType<T> = T extends Blob ? true : false
+      | (TPath extends [] ? never : Record<Join<TPath>, T>)

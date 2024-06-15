@@ -2,22 +2,26 @@ import type { CriteriaMode } from '../constants'
 
 import type { FieldErrors } from './errors'
 import type { FieldReference } from './fields'
-import type { ParseForm } from './form'
+import type { ParseForm } from './parse'
 
 /**
  * A resolver processes the form values and returns a result.
  * i.e. resolving the values/errors of the form.
  */
-export type Resolver<TFieldValues = Record<string, any>, TContext = any> = (
+export type Resolver<
+  TFieldValues = Record<string, any>,
+  TContext = any,
+  TParsedForm = ParseForm<TFieldValues>,
+> = (
   values: TFieldValues,
   context: TContext | undefined,
-  options: ResolverOptions<TFieldValues>,
+  options: ResolverOptions<TFieldValues, TParsedForm>,
 ) => ResolverResult<TFieldValues> | Promise<ResolverResult<TFieldValues>>
 
 /**
  * Resolver options.
  */
-export interface ResolverOptions<T, TParsedForm extends ParseForm<T> = ParseForm<T>> {
+export interface ResolverOptions<T, TParsedForm = ParseForm<T>> {
   /**
    * How to handle encountered errors.
    */
@@ -31,12 +35,12 @@ export interface ResolverOptions<T, TParsedForm extends ParseForm<T> = ParseForm
   /**
    * Names of the fields to parse.
    */
-  names?: TParsedForm['keys'][]
+  names?: (keyof TParsedForm)[]
 
   /**
    * Whether to use native validation by reading the field element.
    */
-  shouldUseNativeValidation?: boolean
+  shouldUseNativeValidation: boolean | undefined
 }
 
 /**
@@ -47,7 +51,7 @@ export type ResolverResult<T = Record<string, any>> = ResolverSuccess<T> | Resol
 /**
  * Successful resolver result.
  */
-export type ResolverSuccess<T> = {
+export type ResolverSuccess<T = Record<string, any>> = {
   /**
    * Return the form values.
    */
@@ -59,7 +63,7 @@ export type ResolverSuccess<T> = {
   errors?: {}
 }
 
-export type ResolverError<T> = {
+export type ResolverError<T = Record<string, any>> = {
   /**
    * Don't return any form values.
    */

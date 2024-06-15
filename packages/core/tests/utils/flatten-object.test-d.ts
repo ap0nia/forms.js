@@ -87,4 +87,22 @@ describe('FlattenObject', () => {
       expectTypeOf<FlattenObject<Nested>>().toEqualTypeOf<Expected>()
     })
   })
+
+  /**
+   * @see {@type NonRecord} for documentation on edge cases.
+   *
+   * None of these types should be recurred into, so assert that the type is the same.
+   */
+  test('handles edge cases', () => {
+    type MyType = {
+      a: (...args: any[]) => any
+      b: Set<any>
+      c: Date
+      d: BigInt
+      e: Map<any, any>
+      f: any[]
+    }
+
+    expectTypeOf<FlattenObject<MyType>>().toEqualTypeOf<MyType>()
+  })
 })

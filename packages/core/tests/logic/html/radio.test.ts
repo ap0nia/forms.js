@@ -1,7 +1,3 @@
-/**
- * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/__tests__/logic/getRadioValue.test.ts
- */
-
 import { describe, test, expect } from 'vitest'
 
 import { getRadioValue, type RadioFieldResult } from '../../../src/logic/html/radio'

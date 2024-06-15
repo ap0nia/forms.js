@@ -1,33 +1,24 @@
-import { isObject } from '@forms.js/common/utils/is-object'
-import { safeGet } from '@forms.js/common/utils/safe-get'
+import type { FieldRecord } from '../../types/fields'
 
-import type { Field, FieldRecord } from '../../types/fields'
+import { iterateFieldsByAction, type IterateAction } from './iterate-fields-by-action'
 
+/**
+ * Abstraction over {@link iterateFieldsByAction}. The parent form control just needs to
+ * provide a callback function for determining whether the field should be focused.
+ */
 export function focusFieldBy(
   fields: FieldRecord,
-  callback: (name?: string) => unknown,
+  shouldFocus: (name?: string) => unknown,
   fieldNames?: Set<string> | string[],
+  abortEarly?: boolean,
 ): void {
-  for (const key of fieldNames || Object.keys(fields)) {
-    const field = safeGet<Field | undefined>(fields, key)
-
-    if (field == null) {
-      continue
+  const focusInput: IterateAction = (ref, name) => {
+    if (shouldFocus(name)) {
+      ref.focus?.()
+      return 1
     }
-
-    const { _f, ...nestedField } = field
-
-    if (_f && callback(_f.name)) {
-      if (_f.ref.focus) {
-        _f.ref.focus()
-        break
-      }
-      if (_f.refs?.[0]?.focus) {
-        _f.refs[0].focus()
-        break
-      }
-    } else if (isObject(nestedField)) {
-      focusFieldBy(nestedField, callback)
-    }
+    return
   }
+
+  return iterateFieldsByAction(fields, focusInput, fieldNames, abortEarly)
 }

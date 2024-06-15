@@ -1,17 +1,22 @@
+import { noop } from '@forms.js/common/utils/noop'
+import type { ValidateResult } from '@forms.js/core'
 import {
+  act as actComponent,
+  fireEvent,
   render,
   screen,
-  fireEvent,
   waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react'
 import React from 'react'
-import { describe, it, expect, vi as jest } from 'vitest'
+import { vi as jest, describe, it, expect } from 'vitest'
 
 import { Controller } from '../src/controller'
+import { FormProvider } from '../src/form-provider'
 import type { ControllerRenderProps } from '../src/use-controller'
 import { useFieldArray } from '../src/use-field-array'
 import { useForm } from '../src/use-form'
+import { useWatch } from '../src/use-watch'
 
 function Input<TFieldValues extends Record<string, any>>({
   onChange,
@@ -43,6 +48,27 @@ describe('Controller', () => {
 
     expect(input).toBeVisible()
     expect(input.name).toBe('test')
+  })
+
+  it('should render correctly with as with component', () => {
+    const Component = () => {
+      const { control } = useForm()
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field }) => <input {...field} />}
+          control={control}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    const input = screen.getByRole('textbox') as HTMLInputElement
+
+    expect(input).toBeVisible()
+    expect(input?.name).toBe('test')
   })
 
   it('should reset value', async () => {
@@ -232,6 +258,59 @@ describe('Controller', () => {
     expect(touched).toEqual({ test: true })
   })
 
+  it('should set field to formState validatingFields and render field isValidating state', async () => {
+    jest.useFakeTimers()
+
+    const getValidateMock: (timeout: number) => Promise<ValidateResult> = (timeout: number) => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(true)
+        }, timeout)
+      })
+    }
+
+    let validatingFields: any
+    const Component = () => {
+      const { control, formState } = useForm({ mode: 'onBlur' })
+
+      validatingFields = formState.validatingFields
+
+      return (
+        <Controller
+          defaultValue=""
+          name="test"
+          render={({ field, fieldState }) => (
+            <>
+              <div>isValidating: {String(fieldState.isValidating)}</div>
+              <input {...field} />
+            </>
+          )}
+          control={control}
+          rules={{
+            validate: () => getValidateMock(1000),
+          }}
+        />
+      )
+    }
+
+    render(<Component />)
+
+    expect(validatingFields).toEqual({})
+    expect(screen.getByText('isValidating: false')).toBeVisible()
+
+    fireEvent.blur(screen.getByRole('textbox'))
+
+    expect(validatingFields).toEqual({ test: true })
+    expect(screen.getByText('isValidating: true')).toBeVisible()
+
+    await actComponent(async () => {
+      jest.advanceTimersByTime(1100)
+    })
+
+    expect(validatingFields).toEqual({})
+    expect(screen.getByText('isValidating: false')).toBeVisible()
+  })
+
   it('should call trigger method when re-validate mode is onBlur with blur event', async () => {
     const Component = () => {
       const {
@@ -243,7 +322,7 @@ describe('Controller', () => {
       })
 
       return (
-        <form onSubmit={handleSubmit(() => {})}>
+        <form onSubmit={handleSubmit(noop)}>
           <Controller
             defaultValue=""
             name="test"
@@ -807,7 +886,7 @@ describe('Controller', () => {
   })
 
   it('should retain default value or defaultValues at Controller', () => {
-    let getValuesMethod = () => {}
+    let getValuesMethod = noop
     const Component = () => {
       const { control, getValues } = useForm<{
         test: number
@@ -1062,62 +1141,62 @@ describe('Controller', () => {
     expect((screen.getByPlaceholderText('test') as HTMLInputElement).value).toEqual('720')
   })
 
-  // it('should mark mounted inputs correctly within field array', async () => {
-  //   const App = () => {
-  //     const {
-  //       control,
-  //       handleSubmit,
-  //       formState: { errors },
-  //     } = useForm({
-  //       defaultValues: {
-  //         test: [{ firstName: 'test' }],
-  //       },
-  //     })
-  //     const { fields, prepend } = useFieldArray({
-  //       control,
-  //       name: 'test',
-  //     })
+  it('should mark mounted inputs correctly within field array', async () => {
+    const App = () => {
+      const {
+        control,
+        handleSubmit,
+        formState: { errors },
+      } = useForm({
+        defaultValues: {
+          test: [{ firstName: 'test' }],
+        },
+      })
+      const { fields, prepend } = useFieldArray({
+        control,
+        name: 'test',
+      })
 
-  //     return (
-  //       <form onSubmit={handleSubmit(() => {})}>
-  //         {fields.map((field, index) => {
-  //           return (
-  //             <div key={field.id}>
-  //               <Controller
-  //                 control={control}
-  //                 render={({ field }) => <input {...field} />}
-  //                 name={`test.${index}.firstName`}
-  //                 rules={{ required: true }}
-  //               />
-  //               {errors?.test?.[index]?.firstName && <p>error</p>}
-  //             </div>
-  //           )
-  //         })}
-  //         <button
-  //           type="button"
-  //           onClick={() =>
-  //             prepend({
-  //               firstName: '',
-  //             })
-  //           }
-  //         >
-  //           prepend
-  //         </button>
-  //         <button>submit</button>
-  //       </form>
-  //     )
-  //   }
+      return (
+        <form onSubmit={handleSubmit(noop)}>
+          {fields.map((field, index) => {
+            return (
+              <div key={field.id}>
+                <Controller
+                  control={control}
+                  render={({ field }) => <input {...field} />}
+                  name={`test.${index}.firstName`}
+                  rules={{ required: true }}
+                />
+                {errors?.test?.[index]?.firstName && <p>error</p>}
+              </div>
+            )
+          })}
+          <button
+            type="button"
+            onClick={() =>
+              prepend({
+                firstName: '',
+              })
+            }
+          >
+            prepend
+          </button>
+          <button>submit</button>
+        </form>
+      )
+    }
 
-  //   render(<App />)
+    render(<App />)
 
-  //   fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
 
-  //   fireEvent.click(screen.getByRole('button', { name: 'prepend' }))
+    fireEvent.click(screen.getByRole('button', { name: 'prepend' }))
 
-  //   fireEvent.click(screen.getByRole('button', { name: 'submit' }))
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }))
 
-  //   expect(await screen.findByText('error')).toBeVisible()
-  // })
+    expect(await screen.findByText('error')).toBeVisible()
+  })
 
   it('should not throw type error with field state', () => {
     type FormValues = {
@@ -1312,74 +1391,74 @@ describe('Controller', () => {
     expect(screen.getAllByRole('textbox').length).toEqual(4)
   })
 
-  // it('should unregister component within field array when field is unmounted', () => {
-  //   const getValueFn = jest.fn()
+  it('should unregister component within field array when field is unmounted', () => {
+    const getValueFn = jest.fn()
 
-  //   const Child = () => {
-  //     const { fields } = useFieldArray({
-  //       name: 'names',
-  //     })
-  //     const show = useWatch({ name: 'show' })
+    const Child = () => {
+      const { fields } = useFieldArray({
+        name: 'names',
+      })
+      const show = useWatch({ name: 'show' })
 
-  //     return (
-  //       <>
-  //         <Controller
-  //           name={'show'}
-  //           render={({ field }) => (
-  //             <input {...field} checked={field.value} type="checkbox" data-testid="checkbox" />
-  //           )}
-  //         />
+      return (
+        <>
+          <Controller
+            name={'show'}
+            render={({ field }) => (
+              <input {...field} checked={field.value} type="checkbox" data-testid="checkbox" />
+            )}
+          />
 
-  //         {fields.map((field, i) => (
-  //           <div key={field.id}>
-  //             {show && (
-  //               <Controller
-  //                 shouldUnregister
-  //                 name={`names.${i}.firstName`}
-  //                 render={({ field }) => <input {...field} />}
-  //               />
-  //             )}
-  //           </div>
-  //         ))}
-  //       </>
-  //     )
-  //   }
+          {fields.map((field, i) => (
+            <div key={field.id}>
+              {show && (
+                <Controller
+                  shouldUnregister
+                  name={`names.${i}.firstName`}
+                  render={({ field }) => <input {...field} />}
+                />
+              )}
+            </div>
+          ))}
+        </>
+      )
+    }
 
-  //   function App() {
-  //     const methods = useForm({
-  //       defaultValues: { show: true, names: [{ firstName: '' }] },
-  //     })
+    function App() {
+      const methods = useForm({
+        defaultValues: { show: true, names: [{ firstName: '' }] },
+      })
 
-  //     return (
-  //       <FormProvider {...methods}>
-  //         <Child />
-  //         <button
-  //           onClick={() => {
-  //             getValueFn(methods.getValues())
-  //           }}
-  //         >
-  //           getValues
-  //         </button>
-  //       </FormProvider>
-  //     )
-  //   }
+      return (
+        <FormProvider {...methods}>
+          <Child />
+          <button
+            onClick={() => {
+              getValueFn(methods.getValues())
+            }}
+          >
+            getValues
+          </button>
+        </FormProvider>
+      )
+    }
 
-  //   render(<App />)
+    render(<App />)
 
-  //   fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByRole('button'))
 
-  //   expect(getValueFn).toBeCalledWith({
-  //     names: [{ firstName: '' }],
-  //     show: true,
-  //   })
+    expect(getValueFn).toBeCalledWith({
+      names: [{ firstName: '' }],
+      show: true,
+    })
 
-  //   fireEvent.click(screen.getByTestId('checkbox'))
-  //   fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByTestId('checkbox'))
+    fireEvent.click(screen.getByRole('button'))
 
-  //   expect(getValueFn).toBeCalledWith({
-  //     show: false,
-  //   })
-  // })
+    expect(getValueFn).toBeCalledWith({
+      show: false,
+    })
+  })
 
   it('should set up defaultValues for controlled component with values prop', () => {
     function App() {
@@ -1408,7 +1487,7 @@ describe('Controller', () => {
       const { control, handleSubmit } = useForm<{ numbers: number[] }>()
 
       return (
-        <form onSubmit={handleSubmit(() => {})}>
+        <form onSubmit={handleSubmit(noop)}>
           <Controller
             control={control}
             name="numbers"

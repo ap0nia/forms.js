@@ -1,4 +1,8 @@
-import type { FormFieldNames } from '@forms.js/core'
+// For some reason these types aren't portable??
+import '@forms.js/core/utils/deep-partial'
+import '@forms.js/core/utils/deep-map'
+
+import type { ParseForm } from '@forms.js/core'
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 
 import type { Control } from './control'
@@ -6,25 +10,38 @@ import { useFormContext } from './use-form-context'
 
 export type UseSubscribeProps<
   TValues extends Record<string, any> = Record<string, any>,
-  TName extends FormFieldNames<TValues> = FormFieldNames<TValues>,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 > = {
-  name: Extract<TName, string>
+  name: TName
   control?: Control<TValues>
+
+  /**
+   * Whether to listen to an exact match for the field name.
+   */
+  exact?: boolean | 'name' | 'context'
 }
 
 export function useSubscribe<
   TValues extends Record<string, any> = Record<string, any>,
-  TName extends FormFieldNames<TValues> = FormFieldNames<TValues>,
+  TName extends keyof ParseForm<TValues> = keyof ParseForm<TValues>,
 >(props: UseSubscribeProps<TValues, TName>) {
+  const { name, exact } = props
+
   const context = useFormContext<TValues>()
 
   const control = props.control ?? context.control
 
-  const state = useMemo(() => control.state.clone(), [control])
+  const state = useMemo(() => {
+    const child = control.state.clone()
 
-  state.keys?.add(props.name)
+    child.keys.add(name)
 
-  const proxy = useMemo(() => state.createTrackingProxy(props.name, { exact: true }), [props.name])
+    return child
+  }, [control, name])
+
+  const proxy = useMemo(() => {
+    return state.createTrackingProxy(name, { exact })
+  }, [name])
 
   const subscribe = useCallback(
     (callback: () => void) => state.subscribe(callback, undefined, false),

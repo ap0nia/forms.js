@@ -1,14 +1,13 @@
-import type { ParseForm } from './form'
+import type { ParseForm } from './parse'
 import type { Validate, ValidationRule } from './validation'
 
 /**
  * Options when registering a new field component or element.
  */
 export type RegisterOptions<
-  TValues extends Record<string, any> = Record<string, any>,
-  TFieldName extends ParseForm<TValues>['keys'] = ParseForm<TValues>['keys'],
-  TFieldValue extends
-    ParseForm<TValues>['values'][TFieldName] = ParseForm<TValues>['values'][TFieldName],
+  TFieldValues = Record<string, any>,
+  TFieldName extends keyof ParseForm<TFieldValues> = keyof ParseForm<TFieldValues>,
+  TFieldValue = ParseForm<TFieldValues>[TFieldName],
 > = {
   /**
    * Native validation, makes the field required.
@@ -39,7 +38,9 @@ export type RegisterOptions<
    * This implementation is different because it flattens the object,
    * and then accesses the value at some key in the flattened object.
    */
-  validate?: Validate<TFieldValue, TValues> | Record<string, Validate<TFieldValue, TValues>>
+  validate?:
+    | Validate<ParseForm<TFieldValues>[TFieldName], TFieldValues>
+    | Record<string, Validate<ParseForm<TFieldValues>[TFieldName], TFieldValues>>
 
   /**
    * The value of the field.
@@ -59,12 +60,12 @@ export type RegisterOptions<
   /**
    * Callback for the input's 'change' event.
    */
-  onChange?: (event: Event) => void
+  onChange?: (event: any) => void
 
   /**
    * Callback for the input's 'blur' event.
    */
-  onBlur?: (event: Event) => void
+  onBlur?: (event: any) => void
 
   /**
    * Whether the field is disabled.
@@ -72,25 +73,59 @@ export type RegisterOptions<
   disabled?: boolean
 
   /**
-   * Dependencies?
+   * Dependencies on other form fields.
    */
   deps?: string | string[]
+} & (
+  | {
+      /**
+       * Regular expression to validate the field.
+       */
+      pattern?: ValidationRule<RegExp>
 
-  /**
-   * Regular expression to validate the field.
-   */
-  pattern?: ValidationRule<RegExp>
+      /**
+       * Native validation, indicates the value is a number.
+       */
+      valueAsNumber?: false
 
-  /**
-   * Native validation, indicates the value is a number.
-   */
-  valueAsNumber?: boolean
+      /**
+       * Native validation, indicates the value is a date.
+       */
+      valueAsDate?: false
+    }
+  | {
+      /**
+       * Regular expression to validate the field.
+       */
+      pattern?: undefined
 
-  /**
-   * Native validation, indicates the value is a date.
-   */
-  valueAsDate?: boolean
-}
+      /**
+       * Native validation, indicates the value is a number.
+       */
+      valueAsNumber?: false
+
+      /**
+       * Native validation, indicates the value is a date.
+       */
+      valueAsDate?: true
+    }
+  | {
+      /**
+       * Regular expression to validate the field.
+       */
+      pattern?: undefined
+
+      /**
+       * Native validation, indicates the value is a number.
+       */
+      valueAsNumber?: true
+
+      /**
+       * Native validation, indicates the value is a date.
+       */
+      valueAsDate?: false
+    }
+)
 
 export type RegisterResult = {
   /**

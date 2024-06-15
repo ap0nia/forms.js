@@ -1,7 +1,10 @@
 import { isBrowser } from '@forms.js/common/utils/is-browser'
 
+/**
+ * @see https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/isHTMLElement.ts
+ */
 export function isHTMLElement(value: unknown): value is HTMLElement {
-  if (!isBrowser()) {
+  if (!isBrowser) {
     return false
   }
 

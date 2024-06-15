@@ -1,25 +1,25 @@
-import { deepSet } from './deep-set'
+import { get } from './get'
 import type { Nullish } from './null'
-import { safeGet } from './safe-get'
+import { set } from './set'
 
-export function deepFilter<T = any>(obj: unknown, key?: PropertyKey | PropertyKey[] | Nullish): T {
+export function deepFilter(obj: unknown, key?: PropertyKey | PropertyKey[] | Nullish): any {
   if (key == null || obj == null) {
-    return obj as T
+    return obj
   }
 
   const keyArray = Array.isArray(key) ? key : [key]
 
   if (keyArray.length === 0) {
-    return obj as T
+    return obj
   }
 
   const result = keyArray.reduce((currentResult, currentKey) => {
-    const value = safeGet(obj, currentKey)
+    const value = get(obj, currentKey)
 
-    deepSet(currentResult, currentKey, value)
+    set(currentResult, currentKey, value)
 
     return currentResult
-  }, {} as T)
+  }, {})
 
   return result
 }

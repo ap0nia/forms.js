@@ -1,11 +1,11 @@
-/**
- * A shared noop function.
- */
-export function noop(): void {
-  /* noop */
+export function noop() {
+  // noop
 }
 
-/**
- * A generic callback function.
- */
+export async function asyncNoop() {
+  // noop
+}
+
 export type Noop = typeof noop
+
+export type AsyncNoop = typeof asyncNoop
