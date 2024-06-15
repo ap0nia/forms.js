@@ -31,9 +31,13 @@ export function useSubscribe<
 
   const control = props.control ?? context.control
 
-  const state = useMemo(() => control.state.clone(), [control])
+  const state = useMemo(() => {
+    const child = control.state.clone()
 
-  state.keys?.add(props.name)
+    child.keys.add(name)
+
+    return child
+  }, [control, name])
 
   const proxy = useMemo(() => {
     return state.createTrackingProxy(name, { exact })

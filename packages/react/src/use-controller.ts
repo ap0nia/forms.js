@@ -4,7 +4,7 @@ import { set } from '@forms.js/common/utils/set'
 import { INPUT_EVENTS, type ParseForm } from '@forms.js/core'
 import type { Field, FormControlState, RegisterOptions } from '@forms.js/core'
 import { getEventValue } from '@forms.js/core/html/get-event-value'
-import { useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useMemo } from 'react'
 
 import type { Control } from './control'
 import type { ControllerFieldState } from './controller'
@@ -69,7 +69,7 @@ export function useController<
     control,
     name,
     defaultValue: get(
-      control.stores.values.value,
+      control._formValues,
       name,
       get(control._defaultValues, name, props.defaultValue),
     ),
@@ -80,47 +80,57 @@ export function useController<
 
   registerProps.current = control.register(name, rules)
 
-  const fieldState = Object.defineProperties(
-    {},
-    {
-      invalid: {
-        enumerable: true,
-        get: () => Boolean(get(formState.errors, name)),
-      },
-      isDirty: {
-        enumerable: true,
-        get: () => Boolean(get(formState.dirtyFields, name)),
-      },
-      isTouched: {
-        enumerable: true,
-        get: () => Boolean(get(formState.touchedFields, name)),
-      },
-      error: {
-        enumerable: true,
-        get: () => get(formState.errors, name),
-      },
-      isValidating: {
-        enumerable: true,
-        get: () => !!get(formState.validatingFields, name),
-      },
-    },
-  ) as ControllerFieldState
-
-  const fieldIsDisabled = disabled || formState.disabled
-
-  const onChange = async (event: any) => {
-    return await registerProps.current.onChange({
-      nativeEvent: {
-        type: INPUT_EVENTS.CHANGE,
-        target: {
-          name: props.name,
-          value: getEventValue(event),
+  const fieldState = useMemo(
+    () =>
+      Object.defineProperties(
+        {},
+        {
+          invalid: {
+            enumerable: true,
+            get: () => Boolean(get(formState.errors, name)),
+          },
+          isDirty: {
+            enumerable: true,
+            get: () => Boolean(get(formState.dirtyFields, name)),
+          },
+          isTouched: {
+            enumerable: true,
+            get: () => Boolean(get(formState.touchedFields, name)),
+          },
+          error: {
+            enumerable: true,
+            get: () => get(formState.errors, name),
+          },
+          isValidating: {
+            enumerable: true,
+            get: () => !!get(formState.validatingFields, name),
+          },
         },
-      },
-    } as any)
-  }
+      ) as ControllerFieldState,
+    [formState, name],
+  )
 
-  const onBlur = async () => {
+  const fieldIsDisabled = useMemo(
+    () => disabled || formState.disabled,
+    [disabled, formState.disabled],
+  )
+
+  const onChange = useCallback(
+    async (event: any) => {
+      return await registerProps.current.onChange({
+        nativeEvent: {
+          type: INPUT_EVENTS.CHANGE,
+          target: {
+            name,
+            value: getEventValue(event),
+          },
+        },
+      } as any)
+    },
+    [registerProps.current, name],
+  )
+
+  const onBlur = useCallback(async () => {
     return await registerProps.current.onBlur({
       nativeEvent: {
         type: INPUT_EVENTS.BLUR,
@@ -130,27 +140,30 @@ export function useController<
         },
       },
     } as any)
-  }
+  }, [registerProps.current, name])
 
-  const ref = (instance: HTMLElement | null) => {
-    if (instance == null) return
+  const ref = useCallback(
+    (instance: HTMLElement | null) => {
+      if (instance == null) return
 
-    const element = instance as HTMLInputElement | HTMLTextAreaElement
+      const element = instance as HTMLInputElement | HTMLTextAreaElement
 
-    const field = get(control.fields, props.name)
+      const field = get(control.fields, name)
 
-    if (field) {
-      field._f.ref = {
-        focus: () => element.focus(),
-        select: () => element.select(),
-        setCustomValidity: (message: string) => element.setCustomValidity(message),
-        reportValidity: () => element.reportValidity(),
+      if (field) {
+        field._f.ref = {
+          focus: () => element.focus(),
+          select: () => element.select(),
+          setCustomValidity: (message: string) => element.setCustomValidity(message),
+          reportValidity: () => element.reportValidity(),
+        }
       }
-    }
-  }
+    },
+    [name],
+  )
 
   useEffect(() => {
-    const shouldUnregisterField = props.shouldUnregister || control.options.shouldUnregister
+    const shouldUnregisterField = shouldUnregister || control.options.shouldUnregister
 
     const updateMounted = (name: PropertyKey, value: boolean) => {
       const field: Field | undefined = get(control.fields, name)
@@ -165,10 +178,10 @@ export function useController<
     if (shouldUnregisterField) {
       const value = cloneObject(get(control.options.defaultValues, props.name))
 
-      set(control.state.value.defaultValues, props.name, value)
+      set(control._defaultValues, props.name, value)
 
-      if (get(control.state.value.values, props.name) == null) {
-        set(control.state.value.values, props.name, value)
+      if (get(control._formValues, props.name) == null) {
+        set(control._formValues, props.name, value)
       }
     }
 

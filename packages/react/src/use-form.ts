@@ -27,7 +27,7 @@ export type UseFormReturn<TFieldValues extends Record<string, any>, TContext = a
 export function useForm<TValues extends Record<string, any>, TContext = any>(
   props: ControlOptions<TValues, TContext> = {},
 ): UseFormReturn<TValues, TContext> {
-  const { disabled, errors, shouldUnregister, values } = props
+  const { disabled, errors, values } = props
 
   const formControlRef = useRef<Control<TValues, TContext>>(new Control(props))
 
@@ -68,25 +68,25 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (control.isTracking('isDirty')) {
+    if (control._proxyFormState.isDirty) {
       const isDirty = control.getDirty()
       control.stores.isDirty.set(isDirty)
     }
-  }, [control, control.state.value.isDirty])
+  }, [control, control._formState.isDirty])
 
   useEffect(() => {
-    if (values && !deepEqual(values, control.stores.values.value)) {
+    if (values && !deepEqual(values, control._formValues)) {
       control.reset(values as any, control.options.resetOptions)
     } else {
       control.resetDefaultValues()
     }
-  }, [values, control])
+  }, [control, values])
 
   useEffect(() => {
     if (errors) {
       control.setErrors(errors)
     }
-  }, [errors, control])
+  }, [control, errors])
 
   useEffect(() => {
     control.disableForm(disabled)
@@ -105,15 +105,6 @@ export function useForm<TValues extends Record<string, any>, TContext = any>(
       control.state.flush()
     }
   })
-
-  useEffect(() => {
-    if (shouldUnregister) {
-      /**
-       * @todo: Notify subscribers, but without changing the actual value?
-       */
-      // control.stores.values.set(control.getWatch())
-    }
-  }, [shouldUnregister, control])
 
   return form.current
 }

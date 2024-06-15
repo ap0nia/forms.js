@@ -12,20 +12,26 @@ export type UseWatchProps<T extends Record<string, any> = Record<string, any>> =
   defaultValue?: any
 }
 
-export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>) {
+export function useWatch<T extends Record<string, any>>(props: UseWatchProps<T> = {}) {
+  const { name, defaultValue, disabled, exact } = props
+
   const context = useFormContext<T>()
 
   const control = props?.control ?? context.control
 
-  const state = useMemo(() => control.state.clone(), [control])
+  const state = useMemo(() => {
+    const child = control.state.clone()
 
-  state.track('values', props?.name, props)
+    child.track('values', name, { exact })
+
+    return child
+  }, [control, name, exact])
 
   const subscribe = useCallback(
     (callback: () => void) => {
-      return state.subscribe(() => !props?.disabled && callback(), undefined, false)
+      return state.subscribe(() => !disabled && callback(), undefined, false)
     },
-    [state, props?.disabled],
+    [state, disabled],
   )
 
   const getSnapshot = useCallback(() => state.value, [state])
@@ -40,5 +46,5 @@ export function useWatch<T extends Record<string, any>>(props?: UseWatchProps<T>
     }
   }, [control, state])
 
-  return control.getWatch(props?.name, props?.defaultValue)
+  return control.getWatch(name, defaultValue)
 }

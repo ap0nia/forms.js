@@ -24,7 +24,7 @@ export function useFieldArray<
   TFieldArrayName extends keyof ParseFieldArray<TFieldValues> = keyof ParseFieldArray<TFieldValues>,
   TKeyName extends string = 'id',
 >(props: UseFieldArrayProps<TFieldValues, TFieldArrayName, TKeyName>) {
-  const { name, shouldUnregister, keyName } = props
+  const { name, shouldUnregister } = props
 
   const context = useFormContext<TFieldValues>()
 
@@ -59,29 +59,23 @@ export function useFieldArray<
   })
 
   useEffect(() => {
-    /**
-     * Read the current value from `stores`, not from `state`!
-     */
-    const currentFieldArrayValue = get(control.stores.values.value, name)
+    const currentFieldArrayValue = get(control._formValues, name)
 
     if (!currentFieldArrayValue) {
-      control.stores.values.update(
-        (values: any) => {
-          set(values, name, [])
-          return values
-        },
-        [name],
-      )
+      control.stores.values.update((values: any) => {
+        set(values, name, [])
+        return values
+      }, name)
     }
 
     return () => {
       fieldArray.current.unmount()
 
-      if (props.shouldUnregister || control.options.shouldUnregister) {
-        control.unregister(props.name)
+      if (shouldUnregister || control.options.shouldUnregister) {
+        control.unregister(name)
       }
     }
-  }, [control, keyName, name, shouldUnregister])
+  }, [control, name, shouldUnregister])
 
   useEffect(() => {
     fieldArray.current.synchronize()

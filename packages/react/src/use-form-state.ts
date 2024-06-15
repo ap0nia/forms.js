@@ -27,7 +27,7 @@ export function useFormState<TFieldValues extends Record<string, any>>(
 
   const proxy = useMemo(
     () => state.createTrackingProxy(name, { exact }, false),
-    [state, name, disabled, exact],
+    [state, name, exact],
   )
 
   const subscribe = useCallback(
@@ -44,7 +44,7 @@ export function useFormState<TFieldValues extends Record<string, any>>(
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   useEffect(() => {
-    if (state.isTracking('isValid')) {
+    if (control._proxyFormState.isValid) {
       control.updateValid(true)
     }
 
