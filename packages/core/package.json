@@ -1,5 +1,5 @@
 {
-  "name": "@forms.js/core",
+  "name": "@hookform/core",
   "version": "0.0.0",
   "description": "form.js core",
   "private": true,
@@ -82,7 +82,7 @@
     "perf": "tsc --generateTrace ./trace"
   },
   "dependencies": {
-    "@forms.js/common": "workspace:^"
+    "@hookform/common": "workspace:^"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",

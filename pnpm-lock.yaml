@@ -92,13 +92,13 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
     devDependencies:
-      '@forms.js/common':
+      '@hookform/common':
         specifier: workspace:^
         version: link:../../../packages/common
-      '@forms.js/core':
+      '@hookform/core':
         specifier: workspace:^
         version: link:../../../packages/core
-      '@forms.js/react':
+      '@hookform/react':
         specifier: workspace:^
         version: link:../../../packages/react
       '@types/react':
@@ -125,7 +125,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@forms.js/common':
+      '@hookform/common':
         specifier: workspace:^
         version: link:../common
     devDependencies:
@@ -141,10 +141,10 @@ importers:
 
   packages/react:
     dependencies:
-      '@forms.js/common':
+      '@hookform/common':
         specifier: workspace:^
         version: link:../common
-      '@forms.js/core':
+      '@hookform/core':
         specifier: workspace:^
         version: link:../core
       react:

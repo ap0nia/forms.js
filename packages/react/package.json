@@ -1,5 +1,5 @@
 {
-  "name": "@forms.js/react",
+  "name": "@hookform/react",
   "version": "0.0.0",
   "description": "form.js react",
   "private": true,
@@ -30,8 +30,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@forms.js/common": "workspace:^",
-    "@forms.js/core": "workspace:^",
+    "@hookform/common": "workspace:^",
+    "@hookform/core": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "use-sync-external-store": "^1.2.0",
