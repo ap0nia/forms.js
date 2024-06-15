@@ -66,6 +66,18 @@ export type FormControlState<T = Record<string, any>> = {
   values: T
 }
 
+export type ProxyFormControlState<T = Record<string, any>> = {
+  [K in keyof FormControlState<T>]: boolean
+}
+
+export type WritableFormControlState<T = Record<string, any>> = {
+  [K in keyof FormControlState<T>]: Writable<FormControlState<T>[K]>
+}
+
+export type BatchableFormControlState<T = Record<string, any>> = Batchable<
+  WritableFormControlState<T>
+>
+
 export type FieldState = {
   invalid: boolean
   isDirty: boolean
@@ -231,9 +243,7 @@ export class FormControl<
    *
    * This is ideal for directly subscribing to specific state.
    */
-  stores: {
-    [K in keyof FormControlState<TFieldValues>]: Writable<FormControlState<TFieldValues>[K]>
-  }
+  stores: WritableFormControlState<TFieldValues>
 
   /**
    * Buffers updates to {@link stores} until it's flushed.
@@ -242,9 +252,7 @@ export class FormControl<
    *
    * This is ideal for subscribing to the entire form control state.
    */
-  state: Batchable<{
-    [K in keyof FormControlState<TFieldValues>]: Writable<FormControlState<TFieldValues>[K]>
-  }>
+  state: BatchableFormControlState<TFieldValues>
 
   /**
    * Registered fields.
@@ -368,11 +376,19 @@ export class FormControl<
   get _formValues() {
     return this.stores.values.value
   }
+
+  /**
+   * @todo Rename this.state?
+   */
   get _state() {
     return {
       mount: this.mounted,
     }
   }
+
+  // set _state(value) {
+  //   _state = value
+  // }
 
   get _defaultValues() {
     return this.stores.defaultValues.value
@@ -382,9 +398,17 @@ export class FormControl<
     return this.names
   }
 
-  get _formState() {
-    return this.state.value
+  set _names(value) {
+    this.names = value
   }
+
+  // get _formState() {
+  //   return this._formState
+  // }
+
+  // set _formState(value) {
+  //   _formState = value
+  // }
 
   get _options() {
     return this.options
@@ -397,11 +421,29 @@ export class FormControl<
     }
   }
 
+  _formState: FormControlState<TFieldValues> = new Proxy(
+    {},
+    {
+      get: (_target, key, _receiver) => {
+        return this.stores[key as keyof typeof this.stores].value
+      },
+    },
+  ) as any
+
+  _proxyFormState: ProxyFormControlState<TFieldValues> = new Proxy(
+    {},
+    {
+      get: (_target, key, _receiver) => {
+        return this.isTracking(key as any)
+      },
+    },
+  ) as any
+
   /**
    * Lazily validate the form.
    */
   async updateValid(force?: boolean, name?: string | string[]): Promise<void> {
-    if (force || this.isTracking('isValid', toStringArray(name))) {
+    if (force || this._proxyFormState.isValid) {
       const result = await this.validate()
 
       const fieldNames = toStringArray(name)
@@ -411,7 +453,7 @@ export class FormControl<
   }
 
   updateIsValidating(names = Array.from(this.names.mount), isValidating?: boolean) {
-    if (!(this.isTracking('isValidating') || this.isTracking('validatingFields'))) return
+    if (!(this._proxyFormState.isValidating || this._proxyFormState.validatingFields)) return
 
     this.state.open()
 
@@ -423,18 +465,13 @@ export class FormControl<
           unset(validatingFields, name)
         }
       })
-
       return validatingFields
     })
 
-    this.stores.isValidating.set(!isEmptyObject(this.state.value.validatingFields))
+    this.stores.isValidating.set(!isEmptyObject(this._formState.validatingFields))
 
     this.state.flush()
   }
-
-  /**
-   * @todo: UPDATE FIELD ARRAY ?
-   */
 
   /**
    */
@@ -478,12 +515,7 @@ export class FormControl<
   shouldRenderByError(name: string, isValid?: boolean, error?: FieldError, modified?: boolean) {
     this.state.open()
 
-    const previousFieldError = get(this.state.value.errors, name)
-
-    const shouldUpdateValid =
-      this.isTracking('isValid') &&
-      typeof isValid === 'boolean' &&
-      this.state.value.isValid !== isValid
+    const previousFieldError = get(this._formState.errors, name)
 
     if (this.options.delayError && error) {
       this.delayErrorCallback = this.debounce(() => this.updateErrors(name, error))
@@ -503,10 +535,8 @@ export class FormControl<
 
     const hasError = error ? !deepEqual(previousFieldError, error) : previousFieldError
 
-    if (hasError || !modified || shouldUpdateValid) {
-      if (typeof isValid === 'boolean') {
-        this.stores.isValid.set(isValid)
-      }
+    if ((hasError || !modified || this.isTracking('isValid')) && typeof isValid === 'boolean') {
+      this.stores.isValid.set(isValid)
     }
 
     this.state.flush()
@@ -595,13 +625,13 @@ export class FormControl<
         return values
       })
     }
-    return !deepEqual(this.getValues(), this.stores.defaultValues.value)
+
+    return !deepEqual(this.getValues(), this._defaultValues)
   }
 
   getWatch(
     name?: PropertyKey | PropertyKey[],
     defaultValue?: DeepPartial<TFieldValues>,
-    // isMounted?: boolean,
     isGlobal?: boolean,
   ): any {
     const nameArray = toStringArray(name) ?? []
@@ -615,9 +645,9 @@ export class FormControl<
     }
 
     const values = this.mounted
-      ? this.stores.values.value
+      ? this._formValues
       : defaultValue == null
-      ? this.stores.defaultValues.value
+      ? this._defaultValues
       : typeof name === 'string'
       ? { [name]: defaultValue }
       : defaultValue
@@ -642,11 +672,9 @@ export class FormControl<
   getFieldArray<T>(name: string): Partial<T>[] {
     const values = this.getValues()
 
-    const result: string[] = get(
-      values,
-      name,
-      this.options.shouldUnregister ? get(this.state.value.defaultValues, name, []) : [],
-    )
+    const defaultValue = this.options.shouldUnregister ? get(this._defaultValues, name, []) : []
+
+    const result: string[] = get(values, name, defaultValue)
 
     return result.filter(Boolean) as any
   }
@@ -663,16 +691,15 @@ export class FormControl<
 
     if (fieldReference != null) {
       if (!fieldReference.disabled) {
-        set(this.stores.values.value, name, getFieldValueAs(value, fieldReference))
+        set(this._formValues, name, getFieldValueAs(value, fieldReference))
       }
 
       fieldValue = isHTMLElement(fieldReference.ref) && value == null ? '' : value
 
       const mutatedInputType = updateFieldReference(fieldReference, fieldValue)
 
-      // If custom input, notify values subscribers?
       if (mutatedInputType === 'custom') {
-        this.stores.values.update((v) => ({ ...v }), true)
+        this.stores.values.update((v) => ({ ...v }), name)
       }
     }
 
@@ -725,14 +752,14 @@ export class FormControl<
     this.stores.values.update((values) => {
       set(values, name, clonedValue)
       return values
-    })
+    }, name)
 
     if (isFieldArray) {
       this.state.flush()
       this.state.open()
 
       if (this.isTracking('isDirty') || (this.isTracking('dirtyFields') && options?.shouldDirty)) {
-        const dirtyFields = getDirtyFields(this.state.value.defaultValues, this.state.value.values)
+        const dirtyFields = getDirtyFields(this._defaultValues, this._formValues)
         this.stores.dirtyFields.set(dirtyFields, name)
 
         const isDirty = this.getDirty(name, clonedValue)
@@ -818,9 +845,9 @@ export class FormControl<
       return validatingFields
     }, name)
 
-    const currentIsValidating = !isEmptyObject(this.state.value.validatingFields)
+    const currentIsValidating = !isEmptyObject(this._formState.validatingFields)
 
-    this.stores.isValidating.set(currentIsValidating, [name])
+    this.stores.isValidating.set(currentIsValidating, name)
 
     this.state.flush()
     this.state.open()
@@ -846,7 +873,7 @@ export class FormControl<
             unset(errors, currentError.name)
           }
           return errors
-        })
+        }, name)
       }
 
       if (field._f.deps) {
@@ -898,7 +925,7 @@ export class FormControl<
       if (isFieldValueUpdated && field._f.deps) {
         await this.trigger(field._f.deps as any)
       } else {
-        this.stores.isValid.set(result.isValid, [name])
+        this.stores.isValid.set(result.isValid, name)
       }
     }
 
@@ -909,7 +936,7 @@ export class FormControl<
       return validatingFields
     }, name)
 
-    const isValidating = !isEmptyObject(this.state.value.validatingFields)
+    const isValidating = !isEmptyObject(this._formState.validatingFields)
 
     this.stores.isValidating.set(isValidating, name)
 
@@ -978,7 +1005,7 @@ export class FormControl<
 
   getValues<T extends keyof TParsedForm>(fieldNames?: T | readonly T[] | T[]) {
     const values = {
-      ...(this.mounted ? this.stores.values.value : this.stores.defaultValues.value),
+      ...(this.mounted ? this._formValues : this._defaultValues),
     }
 
     return fieldNames == null
