@@ -361,10 +361,13 @@ export class FormControl<
     }
   }
 
-  get _formState() {
-    return this.state.value
+  get _fields() {
+    return this.fields
   }
 
+  get _formValues() {
+    return this.stores.values.value
+  }
   get _state() {
     return {
       mount: this.mounted,
@@ -373,6 +376,25 @@ export class FormControl<
 
   get _defaultValues() {
     return this.stores.defaultValues.value
+  }
+
+  get _names() {
+    return this.names
+  }
+
+  get _formState() {
+    return this.state.value
+  }
+
+  get _options() {
+    return this.options
+  }
+
+  set _options(value) {
+    this.options = {
+      ...this.options,
+      ...value,
+    }
   }
 
   /**
