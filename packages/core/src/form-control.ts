@@ -1788,11 +1788,7 @@ export class FormControl<
 
     if (existingField) {
       const disabled = options?.disabled ?? this.options.disabled
-      const result = this.updateDisabledField({ field, disabled, name })
-      if (result) {
-        this.state.flush()
-        this.state.open()
-      }
+      this.updateDisabledField({ field, disabled, name })
     } else {
       const defaultValue =
         options?.value ?? get(this._formValues, name) ?? get(this._defaultValues, name)
@@ -1823,9 +1819,9 @@ export class FormControl<
 
     const field = this.registerField(name, options)
 
-    const fieldNames = toStringArray(name)
-
     const newField = mergeElementWithField(name, field, element, this._defaultValues)
+
+    set(this.fields, name, newField)
 
     const defaultValue = get(this._formValues, name) ?? get(this._defaultValues, name)
 
@@ -1839,10 +1835,6 @@ export class FormControl<
       set(this._formValues, name, getFieldValueAs(defaultValue, newField._f))
       updateFieldReference(newField._f, defaultValue)
     }
-
-    set(this.fields, name, newField)
-
-    this.updateValid(undefined, fieldNames)
 
     this.state.close()
   }
