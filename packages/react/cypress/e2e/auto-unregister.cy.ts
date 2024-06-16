@@ -1,6 +1,6 @@
 describe('autoUnregister', () => {
   it('should keep all inputs data when inputs get unmounted', () => {
-    cy.visit('/autoUnregister')
+    cy.visit('/auto-unregister')
     cy.get('input[name="test"]').type('test')
     cy.get('input[name="test1"]').type('test1')
     cy.get('input[name="test2"]').check()

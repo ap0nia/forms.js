@@ -884,14 +884,19 @@ export class FormControl<
           previousError.name,
         )
 
-        this.stores.errors.update((errors) => {
-          if (currentError.error) {
-            set(errors, currentError.name, currentError.error)
-          } else {
-            unset(errors, currentError.name)
-          }
-          return errors
-        }, name)
+        if (currentError.error) {
+          set(this._formState.errors, currentError.name, currentError.error)
+        } else {
+          unset(this._formState.errors, currentError.name)
+        }
+
+        if (previousError.error == null && !result.isValid) {
+          this.stores.errors.update((errors) => errors, name)
+        }
+
+        if (previousError.error != null && result.isValid) {
+          this.stores.errors.update((errors) => errors, name)
+        }
       }
 
       if (field._f.deps) {
