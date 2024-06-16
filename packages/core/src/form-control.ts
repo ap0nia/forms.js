@@ -813,27 +813,30 @@ export class FormControl<
 
     if (field == null) return
 
+    this.state.open()
+
     const fieldValue = getFieldEventValue(event, field)
 
-    this.state.open()
+    set(this._formValues, name, fieldValue)
 
     const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
 
     if (isBlurEvent) {
+      set(this._formValues, name, fieldValue)
+
       field._f.onBlur?.(original ?? event)
 
       this.delayErrorCallback?.(0)
 
       this.updateTouchedField(name)
     } else {
-      this.stores.values.update((values) => {
-        set(values, name, fieldValue)
-        return values
-      }, name)
-
       this.updateDirtyField(name, fieldValue)
 
       field._f.onChange?.(original ?? event)
+    }
+
+    if (this.isTracking('values', name) && !isBlurEvent) {
+      this.stores.values.update((values) => values, name)
     }
 
     const nothingToValidate =
@@ -925,14 +928,28 @@ export class FormControl<
 
             this.delayErrorCallback = undefined
 
-            this.stores.errors.update((errors) => {
-              set(errors, name, error)
-              return errors
-            }, name)
+            const previousError = get(this._formState.errors, name)
+
+            set(this._formState.errors, name, error)
+
+            const shouldNotify = previousError == null || !deepEqual(previousError, error)
+
+            if (shouldNotify) {
+              this.stores.errors.update((errors) => ({ ...errors }), name)
+            }
           }
         }
       } else {
-        this.mergeErrors(result.validationResult.errors, result.validationResult.names)
+        /**
+         * If there was a previous error, then make sure a notification is made to remove it.
+         */
+        const previousFieldError = get(this._formState.errors, name)
+
+        this.mergeErrors(
+          result.validationResult.errors,
+          result.validationResult.names,
+          !previousFieldError,
+        )
       }
 
       const isFieldValueUpdated = this.isFieldValueUpdated(name, fieldValue)
@@ -1612,32 +1629,36 @@ export class FormControl<
   /**
    * Merge provided errors the form state's existing errors.
    */
-  mergeErrors(errors: FieldErrors<TFieldValues> | FieldErrorRecord, names?: string[]): void {
+  mergeErrors(
+    errors: FieldErrors<TFieldValues> | FieldErrorRecord,
+    names?: string[],
+    silent?: boolean,
+  ): void {
     const namesToMerge = names ?? Object.keys(errors)
 
-    this.stores.errors.update((currentErrors) => {
-      namesToMerge.forEach((name) => {
-        const fieldError = get(errors, name)
+    namesToMerge.forEach((name) => {
+      const fieldError = get(errors, name)
 
-        if (fieldError == null) {
-          unset(currentErrors, name)
-          return
-        }
+      if (fieldError == null) {
+        unset(this._formState.errors, name)
+        return
+      }
 
-        if (!this.names.array.has(name)) {
-          set(currentErrors, name, fieldError)
-          return
-        }
+      if (!this.names.array.has(name)) {
+        set(this._formState.errors, name, fieldError)
+        return
+      }
 
-        const fieldArrayErrors = get(currentErrors, name) ?? {}
+      const fieldArrayErrors = get(this._formState.errors, name) ?? {}
 
-        set(fieldArrayErrors, 'root', errors[name])
+      set(fieldArrayErrors, 'root', errors[name])
 
-        set(currentErrors, name, fieldArrayErrors)
-      })
+      set(this._formState.errors, name, fieldArrayErrors)
+    })
 
-      return currentErrors
-    }, namesToMerge)
+    if (!silent) {
+      this.stores.errors.update((errors) => ({ ...errors }), namesToMerge)
+    }
   }
 
   /**
