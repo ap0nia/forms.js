@@ -1805,6 +1805,10 @@ export class FormControl<
 
     this.state.close()
 
+    if (!this.needsFlush && this.state.depth === 0) {
+      this.state.buffer = []
+    }
+
     return field
   }
   /**
@@ -1837,6 +1841,10 @@ export class FormControl<
     }
 
     this.state.close()
+
+    if (!this.needsFlush && this.state.depth === 0) {
+      this.state.buffer = []
+    }
   }
 
   handleDisabled(disabled?: boolean): void {
