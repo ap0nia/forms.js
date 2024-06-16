@@ -711,7 +711,7 @@ export class FormControl<
       const mutatedInputType = updateFieldReference(fieldReference, fieldValue)
 
       if (mutatedInputType === 'custom') {
-        this.stores.values.update((v) => ({ ...v }), name)
+        this.stores.values.update((values) => values, name)
       }
     }
 
@@ -791,7 +791,7 @@ export class FormControl<
       }
     }
 
-    this.stores.values.update((values) => ({ ...values }), name)
+    this.stores.values.update((values) => values, name)
 
     this.valueListeners.forEach((listener) => listener(this.stores.values.value))
 
@@ -935,7 +935,7 @@ export class FormControl<
             const shouldNotify = previousError == null || !deepEqual(previousError, error)
 
             if (shouldNotify) {
-              this.stores.errors.update((errors) => ({ ...errors }), name)
+              this.stores.errors.update((errors) => errors, name)
             }
           }
         }
@@ -1657,7 +1657,7 @@ export class FormControl<
     })
 
     if (!silent) {
-      this.stores.errors.update((errors) => ({ ...errors }), namesToMerge)
+      this.stores.errors.update((errors) => errors, namesToMerge)
     }
   }
 
