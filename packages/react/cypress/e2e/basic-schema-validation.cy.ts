@@ -41,7 +41,7 @@ describe('basicSchemaValidation form validation', () => {
 
     cy.get('p').should('have.length', 0)
 
-    // cy.get('#renderCount').contains('24')
+    cy.get('#renderCount').contains('24')
   })
 
   it('should validate the form with onBlur mode', () => {
@@ -92,6 +92,9 @@ describe('basicSchemaValidation form validation', () => {
 
     cy.get('p').should('have.length', 0)
 
+    /**
+     * @todo
+     */
     // cy.get('#renderCount').contains('22')
   })
 
@@ -137,6 +140,6 @@ describe('basicSchemaValidation form validation', () => {
 
     cy.get('p').should('have.length', 0)
 
-    // cy.get('#renderCount').contains('26')
+    cy.get('#renderCount').contains('26')
   })
 })

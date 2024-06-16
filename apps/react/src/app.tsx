@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Link } from 'react-router-dom'
 import { AutoUnregister } from './auto-unregister'
 import { Basic } from './basic'
 import { BasicSchemaValidation } from './basic-schema-validation'
+import { ConditionalField } from './conditional-field'
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
   {
     path: '/basic-schema-validation/:mode',
     element: <BasicSchemaValidation />,
+  },
+  {
+    path: '/conditional-field',
+    element: <ConditionalField />,
   },
 ])
 
