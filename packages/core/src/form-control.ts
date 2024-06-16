@@ -588,8 +588,8 @@ export class FormControl<
 
     this.updateIsValidating(nameArray)
 
-    const isValid = nameArray
-      ? !nameArray.some((name) => get(resolverResult.errors, name))
+    const isValid = Array.isArray(name)
+      ? !name.some((n) => get(resolverResult.errors, n))
       : isEmptyObject(resolverResult.errors)
 
     return { resolverResult, isValid }
@@ -890,11 +890,7 @@ export class FormControl<
           unset(this._formState.errors, currentError.name)
         }
 
-        if (previousError.error == null && !result.isValid) {
-          this.stores.errors.update((errors) => errors, name)
-        }
-
-        if (previousError.error != null && result.isValid) {
+        if (!deepEqual(previousError, currentError)) {
           this.stores.errors.update((errors) => errors, name)
         }
       }
