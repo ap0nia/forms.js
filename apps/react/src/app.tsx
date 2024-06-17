@@ -4,6 +4,7 @@ import { AutoUnregister } from './auto-unregister'
 import { Basic } from './basic'
 import { BasicSchemaValidation } from './basic-schema-validation'
 import { ConditionalField } from './conditional-field'
+import { Controller } from './controller'
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
   {
     path: '/conditional-field',
     element: <ConditionalField />,
+  },
+  {
+    path: '/controller/:mode',
+    element: <Controller />,
   },
 ])
 

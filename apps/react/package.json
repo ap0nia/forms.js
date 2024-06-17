@@ -5,6 +5,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@emotion/styled": "^11.11.5",
     "@hookform/react": "workspace:^",
     "@hookform/resolvers": "^3.6.0",
     "@mui/material": "^5.15.20",
