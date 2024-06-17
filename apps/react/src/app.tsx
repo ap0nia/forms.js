@@ -26,6 +26,7 @@ import { SetValueAsyncStrictMode } from './set-value-async-strict-mode'
 import { SetValueCustomRegister } from './set-value-custom-register'
 import { SetValueWithSchema } from './set-value-with-schema'
 import { SetValueWithTrigger } from './set-value-with-trigger'
+import { TriggerValidation } from './trigger-validation'
 import { UseFieldArray } from './use-field-array'
 
 const router = createBrowserRouter([
@@ -138,6 +139,10 @@ const router = createBrowserRouter([
   {
     path: '/set-value-with-trigger',
     element: <SetValueWithTrigger />,
+  },
+  {
+    path: '/trigger-validation',
+    element: <TriggerValidation />,
   },
 ])
 
