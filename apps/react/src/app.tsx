@@ -5,6 +5,7 @@ import { Basic } from './basic'
 import { BasicSchemaValidation } from './basic-schema-validation'
 import { ConditionalField } from './conditional-field'
 import { Controller } from './controller'
+import { CrossFrameForm } from './cross-frame-form'
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
   {
     path: '/controller/:mode',
     element: <Controller />,
+  },
+  {
+    path: '/cross-frame-form',
+    element: <CrossFrameForm />,
   },
 ])
 
