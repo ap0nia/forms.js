@@ -15,6 +15,7 @@ import { DelayError } from './delay-error'
 import FormState from './form-state'
 import { FormStateWithNestedFields } from './form-state-with-nested-fields'
 import { FormStateWithSchema } from './form-state-with-schema'
+import { IsValid } from './is-valid'
 
 const router = createBrowserRouter([
   {
@@ -78,6 +79,10 @@ const router = createBrowserRouter([
   {
     path: '/form-state-with-schema/:mode',
     element: <FormStateWithSchema />,
+  },
+  {
+    path: '/is-valid/:mode/:defaultValues',
+    element: <IsValid />,
   },
 ])
 
