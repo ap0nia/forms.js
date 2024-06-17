@@ -29,6 +29,7 @@ import { SetValueWithTrigger } from './set-value-with-trigger'
 import { TriggerValidation } from './trigger-validation'
 import { UseFieldArray } from './use-field-array'
 import { UseFieldArrayNested } from './use-field-array-nested'
+import { UseFieldArrayUnregister } from './use-field-array-unregister'
 
 const router = createBrowserRouter([
   {
@@ -148,6 +149,10 @@ const router = createBrowserRouter([
   {
     path: '/use-field-array-nested',
     element: <UseFieldArrayNested />,
+  },
+  {
+    path: '/use-field-array-unregister',
+    element: <UseFieldArrayUnregister />,
   },
 ])
 

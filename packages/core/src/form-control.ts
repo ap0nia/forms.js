@@ -1213,42 +1213,42 @@ export class FormControl<
         this.stores.values.update((values) => {
           unset(values, fieldName)
           return values
-        }, fieldNames)
+        }, fieldName)
       }
 
       if (!options?.keepError) {
         this.stores.errors.update((errors) => {
           unset(errors, fieldName)
           return errors
-        }, fieldNames)
+        }, fieldName)
       }
 
       if (!options?.keepDirty) {
         this.stores.dirtyFields.update((dirtyFields) => {
           unset(dirtyFields, fieldName)
           return dirtyFields
-        }, fieldNames)
+        }, fieldName)
       }
 
       if (!options?.keepTouched) {
         this.stores.touchedFields.update((touchedFields) => {
           unset(touchedFields, fieldName)
           return touchedFields
-        }, fieldNames)
+        }, fieldName)
       }
 
       if (!options?.keepIsValidating) {
         this.stores.validatingFields.update((validatingFields) => {
           unset(validatingFields, fieldName)
           return validatingFields
-        }, fieldNames)
+        }, fieldName)
       }
 
       if (!this.options.shouldUnregister && !options?.keepDefaultValue) {
         this.stores.defaultValues.update((defaultValues) => {
           unset(defaultValues, fieldName)
           return defaultValues
-        }, fieldNames)
+        }, fieldName)
       }
     }
 
