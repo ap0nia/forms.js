@@ -1544,7 +1544,13 @@ export class FormControl<
    */
   resetDefaultValues() {
     if (typeof this.options.defaultValues === 'function') {
-      this.reset(this.options.defaultValues)
+      const resolvingDefaultvalues = this.options.defaultValues()
+
+      if (resolvingDefaultvalues instanceof Promise) {
+        resolvingDefaultvalues.then((resolvedDefaultValues) => this.reset(resolvedDefaultValues))
+      } else {
+        this.reset(resolvingDefaultvalues)
+      }
     }
   }
 
