@@ -1331,9 +1331,7 @@ export class FormControl<
        */
       const values = cloneObject(this._formValues)
 
-      this.state.transaction(() => {
-        this.stores.isSubmitting.set(true)
-      })
+      this.stores.isSubmitting.set(true)
 
       this.state.open()
 
@@ -1353,19 +1351,17 @@ export class FormControl<
 
       const isValid = isEmptyObject(this._formState.errors)
 
-      try {
-        if (isValid) {
+      if (isValid) {
+        try {
           const data = cloneObject(resolverResult?.values ?? values) as any
           await onValid?.(data, event)
+        } catch (e) {
+          validCallbackError = e
         }
-      } catch (e) {
-        validCallbackError = e
-      }
-
-      if (!isValid) {
+      } else {
         await onInvalid?.(errors, event)
         this.focusError()
-        setTimeout(this.focusError.bind(this))
+        setTimeout(this.focusError)
       }
 
       this.stores.isSubmitted.set(true)
