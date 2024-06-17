@@ -22,6 +22,7 @@ import { RevalidateMode } from './revalidate-mode'
 import { SetError } from './set-error'
 import { SetFocus } from './set-focus'
 import { SetValue } from './set-value'
+import { SetValueAsyncStrictMode } from './set-value-async-strict-mode'
 import { SetValueCustomRegister } from './set-value-custom-register'
 import { UseFieldArray } from './use-field-array'
 
@@ -123,6 +124,10 @@ const router = createBrowserRouter([
   {
     path: '/set-value-custom-register',
     element: <SetValueCustomRegister />,
+  },
+  {
+    path: '/set-value-async-strict-mode',
+    element: <SetValueAsyncStrictMode />,
   },
 ])
 
