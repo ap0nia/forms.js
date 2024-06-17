@@ -21,6 +21,7 @@ import { Reset } from './reset'
 import { RevalidateMode } from './revalidate-mode'
 import { SetError } from './set-error'
 import { SetFocus } from './set-focus'
+import { SetValue } from './set-value'
 import { UseFieldArray } from './use-field-array'
 
 const router = createBrowserRouter([
@@ -113,6 +114,10 @@ const router = createBrowserRouter([
   {
     path: '/set-focus',
     element: <SetFocus />,
+  },
+  {
+    path: '/set-value',
+    element: <SetValue />,
   },
 ])
 
