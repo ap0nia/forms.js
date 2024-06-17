@@ -214,6 +214,14 @@ export class Batchable<
   }
 
   /**
+   * Same as {@link Batchable.open}.
+   * e.g. You could "cork" this store, accumulate buffered updates, and "flush" it.
+   */
+  cork() {
+    this.open()
+  }
+
+  /**
    */
   close() {
     if (this.depth <= 0) {
@@ -242,8 +250,13 @@ export class Batchable<
    * Attempt to notify subscribers.
    */
   notify(force = false) {
-    if (force || this.shouldUpdate()) {
+    const shouldNotify = force || this.shouldUpdate()
+
+    if (shouldNotify) {
       this.writable.update((value) => ({ ...value }))
+    }
+
+    if (shouldNotify || this.canUpdate()) {
       this.buffer = []
     }
   }
@@ -252,7 +265,11 @@ export class Batchable<
    * Whether the store should trigger updates.
    */
   shouldUpdate(): boolean {
-    return this.depth === 0 && !this.pending && this.keyChangedInBuffer()
+    return this.canUpdate() && this.keyChangedInBuffer()
+  }
+
+  canUpdate(): boolean {
+    return this.depth === 0 && !this.pending
   }
 
   /**
