@@ -28,6 +28,7 @@ import { SetValueWithSchema } from './set-value-with-schema'
 import { SetValueWithTrigger } from './set-value-with-trigger'
 import { TriggerValidation } from './trigger-validation'
 import { UseFieldArray } from './use-field-array'
+import { UseFieldArrayNested } from './use-field-array-nested'
 
 const router = createBrowserRouter([
   {
@@ -109,10 +110,6 @@ const router = createBrowserRouter([
     element: <Reset />,
   },
   {
-    path: '/use-field-array/:mode',
-    element: <UseFieldArray />,
-  },
-  {
     path: '/set-error',
     element: <SetError />,
   },
@@ -143,6 +140,14 @@ const router = createBrowserRouter([
   {
     path: '/trigger-validation',
     element: <TriggerValidation />,
+  },
+  {
+    path: '/use-field-array/:mode',
+    element: <UseFieldArray />,
+  },
+  {
+    path: '/use-field-array-nested',
+    element: <UseFieldArrayNested />,
   },
 ])
 
