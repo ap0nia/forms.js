@@ -9,6 +9,7 @@ import { ConditionalField } from './conditional-field'
 import { Controller } from './controller'
 import { CrossFrameForm } from './cross-frame-form'
 import { CustomSchemaValidation } from './custom-schema-validation'
+import { DefaultValues } from './default-values'
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
   {
     path: '/custom-schema-validation/:mode',
     element: <CustomSchemaValidation />,
+  },
+  {
+    path: '/default-values',
+    element: <DefaultValues />,
   },
 ])
 
