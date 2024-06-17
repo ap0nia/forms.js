@@ -19,6 +19,7 @@ import { IsValid } from './is-valid'
 import { ManualRegisterForm } from './manual-register-form'
 import { Reset } from './reset'
 import { RevalidateMode } from './revalidate-mode'
+import { UseFieldArray } from './use-field-array'
 
 const router = createBrowserRouter([
   {
@@ -98,6 +99,10 @@ const router = createBrowserRouter([
   {
     path: '/reset',
     element: <Reset />,
+  },
+  {
+    path: '/use-field-array/:mode',
+    element: <UseFieldArray />,
   },
 ])
 
