@@ -25,6 +25,7 @@ import { SetValue } from './set-value'
 import { SetValueAsyncStrictMode } from './set-value-async-strict-mode'
 import { SetValueCustomRegister } from './set-value-custom-register'
 import { SetValueWithSchema } from './set-value-with-schema'
+import { SetValueWithTrigger } from './set-value-with-trigger'
 import { UseFieldArray } from './use-field-array'
 
 const router = createBrowserRouter([
@@ -133,6 +134,10 @@ const router = createBrowserRouter([
   {
     path: '/set-value-with-schema',
     element: <SetValueWithSchema />,
+  },
+  {
+    path: '/set-value-with-trigger',
+    element: <SetValueWithTrigger />,
   },
 ])
 
