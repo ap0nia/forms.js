@@ -493,8 +493,6 @@ export class FieldArray<
   synchronize() {
     this.control.action.set(false)
 
-    this.control.state.open()
-
     this.control.stores.values.update((values) => {
       return { ...values }
     }, this.name)
@@ -518,8 +516,6 @@ export class FieldArray<
     this.control.updateValid()
 
     this.action.set(false)
-
-    this.control.state.flush()
   }
 
   async validate(fields = this.control.fields) {
