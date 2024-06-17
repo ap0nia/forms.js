@@ -1830,12 +1830,8 @@ export class FormControl<
     const defaultValue = get(this._formValues, name) ?? get(this._defaultValues, name)
 
     if (defaultValue == null || (element as HTMLInputElement)?.defaultChecked) {
-      this.stores.values.update((values) => {
-        set(values, name, getFieldValue(newField._f))
-        return values
-      }, name)
+      set(this._formValues, name, getFieldValue(newField._f))
     } else {
-      // Set it without updating...
       set(this._formValues, name, getFieldValueAs(defaultValue, newField._f))
       updateFieldReference(newField._f, defaultValue)
     }
