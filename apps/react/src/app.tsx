@@ -1,3 +1,5 @@
+import './app.css'
+
 import { createBrowserRouter, RouterProvider, Link } from 'react-router-dom'
 
 import { AutoUnregister } from './auto-unregister'
@@ -6,6 +8,7 @@ import { BasicSchemaValidation } from './basic-schema-validation'
 import { ConditionalField } from './conditional-field'
 import { Controller } from './controller'
 import { CrossFrameForm } from './cross-frame-form'
+import { CustomSchemaValidation } from './custom-schema-validation'
 
 const router = createBrowserRouter([
   {
@@ -41,6 +44,10 @@ const router = createBrowserRouter([
   {
     path: '/cross-frame-form',
     element: <CrossFrameForm />,
+  },
+  {
+    path: '/custom-schema-validation/:mode',
+    element: <CustomSchemaValidation />,
   },
 ])
 
