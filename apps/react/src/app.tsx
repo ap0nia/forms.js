@@ -19,6 +19,7 @@ import { IsValid } from './is-valid'
 import { ManualRegisterForm } from './manual-register-form'
 import { Reset } from './reset'
 import { RevalidateMode } from './revalidate-mode'
+import { SetError } from './set-error'
 import { UseFieldArray } from './use-field-array'
 
 const router = createBrowserRouter([
@@ -103,6 +104,10 @@ const router = createBrowserRouter([
   {
     path: '/use-field-array/:mode',
     element: <UseFieldArray />,
+  },
+  {
+    path: '/set-error',
+    element: <SetError />,
   },
 ])
 
