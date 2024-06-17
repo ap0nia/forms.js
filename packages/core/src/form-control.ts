@@ -1030,7 +1030,7 @@ export class FormControl<
         return errors
       })
     } else if (result.resolverResult?.errors && !isEmptyObject(result.resolverResult?.errors)) {
-      this.mergeErrors(result.resolverResult.errors)
+      this.mergeErrors(result.resolverResult.errors, name)
     }
 
     // `true` context will match will all field names.
@@ -1646,10 +1646,10 @@ export class FormControl<
    */
   mergeErrors(
     errors: FieldErrors<TFieldValues> | FieldErrorRecord,
-    names?: string[],
+    names?: PropertyKey | PropertyKey[] | readonly PropertyKey[],
     silent?: boolean,
   ): void {
-    const namesToMerge = names ?? Object.keys(errors)
+    const namesToMerge = toStringArray(names) ?? Object.keys(errors)
 
     namesToMerge.forEach((name) => {
       const fieldError = get(errors, name)

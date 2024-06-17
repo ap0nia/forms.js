@@ -24,6 +24,7 @@ import { SetFocus } from './set-focus'
 import { SetValue } from './set-value'
 import { SetValueAsyncStrictMode } from './set-value-async-strict-mode'
 import { SetValueCustomRegister } from './set-value-custom-register'
+import { SetValueWithSchema } from './set-value-with-schema'
 import { UseFieldArray } from './use-field-array'
 
 const router = createBrowserRouter([
@@ -128,6 +129,10 @@ const router = createBrowserRouter([
   {
     path: '/set-value-async-strict-mode',
     element: <SetValueAsyncStrictMode />,
+  },
+  {
+    path: '/set-value-with-schema',
+    element: <SetValueWithSchema />,
   },
 ])
 
