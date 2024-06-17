@@ -12,6 +12,7 @@ import { CustomSchemaValidation } from './custom-schema-validation'
 import { DefaultValues } from './default-values'
 import { DefaultValuesAsync } from './default-values-async'
 import { DelayError } from './delay-error'
+import FormState from './form-state'
 
 const router = createBrowserRouter([
   {
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
   {
     path: '/delay-error',
     element: <DelayError />,
+  },
+  {
+    path: '/form-state/:mode',
+    element: <FormState />,
   },
 ])
 

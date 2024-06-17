@@ -821,20 +821,6 @@ export class FormControl<
 
     const isBlurEvent = event.type === INPUT_EVENTS.BLUR || event.type === INPUT_EVENTS.FOCUS_OUT
 
-    if (isBlurEvent) {
-      set(this._formValues, name, fieldValue)
-
-      field._f.onBlur?.(original ?? event)
-
-      this.delayErrorCallback?.(0)
-
-      this.updateTouchedField(name)
-    } else {
-      this.updateDirtyField(name, fieldValue)
-
-      field._f.onChange?.(original ?? event)
-    }
-
     if (this.isTracking('values', name) && !isBlurEvent) {
       this.stores.values.update((values) => values, name)
     }
@@ -850,7 +836,22 @@ export class FormControl<
 
     if (shouldSkipValidation) {
       this.updateValid()
+
+      if (isBlurEvent) {
+        set(this._formValues, name, fieldValue)
+
+        field._f.onBlur?.(original ?? event)
+
+        this.delayErrorCallback?.(0)
+
+        this.updateTouchedField(name)
+      } else {
+        this.updateDirtyField(name, fieldValue)
+        field._f.onChange?.(original ?? event)
+      }
+
       this.state.flush()
+
       return
     }
 
@@ -869,6 +870,19 @@ export class FormControl<
 
     this.state.flush()
     this.state.open()
+
+    if (isBlurEvent) {
+      set(this._formValues, name, fieldValue)
+
+      field._f.onBlur?.(original ?? event)
+
+      this.delayErrorCallback?.(0)
+
+      this.updateTouchedField(name)
+    } else {
+      this.updateDirtyField(name, fieldValue)
+      field._f.onChange?.(original ?? event)
+    }
 
     const result = await this.validate(name)
 
@@ -957,8 +971,9 @@ export class FormControl<
 
       if (isFieldValueUpdated && field._f.deps) {
         await this.trigger(field._f.deps as any)
-      } else {
-        this.stores.isValid.set(result.isValid, name)
+      } else if (this.isTracking('isValid', name)) {
+        const fullValidationResult = await this.executeBuiltInValidation(undefined, true)
+        this.stores.isValid.set(fullValidationResult.valid, name)
       }
     }
 
