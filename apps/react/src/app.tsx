@@ -13,6 +13,7 @@ import { DefaultValues } from './default-values'
 import { DefaultValuesAsync } from './default-values-async'
 import { DelayError } from './delay-error'
 import FormState from './form-state'
+import { FormStateWithNestedFields } from './form-state-with-nested-fields'
 
 const router = createBrowserRouter([
   {
@@ -68,6 +69,10 @@ const router = createBrowserRouter([
   {
     path: '/form-state/:mode',
     element: <FormState />,
+  },
+  {
+    path: '/form-state-with-nested-fields/:mode',
+    element: <FormStateWithNestedFields />,
   },
 ])
 
