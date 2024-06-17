@@ -1341,10 +1341,7 @@ export class FormControl<
 
       const errors = resolverResult?.errors ?? validationResult?.errors ?? {}
 
-      this.stores.errors.update((errors) => {
-        unset(errors, 'root')
-        return errors
-      })
+      unset(this._formState.errors, 'root')
 
       if (validationResult) {
         this.mergeErrors(errors, validationResult?.names)

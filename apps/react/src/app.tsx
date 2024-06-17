@@ -17,6 +17,7 @@ import { FormStateWithNestedFields } from './form-state-with-nested-fields'
 import { FormStateWithSchema } from './form-state-with-schema'
 import { IsValid } from './is-valid'
 import { ManualRegisterForm } from './manual-register-form'
+import { RevalidateMode } from './revalidate-mode'
 
 const router = createBrowserRouter([
   {
@@ -88,6 +89,10 @@ const router = createBrowserRouter([
   {
     path: '/manual-register-form',
     element: <ManualRegisterForm />,
+  },
+  {
+    path: '/re-validate-mode/:mode/:reValidateMode',
+    element: <RevalidateMode />,
   },
 ])
 
