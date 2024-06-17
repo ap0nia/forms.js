@@ -11,6 +11,7 @@ import { CrossFrameForm } from './cross-frame-form'
 import { CustomSchemaValidation } from './custom-schema-validation'
 import { DefaultValues } from './default-values'
 import { DefaultValuesAsync } from './default-values-async'
+import { DelayError } from './delay-error'
 
 const router = createBrowserRouter([
   {
@@ -58,6 +59,10 @@ const router = createBrowserRouter([
   {
     path: '/default-values-async',
     element: <DefaultValuesAsync />,
+  },
+  {
+    path: '/delay-error',
+    element: <DelayError />,
   },
 ])
 
