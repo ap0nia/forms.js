@@ -16,6 +16,7 @@ import FormState from './form-state'
 import { FormStateWithNestedFields } from './form-state-with-nested-fields'
 import { FormStateWithSchema } from './form-state-with-schema'
 import { IsValid } from './is-valid'
+import { ManualRegisterForm } from './manual-register-form'
 
 const router = createBrowserRouter([
   {
@@ -83,6 +84,10 @@ const router = createBrowserRouter([
   {
     path: '/is-valid/:mode/:defaultValues',
     element: <IsValid />,
+  },
+  {
+    path: '/manual-register-form',
+    element: <ManualRegisterForm />,
   },
 ])
 
