@@ -35,6 +35,7 @@ import { UseWatch } from './use-watch'
 import { UseWatchUseFieldArrayNested } from './use-watch-use-field-array-nested'
 import { ValidateFieldCriteria } from './validate-field-criteria'
 import { Watch } from './watch'
+import { WatchDefaultValues } from './watch-default-values'
 import { Welcome } from './welcome'
 
 const router = createBrowserRouter([
@@ -173,6 +174,10 @@ const router = createBrowserRouter([
   {
     path: '/watch',
     element: <Watch />,
+  },
+  {
+    path: '/watch-default-values',
+    element: <WatchDefaultValues />,
   },
 ])
 
