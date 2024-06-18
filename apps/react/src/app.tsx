@@ -37,6 +37,7 @@ import { ValidateFieldCriteria } from './validate-field-criteria'
 import { Watch } from './watch'
 import { WatchDefaultValues } from './watch-default-values'
 import { WatchUseFieldArray } from './watch-use-field-array'
+import { WatchUseFieldArrayNested } from './watch-use-field-array-nested'
 import { Welcome } from './welcome'
 
 const router = createBrowserRouter([
@@ -183,6 +184,10 @@ const router = createBrowserRouter([
   {
     path: '/watch-field-array/:mode',
     element: <WatchUseFieldArray />,
+  },
+  {
+    path: '/watch-use-field-array-nested',
+    element: <WatchUseFieldArrayNested />,
   },
 ])
 
