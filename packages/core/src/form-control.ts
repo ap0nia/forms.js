@@ -676,7 +676,7 @@ export class FormControl<
         return Array.isArray(name) ? [result] : result
       }
       default: {
-        return Object.values(deepFilter(valuesCopy, nameArray)) ?? defaultValue
+        return getMultiple(valuesCopy, nameArray)
       }
     }
   }

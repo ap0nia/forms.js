@@ -34,6 +34,7 @@ import { UseFormState } from './use-form-state'
 import { UseWatch } from './use-watch'
 import { UseWatchUseFieldArrayNested } from './use-watch-use-field-array-nested'
 import { ValidateFieldCriteria } from './validate-field-criteria'
+import { Watch } from './watch'
 import { Welcome } from './welcome'
 
 const router = createBrowserRouter([
@@ -168,6 +169,10 @@ const router = createBrowserRouter([
   {
     path: '/validate-field-criteria',
     element: <ValidateFieldCriteria />,
+  },
+  {
+    path: '/watch',
+    element: <Watch />,
   },
 ])
 
