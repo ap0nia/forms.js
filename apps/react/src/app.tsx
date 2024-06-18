@@ -31,6 +31,7 @@ import { UseFieldArray } from './use-field-array'
 import { UseFieldArrayNested } from './use-field-array-nested'
 import { UseFieldArrayUnregister } from './use-field-array-unregister'
 import { UseFormState } from './use-form-state'
+import { UseWatch } from './use-watch'
 import { Welcome } from './welcome'
 
 const router = createBrowserRouter([
@@ -153,6 +154,10 @@ const router = createBrowserRouter([
   {
     path: '/use-form-state',
     element: <UseFormState />,
+  },
+  {
+    path: '/use-watch',
+    element: <UseWatch />,
   },
 ])
 
