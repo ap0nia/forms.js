@@ -1496,7 +1496,9 @@ export class FormControl<
     }
 
     if (isEmptyResetValues) {
-      this.stores.dirtyFields.set({})
+      if (!isEmptyObject(this._formState.dirtyFields)) {
+        this.stores.dirtyFields.set({})
+      }
     } else if (options?.keepDirtyValues) {
       if (options?.keepDefaultValues && this._formValues) {
         const dirtyFields = getDirtyFields(this._defaultValues, this._formValues)
@@ -1505,15 +1507,15 @@ export class FormControl<
     } else if (options?.keepDefaultValues && formValues) {
       const dirtyFields = getDirtyFields(this._defaultValues, formValues as any)
       this.stores.dirtyFields.set(dirtyFields)
-    } else if (!options?.keepDirty) {
+    } else if (!options?.keepDirty && !isEmptyObject(this._formState.dirtyFields)) {
       this.stores.dirtyFields.set({})
     }
 
-    if (!options?.keepTouched) {
+    if (!options?.keepTouched && !isEmptyObject(this._formState.touchedFields)) {
       this.stores.touchedFields.set({})
     }
 
-    if (!options?.keepErrors) {
+    if (!options?.keepErrors && !isEmptyObject(this._formState.errors)) {
       this.stores.errors.set({})
     }
 

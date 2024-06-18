@@ -1,6 +1,6 @@
 import './app.css'
 
-import { createBrowserRouter, RouterProvider, Link } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import { AutoUnregister } from './auto-unregister'
 import { Basic } from './basic'
@@ -30,17 +30,13 @@ import { TriggerValidation } from './trigger-validation'
 import { UseFieldArray } from './use-field-array'
 import { UseFieldArrayNested } from './use-field-array-nested'
 import { UseFieldArrayUnregister } from './use-field-array-unregister'
+import { UseFormState } from './use-form-state'
+import { Welcome } from './welcome'
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: (
-      <div>
-        <h1>Hello World</h1>
-        <Link to="/basic/onSubmit">Basic onSubmit</Link>
-        <Link to="/auto-unregister">AutoUnregister</Link>
-      </div>
-    ),
+    element: <Welcome />,
   },
   {
     path: '/auto-unregister',
@@ -153,6 +149,10 @@ const router = createBrowserRouter([
   {
     path: '/use-field-array-unregister',
     element: <UseFieldArrayUnregister />,
+  },
+  {
+    path: '/use-form-state',
+    element: <UseFormState />,
   },
 ])
 
